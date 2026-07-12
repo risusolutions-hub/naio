@@ -1,0 +1,11 @@
+{
+    "name": "nagent",
+    "version": "0.2.3",
+    "kind": "native",
+    "description": "Lightweight multi-agent orchestration scaffolding (no LLM)",
+    "import_paths": [
+        "nagent",
+        "std/nagent"
+    ],
+    "builtin_count": 12
+}

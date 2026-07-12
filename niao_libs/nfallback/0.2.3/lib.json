@@ -1,0 +1,11 @@
+{
+    "name": "nfallback",
+    "version": "0.2.3",
+    "kind": "native",
+    "description": "Graceful degradation: value chains and named circuit breakers",
+    "import_paths": [
+        "nfallback",
+        "std/nfallback"
+    ],
+    "builtin_count": 8
+}

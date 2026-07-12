@@ -1,0 +1,30 @@
+// nlint demo — AST-as-data parse + lint diagnostics.
+// Run: niao run examples/nlint_demo.niao
+import "nlint"
+
+fn main() {
+    print("=== parse ===")
+    let src = "fn add(a: int, b: int) -> int { return a + b }\nfn main() { print(add(1, 2)) }"
+    let ast = nlint.parse(src)
+    print("program kind:", ast.kind)
+    print("items:", len(ast.items))
+
+    print("=== default rules ===")
+    let rules = nlint.rules()
+    print("built-in rules:", len(rules))
+
+    print("=== check (warnings expected) ===")
+    let bad = "fn empty() { }\nfn helper() { print(1) }"
+    let report = nlint.check(bad)
+    print("ok:", report.ok)
+    print("issues:", len(report.issues))
+    for issue in report.issues {
+        print(" ", issue.rule, "@", issue.line, "-", issue.message)
+    }
+
+    print("=== check clean source ===")
+    let good = "fn main() { let x = 1 + 2 }"
+    let clean = nlint.check(good)
+    print("ok:", clean.ok)
+}
+

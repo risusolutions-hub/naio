@@ -1,0 +1,11 @@
+{
+    "name": "nws",
+    "version": "0.2.3",
+    "kind": "native",
+    "description": "Ergonomic WebSocket client wrapper over net (shared handles)",
+    "import_paths": [
+        "nws",
+        "std/nws"
+    ],
+    "builtin_count": 4
+}

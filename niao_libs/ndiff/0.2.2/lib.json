@@ -1,0 +1,11 @@
+{
+    "name": "ndiff",
+    "version": "0.2.2",
+    "kind": "native",
+    "description": "Deep structural equality and diff for values, arrays, and objects",
+    "import_paths": [
+        "ndiff",
+        "std/ndiff"
+    ],
+    "builtin_count": 3
+}

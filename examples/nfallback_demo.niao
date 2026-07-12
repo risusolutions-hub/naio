@@ -1,0 +1,42 @@
+// nfallback demo — value chains and circuit breakers.
+// Run: niao run examples/nfallback_demo.niao
+import "nfallback"
+
+fn main() {
+    print("=== first / coalesce / or ===")
+    print(nfallback.first([nil, "alpha", "beta"]))          // alpha
+    print(nfallback.coalesce(nil, nil, 99))                 // 99
+    print(nfallback.or(nil, "fallback"))                    // fallback
+    print(nfallback.or("keep", "fallback"))                 // keep
+    print(nfallback.try_chain([nil, nil, "chained"]))       // chained
+
+    print("=== circuit opens after threshold ===")
+    nfallback.reset("demo")
+    print(nfallback.is_open("demo"))                        // false
+    for i in 0..5 {
+        let closed = nfallback.circuit("demo", false, {threshold: 5, reset_ms: 0})
+        print("fail", i, "closed?", closed)
+    }
+    print(nfallback.is_open("demo"))                        // true
+    print(nfallback.circuit("demo", true))                  // false — still open
+
+    print("=== allow / reset force close ===")
+    nfallback.allow("demo")
+    print(nfallback.is_open("demo"))                        // false
+    nfallback.circuit("demo", false, {threshold: 2, reset_ms: 0})
+    nfallback.circuit("demo", false, {threshold: 2, reset_ms: 0})
+    print(nfallback.is_open("demo"))                        // true
+    nfallback.reset("demo")
+    print(nfallback.is_open("demo"))                        // false
+
+    print("=== success clears fail streak ===")
+    nfallback.circuit("api", false, {threshold: 3, reset_ms: 0})
+    nfallback.circuit("api", false, {threshold: 3, reset_ms: 0})
+    nfallback.circuit("api", true, {threshold: 3, reset_ms: 0})
+    print(nfallback.is_open("api"))                         // false
+    nfallback.circuit("api", false, {threshold: 3, reset_ms: 0})
+    nfallback.circuit("api", false, {threshold: 3, reset_ms: 0})
+    print(nfallback.is_open("api"))                         // false (need 3 fresh fails)
+    nfallback.circuit("api", false, {threshold: 3, reset_ms: 0})
+    print(nfallback.is_open("api"))                         // true
+}

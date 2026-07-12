@@ -1,0 +1,13 @@
+// Control: pure VM arithmetic (no stdlib). Establishes the interpreter baseline
+// so per-lib benches can be read relative to it. Mirrors benchmarks/math_bench.niao.
+fn heavy(n: int) -> int {
+    let acc = 12345
+    let i = 0
+    while i < n {
+        acc = (acc + i) % 1000000007
+        acc = (acc * 3) % 1000000007
+        i = i + 1
+    }
+    return acc
+}
+fn main() { print(heavy(5000000)) }

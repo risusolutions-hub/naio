@@ -1,0 +1,24 @@
+// nshell demo — subprocess run, capture, which, exists.
+// Run: niao run examples/nshell_demo.niao
+import "nshell"
+
+fn main() {
+    print("=== run (shell) ===")
+    let r = nshell.run("echo hello", {shell: true})
+    print("stdout:", r.stdout)
+    print("stderr:", r.stderr)
+    print("code:", r.code, "ok:", r.ok)
+
+    print("=== run (argv) ===")
+    let r2 = nshell.run(["niao", "--help"], {timeout_ms: 10000})
+    print("niao --help exit:", r2.code, "ok:", r2.ok)
+
+    print("=== run_capture ===")
+    let out = nshell.run("echo capture", {shell: true}).stdout
+    print("captured:", out)
+
+    print("=== which / exists ===")
+    print("which niao:", nshell.which("niao"))
+    print("exists niao:", nshell.exists("niao"))
+    print("exists not-a-binary:", nshell.exists("niao-definitely-not-a-real-binary-xyz"))
+}

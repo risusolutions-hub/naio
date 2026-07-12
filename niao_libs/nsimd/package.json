@@ -1,0 +1,11 @@
+{
+    "name": "nsimd",
+    "version": "0.2.3",
+    "kind": "native",
+    "description": "Unrolled autovectorized f64/i64 kernels on packed FloatArray/IntArray",
+    "import_paths": [
+        "nsimd",
+        "std/nsimd"
+    ],
+    "builtin_count": 9
+}

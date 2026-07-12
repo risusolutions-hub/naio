@@ -1,0 +1,40 @@
+// nreplay demo — record events, inspect, save/load.
+// Run: niao run examples/nreplay_demo.niao
+import "nreplay"
+
+fn main() {
+    print("=== start / record ===")
+    let h = nreplay.start()
+    print("running:", nreplay.running(h))
+    nreplay.record(h, "rng", "42")
+    nreplay.record(h, "tick", 1)
+    nreplay.record(h, "note", "hello")
+    print("len:", nreplay.len(h))
+
+    print("=== play / events ===")
+    let first = nreplay.play(h, 0)
+    print("first:", first.kind, first.data, first.t_ms)
+    print("missing:", nreplay.play(h, 99))
+    let all = nreplay.events(h)
+    print("events:", all)
+
+    print("=== stop ===")
+    nreplay.stop(h)
+    print("running:", nreplay.running(h))
+
+    print("=== save / load ===")
+    let path = "examples/nreplay_demo.nrep"
+    nreplay.save(h, path)
+    nreplay.close(h)
+
+    let h2 = nreplay.load(path)
+    print("loaded running:", nreplay.running(h2))
+    print("loaded len:", nreplay.len(h2))
+    let ev = nreplay.play(h2, 1)
+    print("loaded[1]:", ev.kind, ev.data, ev.t_ms)
+
+    print("=== clear / close ===")
+    nreplay.clear(h2)
+    print("cleared len:", nreplay.len(h2))
+    print("close:", nreplay.close(h2))
+}

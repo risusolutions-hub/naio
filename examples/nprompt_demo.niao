@@ -1,0 +1,30 @@
+// nprompt demo — interactive TTY prompts (stdin/stdout).
+// Run: niao run examples/nprompt_demo.niao
+import "nprompt"
+
+fn main() {
+    print("=== nprompt demo (interactive) ===")
+    print("Answer the prompts below. Press Enter for defaults where shown.")
+    print("")
+
+    let name = nprompt.input("Your name", { default: "guest" })
+    print("name:", name)
+
+    let proceed = nprompt.confirm("Continue?", { default: true })
+    print("continue:", proceed)
+
+    if proceed {
+        let color = nprompt.select(
+            "Pick a color",
+            ["red", "green", "blue"],
+            { default_index: 0 }
+        )
+        print("color:", color)
+
+        let secret = nprompt.password("Password (hidden on Unix TTY)")
+        print("password length:", len(secret))
+    }
+
+    print("")
+    print("Done.")
+}

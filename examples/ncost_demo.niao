@@ -1,0 +1,36 @@
+// ncost demo — rough LLM / S3 / Lambda USD estimates.
+// Run: niao run examples/ncost_demo.niao
+import "ncost"
+
+fn main() {
+    print("=== price ===")
+    print(ncost.price("gpt-4o", 1000000, 1000000))       // 12.5
+    print(ncost.price("gpt-4o-mini", 1000000))            // 0.15 (out defaults 0)
+    print(ncost.price("claude-sonnet", 500000, 100000))
+    print(ncost.price("llama-local", 10000, 2000))        // 0
+
+    print("=== helpers ===")
+    print(ncost.s3_cost(10))                              // 0.23
+    print(ncost.lambda_cost(1000, 1))                     // ~0.0000166667
+
+    print("=== estimate ===")
+    let e = ncost.estimate({
+        model: "gpt-4o-mini",
+        tokens_in: 1000000,
+        tokens_out: 0,
+        s3_gb: 1,
+        lambda_ms: 1000,
+        requests: 1
+    })
+    print("usd:", e.usd)
+    print("breakdown:", e.breakdown)
+
+    print("=== set_price + table ===")
+    ncost.set_price("my-model", 1.0, 2.0)
+    print(ncost.price("my-model", 1000000, 1000000))      // 3.0
+    print(ncost.table())                                  // builtins + overrides
+
+    print("=== unknown model is error ===")
+    let bad = ncost.price("no-such-model", 100)
+    print(is_error(bad))
+}

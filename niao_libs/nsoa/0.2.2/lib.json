@@ -1,0 +1,11 @@
+{
+    "name": "nsoa",
+    "version": "0.2.2",
+    "kind": "native",
+    "description": "Columnar struct-of-arrays tables with typed columns",
+    "import_paths": [
+        "nsoa",
+        "std/nsoa"
+    ],
+    "builtin_count": 8
+}

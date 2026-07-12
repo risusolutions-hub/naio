@@ -1,0 +1,11 @@
+{
+    "name": "nazure",
+    "version": "0.2.2",
+    "kind": "native",
+    "description": "Azure helper: Blob Storage (put/get/delete/list), Table Storage (insert/query/delete), Azure Functions HTTP trigger. SharedKey + SAS + Bearer auth.",
+    "import_paths": [
+        "nazure",
+        "std/nazure"
+    ],
+    "builtin_count": 9
+}

@@ -1,0 +1,11 @@
+{
+    "name": "ntoml",
+    "version": "0.2.3",
+    "kind": "native",
+    "description": "TOML parse and stringify for configuration files",
+    "import_paths": [
+        "ntoml",
+        "std/ntoml"
+    ],
+    "builtin_count": 4
+}

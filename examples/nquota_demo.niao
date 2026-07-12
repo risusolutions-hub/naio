@@ -1,0 +1,38 @@
+// nquota demo — token-bucket rate limiting.
+// Run: niao run examples/nquota_demo.niao
+import "nquota"
+import "time"
+
+fn main() {
+    print("=== create ===")
+    let q = nquota.new(10, 3)          // 10 tokens/sec, burst 3
+    print(nquota.stats(q))
+
+    print("=== take until empty ===")
+    print(nquota.take(q))              // true
+    print(nquota.take(q))              // true
+    print(nquota.take(q))              // true
+    print(nquota.take(q))              // false — empty
+    print(nquota.ok(q))                // false
+    print("wait_ms:", nquota.wait_ms(q))
+
+    print("=== wait & refill ===")
+    let ms = nquota.wait_ms(q)
+    time.sleep_ms(ms + 5)
+    print(nquota.ok(q))                // true after wait
+    print(nquota.take(q, 1))           // true
+
+    print("=== reset ===")
+    nquota.reset(q)
+    print(nquota.stats(q))
+    print(nquota.take(q, 2))           // true — consume 2 at once
+
+    print("=== default burst ===")
+    let q2 = nquota.new(5)             // burst defaults to 5
+    print(nquota.stats(q2))
+
+    print("=== cleanup ===")
+    nquota.close(q)
+    nquota.close(q2)
+    print(is_error(nquota.take(q)))    // true — closed handle
+}

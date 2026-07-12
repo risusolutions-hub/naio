@@ -1,0 +1,11 @@
+{
+    "name": "nbudget",
+    "version": "0.2.2",
+    "kind": "native",
+    "description": "Cooperative resource and cost budgets: cpu/ram/gpu/usd/tokens limits, charge, check, remain",
+    "import_paths": [
+        "nbudget",
+        "std/nbudget"
+    ],
+    "builtin_count": 9
+}

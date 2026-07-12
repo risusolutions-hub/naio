@@ -1,0 +1,24 @@
+// nnpu demo — NPU detection and advisory budget.
+// Run: niao run examples/nnpu_demo.niao
+import "nnpu"
+
+fn main() {
+    print("=== detection ===")
+    print("available:", nnpu.available())
+    print("vendor:", nnpu.vendor())
+    print("name:", nnpu.name())
+
+    print("=== info snapshot ===")
+    let info = nnpu.info()
+    print("info.available:", info.available)
+    print("info.vendor:", info.vendor)
+    print("info.name:", info.name)
+    print("info.note:", info.note)
+    print("info.limit_pct:", info.limit_pct)
+
+    print("=== limit roundtrip ===")
+    nnpu.set_limit(60)
+    print("limit:", nnpu.get_limit())
+    print("ok:", nnpu.ok())
+    nnpu.set_limit(100)
+}

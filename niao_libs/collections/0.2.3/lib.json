@@ -1,0 +1,11 @@
+{
+    "name": "collections",
+    "version": "0.2.3",
+    "kind": "native",
+    "description": "Insertion-ordered maps/sets (IndexMap/IndexSet) and fast hashing",
+    "import_paths": [
+        "collections",
+        "std/collections"
+    ],
+    "builtin_count": 0
+}

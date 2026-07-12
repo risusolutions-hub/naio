@@ -1,0 +1,11 @@
+{
+    "name": "nquota",
+    "version": "0.2.3",
+    "kind": "native",
+    "description": "Token-bucket rate limiting with refill based on wall-clock elapsed time",
+    "import_paths": [
+        "nquota",
+        "std/nquota"
+    ],
+    "builtin_count": 7
+}

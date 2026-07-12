@@ -1,0 +1,11 @@
+{
+    "name": "npersist",
+    "version": "0.2.3",
+    "kind": "native",
+    "description": "im-rc persistent Vector/HashMap with structural sharing",
+    "import_paths": [
+        "npersist",
+        "std/npersist"
+    ],
+    "builtin_count": 13
+}

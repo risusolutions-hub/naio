@@ -1,0 +1,18 @@
+// nmarkdown demo — Markdown to HTML, strip, heading extract.
+// Run: niao run examples/nmarkdown_demo.niao
+import "nmarkdown"
+
+fn main() {
+    let md = "# Nmarkdown Demo\n\n**Bold** and *italic* with `code`.\n\n- item one\n- item two\n\n1. first\n2. second\n\n> A blockquote\n\nSee [Niao](https://niao.dev).\n\n```\nfn main() {}\n```"
+
+    print("=== to_html ===")
+    print(nmarkdown.to_html(md))
+
+    print("=== strip ===")
+    print(nmarkdown.strip(md))
+
+    print("=== headings ===")
+    for h in nmarkdown.headings(md) {
+        print("level:", h.level, "text:", h.text)
+    }
+}

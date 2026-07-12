@@ -1,0 +1,28 @@
+// nmmap demo — memory-mapped file reads, lazy line index, byte search.
+// Run: niao run examples/nmmap_demo.niao
+import "nmmap"
+
+fn main() {
+    let path = "docs/NMMAP.md"
+
+    print("=== open ===")
+    let h = nmmap.open(path)
+    print(nmmap.stats(h))
+
+    print("=== slice ===")
+    print(nmmap.text(h, 0, 6))
+    print(nmmap.len(h))
+
+    print("=== lines (lazy index) ===")
+    print(nmmap.line_count(h))
+    print(nmmap.line(h, 0))
+    print(nmmap.line(h, 1))
+
+    print("=== search ===")
+    print(nmmap.find(h, "nmmap"))
+    print(nmmap.find(h, "NOT_IN_FILE_XYZ"))
+
+    print("=== cleanup ===")
+    nmmap.close(h)
+    print(is_error(nmmap.len(h)))
+}

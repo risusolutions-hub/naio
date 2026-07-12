@@ -1,0 +1,11 @@
+{
+    "name": "nsketch",
+    "version": "0.2.2",
+    "kind": "native",
+    "description": "Probabilistic sketches: Bloom filter, HyperLogLog-lite, Count-Min Sketch",
+    "import_paths": [
+        "nsketch",
+        "std/nsketch"
+    ],
+    "builtin_count": 12
+}

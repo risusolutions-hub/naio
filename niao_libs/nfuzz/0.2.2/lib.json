@@ -1,0 +1,11 @@
+{
+    "name": "nfuzz",
+    "version": "0.2.2",
+    "kind": "native",
+    "description": "Deterministic property/fuzz helpers (xorshift64 seed, int/float/string/bytes/cases)",
+    "import_paths": [
+        "nfuzz",
+        "std/nfuzz"
+    ],
+    "builtin_count": 9
+}

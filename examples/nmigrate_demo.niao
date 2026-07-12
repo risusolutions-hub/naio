@@ -1,0 +1,54 @@
+// nmigrate demo — schema diff → SQL for sqlite/postgres.
+// Run: niao run examples/nmigrate_demo.niao
+import "nmigrate"
+
+fn main() {
+    print("=== nmigrate schema diff ===")
+
+    let v1 = {
+        models: {
+            User: {
+                fields: {
+                    id:   "int@id",
+                    name: "string@required"
+                }
+            }
+        }
+    }
+
+    let v2 = {
+        models: {
+            User: {
+                fields: {
+                    id:    "int@id",
+                    name:  "string@required",
+                    email: "string@unique"
+                }
+            },
+            Post: {
+                fields: {
+                    id:    "int@id",
+                    title: "string@required",
+                    body:  "string"
+                }
+            }
+        }
+    }
+
+    let plan = nmigrate.plan(v1, v2, "sqlite")
+    print("summary:", plan.summary)
+    print("--- sqlite sql ---")
+    for sql in plan.sql {
+        print(sql)
+    }
+
+    print("--- postgres sql ---")
+    let pg = nmigrate.sql(v1, v2, "postgres")
+    for sql in pg {
+        print(sql)
+    }
+
+    let diff = nmigrate.diff(v1, v2)
+    print("change count:", len(diff.changes))
+    print("dialect normalized:", nmigrate.dialect("postgresql"))
+}

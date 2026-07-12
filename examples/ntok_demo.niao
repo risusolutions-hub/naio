@@ -1,0 +1,23 @@
+// ntok demo — byte-level BPE encode/decode/count/chunk/fit.
+// Run: niao run examples/ntok_demo.niao
+import "ntok"
+
+fn main() {
+    print("=== builtin tokenizer ===")
+    let tok = ntok.builtin()
+    let text = "Hello, world! Token counting for context budgets."
+
+    print("count:", ntok.count(tok, text))
+    print("approx:", ntok.count_approx(text))
+    print("encode:", ntok.encode(tok, text))
+    print("decode:", ntok.decode(tok, ntok.encode(tok, text)))
+
+    print("=== chunk & fit ===")
+    let long = "one two three four five six seven eight nine ten eleven twelve"
+    print(ntok.chunk(tok, long, 8))
+    print(ntok.fit(tok, long, 10))
+
+    print("=== cleanup ===")
+    ntok.close(tok)
+    print(is_error(ntok.count(tok, text)))   // true — closed handle
+}

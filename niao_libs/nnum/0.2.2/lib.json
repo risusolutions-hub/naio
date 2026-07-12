@@ -1,0 +1,11 @@
+{
+    "name": "nnum",
+    "version": "0.2.2",
+    "kind": "native",
+    "description": "Numeric foundation: n-dim arrays, linear algebra, FFT (numpy/scipy.linalg/scipy.fft subset)",
+    "import_paths": [
+        "nnum",
+        "std/nnum"
+    ],
+    "builtin_count": 19
+}

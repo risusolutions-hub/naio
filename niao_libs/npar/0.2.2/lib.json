@@ -1,0 +1,11 @@
+{
+    "name": "npar",
+    "version": "0.2.2",
+    "kind": "native",
+    "description": "Explicit rayon parallel ops on packed arrays with set_threads",
+    "import_paths": [
+        "npar",
+        "std/npar"
+    ],
+    "builtin_count": 7
+}

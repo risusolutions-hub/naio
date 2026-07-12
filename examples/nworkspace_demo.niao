@@ -1,0 +1,29 @@
+// nworkspace demo — manifest parse, graph, topo order.
+// Run: niao run examples/nworkspace_demo.niao
+import "nworkspace"
+
+fn main() {
+    let manifest = """
+name = "demo-ws"
+
+[[members]]
+name = "core"
+path = "examples"
+entry = "hello.niao"
+depends = []
+
+[[members]]
+name = "tools"
+path = "examples"
+entry = "loops.niao"
+depends = ["core"]
+"""
+
+    let ws = nworkspace.parse(manifest)
+    print("workspace:", ws.name)
+    print("members:", nworkspace.members(ws))
+    print("graph:", nworkspace.graph(ws))
+    print("order:", nworkspace.order(ws))
+    print("core path:", nworkspace.member_path(ws, "core"))
+    print("(use nworkspace.run(ws, \"core\") when niao is on PATH)")
+}

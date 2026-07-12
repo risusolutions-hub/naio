@@ -1,0 +1,11 @@
+{
+    "name": "nurl",
+    "version": "0.2.2",
+    "kind": "native",
+    "description": "URL parse, build, join, query helpers, and percent encoding",
+    "import_paths": [
+        "nurl",
+        "std/nurl"
+    ],
+    "builtin_count": 7
+}

@@ -1,0 +1,11 @@
+{
+    "name": "nexplain",
+    "version": "0.2.3",
+    "kind": "native",
+    "description": "Actionable error enrichment: pattern hints, custom rules, pretty format",
+    "import_paths": [
+        "nexplain",
+        "std/nexplain"
+    ],
+    "builtin_count": 5
+}

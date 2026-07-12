@@ -1,0 +1,30 @@
+{
+    "name": "naws",
+    "version": "0.2.2",
+    "kind": "native",
+    "description": "AWS helper — SigV4-signed S3, DynamoDB, Lambda, and SSM Parameter Store",
+    "import_paths": [
+        "naws",
+        "std/naws"
+    ],
+    "builtin_count": 11,
+    "api": {
+        "config": "({region, access_key, secret_key, session_token?}) -> config_id",
+        "s3_put": "(config_id, bucket, key, body, content_type?) -> {etag, status}",
+        "s3_get": "(config_id, bucket, key) -> {body, status, headers{}}",
+        "s3_delete": "(config_id, bucket, key) -> true",
+        "s3_list": "(config_id, bucket, prefix?) -> keys[]",
+        "dynamodb_put": "(config_id, table, item{}) -> true",
+        "dynamodb_get": "(config_id, table, key{}) -> item{} | nil",
+        "dynamodb_delete": "(config_id, table, key{}) -> true",
+        "dynamodb_query": "(config_id, table, opts{}) -> items[]",
+        "lambda_invoke": "(config_id, fn_name, payload) -> {status, body}",
+        "ssm_get": "(config_id, name, decrypt?) -> string"
+    },
+    "error_codes": {
+        "E2800": "arity mismatch",
+        "E2801": "API or network error",
+        "E2802": "type mismatch",
+        "E2803": "auth / invalid config handle"
+    }
+}

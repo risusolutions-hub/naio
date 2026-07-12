@@ -1,0 +1,34 @@
+// ncsv demo — parse, stringify, and header rows.
+// Run: niao run examples/ncsv_demo.niao
+import "ncsv"
+
+fn main() {
+    print("=== parse rows ===")
+    let raw = "name,age\nalice,30\nbob,25"
+    let rows = ncsv.parse(raw, {header: true})
+    print("count:", len(rows))
+    print(rows[0].name, rows[0].age)
+    print(rows[1].name, rows[1].age)
+
+    print("=== quoted fields ===")
+    let tricky = ncsv.parse("\"a,b\",c\n\"say \"\"hi\"\"\",ok")
+    print(tricky[0][0])   // a,b
+    print(tricky[0][1])   // c
+    print(tricky[1][0])   // say "hi"
+
+    print("=== explicit column names ===")
+    let named = ncsv.parse("1,2\n3,4", {header: true, names: ["x", "y"]})
+    print(named[0].x, named[0].y)
+    print(named[1].x, named[1].y)
+
+    print("=== stringify ===")
+    let data = [["id", "label"], ["1", "hello, world"]]
+    let text = ncsv.stringify(data)
+    print(text)
+
+    print("=== round-trip ===")
+    let back = ncsv.parse(text)
+    print(back[1][1])     // hello, world
+
+    print("ncsv demo done")
+}

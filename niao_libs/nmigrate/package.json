@@ -1,0 +1,11 @@
+{
+    "name": "nmigrate",
+    "version": "0.2.3",
+    "kind": "native",
+    "description": "Schema diff from nmodel struct definitions to SQL migrations (sqlite/postgres)",
+    "import_paths": [
+        "nmigrate",
+        "std/nmigrate"
+    ],
+    "builtin_count": 4
+}

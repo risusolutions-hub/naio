@@ -1,0 +1,25 @@
+// nsnap demo — binary snapshots + staleness checks.
+// Run: niao run examples/nsnap_demo.niao
+import "nsnap"
+
+fn main() {
+    print("=== capture / restore ===")
+    let state = {count: 10, label: "warm-start", flags: [true, false]}
+    let snap = nsnap.capture(state)
+    print(nsnap.validate(snap))
+    print(nsnap.info(snap))
+    let restored = nsnap.restore(snap)
+    print(restored.count, restored.label)
+
+    print("=== staleness ===")
+    print(nsnap.stale(snap, state))                 // false
+    let fp = nsnap.fingerprint(state)
+    print(nsnap.fingerprint_bytes(snap) == fp)     // true
+    state.count = 11
+    print(nsnap.stale(snap, state))                 // true
+    print(nsnap.stale_hash(snap, fp))              // true — old fingerprint
+
+    print("=== time staleness ===")
+    print(nsnap.stale_since(snap, 0))              // false (snapshot is newer)
+    print(nsnap.stale_since(snap, 9999999999999))  // true (snapshot is older)
+}

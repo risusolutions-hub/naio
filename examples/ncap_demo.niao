@@ -1,0 +1,37 @@
+// ncap demo — cooperative capability sandbox.
+// Run: niao run examples/ncap_demo.niao
+import "ncap"
+
+fn main() {
+    print("=== default (allow_all) ===")
+    print("enabled:", ncap.enabled())
+    print("check net:", ncap.check("net"))
+
+    print("=== deny_all + grant ===")
+    ncap.deny_all()
+    print("enabled:", ncap.enabled())
+    print("check net:", ncap.check("net"))
+
+    ncap.grant(["net", "fs"])
+    print("list:", ncap.list())
+    print("check net:", ncap.check("net"))
+    print("check env:", ncap.check("env"))
+    print("require net:", ncap.require("net"))
+
+    print("=== require denied ===")
+    let denied = ncap.require("env")
+    print("require env:", denied)
+
+    print("=== revoke / all ===")
+    ncap.revoke("fs")
+    print("list after revoke fs:", ncap.list())
+    ncap.grant("all")
+    print("check gpu with all:", ncap.check("gpu"))
+    ncap.revoke("all")
+    print("check gpu after revoke all:", ncap.check("gpu"))
+
+    print("=== allow_all again ===")
+    ncap.allow_all()
+    print("enabled:", ncap.enabled())
+    print("check process:", ncap.check("process"))
+}

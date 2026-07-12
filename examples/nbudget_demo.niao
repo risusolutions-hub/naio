@@ -1,0 +1,41 @@
+// nbudget demo — cooperative resource and cost budgets.
+// Run: niao run examples/nbudget_demo.niao
+import "nbudget"
+
+fn main() {
+    print("=== set limits ===")
+    nbudget.set({cpu_pct: 80, ram_mb: 1024, usd: 2.0, tokens: 10000})
+    print(nbudget.get())
+
+    print("=== charge usage ===")
+    nbudget.charge("tokens", 2500)
+    nbudget.charge("usd", 0.35)
+    nbudget.charge("ram_mb", 256)
+    print("used:", nbudget.used())
+    print("remain:", nbudget.remain())
+    print("ok:", nbudget.ok())
+
+    print("=== soft check with proposed extra ===")
+    let r = nbudget.check({tokens: 8000})
+    print("ok:", r.ok)
+    for v in r.violations {
+        print(" -", v)
+    }
+
+    print("=== charge within budget ===")
+    nbudget.charge("tokens", 1000)
+    print("tokens remain:", nbudget.remain().tokens)
+
+    print("=== exceed is catchable (still charged) ===")
+    let over = nbudget.charge("ram_mb", 900)
+    print(is_error(over))              // true — used now over 1024
+    print("ram used:", nbudget.used().ram_mb)
+    print("ok:", nbudget.ok())
+
+    print("=== reset and clear ===")
+    nbudget.reset_used()
+    print("used after reset:", nbudget.used())
+    nbudget.clear()
+    print("limits after clear:", nbudget.get())
+    print("ok with no limits:", nbudget.ok())
+}

@@ -1,0 +1,11 @@
+{
+    "name": "ngpu",
+    "version": "0.2.3",
+    "kind": "native",
+    "description": "GPU detection, VRAM and utilization readings, cooperative budgets, and thermal gating",
+    "import_paths": [
+        "ngpu",
+        "std/ngpu"
+    ],
+    "builtin_count": 17
+}

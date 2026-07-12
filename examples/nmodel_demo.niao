@@ -1,0 +1,116 @@
+import "nmodel"
+import "nsqlite"
+
+fn main() {
+    print("=== nmodel ORM demo ===")
+
+    // Open an in-memory SQLite database
+    let db = nsqlite.open(":memory:")
+
+    // Declare a schema with two models
+    let s = nmodel.schema({
+        models: {
+            User: {
+                fields: {
+                    id:         "int@id",
+                    name:       "string@required",
+                    email:      "string@unique@required",
+                    score:      "float@default(0)",
+                    active:     "bool@default(TRUE)"
+                }
+            },
+            Post: {
+                fields: {
+                    id:         "int@id",
+                    title:      "string@required",
+                    body:       "string",
+                    user_id:    "int@required"
+                }
+            }
+        }
+    })
+
+    // Bind schema to the SQLite handle (dialect defaults to "sqlite")
+    let c = nmodel.bind(s, db)
+
+    // Auto-migrate: creates User and Post tables + _nmodel_migrations
+    let applied = nmodel.migrate(c)
+    print("tables migrated: " + applied)
+
+    // --- CREATE ---
+    let alice = nmodel.create(c, "User", {
+        name:  "Alice",
+        email: "alice@example.com",
+        score: 9.5
+    })
+    print("created user id=" + alice.id + " name=" + alice.name)
+
+    let bob = nmodel.create(c, "User", {
+        name:  "Bob",
+        email: "bob@example.com"
+    })
+    print("created user id=" + bob.id + " name=" + bob.name)
+
+    let post1 = nmodel.create(c, "Post", {
+        title:   "Hello Niao",
+        body:    "First post from the nmodel demo.",
+        user_id: alice.id
+    })
+    print("created post id=" + post1.id + " title=" + post1.title)
+
+    // --- FIND MANY ---
+    let users = nmodel.find_many(c, "User", {limit: 10})
+    print("all users: " + len(users))
+    for u in users {
+        print("  · " + u.name + " <" + u.email + ">")
+    }
+
+    // Find with WHERE + ORDER
+    let active_users = nmodel.find_many(c, "User", {
+        where: {active: 1},
+        order: "name ASC"
+    })
+    print("active users: " + len(active_users))
+
+    // --- FIND UNIQUE ---
+    let found = nmodel.find_unique(c, "User", {where: {id: alice.id}})
+    if found != nil {
+        print("found unique: " + found.name + " score=" + found.score)
+    }
+
+    let missing = nmodel.find_unique(c, "User", {where: {id: 9999}})
+    print("missing lookup returns nil: " + (missing == nil))
+
+    // --- UPDATE ---
+    let updated = nmodel.update(c, "User", {
+        where: {id: alice.id},
+        data:  {score: 10.0, name: "Alice Niao"}
+    })
+    print("updated: " + updated.name + " score=" + updated.score)
+
+    // --- DELETE ---
+    let deleted = nmodel.delete(c, "Post", {where: {id: post1.id}})
+    print("deleted " + deleted + " post(s)")
+
+    // --- RAW ---
+    let rows = nmodel.raw(c, "SELECT count(*) AS n FROM \"User\"")
+    print("raw count of users: " + rows[0].n)
+
+    let ins_count = nmodel.raw(
+        c,
+        "INSERT INTO \"User\" (name, email) VALUES (?, ?)",
+        ["Charlie", "charlie@example.com"]
+    )
+    print("raw insert affected: " + ins_count)
+
+    // --- SCHEMA INFO ---
+    let info = nmodel.schema_info(s)
+    print("User fields: " + len(info.User))
+
+    // idempotent re-migrate returns 0
+    let re_applied = nmodel.migrate(c)
+    print("re-migrate applied: " + re_applied)
+
+    nsqlite.close(db)
+    print("done")
+}

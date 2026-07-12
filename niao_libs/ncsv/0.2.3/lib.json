@@ -1,0 +1,11 @@
+{
+    "name": "ncsv",
+    "version": "0.2.3",
+    "kind": "native",
+    "description": "Lightweight CSV parse/stringify and file read/write",
+    "import_paths": [
+        "ncsv",
+        "std/ncsv"
+    ],
+    "builtin_count": 4
+}

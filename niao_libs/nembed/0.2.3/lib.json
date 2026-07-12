@@ -1,0 +1,11 @@
+{
+    "name": "nembed",
+    "version": "0.2.3",
+    "kind": "native",
+    "description": "Content-hash embedding cache with local deterministic SHA-256 embedder",
+    "import_paths": [
+        "nembed",
+        "std/nembed"
+    ],
+    "builtin_count": 13
+}

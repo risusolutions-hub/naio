@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Added
+- **ML Wave 0 — `nnum`**: `niao_num` crate (NdArray, broadcasting, linalg, FFT), native `nnum` module, `docs/NNUM.md`, `examples/nnum_demo.niao`, error codes 4000–4009.
+
 ## 0.2.3 — 2026-07-13
 
 ### Release

@@ -1,0 +1,11 @@
+{
+    "name": "nshape",
+    "version": "0.2.3",
+    "kind": "native",
+    "description": "Value shape description, rank/dims, match, and simple schema checks",
+    "import_paths": [
+        "nshape",
+        "std/nshape"
+    ],
+    "builtin_count": 5
+}

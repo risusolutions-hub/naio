@@ -1,0 +1,11 @@
+{
+    "name": "nshell",
+    "version": "0.2.2",
+    "kind": "native",
+    "description": "Subprocess execution with captured output, timeouts, and PATH lookup",
+    "import_paths": [
+        "nshell",
+        "std/nshell"
+    ],
+    "builtin_count": 4
+}

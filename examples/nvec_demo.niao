@@ -1,0 +1,89 @@
+// nvec demo — in-memory vector index with cosine similarity search.
+// Run: niao run examples/nvec_demo.niao
+import "nvec"
+
+// ---------------------------------------------------------------------------
+// 1. Create an ephemeral in-memory index (dim auto-detected from first insert)
+// ---------------------------------------------------------------------------
+let idx = nvec.open()
+
+// Upsert some 4-D "food" embeddings (simplified; real apps use model outputs).
+nvec.upsert(idx, "apple",     [0.90, 0.10, 0.20, 0.05], {category: "fruit",  calories: 52})
+nvec.upsert(idx, "banana",    [0.80, 0.20, 0.10, 0.10], {category: "fruit",  calories: 89})
+nvec.upsert(idx, "carrot",    [0.10, 0.85, 0.60, 0.20], {category: "veggie", calories: 41})
+nvec.upsert(idx, "broccoli",  [0.05, 0.90, 0.70, 0.15], {category: "veggie", calories: 34})
+nvec.upsert(idx, "steak",     [0.00, 0.25, 0.90, 0.80], {category: "meat",   calories: 271})
+nvec.upsert(idx, "salmon",    [0.05, 0.20, 0.75, 0.85], {category: "fish",   calories: 208})
+
+print("Indexed vectors:", nvec.count(idx))
+
+// ---------------------------------------------------------------------------
+// 2. Search — top-3 similar to a "fruit-like" query vector
+// ---------------------------------------------------------------------------
+let fruit_query = [0.88, 0.12, 0.18, 0.07]
+let hits = nvec.search(idx, fruit_query, 3)
+
+print("")
+print("Top-3 nearest to fruit_query:")
+for h in hits {
+    print("  id:", h.id, "  score:", h.score, "  category:", h.metadata.category)
+}
+
+// ---------------------------------------------------------------------------
+// 3. Threshold filtering — only highly similar hits
+// ---------------------------------------------------------------------------
+print("")
+print("Hits with score >= 0.90:")
+let close_hits = nvec.search(idx, fruit_query, 10, 0.90)
+if type(close_hits) == "error" {
+    print("  error:", close_hits.message)
+} else {
+    for h in close_hits {
+        print("  id:", h.id, "  score:", h.score)
+    }
+}
+
+// ---------------------------------------------------------------------------
+// 4. Delete + recount
+// ---------------------------------------------------------------------------
+nvec.delete(idx, "steak")
+print("")
+print("After deleting 'steak', count:", nvec.count(idx))
+
+// ---------------------------------------------------------------------------
+// 5. Upsert (overwrite) an existing entry
+// ---------------------------------------------------------------------------
+nvec.upsert(idx, "banana", [0.82, 0.18, 0.12, 0.08], {category: "fruit", calories: 89, ripe: true})
+print("Upserted 'banana' with extra metadata.")
+print("Count (unchanged):", nvec.count(idx))
+
+// ---------------------------------------------------------------------------
+// 6. Save to disk and reload
+// ---------------------------------------------------------------------------
+let save_path = "nvec_demo_snapshot.nvecd"
+nvec.save(idx, save_path)
+print("")
+print("Saved index to:", save_path)
+nvec.close(idx)
+
+let idx2 = nvec.load(save_path)
+print("Reloaded — count:", nvec.count(idx2))
+
+let reload_hits = nvec.search(idx2, fruit_query, 2)
+print("Top-2 after reload:")
+for h in reload_hits {
+    print("  id:", h.id, "  score:", h.score)
+}
+nvec.close(idx2)
+
+// ---------------------------------------------------------------------------
+// 7. (Optional) Qdrant backend — uncomment if a Qdrant instance is running.
+// ---------------------------------------------------------------------------
+// let q = nvec.connect("http://localhost:6333", "", "food_demo")
+// nvec.upsert(q, "apple", [0.90, 0.10, 0.20, 0.05], {category: "fruit"})
+// let qhits = nvec.search(q, fruit_query, 3)
+// for h in qhits { print("qdrant:", h.id, h.score) }
+// nvec.close(q)
+
+print("")
+print("nvec demo complete.")

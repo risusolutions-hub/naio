@@ -1,0 +1,11 @@
+{
+    "name": "nmmap",
+    "version": "0.2.3",
+    "kind": "native",
+    "description": "Memory-mapped files via memmap2, lazy line index, byte search",
+    "import_paths": [
+        "nmmap",
+        "std/nmmap"
+    ],
+    "builtin_count": 9
+}

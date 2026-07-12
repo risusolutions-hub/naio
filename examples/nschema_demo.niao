@@ -1,0 +1,37 @@
+// nschema demo — infer schema, parse/coerce JSON, tool spec + nagent pairing.
+// Run: niao run examples/nschema_demo.niao
+import "nschema"
+import "nagent"
+
+fn main() {
+    print("=== nschema structured output ===")
+
+    let example = {name: "Niao", age: 3, tags: ["cute", "fast"]}
+    let schema = nschema.from_example(example)
+    print("inferred type:", schema.type)
+
+    let raw = '{"name":"Bob","age":"42","tags":["dev"]}'
+    let user = nschema.parse(raw, schema)
+    print("parsed name:", user.name, "age:", user.age)
+
+    let check = nschema.validate(user, schema)
+    print("valid:", check.ok)
+
+    let prompt = nschema.prompt(schema, "Return a user profile as JSON.")
+    print("prompt snippet:", prompt[0:80] + "...")
+
+    let tool = nschema.tool("search", "Search indexed documents", {
+        type: "object",
+        properties: {
+            query: {type: "string", min_len: 1},
+            limit: {type: "integer", min: 1, max: 50}
+        },
+        required: ["query"]
+    })
+    print("tool name:", tool.name)
+
+    let agent = nagent.new("researcher", "lookup")
+    nagent.remember(agent, "search_tool", tool)
+    print("agent recalls tool:", nagent.recall(agent, "search_tool").name)
+    nagent.close(agent)
+}

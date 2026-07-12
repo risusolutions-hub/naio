@@ -1,0 +1,49 @@
+// nshape demo — describe shapes, rank/dims, match, and check.
+// Run: niao run examples/nshape_demo.niao
+import "nshape"
+
+fn main() {
+    print("=== of ===")
+    print(nshape.of(42))
+    print(nshape.of(3.14))
+    print(nshape.of("hello"))
+    print(nshape.of(true))
+    print(nshape.of(nil))
+    print(nshape.of([1, 2, 3]))
+    print(nshape.of({name: "vivek", age: 27}))
+
+    print("=== rank / dims ===")
+    print(nshape.rank([1, 2, 3]))       // 1
+    print(nshape.rank(42))              // 0
+    print(nshape.dims([1, 2, 3]))       // [3]
+    print(nshape.dims("nope"))          // []
+
+    print("=== match ===")
+    print(nshape.match([1, 2], ["a", "b"]))  // true — both array[2]
+    print(nshape.match([1], [1, 2]))         // false
+    print(nshape.match(1, 2))                // true — both int
+
+    print("=== check type string ===")
+    let r1 = nshape.check(8080, "int")
+    print("int ok:", r1.ok)
+    let r2 = nshape.check([1, 2], "array")
+    print("array ok:", r2.ok)
+    let r3 = nshape.check("x", "int")
+    print("mismatch ok:", r3.ok)
+    for e in r3.errors {
+        print(" -", e)
+    }
+
+    print("=== check schema object ===")
+    let user = {name: "vivek", age: 27}
+    let schema = {name: "string", age: "int", email: "string"}
+    let r4 = nshape.check(user, schema)
+    print("schema ok:", r4.ok)
+    for e in r4.errors {
+        print(" -", e)
+    }
+
+    let good = {name: "vivek", age: 27, email: "vivek@example.com"}
+    let r5 = nshape.check(good, schema)
+    print("full schema ok:", r5.ok)
+}

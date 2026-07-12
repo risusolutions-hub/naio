@@ -1,0 +1,11 @@
+{
+    "name": "naws",
+    "version": "0.2.3",
+    "kind": "native",
+    "description": "AWS helper — SigV4-signed S3, DynamoDB, Lambda, and SSM Parameter Store",
+    "import_paths": [
+        "naws",
+        "std/naws"
+    ],
+    "builtin_count": 11
+}

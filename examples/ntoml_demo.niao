@@ -1,0 +1,43 @@
+// ntoml demo — parse and stringify TOML configuration.
+// Run: niao run examples/ntoml_demo.niao
+import "ntoml"
+
+fn main() {
+    print("=== parse inline ===")
+    let src = """
+[app]
+name = "niao-demo"
+version = "0.2.2"
+debug = false
+
+[server]
+host = "127.0.0.1"
+port = 3001
+tags = ["api", "demo"]
+"""
+    let cfg = ntoml.parse(src)
+    print("app.name:", cfg.app.name)
+    print("server.port:", cfg.server.port)
+    print("server.tags:", cfg.server.tags)
+
+    print("=== stringify ===")
+    let out = ntoml.stringify(cfg)
+    print(out)
+
+    print("=== roundtrip ===")
+    let again = ntoml.parse(out)
+    print("roundtrip app.name:", again.app.name)
+
+    print("=== array of tables ===")
+    let multi = ntoml.parse("""
+[[items]]
+name = "alpha"
+score = 10
+
+[[items]]
+name = "beta"
+score = 20
+""")
+    print("items[0].name:", multi.items[0].name)
+    print(ntoml.stringify_pretty(multi))
+}

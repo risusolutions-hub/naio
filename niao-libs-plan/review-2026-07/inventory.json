@@ -1,0 +1,786 @@
+[
+[
+"nmongo",
+3894,
+45,
+"Y",
+"Fast MongoDB: CRUD, aggregation, indexes, transactions, GridFS, change"
+],
+[
+"ncl",
+3570,
+62,
+"Y",
+"Niao Column Library \u2014 fast pandas/numpy-style columnar data and math"
+],
+[
+"npg",
+2771,
+52,
+"Y",
+"Fast PostgreSQL: pools, migrations, prepared statements, transactions,"
+],
+[
+"http",
+2715,
+"?",
+"-",
+"HTTP types: Method, StatusCode, HeaderMap, Uri"
+],
+[
+"dsa",
+2248,
+90,
+"Y",
+"Data structures and algorithms: list, stack, queue, heap, map, graph, "
+],
+[
+"nvec",
+2120,
+10,
+"Y",
+"Vector database: in-memory cosine similarity index (NSW/HNSW-lite) wit"
+],
+[
+"net",
+2085,
+55,
+"Y",
+"Networking: HTTP, TCP/UDP, DNS, TLS, WebSocket, SMTP, FTP"
+],
+[
+"nml",
+1969,
+67,
+"Y",
+"Niao Machine Learning \u2014 fast tensors, GPU training, classic ML"
+],
+[
+"ahiru",
+1943,
+36,
+"Y",
+"ahiru-server 0.3.0: state, custom middleware, groups, cache, jobs, met"
+],
+[
+"nsqlite",
+1879,
+39,
+"Y",
+"Fast SQLite: schema, migrations, prepared statements, transactions, as"
+],
+[
+"collections",
+1731,
+0,
+"-",
+"Insertion-ordered maps/sets (IndexMap/IndexSet) and fast hashing"
+],
+[
+"nazure",
+1707,
+9,
+"Y",
+"Azure helper: Blob Storage (put/get/delete/list), Table Storage (inser"
+],
+[
+"naws",
+1617,
+11,
+"Y",
+"AWS helper \u2014 SigV4-signed S3, DynamoDB, Lambda, and SSM Parameter Stor"
+],
+[
+"nmodel",
+1595,
+10,
+"Y",
+"Prisma-style ORM over nsqlite and npg: schema DSL, auto-migrations, CR"
+],
+[
+"parallel",
+1592,
+38,
+"Y",
+"Threading, mutexes, channels, worker pools, and cooperative poll"
+],
+[
+"ntok",
+1529,
+9,
+"Y",
+"Byte-level BPE tokenizer with encode/decode/count, chunk, and context "
+],
+[
+"io",
+1344,
+"?",
+"-",
+"<manifest broken>"
+],
+[
+"nsupa",
+1245,
+23,
+"Y",
+"Supabase client: PostgREST query builder, GoTrue auth, Storage REST \u2014 "
+],
+[
+"json",
+1233,
+15,
+"Y",
+"JSON parse, stringify, and object utilities"
+],
+[
+"args",
+1215,
+6,
+"-",
+"CLI argument parsing \u2014 flags, options, positionals, subcommands"
+],
+[
+"bignum",
+1079,
+8,
+"-",
+"Arbitrary-precision integer arithmetic"
+],
+[
+"nstr",
+1023,
+55,
+"Y",
+"String toolkit: case conversions, trim/pad/wrap, split/join, search, s"
+],
+[
+"log",
+1018,
+"?",
+"-",
+"Structured logging, level filtering, and spans"
+],
+[
+"nenv",
+1013,
+26,
+"Y",
+"Environment variables, .env loading, typed accessors, validation, and "
+],
+[
+"nlint",
+1013,
+3,
+"Y",
+"AST-as-data linting via niao_parser with data-driven rules and nlint_c"
+],
+[
+"nconfig",
+961,
+9,
+"Y",
+"Layered config defaults, file, env, args with typed schema validation"
+],
+[
+"nurl",
+945,
+7,
+"Y",
+"URL parse, build, join, query helpers, and percent encoding"
+],
+[
+"neval",
+852,
+15,
+"Y",
+"Model evaluation metrics, dataset runner, and latency benchmarking"
+],
+[
+"nmigrate",
+814,
+4,
+"Y",
+"Schema diff from nmodel struct definitions to SQL migrations (sqlite/p"
+],
+[
+"nmem",
+785,
+14,
+"Y",
+"Script long-term memory with KV, TTL, tags, and export/import"
+],
+[
+"nworkspace",
+772,
+7,
+"Y",
+"Workspace manifest, member graph, topo order, and run"
+],
+[
+"nsketch",
+771,
+12,
+"Y",
+"Probabilistic sketches: Bloom filter, HyperLogLog-lite, Count-Min Sket"
+],
+[
+"time",
+770,
+32,
+"Y",
+"Wall clock, formatting, parsing, time zones, and date arithmetic"
+],
+[
+"nllm",
+768,
+13,
+"-",
+"Fast GGUF LLM inference: complete, chat, stream, tokenize via llama.cp"
+],
+[
+"nmath",
+768,
+48,
+"Y",
+"Scalar math and statistics: trig, logs, rounding, combinatorics, mean/"
+],
+[
+"nargs",
+767,
+4,
+"Y",
+"CLI argument parsing: flags, typed options, positionals, --key=value, "
+],
+[
+"nrand",
+758,
+20,
+"Y",
+"Fast random numbers (xoshiro256**): ints, floats, strings, choice/shuf"
+],
+[
+"nredis",
+752,
+15,
+"Y",
+"Redis client: get/set/del/incr/expire, hash ops, mget/mset, raw RESP c"
+],
+[
+"net_clients",
+730,
+8,
+"-",
+"SMTP and FTP client helpers"
+],
+[
+"ndebug",
+718,
+12,
+"Y",
+"Checkpoint time-travel over values with deep diff"
+],
+[
+"nschema",
+689,
+6,
+"Y",
+"JSON schema from example, validate/coerce/parse, LLM prompt and tool s"
+],
+[
+"nprovider",
+678,
+10,
+"Y",
+"Provider profiles, model aliases, failover chains, and LLM pricing tab"
+],
+[
+"nrag",
+663,
+15,
+"-",
+"Fast vector RAG: batch embeddings, parallel cosine search, index build"
+],
+[
+"nguard",
+661,
+8,
+"Y",
+"PII scan/redact and denylist middleware hooks for AI safety"
+],
+[
+"nmarkdown",
+660,
+3,
+"Y",
+"Lightweight Markdown to HTML, plain-text strip, and heading extraction"
+],
+[
+"nsemver",
+656,
+5,
+"Y",
+"SemVer 2.0 parse, compare, range matching, and version increment"
+],
+[
+"ncost",
+652,
+6,
+"Y",
+"Preflight USD estimates for LLM tokens, S3 storage, and Lambda compute"
+],
+[
+"ncassette",
+651,
+12,
+"Y",
+"VCR-style request/response cassette for record, replay, and passthroug"
+],
+[
+"ncolumnar",
+644,
+5,
+"Y",
+"Column-major binary codec for tables (magic NCOL1)"
+],
+[
+"nlazy",
+633,
+9,
+"Y",
+"Fused lazy map/filter/take pipelines over packed arrays"
+],
+[
+"nsnap",
+631,
+9,
+"Y",
+"Fast binary value snapshots with fingerprints and staleness checks (NS"
+],
+[
+"nagent",
+625,
+12,
+"Y",
+"Lightweight multi-agent orchestration scaffolding (no LLM)"
+],
+[
+"nrepl",
+621,
+7,
+"Y",
+"Subprocess expression evaluation REPL sessions"
+],
+[
+"ncsv",
+613,
+4,
+"Y",
+"Lightweight CSV parse/stringify and file read/write"
+],
+[
+"nvalid",
+609,
+9,
+"Y",
+"Data validation: schema rules, email/url/uuid/ipv4 checks, pattern mat"
+],
+[
+"nsimd",
+607,
+9,
+"Y",
+"Unrolled autovectorized f64/i64 kernels on packed FloatArray/IntArray"
+],
+[
+"nhotreload",
+590,
+9,
+"Y",
+"File watch and per-function body diff via niao_parser"
+],
+[
+"nreplay",
+590,
+11,
+"Y",
+"Deterministic event record/replay sessions with save/load"
+],
+[
+"re",
+589,
+22,
+"Y",
+"Regular expressions: match, find, replace, split"
+],
+[
+"nembed",
+584,
+13,
+"Y",
+"Content-hash embedding cache with local deterministic SHA-256 embedder"
+],
+[
+"nlog",
+582,
+11,
+"Y",
+"Structured logging: levels, key-value fields, text/JSON output, stderr"
+],
+[
+"ntrace",
+582,
+8,
+"Y",
+"Distributed tracing spans, W3C traceparent, events, JSON export"
+],
+[
+"ntoml",
+579,
+4,
+"Y",
+"TOML parse and stringify for configuration files"
+],
+[
+"ndevice",
+578,
+16,
+"Y",
+"Unified hardware detection, thermal profiles, safety guard, pacing, an"
+],
+[
+"ncron",
+575,
+4,
+"Y",
+"Standard 5-field cron parse, validate, match, and next-run computation"
+],
+[
+"nsoa",
+573,
+8,
+"Y",
+"Columnar struct-of-arrays tables with typed columns"
+],
+[
+"nmmap",
+571,
+9,
+"Y",
+"Memory-mapped files via memmap2, lazy line index, byte search"
+],
+[
+"nbudget",
+564,
+9,
+"Y",
+"Cooperative resource and cost budgets: cpu/ram/gpu/usd/tokens limits, "
+],
+[
+"ncache",
+561,
+13,
+"Y",
+"In-memory LRU and TTL caches with hit/miss statistics"
+],
+[
+"npipe",
+560,
+8,
+"Y",
+"Typed step pipelines over built-in ops (id, len, type, keys, not_nil, "
+],
+[
+"nfmt",
+555,
+14,
+"Y",
+"Formatting: {} templates, thousands separators, hex/oct/bin, humanized"
+],
+[
+"nprofile",
+551,
+8,
+"Y",
+"Micro timing spans, named sample recording, and latency stats (p50/p95"
+],
+[
+"npersist",
+550,
+13,
+"Y",
+"im-rc persistent Vector/HashMap with structural sharing"
+],
+[
+"nprompt",
+547,
+4,
+"Y",
+"Interactive TTY prompts on stdin/stdout with pipe fallback"
+],
+[
+"nfallback",
+541,
+8,
+"Y",
+"Graceful degradation: value chains and named circuit breakers"
+],
+[
+"nshell",
+539,
+4,
+"Y",
+"Subprocess execution with captured output, timeouts, and PATH lookup"
+],
+[
+"nos",
+534,
+23,
+"-",
+"OS interface: process, platform constants, lightweight filesystem"
+],
+[
+"nbench",
+528,
+5,
+"Y",
+"Micro-benchmark harness with warmup, percentiles, and compare"
+],
+[
+"ndiff",
+527,
+3,
+"Y",
+"Deep structural equality and diff for values, arrays, and objects"
+],
+[
+"ndoc",
+518,
+3,
+"Y",
+"Doc-comment doctest extraction and execution (// >>> and // =>)"
+],
+[
+"nbatch",
+517,
+5,
+"Y",
+"Adaptive batch sizing: suggest from VRAM/RAM, fit steps, clamp/scale/h"
+],
+[
+"ncontract",
+516,
+5,
+"Y",
+"Design-by-contract: require/ensure/check, assert_type, object invarian"
+],
+[
+"nwhy",
+506,
+9,
+"Y",
+"Value lineage and provenance tracking with explain and graph"
+],
+[
+"nexplain",
+501,
+5,
+"Y",
+"Actionable error enrichment: pattern hints, custom rules, pretty forma"
+],
+[
+"nshape",
+496,
+5,
+"Y",
+"Value shape description, rank/dims, match, and simple schema checks"
+],
+[
+"nquota",
+495,
+7,
+"Y",
+"Token-bucket rate limiting with refill based on wall-clock elapsed tim"
+],
+[
+"nfuzz",
+494,
+9,
+"Y",
+"Deterministic property/fuzz helpers (xorshift64 seed, int/float/string"
+],
+[
+"rand",
+492,
+9,
+"-",
+"Seeded PRNG, uniform ranges, shuffle, and choose"
+],
+[
+"ntest",
+488,
+14,
+"Y",
+"Testing: case registration, runner with summaries, assert_eq/near/cont"
+],
+[
+"nctx",
+486,
+6,
+"Y",
+"Token estimates, trim strategies, message budgets, and conversation st"
+],
+[
+"nvis",
+485,
+8,
+"Y",
+"Niao visualization \u2014 line, histogram, scatter, heatmap, bar charts"
+],
+[
+"ncolor",
+476,
+24,
+"Y",
+"Terminal styling: named colors, 256/truecolor, bold/underline, strip, "
+],
+[
+"nscaffold",
+472,
+5,
+"Y",
+"CRUD route, nmodel schema, SQL migration, and ntest generation from st"
+],
+[
+"npar",
+454,
+7,
+"Y",
+"Explicit rayon parallel ops on packed arrays with set_threads"
+],
+[
+"nsmtp",
+446,
+2,
+"Y",
+"Ergonomic SMTP email sending with object-based config"
+],
+[
+"ntemplate",
+438,
+8,
+"Y",
+"Versioned prompt templates with variable injection and token estimatio"
+],
+[
+"ncanon",
+436,
+4,
+"Y",
+"Canonical JSON-like encoding, FNV-1a hash, structural equal, fingerpri"
+],
+[
+"ncap",
+434,
+8,
+"Y",
+"Cooperative capability sandbox (grant/revoke/require)"
+],
+[
+"ncrash",
+431,
+6,
+"Y",
+"Structured JSON crash reports, wrap(fn), and fingerprints"
+],
+[
+"nwatch",
+429,
+9,
+"Y",
+"Reactive poll watchers for file mtimes and in-memory values"
+],
+[
+"nerrgen",
+423,
+3,
+"Y",
+"E-code spec file parser and rust/niao/markdown artifact generator"
+],
+[
+"ngpu",
+412,
+17,
+"Y",
+"GPU detection, VRAM and utilization readings, cooperative budgets, and"
+],
+[
+"narena",
+375,
+6,
+"Y",
+"Pooled packed-buffer reuse arena for GC-pressure relief"
+],
+[
+"npace",
+351,
+7,
+"Y",
+"Adaptive loop pacing by level, temperature, and load"
+],
+[
+"nram",
+292,
+12,
+"Y",
+"System and process memory readings, cooperative RAM budgets, and press"
+],
+[
+"ncpu",
+262,
+12,
+"Y",
+"CPU detection, usage, temperature, cooperative core limits, and thread"
+],
+[
+"nws",
+230,
+4,
+"Y",
+"Ergonomic WebSocket client wrapper over net (shared handles)"
+],
+[
+"codec",
+202,
+7,
+"-",
+"Base64, hex, UUID, and dotenv helpers"
+],
+[
+"nnpu",
+182,
+7,
+"Y",
+"Best-effort NPU detection and advisory budget for neural accelerator w"
+],
+[
+"crypto",
+143,
+"?",
+"-",
+"SHA-256/512 and HMAC helpers"
+],
+[
+"archive",
+115,
+"?",
+"-",
+"Gzip and deflate compression helpers"
+],
+[
+"core",
+0,
+17,
+"-",
+"Core builtins: print, len, type, assert, errors, timing, arrays"
+]
+]

@@ -1,0 +1,11 @@
+{
+    "name": "nnpu",
+    "version": "0.2.2",
+    "kind": "native",
+    "description": "Best-effort NPU detection and advisory budget for neural accelerator workloads",
+    "import_paths": [
+        "nnpu",
+        "std/nnpu"
+    ],
+    "builtin_count": 7
+}

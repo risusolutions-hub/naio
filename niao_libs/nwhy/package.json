@@ -1,0 +1,11 @@
+{
+    "name": "nwhy",
+    "version": "0.2.3",
+    "kind": "native",
+    "description": "Value lineage and provenance tracking with explain and graph",
+    "import_paths": [
+        "nwhy",
+        "std/nwhy"
+    ],
+    "builtin_count": 9
+}

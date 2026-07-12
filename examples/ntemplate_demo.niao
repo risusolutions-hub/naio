@@ -1,0 +1,29 @@
+// ntemplate demo — versioned prompt templates, vars, token estimate.
+// Run: niao run examples/ntemplate_demo.niao
+import "ntemplate"
+
+fn main() {
+    print("=== register versions ===")
+    ntemplate.set("greet", "1.0.0", "Hello {{name}}, welcome to {{place}}.")
+    ntemplate.set("greet", "2.0.0", "Hey {{name}} — glad you're at {{place}}!")
+    print(ntemplate.versions("greet"))
+
+    print("=== render latest ===")
+    let vars = { name: "Ada", place: "Neko" }
+    let prompt = ntemplate.render("greet", vars)
+    print(prompt)
+
+    print("=== render pinned version ===")
+    print(ntemplate.render("greet", vars, "1.0.0"))
+
+    print("=== inline render ===")
+    print(ntemplate.render_str("Task: {{task}}\nContext: {{ctx}}", {
+        task: "summarize",
+        ctx: "three bullet points",
+    }))
+
+    print("=== vars + estimate ===")
+    let tpl = "System: {{role}}\nUser: {{query}}"
+    print(ntemplate.vars(tpl))
+    print("tokens:", ntemplate.estimate(prompt))
+}

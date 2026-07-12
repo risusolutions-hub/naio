@@ -1,0 +1,29 @@
+// ndebug demo — checkpoints, diff, time-travel.
+// Run: niao run examples/ndebug_demo.niao
+import "ndebug"
+
+fn main() {
+    let h = ndebug.start()
+
+    let state = {count: 1, tags: ["alpha", "beta"]}
+    ndebug.checkpoint(h, "v1", state)
+
+    state.count = 3
+    state.tags = ["alpha", "beta", "gamma"]
+    ndebug.checkpoint(h, "v2", state)
+
+    print("labels:", ndebug.labels(h))
+    print("len:", ndebug.len(h))
+
+    let d = ndebug.diff(h, "v1", "v2")
+    print("equal:", d.equal)
+    print("changes:", d.changes)
+
+    let back = ndebug.travel(h, "v1")
+    print("travel v1:", back)
+
+    let live_diff = ndebug.diff_value(h, "v1", state)
+    print("live diff equal:", live_diff.equal)
+
+    ndebug.close(h)
+}

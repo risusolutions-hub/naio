@@ -1,0 +1,11 @@
+{
+    "name": "ndebug",
+    "version": "0.2.2",
+    "kind": "native",
+    "description": "Checkpoint time-travel over values with deep diff",
+    "import_paths": [
+        "ndebug",
+        "std/ndebug"
+    ],
+    "builtin_count": 12
+}

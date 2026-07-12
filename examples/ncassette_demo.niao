@@ -1,0 +1,38 @@
+// ncassette demo — record / save / load / replay string responses.
+// Run: niao run examples/ncassette_demo.niao
+import "ncassette"
+
+fn main() {
+    print("=== record ===")
+    let tape = ncassette.new("record")
+    print(ncassette.mode(tape))
+
+    let k_users = ncassette.key("GET", "/api/users")
+    let k_create = ncassette.key("post", "/api/users", "{\"name\":\"vivek\"}")
+    print(k_users)
+    print(k_create)
+
+    ncassette.put(tape, k_users, "[{\"id\":1}]")
+    ncassette.put(tape, k_create, "{\"id\":2,\"name\":\"vivek\"}")
+    print(ncassette.has(tape, k_users))
+    print(ncassette.get(tape, k_users))
+    print(ncassette.len(tape))
+    print(ncassette.keys(tape))
+
+    print("=== save / load / replay ===")
+    let path = "examples/_ncassette_demo_tape.json"
+    print(ncassette.save(tape, path))
+    ncassette.close(tape)
+
+    let replay = ncassette.load(path)
+    print(ncassette.mode(replay))                 // replay
+    print(ncassette.get(replay, k_users))
+    print(ncassette.get(replay, k_create))
+    print(ncassette.get(replay, "missing"))       // nil
+
+    print("=== clear & close ===")
+    ncassette.clear(replay)
+    print(ncassette.len(replay))                  // 0
+    ncassette.close(replay)
+    print(is_error(ncassette.get(replay, k_users)))  // true — closed handle
+}

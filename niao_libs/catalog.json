@@ -23,6 +23,7 @@
                  "ncl",
                  "nstr",
                  "nmath",
+                 "nnum",
                  "nrand",
                  "nfmt",
                  "nlog",

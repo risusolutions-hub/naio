@@ -1,0 +1,11 @@
+{
+    "name": "nsmtp",
+    "version": "0.2.3",
+    "kind": "native",
+    "description": "Ergonomic SMTP email sending with object-based config",
+    "import_paths": [
+        "nsmtp",
+        "std/nsmtp"
+    ],
+    "builtin_count": 2
+}

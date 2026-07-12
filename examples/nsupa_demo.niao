@@ -1,0 +1,128 @@
+// nsupa — Supabase client demo
+// Run: niao run examples/nsupa_demo.niao
+//
+// This demo shows the nsupa API surface against a real or mock Supabase project.
+// Set environment variables SUPA_URL, SUPA_ANON_KEY, SUPA_EMAIL, SUPA_PASS
+// before running against a live project.  Without them the demo prints the
+// expected call shapes and exits cleanly.
+
+import "nsupa"
+import "nenv"
+
+fn main() {
+    print("== nsupa Supabase client demo ==")
+
+    // -----------------------------------------------------------------------
+    // 1. Connect
+    // -----------------------------------------------------------------------
+    let url      = nenv.get_or("SUPA_URL",      "https://demo.supabase.co")
+    let anon_key = nenv.get_or("SUPA_ANON_KEY", "demo-anon-key")
+    let email    = nenv.get_or("SUPA_EMAIL",    "demo@example.com")
+    let pass     = nenv.get_or("SUPA_PASS",     "demo-password")
+
+    let client = nsupa.connect(url, anon_key)
+    print("client handle: " + client)
+
+    // -----------------------------------------------------------------------
+    // 2. Auth — sign in
+    // -----------------------------------------------------------------------
+    print("\n-- auth_sign_in --")
+    let session = nsupa.auth_sign_in(client, email, pass)
+    if is_error(session) {
+        print("sign_in skipped (no live project): " + session.message)
+    } else {
+        print("signed in, token prefix: " + session.access_token)
+    }
+
+    // -----------------------------------------------------------------------
+    // 3. SELECT with filters
+    // -----------------------------------------------------------------------
+    print("\n-- select users where active=true, limit 5 --")
+    let q = nsupa.from(client, "users")
+    nsupa.eq(q, "active", "true")
+    nsupa.order(q, "created_at", "desc")
+    nsupa.limit(q, 5)
+    let rows = nsupa.select(q, "id,email,created_at")
+    if is_error(rows) {
+        print("select skipped: " + rows.message)
+    } else {
+        print("rows returned: " + len(rows))
+        if len(rows) > 0 {
+            print("first row: " + rows[0])
+        }
+    }
+
+    // -----------------------------------------------------------------------
+    // 4. INSERT
+    // -----------------------------------------------------------------------
+    print("\n-- insert a new todo --")
+    let q2 = nsupa.from(client, "todos")
+    let todo = nsupa.insert(q2, {"title": "Test nsupa", "done": false})
+    if is_error(todo) {
+        print("insert skipped: " + todo.message)
+    } else {
+        print("inserted: " + todo)
+    }
+
+    // -----------------------------------------------------------------------
+    // 5. UPDATE
+    // -----------------------------------------------------------------------
+    print("\n-- update todo where id=1 --")
+    let q3 = nsupa.from(client, "todos")
+    nsupa.eq(q3, "id", "1")
+    let updated = nsupa.update(q3, {"done": true})
+    if is_error(updated) {
+        print("update skipped: " + updated.message)
+    } else {
+        print("updated: " + updated)
+    }
+
+    // -----------------------------------------------------------------------
+    // 6. DELETE
+    // -----------------------------------------------------------------------
+    print("\n-- delete todo where id=99 --")
+    let q4 = nsupa.from(client, "todos")
+    nsupa.eq(q4, "id", "99")
+    let del_result = nsupa.delete(q4)
+    if is_error(del_result) {
+        print("delete skipped: " + del_result.message)
+    } else {
+        print("deleted ok: " + del_result)
+    }
+
+    // -----------------------------------------------------------------------
+    // 7. RPC
+    // -----------------------------------------------------------------------
+    print("\n-- rpc: get_stats --")
+    let stats = nsupa.rpc(client, "get_stats", {"limit": 10})
+    if is_error(stats) {
+        print("rpc skipped: " + stats.message)
+    } else {
+        print("rpc result: " + stats)
+    }
+
+    // -----------------------------------------------------------------------
+    // 8. Storage
+    // -----------------------------------------------------------------------
+    print("\n-- storage upload/download --")
+    let upload_result = nsupa.storage_upload(client, "docs", "demo/hello.txt", "Hello from nsupa!")
+    if is_error(upload_result) {
+        print("upload skipped: " + upload_result.message)
+    } else {
+        print("uploaded to: " + upload_result.path)
+
+        let content = nsupa.storage_download(client, "docs", "demo/hello.txt")
+        if is_error(content) {
+            print("download skipped: " + content.message)
+        } else {
+            print("downloaded: " + content)
+        }
+    }
+
+    // -----------------------------------------------------------------------
+    // 9. Sign out + close
+    // -----------------------------------------------------------------------
+    nsupa.auth_sign_out(client)
+    nsupa.close(client)
+    print("\nsupa demo done")
+}

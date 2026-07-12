@@ -1,0 +1,11 @@
+{
+    "name": "ncost",
+    "version": "0.2.2",
+    "kind": "native",
+    "description": "Preflight USD estimates for LLM tokens, S3 storage, and Lambda compute",
+    "import_paths": [
+        "ncost",
+        "std/ncost"
+    ],
+    "builtin_count": 6
+}

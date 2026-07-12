@@ -1,0 +1,11 @@
+{
+    "name": "nbench",
+    "version": "0.2.2",
+    "kind": "native",
+    "description": "Micro-benchmark harness with warmup, percentiles, and compare",
+    "import_paths": [
+        "nbench",
+        "std/nbench"
+    ],
+    "builtin_count": 5
+}

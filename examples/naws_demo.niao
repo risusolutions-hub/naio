@@ -1,0 +1,133 @@
+// naws — Native AWS Helper demo.
+// Run: niao run examples/naws_demo.niao
+//
+// Set real credentials via environment variables or replace the literals below.
+// The demo exercises every naws API call against live AWS endpoints.
+// Without valid credentials the calls return naws error values that are caught
+// and printed gracefully — no exceptions are thrown.
+
+import "naws"
+import "nenv"
+import "ntest"
+import "json"
+
+// ── helpers ──────────────────────────────────────────────────────────────────
+
+fn check(label, result) {
+    if ntest.is_error(result) {
+        print("[SKIP] " + label + " — " + result.message)
+    } else {
+        print("[OK]   " + label)
+    }
+    return result
+}
+
+fn env_or(name, default) {
+    let v = nenv.get(name)
+    if v == nil { return default }
+    return v
+}
+
+// ── config ───────────────────────────────────────────────────────────────────
+
+fn main() {
+    print("=== naws demo ===")
+
+    let region     = env_or("AWS_DEFAULT_REGION",  "us-east-1")
+    let access_key = env_or("AWS_ACCESS_KEY_ID",     "AKIDEXAMPLE")
+    let secret_key = env_or("AWS_SECRET_ACCESS_KEY", "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY")
+    let session    = env_or("AWS_SESSION_TOKEN",     nil)
+
+    let cfg = naws.config({
+        region:        region,
+        access_key:    access_key,
+        secret_key:    secret_key,
+        session_token: session
+    })
+    print("Config handle: " + str(cfg))
+
+    // ── S3 ───────────────────────────────────────────────────────────────────
+
+    let bucket = env_or("NAWS_TEST_BUCKET", "my-niao-test-bucket")
+    let key    = "naws-demo/hello.txt"
+    let body   = "Hello from naws! Timestamp: demo"
+
+    print("\n-- S3 put --")
+    let put = check("s3_put", naws.s3_put(cfg, bucket, key, body, "text/plain"))
+
+    print("\n-- S3 get --")
+    let got = check("s3_get", naws.s3_get(cfg, bucket, key))
+    if !ntest.is_error(got) {
+        print("   body:   " + got.body)
+        print("   status: " + str(got.status))
+    }
+
+    print("\n-- S3 list --")
+    let keys = check("s3_list", naws.s3_list(cfg, bucket, "naws-demo/"))
+    if !ntest.is_error(keys) {
+        print("   keys: " + json.stringify(keys))
+    }
+
+    print("\n-- S3 delete --")
+    check("s3_delete", naws.s3_delete(cfg, bucket, key))
+
+    // ── DynamoDB ──────────────────────────────────────────────────────────────
+
+    let table = env_or("NAWS_TEST_TABLE", "NiaoTestTable")
+
+    print("\n-- DynamoDB put --")
+    let item = {
+        id:     "demo-001",
+        name:   "Niao Demo",
+        count:  42,
+        active: true
+    }
+    check("dynamodb_put", naws.dynamodb_put(cfg, table, item))
+
+    print("\n-- DynamoDB get --")
+    let fetched = check("dynamodb_get", naws.dynamodb_get(cfg, table, {id: "demo-001"}))
+    if !ntest.is_error(fetched) && fetched != nil {
+        print("   name:   " + fetched.name)
+        print("   count:  " + str(fetched.count))
+        print("   active: " + str(fetched.active))
+    }
+
+    print("\n-- DynamoDB query --")
+    let rows = check("dynamodb_query", naws.dynamodb_query(cfg, table, {
+        key_condition: "id = :id",
+        values: {":id": "demo-001"},
+        limit: 10
+    }))
+    if !ntest.is_error(rows) {
+        print("   rows: " + str(len(rows)))
+    }
+
+    print("\n-- DynamoDB delete --")
+    check("dynamodb_delete", naws.dynamodb_delete(cfg, table, {id: "demo-001"}))
+
+    // ── Lambda ────────────────────────────────────────────────────────────────
+
+    let fn_name = env_or("NAWS_TEST_FUNCTION", "niao-test-function")
+
+    print("\n-- Lambda invoke --")
+    let inv = check("lambda_invoke", naws.lambda_invoke(cfg, fn_name, {
+        action: "ping",
+        source: "naws_demo"
+    }))
+    if !ntest.is_error(inv) {
+        print("   status: " + str(inv.status))
+        print("   body:   " + inv.body)
+    }
+
+    // ── SSM Parameter Store ───────────────────────────────────────────────────
+
+    let param = env_or("NAWS_TEST_PARAM", "/niao/demo/message")
+
+    print("\n-- SSM get --")
+    let val = check("ssm_get", naws.ssm_get(cfg, param))
+    if !ntest.is_error(val) {
+        print("   value: " + val)
+    }
+
+    print("\n=== naws demo done ===")
+}

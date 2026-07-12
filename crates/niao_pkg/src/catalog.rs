@@ -252,6 +252,13 @@ pub fn standard_libs() -> Vec<LibSpec> {
             13,
         ),
         native_lib(
+            "nnum",
+            NIAO_TOOLCHAIN_VERSION,
+            "Numeric foundation: n-dim arrays, linear algebra, FFT (numpy/scipy.linalg/scipy.fft subset)",
+            &["nnum", "std/nnum"],
+            19,
+        ),
+        native_lib(
             "nvalid",
             NIAO_TOOLCHAIN_VERSION,
             "Data validation: schema rules, email/url/uuid/ipv4 checks, pattern matching",
@@ -285,7 +292,7 @@ pub fn remote_libs() -> &'static [&'static str] {
 /// Alias used by install code.
 pub const STANDARD_LIBS: &[&str] = &[
     "core", "dsa", "json", "io", "re", "net", "parallel", "time", "nsqlite", "npg", "nmongo", "nos", "nenv", "ncl", "nml", "nvis",
-    "nstr", "nmath", "nrand", "nfmt", "nlog", "nargs", "ntest", "ncache", "nvalid", "ncolor", "ahiru",
+    "nstr", "nmath", "nnum", "nrand", "nfmt", "nlog", "nargs", "ntest", "ncache", "nvalid", "ncolor", "ahiru",
 ];
 
 /// Map user-facing names (e.g. `ahiru-server`) to catalog lib names (`ahiru`).

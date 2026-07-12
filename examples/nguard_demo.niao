@@ -1,0 +1,24 @@
+// nguard demo — PII scan/redact and denylist filtering.
+// Run: niao run examples/nguard_demo.niao
+import "nguard"
+
+fn main() {
+    let text = "Email alice@example.com, phone 555-123-4567, key sk-test1234567890abcdef"
+
+    print("=== scan ===")
+    print(nguard.scan(text))
+
+    print("=== redact ===")
+    print(nguard.redact(text))
+
+    print("=== has_pii ===")
+    print(nguard.has_pii(text, ["email", "api_key"]))
+
+    print("=== denylist ===")
+    nguard.denylist_add("blocked-word")
+    print(nguard.denylist_check("this is blocked-word here"))
+    print(nguard.filter("safe text only"))
+
+    print("=== cleanup denylist ===")
+    nguard.denylist_clear()
+}

@@ -1,0 +1,40 @@
+// nexplain demo — enrich errors with hints and fixes.
+// Run: niao run examples/nexplain_demo.niao
+import "nexplain"
+
+fn main() {
+    print("=== builtin of() ===")
+    let u = nexplain.of("undefined variable 'x'")
+    print("message:", u.message)
+    print("hint:", u.hint)
+    print("fix:", u.fix)
+
+    print("=== more builtins ===")
+    print(nexplain.of("type mismatch: expected int").hint)
+    print(nexplain.of("wrong arity for foo").hint)
+    print(nexplain.of("import failed: nfoo").hint)
+    print(nexplain.of("division by zero").hint)
+    print(nexplain.of("got nil where object expected").hint)
+    print(nexplain.of("invalid handle 3").hint)
+    print(nexplain.of("permission denied").hint)
+    print(nexplain.of("request timeout after 30s").hint)
+
+    print("=== format ===")
+    print(nexplain.format("nil dereference in map lookup"))
+
+    print("=== custom rules ===")
+    nexplain.register("quota", "Usage quota exceeded", "Raise the limit or wait for reset")
+    let q = nexplain.of("quota exceeded for tenant A")
+    print(q.hint)
+    print(q.fix)
+
+    print("=== hints() ===")
+    let all = nexplain.hints()
+    print("count:", len(all))
+    print("first pattern:", all[0].pattern)
+
+    print("=== clear_custom ===")
+    nexplain.clear_custom()
+    let after = nexplain.of("quota exceeded for tenant A")
+    print("after clear hint:", after.hint)
+}

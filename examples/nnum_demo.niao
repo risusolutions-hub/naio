@@ -1,0 +1,30 @@
+// nnum demo — arrays, linear algebra, FFT.
+// Run: niao run examples/nnum_demo.niao
+import "nnum"
+
+fn main() {
+    print("=== creation ===")
+    let a = nnum.array([2, 2], [4.0, 7.0, 2.0, 6.0])
+    print("shape:", nnum.shape(a))
+    print("data:", nnum.to_float_array(a))
+
+    print("=== linalg ===")
+    print("det:", nnum.det(a))
+    let b = nnum.array([2, 1], [1.0, 0.0])
+    let x = nnum.solve(a, b)
+    print("solve:", nnum.to_float_array(x))
+
+    let m1 = nnum.array([2, 2], [1.0, 2.0, 3.0, 4.0])
+    let m2 = nnum.array([2, 2], [5.0, 6.0, 7.0, 8.0])
+    let prod = nnum.matmul(m1, m2)
+    print("matmul:", nnum.to_float_array(prod))
+
+    print("=== linspace ===")
+    let v = nnum.linspace(0.0, 1.0, 5)
+    print(nnum.to_float_array(v))
+
+    print("=== fft ===")
+    let impulse = nnum.array([4], [1.0, 0.0, 0.0, 0.0])
+    let spec = nnum.fft(impulse)
+    print("fft re:", spec.re)
+}

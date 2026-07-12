@@ -1,0 +1,43 @@
+// nurl demo — parse, build, encode, query, join.
+// Run: niao run examples/nurl_demo.niao
+import "nurl"
+
+fn main() {
+    print("=== parse ===")
+    let u = nurl.parse("https://user:pass@api.example.com:8443/v1?q=1#frag")
+    print("scheme:", u.scheme)
+    print("host:", u.host)
+    print("port:", u.port)           // 8443
+    print("path:", u.path)
+    print("query:", u.query)
+    print("fragment:", u.fragment)
+    print("userinfo:", u.userinfo)
+
+    print("=== build ===")
+    let built = nurl.build({
+        scheme: "https",
+        host: "niao.risu.in",
+        path: "/docs",
+        query: "v=1"
+    })
+    print(built)
+
+    print("=== encode / decode ===")
+    let enc = nurl.encode("hello world!")
+    print(enc)                       // hello%20world!
+    print(nurl.decode(enc))
+
+    print("=== query ===")
+    let q = nurl.get_query("https://ex.com/?a=1&b=hello%20world&flag")
+    print("a:", q.a)
+    print("b:", q.b)
+    print("flag:", q.flag)
+
+    let with_q = nurl.set_query("https://ex.com/path", {search: "niao lang", page: 2})
+    print(with_q)
+
+    print("=== join ===")
+    print(nurl.join("https://example.com/a/b/", "c"))
+    print(nurl.join("https://example.com/a/b/", "../d"))
+    print(nurl.join("https://example.com/old", "https://other.com/new"))
+}

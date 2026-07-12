@@ -1,0 +1,40 @@
+// nsketch demo — Bloom, HyperLogLog-lite, Count-Min Sketch.
+// Run: niao run examples/nsketch_demo.niao
+import "nsketch"
+
+fn main() {
+    print("=== Bloom filter ===")
+    let bf = nsketch.bloom_new(200, 0.01)
+    print("kind:", nsketch.kind(bf))
+    nsketch.bloom_add(bf, "alice")
+    nsketch.bloom_add(bf, "bob")
+    print("alice?", nsketch.bloom_may_contain(bf, "alice"))
+    print("carol?", nsketch.bloom_may_contain(bf, "carol"))
+    nsketch.bloom_clear(bf)
+    print("alice after clear?", nsketch.bloom_may_contain(bf, "alice"))
+    nsketch.close(bf)
+
+    print("=== HyperLogLog-lite ===")
+    let hll = nsketch.hll_new()
+    print("kind:", nsketch.kind(hll))
+    let i = 0
+    while i < 100 {
+        nsketch.hll_add(hll, "item-" + str(i))
+        i = i + 1
+    }
+    print("estimate after 100 distinct:", nsketch.hll_count(hll))
+    nsketch.close(hll)
+
+    print("=== Count-Min Sketch ===")
+    let cms = nsketch.cms_new(512, 4)
+    print("kind:", nsketch.kind(cms))
+    nsketch.cms_add(cms, "page:/home", 7)
+    nsketch.cms_add(cms, "page:/home")
+    nsketch.cms_add(cms, "page:/about", 2)
+    print("home estimate:", nsketch.cms_estimate(cms, "page:/home"))
+    print("about estimate:", nsketch.cms_estimate(cms, "page:/about"))
+    print("missing estimate:", nsketch.cms_estimate(cms, "page:/missing"))
+    nsketch.close(cms)
+
+    print("nsketch demo done")
+}

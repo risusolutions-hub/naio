@@ -1,0 +1,11 @@
+{
+    "name": "nprompt",
+    "version": "0.2.2",
+    "kind": "native",
+    "description": "Interactive TTY prompts on stdin/stdout with pipe fallback",
+    "import_paths": [
+        "nprompt",
+        "std/nprompt"
+    ],
+    "builtin_count": 4
+}

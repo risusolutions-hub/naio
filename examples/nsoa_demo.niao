@@ -1,0 +1,29 @@
+// nsoa demo — columnar struct-of-arrays table.
+// Run: niao run examples/nsoa_demo.niao
+import "nsoa"
+
+fn main() {
+    print("=== schema ===")
+    let t = nsoa.new({
+        id: "int",
+        score: "float",
+        active: "bool",
+        name: "string",
+    })
+    print(nsoa.names(t))
+
+    print("=== rows ===")
+    nsoa.push(t, {id: 1, score: 9.5, active: true, name: "alice"})
+    nsoa.push(t, {id: 2, score: 8.0, active: false, name: "bob"})
+    print(nsoa.len(t))
+    print(nsoa.column(t, "id"))
+    print(nsoa.get(t, 0, "name"))
+    print(nsoa.get(t, 1))
+
+    print("=== stats ===")
+    print(nsoa.stats(t))
+
+    print("=== cleanup ===")
+    nsoa.close(t)
+    print(is_error(nsoa.len(t)))
+}

@@ -1,0 +1,11 @@
+{
+    "name": "neval",
+    "version": "0.2.2",
+    "kind": "native",
+    "description": "Model evaluation metrics, dataset runner, and latency benchmarking",
+    "import_paths": [
+        "neval",
+        "std/neval"
+    ],
+    "builtin_count": 15
+}

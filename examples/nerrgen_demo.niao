@@ -1,0 +1,27 @@
+// nerrgen demo — E-code spec → rust/niao/markdown artifacts.
+// Run: niao run examples/nerrgen_demo.niao
+import "nerrgen"
+
+fn main() {
+    let spec = """
+# demo module errors
+E3220 nlint_arity | Wrong argument count | nlint_error
+E3221 nlint_error | Lint error | nlint_error
+E3223 nlint_parse | Parse error | nlint_error
+"""
+
+    print("=== parse ===")
+    let entries = nerrgen.parse(spec)
+    print("entries:", len(entries))
+
+    print("=== gen rust ===")
+    let rust = nerrgen.gen(entries, "rust")
+    print(rust)
+
+    print("=== all formats ===")
+    let all = nerrgen.all(entries, "NLINT errors")
+    print("rust lines:", len(all.rust))
+    print("niao lines:", len(all.niao))
+    print("markdown lines:", len(all.markdown))
+}
+

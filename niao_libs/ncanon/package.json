@@ -1,0 +1,11 @@
+{
+    "name": "ncanon",
+    "version": "0.2.3",
+    "kind": "native",
+    "description": "Canonical JSON-like encoding, FNV-1a hash, structural equal, fingerprint",
+    "import_paths": [
+        "ncanon",
+        "std/ncanon"
+    ],
+    "builtin_count": 4
+}

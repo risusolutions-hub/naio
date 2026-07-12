@@ -1,0 +1,11 @@
+{
+    "name": "narena",
+    "version": "0.2.3",
+    "kind": "native",
+    "description": "Pooled packed-buffer reuse arena for GC-pressure relief",
+    "import_paths": [
+        "narena",
+        "std/narena"
+    ],
+    "builtin_count": 6
+}

@@ -1,0 +1,11 @@
+{
+    "name": "nhotreload",
+    "version": "0.2.3",
+    "kind": "native",
+    "description": "File watch and per-function body diff via niao_parser",
+    "import_paths": [
+        "nhotreload",
+        "std/nhotreload"
+    ],
+    "builtin_count": 9
+}

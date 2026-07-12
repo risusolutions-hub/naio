@@ -1,0 +1,11 @@
+{
+    "name": "nworkspace",
+    "version": "0.2.2",
+    "kind": "native",
+    "description": "Workspace manifest, member graph, topo order, and run",
+    "import_paths": [
+        "nworkspace",
+        "std/nworkspace"
+    ],
+    "builtin_count": 7
+}

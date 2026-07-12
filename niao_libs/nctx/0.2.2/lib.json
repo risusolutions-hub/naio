@@ -1,0 +1,11 @@
+{
+    "name": "nctx",
+    "version": "0.2.2",
+    "kind": "native",
+    "description": "Token estimates, trim strategies, message budgets, and conversation stats",
+    "import_paths": [
+        "nctx",
+        "std/nctx"
+    ],
+    "builtin_count": 6
+}

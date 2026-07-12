@@ -1,0 +1,11 @@
+{
+    "name": "nsemver",
+    "version": "0.2.2",
+    "kind": "native",
+    "description": "SemVer 2.0 parse, compare, range matching, and version increment",
+    "import_paths": [
+        "nsemver",
+        "std/nsemver"
+    ],
+    "builtin_count": 5
+}

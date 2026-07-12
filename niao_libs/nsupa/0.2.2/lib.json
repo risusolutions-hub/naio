@@ -1,0 +1,11 @@
+{
+    "name":  "nsupa",
+    "version":  "0.2.2",
+    "kind":  "native",
+    "description":  "Supabase client: PostgREST query builder, GoTrue auth, Storage REST — zero-dep over HTTP",
+    "import_paths":  [
+                         "nsupa",
+                         "std/nsupa"
+                     ],
+    "builtin_count":  23
+}

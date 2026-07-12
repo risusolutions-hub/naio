@@ -3556,6 +3556,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "niao_num"
+version = "0.2.3"
+dependencies = [
+ "niao_errors",
+ "niao_rand",
+ "niao_tensor",
+]
+
+[[package]]
 name = "niao_parser"
 version = "0.2.3"
 dependencies = [
@@ -3628,6 +3637,7 @@ dependencies = [
  "niao_llm",
  "niao_ml",
  "niao_net_clients",
+ "niao_num",
  "niao_parser",
  "niao_rag",
  "niao_regex",

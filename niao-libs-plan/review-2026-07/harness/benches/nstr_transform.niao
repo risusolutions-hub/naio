@@ -1,0 +1,15 @@
+// Measures nstr allocation-heavy transforms -> targets PERFORMANCE.md #6/#7 (reserve outputs).
+import "nstr"
+fn main() {
+    let base = "The Quick Brown Fox Jumps Over The Lazy Dog"
+    let acc = 0
+    let i = 0
+    while i < 200000 {
+        let u = nstr.upper(base)
+        let l = nstr.lower(u)
+        let r = nstr.replace(l, "o", "0")
+        acc = acc + nstr.byte_len(r)
+        i = i + 1
+    }
+    print(acc)
+}

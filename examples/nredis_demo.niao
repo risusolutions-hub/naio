@@ -1,0 +1,79 @@
+// nredis_demo.niao — Redis client showcase
+// Run with a local Redis: redis-server
+// Set NIAO_TEST_REDIS_URL=redis://127.0.0.1:6379 or adjust the URL below.
+
+import "nredis"
+
+let url = "redis://127.0.0.1:6379"
+let r = nredis.connect(url)
+if r is error {
+    print("Cannot connect to Redis at", url)
+    print("Error:", r.message)
+    return
+}
+
+// --- Basic ping ---
+print("ping:", nredis.ping(r))
+
+// --- String set / get / del ---
+nredis.set(r, "niao:demo:greeting", "Hello, Niao!")
+let greeting = nredis.get(r, "niao:demo:greeting")
+print("get:", greeting)
+
+// --- Incr with optional by ---
+nredis.set(r, "niao:demo:counter", "0")
+nredis.incr(r, "niao:demo:counter")
+nredis.incr(r, "niao:demo:counter")
+nredis.incr(r, "niao:demo:counter", 8)
+print("counter after +1 +1 +8:", nredis.get(r, "niao:demo:counter"))
+
+// --- Expire ---
+let did_expire = nredis.expire(r, "niao:demo:counter", 120)
+print("expire set:", did_expire)
+
+// --- mset / mget ---
+nredis.mset(r, {
+    "niao:demo:a": "alpha",
+    "niao:demo:b": "beta",
+    "niao:demo:c": "gamma",
+})
+let multi = nredis.mget(r, ["niao:demo:a", "niao:demo:b", "niao:demo:c", "niao:demo:MISSING"])
+print("mget:", multi)   // ["alpha", "beta", "gamma", nil]
+
+// --- Hash ops ---
+nredis.hset(r, "niao:demo:user", "name", "Alice")
+nredis.hset(r, "niao:demo:user", "role", "admin")
+nredis.hset(r, "niao:demo:user", "score", "42")
+
+let name = nredis.hget(r, "niao:demo:user", "name")
+print("hget name:", name)
+
+let user = nredis.hgetall(r, "niao:demo:user")
+print("hgetall:", user)
+
+nredis.hdel(r, "niao:demo:user", "score")
+print("after hdel score:", nredis.hgetall(r, "niao:demo:user"))
+
+// --- Raw RESP command ---
+let dbsize = nredis.cmd(r, ["DBSIZE"])
+print("DBSIZE:", dbsize)
+
+let info_line = nredis.cmd(r, ["CONFIG", "GET", "maxmemory"])
+print("maxmemory config:", info_line)
+
+// --- Cleanup demo keys ---
+nredis.del(r, "niao:demo:greeting")
+nredis.del(r, "niao:demo:counter")
+nredis.del(r, "niao:demo:a")
+nredis.del(r, "niao:demo:b")
+nredis.del(r, "niao:demo:c")
+nredis.del(r, "niao:demo:user")
+
+// --- Error handling example ---
+nredis.close(r)
+let attempt = nredis.get(r, "niao:demo:greeting")
+if attempt is error {
+    print("expected error after close — code:", attempt.code)
+}
+
+print("nredis_demo done.")

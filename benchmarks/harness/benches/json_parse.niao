@@ -1,0 +1,13 @@
+// Measures json parse throughput -> targets PERFORMANCE.md #4 (reserve + SIMD scan + fast paths).
+import "json"
+fn main() {
+    let doc = "{\"id\":123,\"name\":\"vivek\",\"tags\":[1,2,3,4,5],\"active\":true,\"score\":9.5}"
+    let acc = 0
+    let i = 0
+    while i < 300000 {
+        let v = json.parse(doc)
+        acc = acc + v.id
+        i = i + 1
+    }
+    print(acc)
+}

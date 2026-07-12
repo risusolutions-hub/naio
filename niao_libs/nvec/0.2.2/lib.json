@@ -1,0 +1,29 @@
+{
+    "name": "nvec",
+    "version": "0.2.2",
+    "kind": "native",
+    "description": "Vector database: in-memory cosine similarity index (NSW/HNSW-lite) with optional Qdrant REST backend",
+    "import_paths": [
+        "nvec",
+        "std/nvec"
+    ],
+    "builtin_count": 10,
+    "api": {
+        "nvec.open":    "(path?: string, dim?: int) -> handle_id",
+        "nvec.connect": "(url: string, api_key?: string, collection?: string) -> handle_id",
+        "nvec.insert":  "(id, vec_id: string, vector: float[], metadata: {}) -> true | error",
+        "nvec.upsert":  "(id, vec_id: string, vector: float[], metadata: {}) -> true | error",
+        "nvec.search":  "(id, query: float[], top_k?: int, threshold?: float) -> {id,score,metadata{}}[]",
+        "nvec.delete":  "(id, vec_id: string) -> bool",
+        "nvec.count":   "(id) -> int",
+        "nvec.save":    "(id, path: string) -> true | error",
+        "nvec.load":    "(path: string) -> handle_id | error",
+        "nvec.close":   "(id) -> bool"
+    },
+    "error_codes": {
+        "E2790": "arity error",
+        "E2791": "index or search error",
+        "E2792": "type mismatch",
+        "E2793": "invalid or closed handle"
+    }
+}

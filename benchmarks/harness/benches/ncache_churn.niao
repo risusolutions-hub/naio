@@ -1,0 +1,16 @@
+// Measures ncache set/get churn -> targets PERFORMANCE.md #E (O(1) intrusive LRU option).
+// NOTE: assumes an int->string builtin `str()`. If your build names it differently
+// (e.g. nfmt.number), swap it and re-run.
+import "ncache"
+fn main() {
+    let c = ncache.new_lru(2000)
+    let i = 0
+    while i < 500000 {
+        let k = "k" + str(i % 4000)
+        ncache.set(c, k, i)
+        let v = ncache.get(c, k)
+        i = i + 1
+    }
+    let st = ncache.stats(c)
+    print(st.hit_rate)
+}

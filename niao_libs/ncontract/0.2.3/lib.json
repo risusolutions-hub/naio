@@ -1,0 +1,11 @@
+{
+    "name": "ncontract",
+    "version": "0.2.3",
+    "kind": "native",
+    "description": "Design-by-contract: require/ensure/check, assert_type, object invariants",
+    "import_paths": [
+        "ncontract",
+        "std/ncontract"
+    ],
+    "builtin_count": 5
+}

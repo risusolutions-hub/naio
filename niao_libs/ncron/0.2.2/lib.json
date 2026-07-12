@@ -1,0 +1,11 @@
+{
+    "name": "ncron",
+    "version": "0.2.2",
+    "kind": "native",
+    "description": "Standard 5-field cron parse, validate, match, and next-run computation",
+    "import_paths": [
+        "ncron",
+        "std/ncron"
+    ],
+    "builtin_count": 4
+}

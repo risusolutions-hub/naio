@@ -1,0 +1,46 @@
+// nprofile demo — micro timing spans, samples, and latency stats.
+// Run: niao run examples/nprofile_demo.niao
+import "nprofile"
+
+fn main() {
+    print("=== wall clock ===")
+    print(nprofile.now_ms())
+
+    print("=== span start/end ===")
+    let h = nprofile.start("demo_work")
+    let sum = 0
+    for i in 0..1000 {
+        sum = sum + i
+    }
+    let r = nprofile.end(h)
+    print("label:", r.label, "ms:", r.ms)
+
+    print("=== span alias ===")
+    let outer = nprofile.span("outer")
+    let inner = nprofile.span("inner")
+    print(nprofile.end(inner))
+    print(nprofile.end(outer))
+
+    print("=== record / samples / stats ===")
+    nprofile.clear()
+    nprofile.record("parse", 10)
+    nprofile.record("parse", 20)
+    nprofile.record("parse", 30)
+    nprofile.record("parse", 40)
+    nprofile.record("parse", 50)
+    print(nprofile.samples("parse"))
+    let s = nprofile.stats(nprofile.samples("parse"))
+    print("n:", s.n, "mean:", s.mean, "min:", s.min, "max:", s.max)
+    print("p50:", s.p50, "p95:", s.p95)
+
+    print("=== stats from literal array ===")
+    let s2 = nprofile.stats([1, 2, 3, 4, 5, 6, 7, 8, 9, 100])
+    print("n:", s2.n, "p50:", s2.p50, "p95:", s2.p95)
+
+    print("=== clear one label ===")
+    nprofile.record("http", 3)
+    nprofile.clear("parse")
+    print("parse samples:", nprofile.samples("parse"))
+    print("http samples:", nprofile.samples("http"))
+    nprofile.clear()
+}

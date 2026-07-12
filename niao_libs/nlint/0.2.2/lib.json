@@ -1,0 +1,11 @@
+{
+    "name": "nlint",
+    "version": "0.2.2",
+    "kind": "native",
+    "description": "AST-as-data linting via niao_parser with data-driven rules and nlint_check diagnostics",
+    "import_paths": [
+        "nlint",
+        "std/nlint"
+    ],
+    "builtin_count": 3
+}

@@ -1,0 +1,11 @@
+{
+    "name": "nlazy",
+    "version": "0.2.2",
+    "kind": "native",
+    "description": "Fused lazy map/filter/take pipelines over packed arrays",
+    "import_paths": [
+        "nlazy",
+        "std/nlazy"
+    ],
+    "builtin_count": 9
+}

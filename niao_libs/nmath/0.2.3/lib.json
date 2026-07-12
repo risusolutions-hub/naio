@@ -1,0 +1,11 @@
+{
+    "name": "nmath",
+    "version": "0.2.3",
+    "kind": "native",
+    "description": "Scalar math and statistics: trig, logs, rounding, combinatorics, mean/median/stdev/percentile",
+    "import_paths": [
+        "nmath",
+        "std/nmath"
+    ],
+    "builtin_count": 48
+}

@@ -1,0 +1,11 @@
+{
+    "name": "nprovider",
+    "version": "0.2.3",
+    "kind": "native",
+    "description": "Provider profiles, model aliases, failover chains, and LLM pricing table",
+    "import_paths": [
+        "nprovider",
+        "std/nprovider"
+    ],
+    "builtin_count": 10
+}

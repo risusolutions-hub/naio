@@ -41,6 +41,7 @@ members = [
     "crates/niao_graph",
     "crates/niao_rag",
     "crates/niao_llm",
+    "crates/niao_num",
 ]
 
 [workspace.package]
@@ -89,6 +90,7 @@ niao_data = { path = "crates/niao_data" }
 niao_graph = { path = "crates/niao_graph" }
 niao_rag = { path = "crates/niao_rag" }
 niao_llm = { path = "crates/niao_llm" }
+niao_num = { path = "crates/niao_num" }
 clap = { version = "4", features = ["derive"] }
 tokio = { version = "1", features = ["full"] }
 axum = "0.8"

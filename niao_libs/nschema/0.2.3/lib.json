@@ -1,0 +1,11 @@
+{
+    "name": "nschema",
+    "version": "0.2.3",
+    "kind": "native",
+    "description": "JSON schema from example, validate/coerce/parse, LLM prompt and tool specs",
+    "import_paths": [
+        "nschema",
+        "std/nschema"
+    ],
+    "builtin_count": 6
+}

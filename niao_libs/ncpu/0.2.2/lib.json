@@ -1,0 +1,11 @@
+{
+    "name": "ncpu",
+    "version": "0.2.2",
+    "kind": "native",
+    "description": "CPU detection, usage, temperature, cooperative core limits, and thread recommendations",
+    "import_paths": [
+        "ncpu",
+        "std/ncpu"
+    ],
+    "builtin_count": 12
+}

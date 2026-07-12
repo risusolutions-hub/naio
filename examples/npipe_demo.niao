@@ -1,0 +1,35 @@
+// npipe demo — build and run typed step pipelines.
+// Run: niao run examples/npipe_demo.niao
+import "npipe"
+
+fn main() {
+    print("=== handle pipeline ===")
+    let p = npipe.new()
+    npipe.add(p, "abs")
+    npipe.add(p, "str")
+    print(npipe.run(p, -42))            // "42"
+    print(npipe.describe(p))            // npipe[abs → str]
+    print(npipe.steps(p))               // ["abs", "str"]
+
+    print("=== type / len / keys ===")
+    npipe.clear(p)
+    npipe.add(p, "type")
+    print(npipe.run(p, [1, 2, 3]))      // "array"
+
+    npipe.clear(p)
+    npipe.add(p, "keys")
+    print(npipe.run(p, {b: 2, a: 1}))   // ["a", "b"]
+
+    print("=== not_nil / id ===")
+    print(npipe.run_ops(["not_nil"], 1))
+    print(npipe.run_ops(["not_nil"], nil))
+    print(npipe.run_ops(["id"], "same"))
+
+    print("=== run_ops one-shot ===")
+    // type("hello") → "string"; len("string") → 6
+    print(npipe.run_ops(["type", "len"], "hello"))
+
+    print("=== close ===")
+    print(npipe.close(p))               // true
+}
+

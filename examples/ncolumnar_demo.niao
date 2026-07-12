@@ -1,0 +1,23 @@
+// ncolumnar demo — column-major NCOL1 wire codec.
+// Run: niao run examples/ncolumnar_demo.niao
+import "ncolumnar"
+
+fn main() {
+    print("=== encode table ===")
+    let table = {
+        id: [10, 20, 30],
+        active: [1, 0, 1],
+        score: [0.5, 0.75, 1.0],
+        name: ["alpha", "beta", "gamma"]
+    }
+    print(ncolumnar.rows(table))
+    let wire = ncolumnar.encode(table)
+    print(len(wire), ncolumnar.validate(wire))
+
+    print("=== info ===")
+    print(ncolumnar.info(wire))
+
+    print("=== decode round-trip ===")
+    let back = ncolumnar.decode(wire)
+    print(back.id, back.name[1], back.score[2])
+}

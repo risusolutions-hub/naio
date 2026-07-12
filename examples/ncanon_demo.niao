@@ -1,0 +1,24 @@
+// ncanon demo — canonical JSON-like form, hash, equal, fingerprint.
+// Run: niao run examples/ncanon_demo.niao
+import "ncanon"
+
+fn main() {
+    print("=== canon (sorted keys) ===")
+    let a = {z: 9, a: 1, m: "hi"}
+    print(ncanon.canon(a))
+    print(ncanon.canon([1, true, nil, "x"]))
+    print(ncanon.canon(nil))
+    print(ncanon.canon("line\nbreak"))
+
+    print("=== equal ignores key order ===")
+    let b = {a: 1, m: "hi", z: 9}
+    print(ncanon.equal(a, b))              // true
+    print(ncanon.equal(a, {a: 1, z: 8}))   // false
+
+    print("=== hash + fingerprint ===")
+    let h = ncanon.hash(a)
+    let fp = ncanon.fingerprint(a)
+    print("hash:", h)
+    print("fingerprint:", fp)
+    print(ncanon.hash(b) == h)             // true — same canon
+}

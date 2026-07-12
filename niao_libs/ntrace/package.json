@@ -1,0 +1,11 @@
+{
+    "name": "ntrace",
+    "version": "0.2.3",
+    "kind": "native",
+    "description": "Distributed tracing spans, W3C traceparent, events, JSON export",
+    "import_paths": [
+        "ntrace",
+        "std/ntrace"
+    ],
+    "builtin_count": 8
+}

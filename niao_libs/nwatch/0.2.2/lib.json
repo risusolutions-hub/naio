@@ -1,0 +1,11 @@
+{
+    "name": "nwatch",
+    "version": "0.2.2",
+    "kind": "native",
+    "description": "Reactive poll watchers for file mtimes and in-memory values",
+    "import_paths": [
+        "nwatch",
+        "std/nwatch"
+    ],
+    "builtin_count": 9
+}

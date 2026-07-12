@@ -1,0 +1,28 @@
+// nlazy demo — fused lazy map/filter/take pipelines.
+// Run: niao run examples/nlazy_demo.niao
+import "nlazy"
+import "ncl"
+
+fn main() {
+    print("=== int pipeline ===")
+    let data = ncl.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+    let p = nlazy.from(data)
+
+    nlazy.filter(p, "even")
+    nlazy.map(p, "double")
+    nlazy.take(p, 3)
+
+    print("describe:", nlazy.describe(p))
+    print("sum:", nlazy.sum(p))           // 4 + 8 + 12 = 24
+    print("collect:", nlazy.collect(p))   // int_array[4, 8, 12]
+    print("len:", nlazy.len(p))
+    nlazy.close(p)
+
+    print("=== float pipeline ===")
+    let fp = nlazy.from(ncl.array([1.0, 4.0, 9.0, 16.0]))
+    nlazy.map(fp, "sqrt")
+    nlazy.filter(fp, "positive")
+    nlazy.take(fp, 2)
+    print("sqrt take2 sum:", nlazy.sum(fp))   // 1 + 2 = 3
+    nlazy.close(fp)
+}

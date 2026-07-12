@@ -1,0 +1,11 @@
+{
+    "name": "ntok",
+    "version": "0.2.3",
+    "kind": "native",
+    "description": "Byte-level BPE tokenizer with encode/decode/count, chunk, and context fit",
+    "import_paths": [
+        "ntok",
+        "std/ntok"
+    ],
+    "builtin_count": 9
+}

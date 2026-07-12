@@ -1,0 +1,11 @@
+{
+    "name":  "crypto",
+    "version":  "0.2.3",
+    "kind":  "native",
+    "description":  "SHA-256/512 and HMAC helpers",
+    "import_paths":  [
+                         "crypto",
+                         "std/crypto"
+                     ],
+    "builtin_count":  3
+}

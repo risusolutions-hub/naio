@@ -1,0 +1,32 @@
+// ndoc demo — doc-comment doctest extract + run.
+// Run: niao run examples/ndoc_demo.niao
+import "ndoc"
+
+fn main() {
+    let source = """
+// >>> 2 + 3
+// => 5
+// >>> let n = 4
+// >>> n * 2
+// => 8
+// >>> "hi" + "!"
+// => hi!
+"""
+
+    print("=== extract ===")
+    let blocks = ndoc.extract(source)
+    print("blocks:", len(blocks))
+
+    print("=== run ===")
+    let result = ndoc.run(source)
+    print("passed:", result.passed, "failed:", result.failed, "ok:", result.ok)
+
+    print("=== check ===")
+    let checked = ndoc.check(source)
+    if checked.code != nil {
+        print("check error:", checked.message)
+    } else {
+        print("all doctests passed")
+    }
+}
+

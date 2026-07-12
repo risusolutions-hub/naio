@@ -1,0 +1,29 @@
+// npersist demo — persistent vector/map with structural sharing.
+// Run: niao run examples/npersist_demo.niao
+import "npersist"
+
+fn main() {
+    print("=== vector snapshots ===")
+    let v0 = npersist.vec_new([10, 20])
+    let v1 = npersist.vec_push(v0, 30)
+    print(npersist.vec_len(v0))
+    print(npersist.vec_len(v1))
+    print(npersist.vec_get(v1, 2))
+    print(npersist.share(v0, v1))
+
+    print("=== map snapshots ===")
+    let m0 = npersist.map_new({x: 1})
+    let m1 = npersist.map_set(m0, "y", 2)
+    print(npersist.map_len(m0))
+    print(npersist.map_len(m1))
+    print(npersist.map_get(m1, "y"))
+    print(npersist.map_keys(m1))
+    print(npersist.share(m0, m1))
+
+    print("=== cleanup ===")
+    npersist.close(v0)
+    npersist.close(v1)
+    npersist.close(m0)
+    npersist.close(m1)
+    print(is_error(npersist.vec_len(v0)))
+}

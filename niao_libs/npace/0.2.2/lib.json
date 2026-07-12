@@ -1,0 +1,11 @@
+{
+    "name": "npace",
+    "version": "0.2.2",
+    "kind": "native",
+    "description": "Adaptive loop pacing by level, temperature, and load",
+    "import_paths": [
+        "npace",
+        "std/npace"
+    ],
+    "builtin_count": 7
+}

@@ -1,0 +1,11 @@
+{
+    "name": "ncassette",
+    "version": "0.2.3",
+    "kind": "native",
+    "description": "VCR-style request/response cassette for record, replay, and passthrough",
+    "import_paths": [
+        "ncassette",
+        "std/ncassette"
+    ],
+    "builtin_count": 12
+}

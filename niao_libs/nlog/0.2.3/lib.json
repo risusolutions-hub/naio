@@ -1,0 +1,11 @@
+{
+    "name": "nlog",
+    "version": "0.2.3",
+    "kind": "native",
+    "description": "Structured logging: levels, key-value fields, text/JSON output, stderr/stdout/file sinks",
+    "import_paths": [
+        "nlog",
+        "std/nlog"
+    ],
+    "builtin_count": 11
+}

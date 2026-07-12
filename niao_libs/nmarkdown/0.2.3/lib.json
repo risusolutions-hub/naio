@@ -1,0 +1,11 @@
+{
+    "name": "nmarkdown",
+    "version": "0.2.3",
+    "kind": "native",
+    "description": "Lightweight Markdown to HTML, plain-text strip, and heading extraction",
+    "import_paths": [
+        "nmarkdown",
+        "std/nmarkdown"
+    ],
+    "builtin_count": 3
+}

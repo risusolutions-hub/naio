@@ -1,0 +1,34 @@
+// nprovider demo — profiles, aliases, failover chain, pricing.
+// Run: niao run examples/nprovider_demo.niao
+import "nprovider"
+
+fn main() {
+    print("=== nprovider registry ===")
+
+    nprovider.profile("openai-main", {
+        provider: "openai",
+        model:    "gpt-4o-mini",
+        key_env:  "OPENAI_API_KEY"
+    })
+    nprovider.profile("anthropic-backup", {
+        provider: "anthropic",
+        model:    "claude-sonnet"
+    })
+    nprovider.alias("fast", "openai-main")
+
+    let p = nprovider.resolve("fast")
+    print("resolved:", p.provider, p.model)
+
+    print("price 1M in gpt-4o-mini:", nprovider.price("gpt-4o-mini", 1000000, 0))
+
+    let chain = nprovider.chain(["fast", "anthropic-backup"])
+    print("chain step 1:", nprovider.next(chain).key)
+    print("chain step 2:", nprovider.next(chain).key)
+    print("chain step 3 (wrap):", nprovider.next(chain).key)
+    nprovider.close(chain)
+
+    let listing = nprovider.list()
+    print("profiles:", len(listing.profiles))
+    print("aliases:", len(listing.aliases))
+    print("table models:", len(nprovider.table()))
+}

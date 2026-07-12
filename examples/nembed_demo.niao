@@ -1,0 +1,28 @@
+// nembed demo — content-hash cache + deterministic local embedder.
+// Run: niao run examples/nembed_demo.niao
+import "nembed"
+
+fn main() {
+    print("=== hash & pure embed ===")
+    print(nembed.hash("hello world"))
+    let v = nembed.embed("hello world", 16)
+    print(len(v), v[0], v[1])
+
+    print("=== cache ===")
+    let cache = nembed.open(16)
+    let a = nembed.get_or_embed(cache, "cats are great")
+    let b = nembed.get_or_embed(cache, "cats are great")   // hit
+    print(nembed.cosine(a, b))                              // 1.0
+    print(nembed.get(cache, "missing"))                     // nil
+
+    print("=== batch ===")
+    let batch = nembed.embed_batch(cache, ["one", "two", "three"])
+    print(len(batch), len(batch[0]))
+
+    print("=== stats ===")
+    print(nembed.stats(cache))
+    print(nembed.len(cache))
+    print(nembed.has(cache, "cats are great"))
+
+    nembed.close(cache)
+}

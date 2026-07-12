@@ -276,6 +276,64 @@ fn nrand_float(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     Ok(Value::Float(lo + x * (hi - lo)).ref_cell())
 }
 
+fn nrand_fill_float(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
+    if args.len() != 1 && args.len() != 3 {
+        return Err(RuntimeError::at(
+            span,
+            codes::E2620_NRAND_ARITY,
+            format!(
+                "nrand_fill_float() expects 1 or 3 argument(s), got {}",
+                args.len()
+            ),
+        ));
+    }
+    let n = int_arg(args, 0, "nrand_fill_float", span)?;
+    let n = match checked_len(n, "nrand_fill_float", span) {
+        Ok(n) => n,
+        Err(e) => return Ok(e),
+    };
+    let (lo, hi) = match args.len() {
+        1 => (0.0, 1.0),
+        3 => (
+            num_arg(args, 1, "nrand_fill_float", span)?,
+            num_arg(args, 2, "nrand_fill_float", span)?,
+        ),
+        _ => unreachable!(),
+    };
+    if lo > hi {
+        return Ok(nrand_err(span, "nrand_fill_float() requires lo <= hi"));
+    }
+    let mut out = Vec::with_capacity(n);
+    with_default(|g| {
+        for _ in 0..n {
+            let x = g.next_f64();
+            out.push(lo + x * (hi - lo));
+        }
+    });
+    Ok(Value::FloatArray(out).ref_cell())
+}
+
+fn nrand_fill_int(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
+    arity(args, 3, "nrand_fill_int", span)?;
+    let n = int_arg(args, 0, "nrand_fill_int", span)?;
+    let lo = int_arg(args, 1, "nrand_fill_int", span)?;
+    let hi = int_arg(args, 2, "nrand_fill_int", span)?;
+    let n = match checked_len(n, "nrand_fill_int", span) {
+        Ok(n) => n,
+        Err(e) => return Ok(e),
+    };
+    if lo > hi {
+        return Ok(nrand_err(span, "nrand_fill_int() requires lo <= hi"));
+    }
+    let mut out = Vec::with_capacity(n);
+    with_default(|g| {
+        for _ in 0..n {
+            out.push(g.int_range(lo, hi));
+        }
+    });
+    Ok(Value::IntArray(out).ref_cell())
+}
+
 fn nrand_bool(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity_range(args, 0, 1, "nrand_bool", span)?;
     let p = if args.is_empty() {
@@ -645,6 +703,8 @@ nrand_fns![
     ("nrand_seed", "seed", nrand_seed),
     ("nrand_int", "int", nrand_int),
     ("nrand_float", "float", nrand_float),
+    ("nrand_fill_float", "fill_float", nrand_fill_float),
+    ("nrand_fill_int", "fill_int", nrand_fill_int),
     ("nrand_bool", "bool", nrand_bool),
     ("nrand_bytes", "bytes", nrand_bytes),
     ("nrand_hex", "hex", nrand_hex),
@@ -696,6 +756,10 @@ mod tests {
         Value::Int(v).ref_cell()
     }
 
+    fn f(v: f64) -> ValueRef {
+        Value::Float(v).ref_cell()
+    }
+
     #[test]
     fn seeded_is_reproducible() {
         let h1 = nrand_new_gen(&[i(42)], span()).unwrap();
@@ -734,6 +798,48 @@ mod tests {
                 other => panic!("expected float, got {other:?}"),
             };
         }
+    }
+
+    #[test]
+    fn fill_int_length_and_bounds() {
+        nrand_seed(&[i(7)], span()).unwrap();
+        let v = nrand_fill_int(&[i(500), i(-3), i(3)], span()).unwrap();
+        match &*v.borrow() {
+            Value::IntArray(items) => {
+                assert_eq!(items.len(), 500);
+                assert!(items.iter().all(|n| (-3..=3).contains(n)));
+            }
+            other => panic!("expected int array, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn fill_float_length_and_bounds() {
+        nrand_seed(&[i(7)], span()).unwrap();
+        let v = nrand_fill_float(&[i(500), f(2.0), f(5.0)], span()).unwrap();
+        match &*v.borrow() {
+            Value::FloatArray(items) => {
+                assert_eq!(items.len(), 500);
+                assert!(items.iter().all(|f| (2.0..=5.0).contains(f)));
+            }
+            other => panic!("expected float array, got {other:?}"),
+        }
+        let v = nrand_fill_float(&[i(100)], span()).unwrap();
+        match &*v.borrow() {
+            Value::FloatArray(items) => {
+                assert_eq!(items.len(), 100);
+                assert!(items.iter().all(|f| (0.0..1.0).contains(f)));
+            }
+            other => panic!("expected float array, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn fill_rejects_invalid_range() {
+        let v = nrand_fill_int(&[i(10), i(5), i(1)], span()).unwrap();
+        assert!(matches!(&*v.borrow(), Value::Error(_)));
+        let v = nrand_fill_float(&[i(10), f(3.0), f(1.0)], span()).unwrap();
+        assert!(matches!(&*v.borrow(), Value::Error(_)));
     }
 
     #[test]

@@ -1,0 +1,11 @@
+{
+    "name": "ncrash",
+    "version": "0.2.2",
+    "kind": "native",
+    "description": "Structured JSON crash reports, wrap(fn), and fingerprints",
+    "import_paths": [
+        "ncrash",
+        "std/ncrash"
+    ],
+    "builtin_count": 6
+}

@@ -1,0 +1,34 @@
+// ncpu demo — CPU detection, limits, and thread recommendations.
+// Run: niao run examples/ncpu_demo.niao
+import "ncpu"
+
+fn main() {
+    print("=== detection ===")
+    print("cores:", ncpu.count())
+    print("physical:", ncpu.physical_count())
+    print("arch:", ncpu.arch())
+    print("brand:", ncpu.brand())
+
+    print("=== live readings (nil when unavailable) ===")
+    print("usage:", ncpu.usage())
+    print("temp_c:", ncpu.temp_c())
+
+    print("=== limit roundtrip ===")
+    ncpu.set_limit(50)
+    print("limit:", ncpu.get_limit())
+    print("threads at 50%:", ncpu.threads())
+    ncpu.set_limit(100)
+    print("threads at 100%:", ncpu.threads())
+
+    print("=== max temp roundtrip ===")
+    ncpu.set_max_temp(90)
+    print("max_temp:", ncpu.get_max_temp())
+    ncpu.set_max_temp(0)
+
+    print("=== info snapshot ===")
+    let info = ncpu.info()
+    print("info.cores:", info.cores)
+    print("info.arch:", info.arch)
+    print("info.limit_pct:", info.limit_pct)
+    print("info.threads:", info.threads)
+}

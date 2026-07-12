@@ -1,0 +1,27 @@
+// ntrace demo — spans, W3C traceparent, events, export.
+// Run: niao run examples/ntrace_demo.niao
+import "ntrace"
+
+fn main() {
+    print("=== ntrace spans ===")
+
+    let root = ntrace.start("request")
+    let tp = ntrace.traceparent()
+    print("traceparent:", tp)
+
+    ntrace.event("auth", {user: "demo"})
+
+    let child = ntrace.start("compute", root)
+    ntrace.event("step", {n: 42})
+    let c = ntrace.end(child)
+    print("child ms:", c.duration_ms)
+
+    let r = ntrace.end(root)
+    print("root events:", r.events.len())
+
+    let exp = ntrace.export()
+    print("finished spans:", exp.finished.len())
+    print("active spans:", exp.active.len())
+
+    ntrace.clear()
+}

@@ -1,0 +1,11 @@
+{
+    "name": "nrepl",
+    "version": "0.2.3",
+    "kind": "native",
+    "description": "Subprocess expression evaluation REPL sessions",
+    "import_paths": [
+        "nrepl",
+        "std/nrepl"
+    ],
+    "builtin_count": 7
+}

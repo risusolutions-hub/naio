@@ -1,0 +1,40 @@
+// ngpu demo — GPU detection, readings, and cooperative budgets.
+// Run: niao run examples/ngpu_demo.niao
+import "ngpu"
+
+fn main() {
+    print("=== detection ===")
+    print("available:", ngpu.available())
+    print("count:", ngpu.count())
+    print("backend:", ngpu.backend())
+
+    print("=== list ===")
+    let gpus = ngpu.list()
+    print("gpus.length:", len(gpus))
+    if ngpu.available() {
+        let g = ngpu.info()
+        print("gpu[0].name:", g.name)
+        print("gpu[0].vendor:", g.vendor)
+        print("gpu[0].vram_total_mb:", g.vram_total_mb)
+        print("gpu[0].usage:", g.usage)
+        print("gpu[0].temp_c:", g.temp_c)
+    }
+
+    print("=== limit roundtrip ===")
+    ngpu.set_limit(60)
+    print("limit:", ngpu.get_limit())
+    ngpu.set_max_temp(85)
+    print("max_temp:", ngpu.get_max_temp())
+    print("ok:", ngpu.ok())
+
+    print("=== status snapshot ===")
+    let st = ngpu.status()
+    print("status.backend:", st.backend)
+    print("status.count:", st.count)
+    print("status.throttle_level:", st.throttle_level)
+    print("status.limit_pct:", st.limit_pct)
+
+    // restore defaults
+    ngpu.set_limit(100)
+    ngpu.set_max_temp(0)
+}

@@ -1,0 +1,36 @@
+// nram demo — memory readings, budgets, and pressure.
+// Run: niao run examples/nram_demo.niao
+import "nram"
+
+fn main() {
+    print("=== system memory (nil when unavailable) ===")
+    print("total_mb:", nram.total_mb())
+    print("available_mb:", nram.available_mb())
+    print("used_mb:", nram.used_mb())
+    print("usage:", nram.usage())
+
+    print("=== process ===")
+    print("process_mb:", nram.process_mb())
+
+    print("=== pressure ===")
+    print("pressure:", nram.pressure())
+    print("headroom_mb:", nram.headroom_mb())
+
+    print("=== budget roundtrip ===")
+    nram.set_limit_mb(4096)
+    print("limit_mb:", nram.get_limit_mb())
+    print("ok(512):", nram.ok(512))
+    print("ok(999999):", nram.ok(999999))
+
+    print("=== pct limit ===")
+    nram.set_limit_mb(0)
+    nram.set_limit_pct(50)
+    print("limit_mb (from pct):", nram.get_limit_mb())
+    nram.set_limit_pct(0)
+
+    print("=== info snapshot ===")
+    let info = nram.info()
+    print("info.process_mb:", info.process_mb)
+    print("info.pressure:", info.pressure)
+    print("info.limit_mb:", info.limit_mb)
+}

@@ -1,0 +1,11 @@
+{
+    "name": "nmem",
+    "version": "0.2.2",
+    "kind": "native",
+    "description": "Script long-term memory with KV, TTL, tags, and export/import",
+    "import_paths": [
+        "nmem",
+        "std/nmem"
+    ],
+    "builtin_count": 14
+}

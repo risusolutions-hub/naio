@@ -1,0 +1,56 @@
+// ndevice demo — hardware report, profiles, limits, and device selection.
+// Run: niao run examples/ndevice_demo.niao
+import "ndevice"
+
+fn main() {
+    print("=== summary ===")
+    print(ndevice.summary())
+
+    print("=== detect keys ===")
+    let hw = ndevice.detect()
+    print("os:", hw.os)
+    print("cpu.cores:", hw.cpu.cores)
+    print("cpu.brand:", hw.cpu.brand)
+    print("gpu.available:", hw.gpu.available)
+    print("gpu.count:", hw.gpu.count)
+    print("ram.process_mb:", hw.ram.process_mb)
+    print("ram.pressure:", hw.ram.pressure)
+    print("npu.available:", hw.npu.available)
+
+    print("=== profiles ===")
+    ndevice.profile("eco")
+    print("profile eco limits:", ndevice.limits())
+    ndevice.profile("balanced")
+    print("profile balanced:", ndevice.get_profile())
+    ndevice.profile("performance")
+    print("profile performance:", ndevice.get_profile())
+
+    print("=== custom limits ===")
+    ndevice.set_limits({cpu_pct: 40, gpu_max_temp: 70})
+    print("custom limits:", ndevice.limits())
+    ndevice.profile("performance")
+
+    print("=== throttle (manual) ===")
+    print("throttle:", ndevice.throttle_level())
+    print("ok:", ndevice.ok())
+    print("threads:", ndevice.threads())
+    ndevice.set_throttle(2)
+    print("throttle=2 ok:", ndevice.ok())
+    ndevice.pace()
+    ndevice.set_throttle(0)
+
+    print("=== best device ===")
+    print("auto:", ndevice.best_device())
+    print("train:", ndevice.best_device("train"))
+    print("infer:", ndevice.best_device("infer"))
+    print("embed:", ndevice.best_device("embed"))
+
+    print("=== status ===")
+    let st = ndevice.status()
+    print("guard_running:", st.guard_running)
+    print("throttle_level:", st.throttle_level)
+    print("threads:", st.threads)
+
+    // restore temps disabled
+    ndevice.set_limits({gpu_max_temp: 0, cpu_max_temp: 0})
+}

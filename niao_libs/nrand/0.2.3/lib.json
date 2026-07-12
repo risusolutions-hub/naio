@@ -1,0 +1,11 @@
+{
+    "name": "nrand",
+    "version": "0.2.3",
+    "kind": "native",
+    "description": "Fast random numbers (xoshiro256**): ints, floats, strings, choice/shuffle/sample, distributions",
+    "import_paths": [
+        "nrand",
+        "std/nrand"
+    ],
+    "builtin_count": 20
+}

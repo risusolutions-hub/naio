@@ -1,0 +1,29 @@
+// nconfig demo — layered defaults, env, args, schema validation.
+// Run: niao run examples/nconfig_demo.niao
+import "nconfig"
+
+fn main() {
+    print("=== nconfig layered config ===")
+
+    let cfg = nconfig.new({port: 8080, host: "localhost", debug: false})
+    print("defaults port:", nconfig.get(cfg, "port"))
+
+    // Simulate file layer via merge from defaults object (offline deterministic).
+    nconfig.schema(cfg, {
+        port: {type: "int", required: true, min: 1, max: 65535},
+        host: {type: "string", required: true},
+        debug: {type: "bool", default: false},
+        retries: {type: "int", default: 3},
+    })
+
+    nconfig.args(cfg, ["--port=3000", "--verbose"])
+    print("after args port:", nconfig.get(cfg, "port"))
+    print("validate:", nconfig.validate(cfg))
+
+    let resolved = nconfig.resolve(cfg)
+    print("resolved host:", resolved.host)
+    print("resolved retries:", resolved.retries)
+    print("verbose flag:", nconfig.get(cfg, "verbose"))
+
+    nconfig.close(cfg)
+}

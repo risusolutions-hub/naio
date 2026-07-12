@@ -1,0 +1,35 @@
+// nsemver demo — SemVer parse, compare, ranges, increment.
+// Run: niao run examples/nsemver_demo.niao
+import "nsemver"
+
+fn main() {
+    print("=== parse ===")
+    let v = nsemver.parse("2.4.1-rc.1+exp.sha")
+    print("major:", v.major, "minor:", v.minor, "patch:", v.patch)
+    print("pre:", v.pre, "build:", v.build)
+
+    print("=== compare ===")
+    print(nsemver.compare("1.2.3", "1.2.4"))        // -1
+    print(nsemver.compare("2.0.0", "1.9.9"))        // 1
+    print(nsemver.compare("1.0.0", "1.0.0"))        // 0
+    print(nsemver.compare("1.0.0-alpha", "1.0.0"))  // -1
+
+    print("=== valid ===")
+    print(nsemver.valid("1.2.3"))                   // true
+    print(nsemver.valid("v1.2.3"))                  // false
+    print(nsemver.valid("01.2.3"))                  // false
+
+    print("=== satisfies ===")
+    print(nsemver.satisfies("1.5.0", "^1.2.3"))     // true
+    print(nsemver.satisfies("2.0.0", "^1.2.3"))     // false
+    print(nsemver.satisfies("1.2.5", "~1.2.3"))     // true
+    print(nsemver.satisfies("1.3.0", "~1.2.3"))     // false
+    print(nsemver.satisfies("1.8.0", ">=1.0.0 <2.0.0")) // true
+    print(nsemver.satisfies("0.2.5", "^0.2.3"))     // true
+    print(nsemver.satisfies("0.3.0", "^0.2.3"))     // false
+
+    print("=== inc ===")
+    print(nsemver.inc("1.2.3", "patch"))            // 1.2.4
+    print(nsemver.inc("1.2.3", "minor"))            // 1.3.0
+    print(nsemver.inc("1.2.3-alpha", "major"))      // 2.0.0
+}

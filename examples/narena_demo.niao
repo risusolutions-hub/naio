@@ -1,0 +1,26 @@
+// narena demo — pooled byte buffer reuse.
+// Run: niao run examples/narena_demo.niao
+import "narena"
+
+fn main() {
+    print("=== create ===")
+    let a = narena.new(256, 4)
+    print(narena.stats(a))
+
+    print("=== alloc / recycle ===")
+    let b1 = narena.alloc(a, 128)
+    let b2 = narena.alloc(a, 128)
+    print(narena.stats(a))
+    narena.recycle(a, b1)
+    narena.recycle(a, b2)
+    print(narena.stats(a))
+
+    print("=== reset ===")
+    let b3 = narena.alloc(a, 64)
+    narena.reset(a)
+    print(narena.stats(a))
+
+    print("=== cleanup ===")
+    narena.close(a)
+    print(is_error(narena.alloc(a, 8)))
+}

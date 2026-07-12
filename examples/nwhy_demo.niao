@@ -1,0 +1,39 @@
+// nwhy demo — value lineage / provenance.
+// Run: niao run examples/nwhy_demo.niao
+import "nwhy"
+
+fn main() {
+    print("=== track ===")
+    let price = nwhy.track(100, "price")
+    let qty = nwhy.track(3, "qty")
+    print(nwhy.value(price), nwhy.label(price))
+    print(nwhy.parents(price))              // []
+
+    print("=== derive ===")
+    let total = nwhy.derive([price, qty], 300, "mul")
+    print(nwhy.value(total))                // 300
+    print(nwhy.explain(total))              // mul ← price, qty
+    print(nwhy.parents(total))
+
+    print("=== tax chain ===")
+    let tax = nwhy.derive([total], 330, "tax+10%")
+    print(nwhy.explain(tax))                // tax+10% ← mul
+
+    print("=== graph ===")
+    let g = nwhy.graph(tax)
+    print(g.nodes)
+    print(g.edges)
+
+    print("=== same ===")
+    let price2 = nwhy.track(100, "price_copy")
+    print(nwhy.same(price, price2))         // true
+    print(nwhy.same(price, qty))            // false
+
+    print("=== close ===")
+    nwhy.close(tax)
+    nwhy.close(total)
+    nwhy.close(price)
+    nwhy.close(qty)
+    nwhy.close(price2)
+    print(is_error(nwhy.value(price)))      // true — closed handle
+}

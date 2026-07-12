@@ -1,0 +1,23 @@
+// nhotreload demo — parse functions and diff sources.
+// Run: niao run examples/nhotreload_demo.niao
+import "nhotreload"
+
+fn main() {
+    let old_src = "fn add(a: int) -> int { return a + b }\nfn main() { print(add(1, 2)) }\n"
+    let new_src = "fn add(a: int) -> int { return a + b + 1 }\nfn main() { print(add(1, 2)) }\n"
+
+    let fns = nhotreload.parse(old_src)
+    print("functions:", fns)
+
+    let changes = nhotreload.diff_sources(old_src, new_src)
+    print("diff count:", changes)
+    if changes.len() > 0 {
+        print("first change:", changes[0].name)
+    }
+
+    // File watch on this demo (rewrite does not auto-run; poll detects mtime change).
+    let h = nhotreload.watch("examples/nhotreload_demo.niao")
+    print("watching:", nhotreload.path(h))
+    print("changed:", nhotreload.changed(h))
+    nhotreload.close(h)
+}

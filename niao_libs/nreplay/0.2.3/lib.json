@@ -1,0 +1,11 @@
+{
+    "name": "nreplay",
+    "version": "0.2.3",
+    "kind": "native",
+    "description": "Deterministic event record/replay sessions with save/load",
+    "import_paths": [
+        "nreplay",
+        "std/nreplay"
+    ],
+    "builtin_count": 11
+}

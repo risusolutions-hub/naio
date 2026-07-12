@@ -1,0 +1,11 @@
+{
+    "name":  "nmodel",
+    "version":  "0.2.3",
+    "kind":  "native",
+    "description":  "Prisma-style ORM over nsqlite and npg: schema DSL, auto-migrations, CRUD",
+    "import_paths":  [
+                         "nmodel",
+                         "std/nmodel"
+                     ],
+    "builtin_count":  10
+}

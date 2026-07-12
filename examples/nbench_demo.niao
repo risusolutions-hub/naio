@@ -1,0 +1,33 @@
+// nbench demo — warmup, stats, compare (offline deterministic).
+// Run: niao run examples/nbench_demo.niao
+import "nbench"
+
+fn bench_fn() {
+    let s = 0
+    for i in 0..500 { s = s + i }
+    return s
+}
+
+fn slower_fn() {
+    let s = 0
+    for i in 0..2000 { s = s + i }
+    return s
+}
+
+fn main() {
+    print("=== nbench micro-benchmarks ===")
+
+    let samples = [100, 200, 150, 180, 120, 300, 250, 220, 190, 160]
+    let stats = nbench.stats(samples)
+    print("stats n:", stats.n, "mean:", stats.mean, "p50:", stats.p50, "p95:", stats.p95, "p99:", stats.p99)
+
+    let a = nbench.run("fast", bench_fn, {warmup: 1, iterations: 5})
+    let b = nbench.run("slow", slower_fn, {warmup: 1, iterations: 5})
+    print("fast mean(ns):", a.mean)
+    print("slow mean(ns):", b.mean)
+
+    let cmp = nbench.compare("fast", "slow")
+    print("faster:", cmp.faster, "ratio:", cmp.ratio)
+
+    nbench.clear()
+}

@@ -1,0 +1,33 @@
+// nscaffold demo — CRUD route + model + migration + test generation.
+// Run: niao run examples/nscaffold_demo.niao
+import "nscaffold"
+
+fn main() {
+    let spec = {
+        name: "Book",
+        fields: {
+            id:     "int@id",
+            title:  "string@required",
+            author: "string@required",
+            pages:  "int@default(0)"
+        }
+    }
+
+    print("=== crud bundle ===")
+    let bundle = nscaffold.crud(spec)
+    print("table:", bundle.table)
+    print("path:", bundle.path)
+
+    print("=== migration ===")
+    print(bundle.migration)
+
+    print("=== routes (first lines) ===")
+    print(bundle.routes)
+
+    print("=== model keys ===")
+    print("models:", len(bundle.model.models))
+
+    print("=== tests scaffold ===")
+    print(bundle.tests)
+}
+

@@ -1,0 +1,31 @@
+// nbatch demo — adaptive batch sizing helpers.
+// Run: niao run examples/nbatch_demo.niao
+import "nbatch"
+
+fn main() {
+    print("=== suggest ===")
+    print(nbatch.suggest())                              // 4096 (default 1GiB / 1 byte → clamp)
+    print(nbatch.suggest(8192, nil, 4 * 1024 * 1024))    // 1024
+    print(nbatch.suggest(nil, 4096, 1024 * 1024))        // 2048 (RAM fallback)
+    print(nbatch.suggest(8192, nil, 1, 64))              // 64 (max clamp)
+
+    print("=== fit ===")
+    print(nbatch.fit(10000, 32))                         // 313
+    print(nbatch.fit(96, 32))                            // 3
+    print(nbatch.fit(0, 32))                             // 0
+
+    print("=== clamp / scale / halve_on ===")
+    print(nbatch.clamp(50, 1, 32))                       // 32
+    print(nbatch.scale(64, 0.5))                         // 32
+    print(nbatch.scale(10, 1.5))                         // 15
+    print(nbatch.halve_on(true, 128))                    // 128
+    print(nbatch.halve_on(false, 128))                   // 64
+    print(nbatch.halve_on(false, 1))                     // 1
+
+    print("=== training-style loop sketch ===")
+    let bs = nbatch.suggest(4096, nil, 2 * 1024 * 1024, 512)
+    let steps = nbatch.fit(1000, bs)
+    print("batch:", bs, "steps:", steps)
+    let after_oom = nbatch.halve_on(false, bs)
+    print("after OOM:", after_oom)
+}

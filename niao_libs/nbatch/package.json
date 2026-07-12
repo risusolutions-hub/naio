@@ -1,0 +1,11 @@
+{
+    "name": "nbatch",
+    "version": "0.2.3",
+    "kind": "native",
+    "description": "Adaptive batch sizing: suggest from VRAM/RAM, fit steps, clamp/scale/halve",
+    "import_paths": [
+        "nbatch",
+        "std/nbatch"
+    ],
+    "builtin_count": 5
+}

@@ -1117,6 +1117,19 @@ pub const E3432_NCOLUMNAR_TYPE: u32 = 3432;
 /// e3433 ncolumnar format.
 pub const E3433_NCOLUMNAR_FORMAT: u32 = 3433;
 
+/// e4000 nnum arity.
+pub const E4000_NNUM_ARITY: u32 = 4000;
+/// e4001 nnum error.
+pub const E4001_NNUM_ERROR: u32 = 4001;
+/// e4002 nnum type.
+pub const E4002_NNUM_TYPE: u32 = 4002;
+/// e4003 nnum shape mismatch.
+pub const E4003_NNUM_SHAPE: u32 = 4003;
+/// e4004 nnum singular matrix.
+pub const E4004_NNUM_SINGULAR: u32 = 4004;
+/// e4005 nnum non-convergence.
+pub const E4005_NNUM_NON_CONVERGENCE: u32 = 4005;
+
 /// Division by zero.
 pub const E2001_DIVISION_BY_ZERO: u32 = 2001;
 /// Reference to undefined variable.
@@ -1212,6 +1225,7 @@ pub fn runtime_kind_name(code: u32) -> &'static str {
         E3260_NMIGRATE_ARITY..=E3262_NMIGRATE_TYPE => "nmigrate_error",
         E3360_NMMAP_ARITY..=E3363_NMMAP_INVALID_HANDLE => "nmmap_error",
         E2830_NMODEL_ARITY..=E2833_NMODEL_SCHEMA => "nmodel_error",
+        E4000_NNUM_ARITY..=E4005_NNUM_NON_CONVERGENCE => "nnum_error",
         E2730_NNPU_ARITY..=E2732_NNPU_TYPE => "nnpu_error",
         E3020_NPACE_ARITY..=E3022_NPACE_TYPE => "npace_error",
         E3390_NPAR_ARITY..=E3392_NPAR_TYPE => "npar_error",

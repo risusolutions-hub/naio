@@ -1,0 +1,39 @@
+// neval demo — text metrics, classification, regression, dataset runner.
+// Run: niao run examples/neval_demo.niao
+import "neval"
+
+fn predict(x) {
+    let s = to_string(x)
+    if contains(s, "2+2") { return "4" }
+    if contains(s, "3+3") { return "6" }
+    return "unknown"
+}
+
+fn main() {
+    print("=== text metrics ===")
+    print(neval.exact("hello", "hello"))
+    print(neval.similarity("kitten", "sitting"))
+    print(neval.token_f1("a b c d", "a b c e"))
+
+    print("=== classification ===")
+    let preds = ["cat", "dog", "cat"]
+    let labels = ["cat", "cat", "dog"]
+    print("accuracy:", neval.accuracy(preds, labels))
+    print("f1:", neval.f1(preds, labels))
+    print(neval.confusion(preds, labels))
+
+    print("=== regression ===")
+    let yhat = [1.0, 2.0, 3.0]
+    let y = [1.5, 2.5, 2.8]
+    print("mae:", neval.mae(yhat, y))
+    print("rmse:", neval.rmse(yhat, y))
+    print("r2:", neval.r2(yhat, y))
+
+    print("=== dataset runner ===")
+    let data = [
+        { input: "2+2", expected: "4" },
+        { input: "3+3", expected: "6" },
+        { input: "1+1", expected: "2" },
+    ]
+    print(neval.run(data, predict))
+}

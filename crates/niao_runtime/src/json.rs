@@ -167,7 +167,8 @@ fn value_to_json(v: &Value, span: Span) -> NiaoResult<JsonValue> {
         }
         Value::Object(map) => {
             let mut out = JObject::with_capacity(map.len());
-            let mut keys: Vec<&String> = map.keys().collect();
+            let mut keys: Vec<&String> = Vec::with_capacity(map.len());
+            keys.extend(map.keys());
             keys.sort();
             for k in keys {
                 out.insert(k.clone(), value_to_json(&map[k].borrow(), span)?);
@@ -176,7 +177,8 @@ fn value_to_json(v: &Value, span: Span) -> NiaoResult<JsonValue> {
         }
         #[cfg(feature = "nmongo")]
         Value::BsonDoc(buf) => {
-            let mut out = JObject::new();
+            let cap = buf.iter().count();
+            let mut out = JObject::with_capacity(cap);
             for elem in buf.iter() {
                 let (k, v) = elem.map_err(|e| type_err(span, e.to_string()))?;
                 out.insert(
@@ -187,8 +189,9 @@ fn value_to_json(v: &Value, span: Span) -> NiaoResult<JsonValue> {
             Ok(JsonValue::Object(out))
         }
         Value::Instance(inst) => {
-            let mut out = JObject::new();
-            let mut keys: Vec<&String> = inst.fields.keys().collect();
+            let mut out = JObject::with_capacity(inst.fields.len());
+            let mut keys: Vec<&String> = Vec::with_capacity(inst.fields.len());
+            keys.extend(inst.fields.keys());
             keys.sort();
             for k in keys {
                 out.insert(k.clone(), value_to_json(&inst.fields[k].borrow(), span)?);
@@ -271,7 +274,12 @@ fn parse_path(path: &str) -> Result<Vec<PathToken>, String> {
     if path.is_empty() {
         return Err("json path must not be empty".into());
     }
-    let mut tokens = Vec::new();
+    let cap = 1 + path
+        .as_bytes()
+        .iter()
+        .filter(|&&b| b == b'.' || b == b'[')
+        .count();
+    let mut tokens = Vec::with_capacity(cap);
     let mut i = 0;
     let bytes = path.as_bytes();
     while i < bytes.len() {
@@ -615,12 +623,13 @@ fn clone_json_value(v: &Value) -> Value {
         Value::IntArray(a) => Value::IntArray(a.clone()),
         Value::ByteArray(a) => Value::ByteArray(a.clone()),
         Value::StringArray(a) => Value::StringArray(a.clone()),
-        Value::Array(items) => Value::Array(
-            items
-                .iter()
-                .map(|slot| clone_json_value(&slot.borrow()).ref_cell())
-                .collect(),
-        ),
+        Value::Array(items) => {
+            let mut out = Vec::with_capacity(items.len());
+            for slot in items {
+                out.push(clone_json_value(&slot.borrow()).ref_cell());
+            }
+            Value::Array(out)
+        }
         Value::Object(map) => {
             let mut out = HashMap::with_capacity(map.len());
             for (k, v) in map {
@@ -775,7 +784,8 @@ fn stringify_value(v: &Value, out: &mut String, span: Span) -> NiaoResult<()> {
         }
         Value::Object(map) => {
             out.push('{');
-            let mut keys: Vec<&String> = map.keys().collect();
+            let mut keys: Vec<&String> = Vec::with_capacity(map.len());
+            keys.extend(map.keys());
             keys.sort();
             for (i, k) in keys.iter().enumerate() {
                 if i > 0 {
@@ -809,7 +819,8 @@ fn stringify_value(v: &Value, out: &mut String, span: Span) -> NiaoResult<()> {
         }
         Value::Instance(inst) => {
             out.push('{');
-            let mut keys: Vec<&String> = inst.fields.keys().collect();
+            let mut keys: Vec<&String> = Vec::with_capacity(inst.fields.len());
+            keys.extend(inst.fields.keys());
             keys.sort();
             for (i, k) in keys.iter().enumerate() {
                 if i > 0 {

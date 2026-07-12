@@ -1,0 +1,11 @@
+{
+    "name": "nvec",
+    "version": "0.2.3",
+    "kind": "native",
+    "description": "Vector database: in-memory cosine similarity index (NSW/HNSW-lite) with optional Qdrant REST backend",
+    "import_paths": [
+        "nvec",
+        "std/nvec"
+    ],
+    "builtin_count": 10
+}

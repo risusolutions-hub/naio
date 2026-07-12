@@ -1,0 +1,11 @@
+{
+    "name": "ncap",
+    "version": "0.2.3",
+    "kind": "native",
+    "description": "Cooperative capability sandbox (grant/revoke/require)",
+    "import_paths": [
+        "ncap",
+        "std/ncap"
+    ],
+    "builtin_count": 8
+}

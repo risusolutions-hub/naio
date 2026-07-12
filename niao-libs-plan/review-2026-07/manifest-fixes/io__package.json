@@ -1,0 +1,11 @@
+{
+    "name": "io",
+    "version": "0.2.3",
+    "kind": "native",
+    "description": "File I/O, paths, streaming handles, async tasks, raw socket options (niao_io)",
+    "import_paths": [
+        "io",
+        "std/io"
+    ],
+    "builtin_count": 55
+}

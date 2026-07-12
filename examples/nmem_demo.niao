@@ -1,0 +1,43 @@
+// nmem demo — long-term KV memory with TTL, tags, and export/import.
+// Run: niao run examples/nmem_demo.niao
+import "nmem"
+import "time"
+
+fn main() {
+    print("=== basic KV ===")
+    let mem = nmem.new(100)
+    nmem.set(mem, "user:1", {name: "alice"})
+    nmem.set(mem, "user:2", {name: "bob"})
+    nmem.set(mem, "note:hello", "world")
+    print(nmem.get(mem, "user:1"))
+    print(nmem.has(mem, "user:2"))
+    print(nmem.len(mem))
+
+    print("=== tags & search ===")
+    nmem.tag(mem, "user:1", "people")
+    nmem.tag(mem, "user:2", "people")
+    print(nmem.by_tag(mem, "people"))
+    print(nmem.search(mem, "user:"))
+
+    print("=== TTL ===")
+    nmem.set(mem, "flash", "gone soon", 50)
+    print(nmem.get(mem, "flash"))
+    time.sleep_ms(80)
+    print(nmem.get(mem, "flash"))          // nil (expired)
+
+    print("=== stats / export / import ===")
+    print(nmem.stats(mem))
+    let snap = nmem.export(mem)
+    let mem2 = nmem.new()
+    nmem.import(mem2, snap)
+    print(nmem.get(mem2, "note:hello"))
+    print(nmem.len(mem2))
+
+    print("=== cleanup ===")
+    nmem.remove(mem, "note:hello")
+    nmem.clear(mem)
+    print(nmem.len(mem))                   // 0
+    nmem.close(mem)
+    nmem.close(mem2)
+    print(is_error(nmem.get(mem, "user:1")))  // true — closed handle
+}

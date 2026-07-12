@@ -1,0 +1,18 @@
+// nws demo — WebSocket client wrapper over net.
+// Run:  niao run examples/nws_demo.niao
+//
+// Requires a live ws:// echo server for the live section below.
+import "nws"
+
+fn main() {
+    print("=== nws WebSocket demo ===")
+    print("Handles are shared with net.ws_* (same integer IDs).")
+    print("")
+    print("Live echo example (uncomment when a server is available):")
+    print("  let id = nws.connect(\"ws://echo.websocket.events\")")
+    print("  nws.send(id, \"hello from niao\")")
+    print("  print(nws.recv(id))")
+    print("  nws.close(id)")
+    print("")
+    print("nws demo stub done")
+}

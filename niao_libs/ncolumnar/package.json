@@ -1,0 +1,11 @@
+{
+    "name": "ncolumnar",
+    "version": "0.2.3",
+    "kind": "native",
+    "description": "Column-major binary codec for tables (magic NCOL1)",
+    "import_paths": [
+        "ncolumnar",
+        "std/ncolumnar"
+    ],
+    "builtin_count": 5
+}

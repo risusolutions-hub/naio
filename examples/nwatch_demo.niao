@@ -1,0 +1,39 @@
+// nwatch demo — file mtime and in-memory value watches.
+// Run: niao run examples/nwatch_demo.niao
+import "nwatch"
+import "io"
+import "time"
+
+fn main() {
+    print("=== value watch ===")
+    let v = nwatch.value("hello")
+    print("kind:", nwatch.kind(v))              // value
+    print("path:", nwatch.path(v))              // nil
+    print(nwatch.take_changed(v))               // nil (clean)
+
+    nwatch.set(v, "hello")                      // same → still clean
+    print(nwatch.take_changed(v))               // nil
+
+    nwatch.set(v, "world")
+    print(nwatch.take_changed(v))               // world
+    print(nwatch.take_changed(v))               // nil
+
+    print("=== file watch ===")
+    let path = "examples/_nwatch_demo.tmp"
+    io_write_file(path, "v1")
+    let f = nwatch.file(path)
+    print("kind:", nwatch.kind(f))              // file
+    print("path:", nwatch.path(f))
+    print("poll (unchanged):", nwatch.poll(f))  // false
+
+    time.sleep_ms(20)
+    io_write_file(path, "v2")
+    print("changed?:", nwatch.changed(f))       // true (no update)
+    print("poll:", nwatch.poll(f))              // true (updates)
+    print("poll again:", nwatch.poll(f))        // false
+
+    nwatch.close(v)
+    nwatch.close(f)
+    io_remove_file(path)
+    print("done")
+}

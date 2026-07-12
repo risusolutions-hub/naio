@@ -1,0 +1,29 @@
+// ncrash demo — structured reports, wrap, fingerprints.
+// Run: niao run examples/ncrash_demo.niao
+import "ncrash"
+
+fn ok_fn() {
+    return 42
+}
+
+fn fail_fn() {
+    return error(500, "demo failure")
+}
+
+fn main() {
+    print("=== ncrash reports ===")
+
+    let ok = ncrash.wrap(ok_fn)
+    print("wrap ok:", ok)
+
+    let bad = ncrash.wrap(fail_fn, {handler: "fail_fn"})
+    print("wrap kind:", bad.kind, "code:", bad.code)
+    print("fingerprint:", bad.fingerprint)
+    print("json:", ncrash.format(bad))
+
+    let manual = ncrash.report(error(404, "not found"), {path: "/x"})
+    print("manual fp:", ncrash.fingerprint(manual))
+    print("last fp:", ncrash.last().fingerprint)
+
+    ncrash.clear()
+}

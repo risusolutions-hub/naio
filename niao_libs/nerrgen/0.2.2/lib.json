@@ -1,0 +1,11 @@
+{
+    "name": "nerrgen",
+    "version": "0.2.2",
+    "kind": "native",
+    "description": "E-code spec file parser and rust/niao/markdown artifact generator",
+    "import_paths": [
+        "nerrgen",
+        "std/nerrgen"
+    ],
+    "builtin_count": 3
+}

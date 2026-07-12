@@ -1,0 +1,127 @@
+// Azure helper library showcase.
+// Run:  niao run examples/nazure_demo.niao
+//
+// Set the following environment variables before running against a real account:
+//   AZURE_ACCOUNT       — storage account name
+//   AZURE_KEY           — base64-encoded storage account key
+//   AZURE_CONTAINER     — blob container name
+//   AZURE_TABLE         — table name
+//   AZURE_FUNC_APP      — function app name (for function_invoke demo)
+//   AZURE_FUNC_KEY      — function key / SAS
+//
+// Without those variables the demo runs in "mock" mode, showing the API
+// surface without making real network calls.
+
+import "nazure"
+import "nenv"
+
+fn main() {
+    print("=== nazure demo ===")
+
+    // ── Config ───────────────────────────────────────────────────────────────
+    let account   = nenv.get("AZURE_ACCOUNT",   "mystorageacct")
+    let key_b64   = nenv.get("AZURE_KEY",       "")
+    let container = nenv.get("AZURE_CONTAINER", "demo-container")
+    let table     = nenv.get("AZURE_TABLE",     "DemoTable")
+    let func_app  = nenv.get("AZURE_FUNC_APP",  "myfuncapp")
+    let func_key  = nenv.get("AZURE_FUNC_KEY",  "")
+
+    let cfg_opts = {account: account}
+    if key_b64 != "" {
+        cfg_opts.key = key_b64
+    }
+    if func_key != "" {
+        cfg_opts.sas = func_key
+    }
+
+    let cfg = nazure.config(cfg_opts)
+    if type(cfg) == "error" {
+        print("Config error:", cfg.message)
+        return
+    }
+    print("Config handle:", cfg)
+
+    // ── Blob PUT ─────────────────────────────────────────────────────────────
+    print("\n-- blob_put --")
+    let payload = "Hello from Niao nazure demo!"
+    let put_result = nazure.blob_put(cfg, container, "demo/hello.txt", payload, "text/plain")
+    if type(put_result) == "error" {
+        print("blob_put skipped (no live account):", put_result.message)
+    } else {
+        print("blob_put status:", put_result.status)
+        print("blob_put etag:", put_result.etag)
+    }
+
+    // ── Blob GET ─────────────────────────────────────────────────────────────
+    print("\n-- blob_get --")
+    let get_result = nazure.blob_get(cfg, container, "demo/hello.txt")
+    if type(get_result) == "error" {
+        print("blob_get skipped:", get_result.message)
+    } else {
+        print("blob_get status:", get_result.status)
+        print("blob_get body:", get_result.body)
+    }
+
+    // ── Blob LIST ────────────────────────────────────────────────────────────
+    print("\n-- blob_list --")
+    let names = nazure.blob_list(cfg, container, "demo/")
+    if type(names) == "error" {
+        print("blob_list skipped:", names.message)
+    } else {
+        print("Blob names:", names)
+    }
+
+    // ── Blob DELETE ──────────────────────────────────────────────────────────
+    print("\n-- blob_delete --")
+    let del_ok = nazure.blob_delete(cfg, container, "demo/hello.txt")
+    if type(del_ok) == "error" {
+        print("blob_delete skipped:", del_ok.message)
+    } else {
+        print("blob_delete ok:", del_ok)
+    }
+
+    // ── Table INSERT ─────────────────────────────────────────────────────────
+    print("\n-- table_insert --")
+    let entity = {
+        PartitionKey: "demo",
+        RowKey: "row1",
+        Name: "Alice",
+        Score: 99
+    }
+    let ins = nazure.table_insert(cfg, table, entity)
+    if type(ins) == "error" {
+        print("table_insert skipped:", ins.message)
+    } else {
+        print("table_insert result:", ins)
+    }
+
+    // ── Table QUERY ──────────────────────────────────────────────────────────
+    print("\n-- table_query --")
+    let rows = nazure.table_query(cfg, table, "PartitionKey eq 'demo'")
+    if type(rows) == "error" {
+        print("table_query skipped:", rows.message)
+    } else {
+        print("table_query rows:", rows)
+    }
+
+    // ── Table DELETE ─────────────────────────────────────────────────────────
+    print("\n-- table_delete --")
+    let tdel = nazure.table_delete(cfg, table, {PartitionKey: "demo", RowKey: "row1"})
+    if type(tdel) == "error" {
+        print("table_delete skipped:", tdel.message)
+    } else {
+        print("table_delete ok:", tdel)
+    }
+
+    // ── Function INVOKE ──────────────────────────────────────────────────────
+    print("\n-- function_invoke --")
+    let fn_result = nazure.function_invoke(cfg, func_app, "HelloWorld", {name: "Niao"})
+    if type(fn_result) == "error" {
+        print("function_invoke skipped:", fn_result.message)
+    } else {
+        print("function_invoke status:", fn_result.status)
+        print("function_invoke body:", fn_result.body)
+    }
+
+    print("\n=== nazure demo complete ===")
+}

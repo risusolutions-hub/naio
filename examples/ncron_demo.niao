@@ -1,0 +1,33 @@
+// ncron demo — validate, decompose, match, and compute next run.
+// Run: niao run examples/ncron_demo.niao
+import "ncron"
+import "time"
+
+fn main() {
+    print("=== valid ===")
+    print(ncron.valid("*/5 * * * *"))     // true
+    print(ncron.valid("0 9 * * 1-5"))     // true
+    print(ncron.valid("* * *"))           // false
+
+    print("=== fields ===")
+    let f = ncron.fields("30 2 1,15 * 1-5")
+    print("minute:", f.minute)
+    print("hour:", f.hour)
+    print("day:", f.day)
+    print("month:", f.month)
+    print("weekday:", f.weekday)
+
+    print("=== match ===")
+    let ms = time.parse("2026-07-12 09:00:00", "%Y-%m-%d %H:%M:%S")
+    print(ncron.match("0 9 * * *", ms))           // true (local)
+    print(ncron.match("30 9 * * *", ms))          // false
+
+    print("=== next ===")
+    let from = time.parse("2026-07-12 10:03:00", "%Y-%m-%d %H:%M:%S")
+    let next = ncron.next("*/5 * * * *", from)
+    print("from:", time.format(from, "%Y-%m-%d %H:%M:%S"))
+    print("next:", time.format(next, "%Y-%m-%d %H:%M:%S"))  // 10:05:00
+
+    print("next weekday 09:00 from now:")
+    print(ncron.next("0 9 * * 1-5"))
+}

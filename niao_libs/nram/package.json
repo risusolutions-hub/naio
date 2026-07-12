@@ -1,0 +1,11 @@
+{
+    "name": "nram",
+    "version": "0.2.3",
+    "kind": "native",
+    "description": "System and process memory readings, cooperative RAM budgets, and pressure gating",
+    "import_paths": [
+        "nram",
+        "std/nram"
+    ],
+    "builtin_count": 12
+}

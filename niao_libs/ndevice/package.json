@@ -1,0 +1,11 @@
+{
+    "name": "ndevice",
+    "version": "0.2.3",
+    "kind": "native",
+    "description": "Unified hardware detection, thermal profiles, safety guard, pacing, and device selection",
+    "import_paths": [
+        "ndevice",
+        "std/ndevice"
+    ],
+    "builtin_count": 16
+}

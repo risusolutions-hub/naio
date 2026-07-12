@@ -1,0 +1,31 @@
+// nsmtp demo — object-based SMTP send (plain + multipart HTML).
+// Run: niao run examples/nsmtp_demo.niao
+// Requires a reachable SMTP server; adjust host/port/credentials for your setup.
+import "nsmtp"
+
+fn main() {
+    print("=== plain text ===")
+    let plain = nsmtp.send({
+        host: "smtp.example.com",
+        port: 587,
+        from: "sender@example.com",
+        to: "recipient@example.com",
+        subject: "Niao nsmtp demo",
+        body: "Hello from nsmtp.send()",
+        user: "sender",
+        pass: "secret",
+        tls: true
+    })
+    print("result:", plain)   // true on success, nsmtp_error on failure
+
+    print("=== multipart html ===")
+    let html = nsmtp.send_html({
+        host: "smtp.example.com",
+        from: "sender@example.com",
+        to: ["alice@example.com", "bob@example.com"],
+        subject: "Welcome",
+        body: "Your client does not support HTML.",
+        html: "<h1>Welcome</h1><p>Thanks for trying <strong>nsmtp</strong>.</p>"
+    })
+    print("result:", html)
+}

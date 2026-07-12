@@ -1,0 +1,37 @@
+// nagent demo — multi-agent orchestration scaffolding (no LLM).
+// Run: niao run examples/nagent_demo.niao
+import "nagent"
+
+fn main() {
+    print("=== new / identity ===")
+    let alice = nagent.new("alice", "researcher")
+    let bob = nagent.new("bob", "writer")
+    print(nagent.name(alice), nagent.role(alice))
+    print(nagent.name(bob), nagent.role(bob))
+
+    print("=== say / step / messages ===")
+    nagent.say(alice, "system", "stay factual")
+    print(nagent.step(alice, "summarize cats"))
+    print(nagent.messages(alice))
+
+    print("=== remember / recall ===")
+    nagent.remember(alice, "topic", "cats")
+    print(nagent.recall(alice, "topic"))
+    print(nagent.recall(alice, "missing"))
+
+    print("=== handoff ===")
+    nagent.handoff(alice, bob, "draft the intro")
+    print(nagent.messages(alice))
+    print(nagent.messages(bob))
+
+    print("=== run (round-robin) ===")
+    print(nagent.run([alice, bob], "kickoff", 2))
+
+    print("=== clear / close ===")
+    nagent.clear_messages(alice)
+    print(nagent.messages(alice))
+    print(nagent.recall(alice, "topic"))   // memory survives clear
+    print(nagent.close(alice))
+    print(nagent.close(bob))
+    print(is_error(nagent.step(alice, "gone")))
+}

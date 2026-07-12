@@ -1,0 +1,11 @@
+{
+    "name": "nconfig",
+    "version": "0.2.2",
+    "kind": "native",
+    "description": "Layered config defaults, file, env, args with typed schema validation",
+    "import_paths": [
+        "nconfig",
+        "std/nconfig"
+    ],
+    "builtin_count": 9
+}

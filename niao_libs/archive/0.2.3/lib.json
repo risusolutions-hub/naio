@@ -1,0 +1,11 @@
+{
+    "name": "archive",
+    "version": "0.2.3",
+    "kind": "native",
+    "description": "Gzip and deflate compression helpers",
+    "import_paths": [
+        "archive",
+        "std/archive"
+    ],
+    "builtin_count": 4
+}

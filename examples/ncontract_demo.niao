@@ -1,0 +1,39 @@
+// ncontract demo — design-by-contract helpers.
+// Run: niao run examples/ncontract_demo.niao
+import "ncontract"
+
+fn main() {
+    print("=== require / ensure ===")
+    print(ncontract.require(true))
+    print(ncontract.ensure(1 > 0, "math ok"))
+
+    print("=== check (soft) ===")
+    let ok = ncontract.check(2 > 1)
+    print(ok)                    // true
+    let bad = ncontract.check(false, "soft fail")
+    print(is_error(bad))         // true
+
+    print("=== assert_type ===")
+    let n = ncontract.assert_type(42, "int")
+    print(n)
+    let s = ncontract.assert_type("hello", "string")
+    print(s)
+
+    print("=== invariant ===")
+    let good = {name: "vivek", age: 27}
+    let rules = {
+        name: {required: true, type: "string"},
+        age:  {type: "int"}
+    }
+    let r = ncontract.invariant(good, rules)
+    print("ok:", r.ok)
+
+    let messy = {age: "old"}
+    let r2 = ncontract.invariant(messy, rules)
+    print("ok:", r2.ok)
+    for e in r2.errors {
+        print(" -", e)
+    }
+
+    print("ncontract demo done")
+}

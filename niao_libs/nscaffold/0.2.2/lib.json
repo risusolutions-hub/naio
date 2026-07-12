@@ -1,0 +1,11 @@
+{
+    "name": "nscaffold",
+    "version": "0.2.2",
+    "kind": "native",
+    "description": "CRUD route, nmodel schema, SQL migration, and ntest generation from struct spec",
+    "import_paths": [
+        "nscaffold",
+        "std/nscaffold"
+    ],
+    "builtin_count": 5
+}

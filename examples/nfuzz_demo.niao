@@ -1,0 +1,32 @@
+// nfuzz demo — deterministic fuzz helpers.
+// Run: niao run examples/nfuzz_demo.niao
+import "nfuzz"
+
+fn main() {
+    print("=== seed + int / float / bool ===")
+    nfuzz.seed(42)
+    print(nfuzz.int(0, 100))
+    print(nfuzz.float(0.0, 1.0))
+    print(nfuzz.bool())
+
+    print("=== string ===")
+    print(nfuzz.string())
+    print(nfuzz.string(16))
+
+    print("=== pick / shuffle ===")
+    let items = ["red", "green", "blue"]
+    print(nfuzz.pick(items))
+    let nums = [1, 2, 3, 4, 5]
+    let shuffled = nfuzz.shuffle(nums)
+    print("original:", nums)
+    print("shuffled:", shuffled)
+
+    print("=== bytes / cases ===")
+    print(nfuzz.bytes(8))
+    print(nfuzz.cases(5, 1, 10))
+
+    print("=== deterministic replay ===")
+    nfuzz.seed(42)
+    print(nfuzz.int(0, 100))
+    print(nfuzz.float(0.0, 1.0))
+}

@@ -1,0 +1,11 @@
+{
+    "name": "nredis",
+    "version": "0.2.2",
+    "kind": "native",
+    "description": "Redis client: get/set/del/incr/expire, hash ops, mget/mset, raw RESP commands",
+    "import_paths": [
+        "nredis",
+        "std/nredis"
+    ],
+    "builtin_count": 15
+}

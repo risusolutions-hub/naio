@@ -1,0 +1,24 @@
+// nrepl demo — subprocess expression eval session.
+// Run: niao run examples/nrepl_demo.niao
+import "nrepl"
+
+fn main() {
+    print("niao available:", nrepl.available())
+    if !nrepl.available() {
+        print("skip eval — niao binary not found")
+        return
+    }
+
+    let h = nrepl.start()
+    print("cwd:", nrepl.cwd(h))
+
+    let r1 = nrepl.eval(h, "2 * 21")
+    print("eval ok:", r1.ok, "stdout:", r1.stdout)
+
+    let r2 = nrepl.eval(h, "\"hello\" + \" nrepl\"")
+    print("eval2:", r2.stdout)
+
+    print("history len:", nrepl.len(h))
+    print("history:", nrepl.history(h))
+    nrepl.close(h)
+}

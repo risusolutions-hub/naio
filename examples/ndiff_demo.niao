@@ -1,0 +1,31 @@
+// ndiff demo — deep equality, structural diff, and summary.
+// Run: niao run examples/ndiff_demo.niao
+import "ndiff"
+
+fn main() {
+    print("=== equal scalars ===")
+    print(ndiff.equal(1, 1))
+    print(ndiff.equal("hi", "hi"))
+    print(ndiff.equal(true, false))
+    print(ndiff.equal(nil, nil))
+
+    print("=== nested structures ===")
+    let a = {name: "vivek", tags: ["a", "b"], meta: {n: 1}}
+    let b = {name: "vivek", tags: ["a", "c"], meta: {n: 1}, extra: 42}
+    print(ndiff.equal(a, b))
+
+    print("=== diff paths ===")
+    let d = ndiff.diff(a, b)
+    print("equal:", d.equal)
+    for c in d.changes {
+        print(" -", c.path, ":", c.left, "→", c.right)
+    }
+
+    print("=== summary ===")
+    print(ndiff.summary(d))
+
+    print("=== identical ===")
+    let same = ndiff.diff({x: [1, 2]}, {x: [1, 2]})
+    print(same.equal)
+    print(ndiff.summary(same))
+}

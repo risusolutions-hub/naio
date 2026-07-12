@@ -1,0 +1,12 @@
+// Measures nrand.normal throughput -> targets PERFORMANCE.md #5 (Box-Muller pair cache).
+import "nrand"
+fn main() {
+    nrand.seed(7)
+    let s = 0.0
+    let i = 0
+    while i < 1000000 {
+        s = s + nrand.normal(0.0, 1.0)
+        i = i + 1
+    }
+    print(s)
+}

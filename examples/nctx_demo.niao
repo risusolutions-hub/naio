@@ -1,0 +1,31 @@
+// nctx demo — token estimates, trim strategies, budgets, stats.
+// Run: niao run examples/nctx_demo.niao
+import "nctx"
+
+fn main() {
+    print("=== nctx context manager ===")
+
+    let msgs = [
+        {role: "system", content: "You are a concise assistant."},
+        {role: "user", content: "Explain quantum computing in one paragraph."},
+        {role: "assistant", content: "Quantum computing uses qubits that can be in superposition…"},
+        {role: "user", content: "Give an analogy."}
+    ]
+
+    print("estimate 'hello world':", nctx.estimate("hello world"))
+    print("message tokens:", nctx.estimate_messages(msgs))
+
+    let stats = nctx.stats(msgs)
+    print("stats:", stats.messages, "msgs,", stats.tokens, "tokens")
+    print("roles:", stats.roles)
+
+    let budget = nctx.budget(128, 32)
+    print("budget available:", budget.available)
+    print("fits budget:", nctx.fits(msgs, budget))
+
+    let tail = nctx.trim(msgs, 40, "tail")
+    print("trim tail →", len(tail), "messages")
+
+    let system = nctx.trim(msgs, 40, "system")
+    print("trim system →", len(system), "messages (keeps system)")
+}
