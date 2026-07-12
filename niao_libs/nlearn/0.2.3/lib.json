@@ -1,0 +1,11 @@
+{
+    "name": "nlearn",
+    "version": "0.2.3",
+    "kind": "native",
+    "description": "Classical ML: estimators, preprocessing, Pipeline (scikit-learn subset)",
+    "import_paths": [
+        "nlearn",
+        "std/nlearn"
+    ],
+    "builtin_count": 28
+}

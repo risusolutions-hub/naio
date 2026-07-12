@@ -1,0 +1,19 @@
+[package]
+name = "niao_ts"
+version.workspace = true
+edition.workspace = true
+license = "MIT"
+description = "Time series analysis and forecasting for Niao (statsmodels.tsa core)"
+
+[dependencies]
+niao_num = { workspace = true }
+niao_stats = { workspace = true }
+niao_optim = { workspace = true }
+niao_frame = { workspace = true }
+niao_errors = { workspace = true }
+
+[dev-dependencies]
+
+[[example]]
+name = "bench_acf"
+path = "examples/bench_acf.rs"

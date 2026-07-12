@@ -1,0 +1,42 @@
+// nnlp demo — normalize, TF-IDF vectorize, word2vec neighbors, BM25 rank.
+// Run: niao run examples/nnlp_demo.niao  (after runtime wiring)
+import "nnlp"
+
+fn main() {
+    print("=== Normalize + tokenize ===")
+    let text = "The cats are running quickly! See https://example.com"
+    let clean = nnlp.normalize(text)
+    print("normalized:", clean)
+    let toks = nnlp.word_tokenize(clean)
+    print("tokens:", toks)
+
+    print("=== TF-IDF ===")
+    let docs = [
+        "the cat sat on the mat",
+        "the dog sat on the log",
+        "cats and dogs are pets",
+    ]
+    let tv = nnlp.TfidfVectorizer()
+    tv.fit(docs)
+    let mat = tv.transform(docs)
+    print("sparse rows:", mat.n_rows, "cols:", mat.n_cols, "nnz:", mat.nnz)
+
+    print("=== Porter stemmer ===")
+    let stemmer = nnlp.PorterStemmer()
+    print("running ->", stemmer.stem("running"))
+    print("connections ->", stemmer.stem("connections"))
+
+    print("=== Similarity ===")
+    print("levenshtein(kitten,sitting):", nnlp.levenshtein("kitten", "sitting"))
+    print("sentiment:", nnlp.sentiment("I love this excellent product"))
+    print("language:", nnlp.detect_language("the cat is in the garden"))
+
+    print("=== BM25 ===")
+    let corpus = [
+        ["the", "cat", "sat"],
+        ["the", "dog", "ran"],
+    ]
+    let bm = nnlp.Bm25.fit(corpus, 1.5, 0.75)
+    let ranked = bm.rank(["cat"])
+    print("BM25 top doc:", ranked[0])
+}

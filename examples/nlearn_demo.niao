@@ -1,0 +1,35 @@
+// nlearn demo — train / predict / score on Iris-like data.
+// Run: niao run examples/nlearn_demo.niao  (after runtime wiring)
+import "nlearn"
+
+fn main() {
+    // First 6 Iris rows (setosa=0, versicolor=1) — binary demo
+    let x = [
+        [5.1, 3.5, 1.4, 0.2],
+        [4.9, 3.0, 1.4, 0.2],
+        [4.7, 3.2, 1.3, 0.2],
+        [7.0, 3.2, 4.7, 1.4],
+        [6.4, 3.2, 4.5, 1.5],
+        [6.9, 3.1, 4.9, 1.5],
+    ]
+    let y = [0.0, 0.0, 0.0, 1.0, 1.0, 1.0]
+
+    print("=== StandardScaler + LogisticRegression Pipeline ===")
+    let mut pipe = nlearn.Pipeline([
+        ("sc", nlearn.StandardScaler()),
+        ("clf", nlearn.LogisticRegression()),
+    ])
+    pipe.fit(x, y)
+    print("train accuracy:", pipe.score(x, y))
+    print("predictions:", pipe.predict(x))
+
+    print("=== DecisionTree ===")
+    let mut tree = nlearn.DecisionTreeClassifier(3)
+    tree.fit(x, y)
+    print("tree accuracy:", tree.score(x, y))
+
+    print("=== KMeans k=2 ===")
+    let mut km = nlearn.KMeans(2, 42)
+    km.fit(x)
+    print("labels:", km.predict(x))
+}

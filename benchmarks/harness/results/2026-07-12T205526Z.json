@@ -1,0 +1,45 @@
+{
+  "timestamp": "2026-07-12T205526Z",
+  "niao": "C:\\Users\\vivek\\.cargo\\bin\\niao.EXE",
+  "runs": 5,
+  "results": {
+    "aa_control_arith": {
+      "status": "ok",
+      "runs": 5,
+      "best_ms": 41.78,
+      "avg_ms": 43.146,
+      "worst_ms": 44.95
+    },
+    "json_parse": {
+      "status": "ok",
+      "runs": 5,
+      "best_ms": 855.97,
+      "avg_ms": 983.27,
+      "worst_ms": 1087.17
+    },
+    "ncache_churn": {
+      "status": "error",
+      "detail": "Error: \"E0100: unexpected token \\\"FloorDiv\\\", expected expression at line 3, col 1\""
+    },
+    "nmath_scalar": {
+      "status": "error",
+      "detail": "Error: \"E2005: module not found: C:\\\\Risu\\\\Neko\\\\benchmarks\\\\harness\\\\benches\\\\nmath.niao\""
+    },
+    "nrand_normal": {
+      "status": "error",
+      "detail": "Error: \"E2005: module not found: C:\\\\Risu\\\\Neko\\\\benchmarks\\\\harness\\\\benches\\\\nrand.niao\""
+    },
+    "nrand_ranged_int": {
+      "status": "error",
+      "detail": "Error: \"E0100: unexpected token \\\"TypeInt\\\", expected identifier at line 9, col 28\""
+    },
+    "nstr_transform": {
+      "status": "error",
+      "detail": "Error: \"E2005: module not found: C:\\\\Risu\\\\Neko\\\\benchmarks\\\\harness\\\\benches\\\\nstr.niao\""
+    },
+    "nvec_search": {
+      "status": "error",
+      "detail": "Error: \"E2005: module not found: C:\\\\Risu\\\\Neko\\\\benchmarks\\\\harness\\\\benches\\\\nvec.niao\""
+    }
+  }
+}

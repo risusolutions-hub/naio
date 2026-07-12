@@ -1,0 +1,11 @@
+{
+    "name": "nnlp",
+    "version": "0.2.2",
+    "kind": "native",
+    "description": "Classical NLP: normalization, TF-IDF, n-grams, word2vec, similarity, baselines",
+    "import_paths": [
+        "nnlp",
+        "std/nnlp"
+    ],
+    "builtin_count": 28
+}

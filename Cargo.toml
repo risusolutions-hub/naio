@@ -46,6 +46,11 @@ members = [
     "crates/niao_frame",
     "crates/niao_optim",
     "crates/niao_plot",
+    "crates/niao_learn",
+    "crates/niao_boost",
+    "crates/niao_ts",
+    "crates/niao_nlp",
+    "crates/niao_vision",
 ]
 
 [workspace.package]
@@ -99,6 +104,11 @@ niao_stats = { path = "crates/niao_stats" }
 niao_frame = { path = "crates/niao_frame" }
 niao_optim = { path = "crates/niao_optim" }
 niao_plot = { path = "crates/niao_plot" }
+niao_learn = { path = "crates/niao_learn" }
+niao_boost = { path = "crates/niao_boost" }
+niao_ts = { path = "crates/niao_ts" }
+niao_nlp = { path = "crates/niao_nlp" }
+niao_vision = { path = "crates/niao_vision" }
 clap = { version = "4", features = ["derive"] }
 tokio = { version = "1", features = ["full"] }
 axum = "0.8"

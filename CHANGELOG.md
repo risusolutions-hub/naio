@@ -5,6 +5,7 @@
 ### Added
 - **ML Wave 0 — `nnum`**: `niao_num` crate (NdArray, broadcasting, linalg, FFT), native `nnum` module, `docs/NNUM.md`, `examples/nnum_demo.niao`, error codes 4000–4009.
 - **ML Wave 1 — `nframe`, `nstats`, `noptim`, `nplot`**: four crates + native modules, docs/demos/benchmarks, error codes 4010–4049.
+- **ML Wave 2 — `nlearn`, `nboost`, `nts`, `nnlp`, `nvision`**: five crates, docs/demos/benchmarks, error codes 4050–4099 (runtime module wiring partial — expand in follow-up).
 
 ## 0.2.3 — 2026-07-13
 

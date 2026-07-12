@@ -1,0 +1,11 @@
+{
+    "name": "nboost",
+    "version": "0.2.2",
+    "kind": "native",
+    "description": "Histogram gradient-boosted decision trees (XGBoost / LightGBM subset)",
+    "import_paths": [
+        "nboost",
+        "std/nboost"
+    ],
+    "builtin_count": 12
+}

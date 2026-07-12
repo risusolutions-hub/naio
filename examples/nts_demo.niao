@@ -1,0 +1,37 @@
+// nts demo — ARIMA fit, forecast with intervals, Holt-Winters seasonal forecast.
+// Run: niao run examples/nts_demo.niao  (after runtime wiring)
+import "nts"
+
+fn main() {
+    print("=== ACF / PACF ===")
+    let y = [1.0, 2.0, 1.5, 2.2, 1.8, 2.5, 2.1, 2.8, 2.4, 3.0]
+    let acf_vals = nts.acf(y, 5)
+    print("ACF:", acf_vals)
+
+    print("=== Seasonal decompose ===")
+    let air = [
+        112.0, 118.0, 132.0, 129.0, 121.0, 135.0, 148.0, 148.0, 136.0, 119.0, 104.0, 118.0,
+        115.0, 126.0, 141.0, 135.0, 125.0, 149.0, 170.0, 170.0, 158.0, 133.0, 114.0, 140.0,
+    ]
+    let dec = nts.seasonal_decompose(air, 12, false)
+    print("trend[0]:", dec.trend[0])
+
+    print("=== ARIMA(1,1,1) fit + forecast ===")
+    let model = nts.arima(1, 1, 1)
+    model.fit(air)
+    let fc = model.forecast(6, 0.05)
+    print("forecast mean:", fc.mean)
+    print("95% lower:", fc.lower)
+    print("95% upper:", fc.upper)
+    print(model.summary())
+
+    print("=== Holt-Winters ===")
+    let hw = nts.holt_winters(12, false)
+    hw.fit(air)
+    print("HW forecast:", hw.forecast(4))
+
+    print("=== auto_arima ===")
+    let auto = nts.auto_arima(air, 2, 1, 2, 12)
+    print("selected order p,d,q:", auto.order.p, auto.order.d, auto.order.q)
+    print("AICc:", auto.aicc)
+}

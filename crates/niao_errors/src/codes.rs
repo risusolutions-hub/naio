@@ -1178,6 +1178,41 @@ pub const E4043_NPLOT_HANDLE: u32 = 4043;
 /// e4044 nplot render/encode.
 pub const E4044_NPLOT_RENDER: u32 = 4044;
 
+/// e4050 nlearn arity.
+pub const E4050_NLEARN_ARITY: u32 = 4050;
+pub const E4051_NLEARN_ERROR: u32 = 4051;
+pub const E4052_NLEARN_TYPE: u32 = 4052;
+pub const E4053_NLEARN_NOT_FITTED: u32 = 4053;
+pub const E4054_NLEARN_SHAPE: u32 = 4054;
+pub const E4055_NLEARN_NON_CONVERGENCE: u32 = 4055;
+
+pub const E4060_NBOOST_ARITY: u32 = 4060;
+pub const E4061_NBOOST_ERROR: u32 = 4061;
+pub const E4062_NBOOST_TYPE: u32 = 4062;
+pub const E4063_NBOOST_NOT_FITTED: u32 = 4063;
+pub const E4064_NBOOST_PARAM: u32 = 4064;
+pub const E4065_NBOOST_SHAPE: u32 = 4065;
+
+pub const E4070_NTS_ARITY: u32 = 4070;
+pub const E4071_NTS_ERROR: u32 = 4071;
+pub const E4072_NTS_TYPE: u32 = 4072;
+pub const E4073_NTS_NOT_FITTED: u32 = 4073;
+pub const E4074_NTS_NON_STATIONARY: u32 = 4074;
+pub const E4075_NTS_NON_CONVERGENCE: u32 = 4075;
+
+pub const E4080_NNLP_ARITY: u32 = 4080;
+pub const E4081_NNLP_ERROR: u32 = 4081;
+pub const E4082_NNLP_TYPE: u32 = 4082;
+pub const E4083_NNLP_NOT_FITTED: u32 = 4083;
+pub const E4084_NNLP_EMPTY_VOCAB: u32 = 4084;
+
+pub const E4090_NVISION_ARITY: u32 = 4090;
+pub const E4091_NVISION_ERROR: u32 = 4091;
+pub const E4092_NVISION_TYPE: u32 = 4092;
+pub const E4093_NVISION_CODEC: u32 = 4093;
+pub const E4094_NVISION_SHAPE: u32 = 4094;
+pub const E4095_NVISION_MISSING: u32 = 4095;
+
 /// Division by zero.
 pub const E2001_DIVISION_BY_ZERO: u32 = 2001;
 /// Reference to undefined variable.
@@ -1278,6 +1313,11 @@ pub fn runtime_kind_name(code: u32) -> &'static str {
         E4020_NSTATS_ARITY..=E4024_NSTATS_NON_CONVERGENCE => "nstats_error",
         E4030_NOPTIM_ARITY..=E4035_NOPTIM_INFEASIBLE => "noptim_error",
         E4040_NPLOT_ARITY..=E4044_NPLOT_RENDER => "nplot_error",
+        E4050_NLEARN_ARITY..=E4055_NLEARN_NON_CONVERGENCE => "nlearn_error",
+        E4060_NBOOST_ARITY..=E4065_NBOOST_SHAPE => "nboost_error",
+        E4070_NTS_ARITY..=E4075_NTS_NON_CONVERGENCE => "nts_error",
+        E4080_NNLP_ARITY..=E4084_NNLP_EMPTY_VOCAB => "nnlp_error",
+        E4090_NVISION_ARITY..=E4095_NVISION_MISSING => "nvision_error",
         E2730_NNPU_ARITY..=E2732_NNPU_TYPE => "nnpu_error",
         E3020_NPACE_ARITY..=E3022_NPACE_TYPE => "npace_error",
         E3390_NPAR_ARITY..=E3392_NPAR_TYPE => "npar_error",

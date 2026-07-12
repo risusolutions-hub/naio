@@ -3336,6 +3336,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "niao_boost"
+version = "0.2.3"
+dependencies = [
+ "niao_errors",
+ "niao_frame",
+ "niao_num",
+]
+
+[[package]]
 name = "niao_bytecode"
 version = "0.2.3"
 dependencies = [
@@ -3501,6 +3510,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "niao_learn"
+version = "0.2.3"
+dependencies = [
+ "niao_errors",
+ "niao_frame",
+ "niao_num",
+ "niao_optim",
+ "niao_rand",
+ "niao_stats",
+]
+
+[[package]]
 name = "niao_lexer"
 version = "0.2.3"
 dependencies = [
@@ -3554,6 +3575,16 @@ name = "niao_net_clients"
 version = "0.2.3"
 dependencies = [
  "suppaftp",
+]
+
+[[package]]
+name = "niao_nlp"
+version = "0.2.3"
+dependencies = [
+ "niao_errors",
+ "niao_frame",
+ "niao_num",
+ "niao_rand",
 ]
 
 [[package]]
@@ -3707,6 +3738,30 @@ dependencies = [
 [[package]]
 name = "niao_time"
 version = "0.2.3"
+
+[[package]]
+name = "niao_ts"
+version = "0.2.3"
+dependencies = [
+ "niao_errors",
+ "niao_frame",
+ "niao_num",
+ "niao_optim",
+ "niao_stats",
+]
+
+[[package]]
+name = "niao_vision"
+version = "0.2.3"
+dependencies = [
+ "niao_archive",
+ "niao_codec",
+ "niao_errors",
+ "niao_ml",
+ "niao_num",
+ "niao_rand",
+ "niao_tensor",
+]
 
 [[package]]
 name = "niao_vm"

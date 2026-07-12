@@ -1,0 +1,21 @@
+[package]
+name = "niao_vision"
+version.workspace = true
+edition.workspace = true
+license = "MIT"
+description = "Computer vision for Niao (torchvision / OpenCV / Pillow subset)"
+
+[dependencies]
+niao_num = { workspace = true }
+niao_tensor = { workspace = true }
+niao_ml = { workspace = true }
+niao_codec = { workspace = true }
+niao_archive = { workspace = true }
+niao_rand = { workspace = true }
+niao_errors = { workspace = true }
+
+[[bin]]
+name = "vision_bench"
+path = "src/bin/vision_bench.rs"
+
+[dev-dependencies]

@@ -1,0 +1,14 @@
+[package]
+name = "niao_boost"
+version.workspace = true
+edition.workspace = true
+description = "Histogram GBDT for Niao (XGBoost / LightGBM subset)"
+
+[dependencies]
+niao_num = { workspace = true }
+niao_frame = { workspace = true }
+niao_errors = { workspace = true }
+
+[[example]]
+name = "bench_boost"
+path = "examples/bench_boost.rs"

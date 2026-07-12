@@ -1,0 +1,11 @@
+{
+    "name": "nvision",
+    "version": "0.2.2",
+    "kind": "native",
+    "description": "Computer vision: image IO, transforms, classical CV, dataset loaders (torchvision/OpenCV/Pillow subset)",
+    "import_paths": [
+        "nvision",
+        "std/nvision"
+    ],
+    "builtin_count": 24
+}

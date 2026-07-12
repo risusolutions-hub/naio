@@ -1,0 +1,28 @@
+// nboost demo — train GBDT regressor on synthetic fixture, predict.
+// Run: niao run examples/nboost_demo.niao  (after runtime wiring)
+import "nboost"
+
+fn main() {
+    print("=== nboost GBRegressor demo ===")
+    let x = [
+        0.5, 1.0, 0.1, 2.0,
+        1.5, 0.2, 0.8, 1.1,
+        2.0, 2.5, 1.2, 0.3,
+        0.0, 0.5, 2.0, 1.8,
+        1.0, 1.5, 0.5, 0.9,
+    ]
+    let y = [1.2, 0.8, 2.5, 0.4, 1.7]
+    let params = {
+        learning_rate: 0.1,
+        n_estimators: 20,
+        max_depth: 3,
+        max_leaves: 8,
+        min_data_in_leaf: 1,
+    }
+    let model = nboost.gb_regressor(params)
+    nboost.fit(model, x, 5, 4, y)
+    let pred = nboost.predict(model, x, 5, 4)
+    print("predictions:", pred)
+    let imp = nboost.feature_importance(model, "gain")
+    print("feature importance (gain):", imp)
+}

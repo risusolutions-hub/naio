@@ -1,0 +1,11 @@
+{
+    "name": "nts",
+    "version": "0.2.3",
+    "kind": "native",
+    "description": "Time series: ACF/PACF, decomposition, ARIMA/SARIMA, Holt-Winters (statsmodels.tsa core)",
+    "import_paths": [
+        "nts",
+        "std/nts"
+    ],
+    "builtin_count": 20
+}

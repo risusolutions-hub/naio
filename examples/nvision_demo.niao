@@ -1,0 +1,19 @@
+// nvision demo — load → transform → tensor.
+// Run: niao run examples/nvision_demo.niao
+// Requires runtime wiring of nvision builtins (orchestrator task).
+
+import "nvision"
+
+fn main() {
+    print("=== nvision demo ===")
+
+    // Synthetic path: encode a small PNG via builtins when wired.
+    // Until runtime is wired, this documents the intended API surface.
+    let img = nvision.imread("examples/fixtures/nvision_demo.png")
+    let small = nvision.resize(img, 64, 64)
+    let flipped = nvision.flip_h(small)
+    let t = nvision.to_tensor(flipped)
+    let n = nvision.normalize(t, [0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+    print("tensor ready:", n)
+    print("nvision demo ok")
+}

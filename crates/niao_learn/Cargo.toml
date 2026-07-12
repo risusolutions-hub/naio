@@ -1,0 +1,16 @@
+[package]
+name = "niao_learn"
+version.workspace = true
+edition.workspace = true
+license = "MIT"
+description = "Classical ML estimators for Niao (scikit-learn subset)"
+
+[dependencies]
+niao_num = { workspace = true }
+niao_frame = { workspace = true }
+niao_stats = { workspace = true }
+niao_rand = { workspace = true }
+niao_optim = { workspace = true }
+niao_errors = { workspace = true }
+
+[dev-dependencies]
