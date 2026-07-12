@@ -1,6 +1,6 @@
 {
     "name":  "args",
-    "version":  "0.2.2",
+    "version":  "0.2.3",
     "kind":  "native",
     "description":  "CLI argument parsing — flags, options, positionals, subcommands",
     "import_paths":  [

@@ -1,6 +1,6 @@
 {
     "name":  "rand",
-    "version":  "0.2.2",
+    "version":  "0.2.3",
     "kind":  "native",
     "description":  "Seeded PRNG, uniform ranges, shuffle, and choose",
     "import_paths":  [

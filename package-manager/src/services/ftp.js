@@ -34,11 +34,19 @@ function progressBar(pct, width = 24) {
 export function createConsoleFtpProgress({ label = 'FTP upload' } = {}) {
   const started = Date.now();
   let lastLineLen = 0;
-  let barStarted = false;
+  let prepStarted = false;
+  let uploadStarted = false;
 
   function writeLine(line) {
     process.stdout.write(`\r${line}${' '.repeat(Math.max(0, lastLineLen - line.length))}`);
     lastLineLen = line.length;
+  }
+
+  function endLine() {
+    if (prepStarted || uploadStarted) {
+      process.stdout.write('\n');
+      lastLineLen = 0;
+    }
   }
 
   return {
@@ -53,12 +61,28 @@ export function createConsoleFtpProgress({ label = 'FTP upload' } = {}) {
         case 'cleanup':
           console.log('  Cleaning legacy FTP directories…');
           return;
-        case 'uploading':
-          if (!barStarted) {
-            console.log(
-              `  Uploading ${state.totalFiles} files (${formatBytes(state.totalBytes)})…`,
+        case 'preparing':
+          if (!prepStarted) {
+            console.log(`  Preparing ${state.totalDirs || 0} remote directories…`);
+            prepStarted = true;
+          }
+          if (state.totalDirs > 0) {
+            const pct = Math.min(100, (state.doneDirs / state.totalDirs) * 100);
+            writeLine(
+              `  [${progressBar(pct)}] ${pct.toFixed(0)}%  ` +
+                `${state.doneDirs}/${state.totalDirs} directories`,
             );
-            barStarted = true;
+          }
+          return;
+        case 'uploading':
+          if (!uploadStarted) {
+            endLine();
+            const parallel =
+              state.workers && state.workers > 1 ? ` (${state.workers} parallel)` : '';
+            console.log(
+              `  Uploading ${state.totalFiles} files (${formatBytes(state.totalBytes)})${parallel}…`,
+            );
+            uploadStarted = true;
           }
           break;
         default:
@@ -79,23 +103,25 @@ export function createConsoleFtpProgress({ label = 'FTP upload' } = {}) {
           ? `…${state.currentFile.slice(-41)}`
           : state.currentFile
         : '';
+      const workers =
+        state.workers && state.workers > 1 ? ` · ${state.workers} parallel` : '';
 
       writeLine(
         `  [${progressBar(pct)}] ${pct.toFixed(1)}%  ` +
           `${state.uploadedFiles}/${state.totalFiles} files (${leftFiles} left)  ` +
           `${formatBytes(state.uploadedBytes)} / ${formatBytes(state.totalBytes)}  ` +
-          `${formatBytes(rate)}/s  ETA ${formatEta(eta)}  ${shortFile}`,
+          `${formatBytes(rate)}/s  ETA ${formatEta(eta)}${workers}  ${shortFile}`,
       );
     },
     done(result) {
-      if (barStarted) process.stdout.write('\n');
+      endLine();
       const elapsed = formatEta((Date.now() - started) / 1000);
       console.log(
         `  ✓ ${label}: ${result.uploaded} files, ${formatBytes(result.totalBytes)} in ${elapsed} → ${result.remote}`,
       );
     },
     fail(err) {
-      if (barStarted) process.stdout.write('\n');
+      endLine();
       console.error(`  ✗ ${label} failed: ${err.message}`);
     },
   };
@@ -144,10 +170,171 @@ function ftpHint(err) {
   if (msg.includes('530') || msg.includes('Login')) {
     return ' Check FTP_USER, FTP_PASSWORD, and unlock FTP in StackCP (Manage Hosting → Unlock FTP).';
   }
-  if (msg.includes('Timeout') || msg.includes('control socket')) {
+  if (msg.includes('Timeout') || msg.includes('control socket') || msg.includes('ECONNRESET')) {
     return ' Use FTP_HOST=ftp.stackcp.com (not ftp.stackcp.risu.in). Unlock FTP in StackCP control panel.';
   }
   return '';
+}
+
+function isRetryableFtpError(err) {
+  const msg = err?.message || String(err);
+  return /ECONNRESET|ETIMEDOUT|EPIPE|Timeout|control socket|421|426/i.test(msg);
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function withRetry(fn, { attempts = config.ftp.retryAttempts, label = 'FTP' } = {}) {
+  let lastErr;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastErr = err;
+      if (attempt >= attempts || !isRetryableFtpError(err)) throw err;
+      await sleep(400 * attempt);
+    }
+  }
+  throw lastErr;
+}
+
+function resolveRemotePath(remoteRoot, rel) {
+  return remoteRoot === '/' ? `/${rel}` : path.posix.join(remoteRoot, rel);
+}
+
+function leafEnsureDirs(dirs) {
+  const all = [...dirs];
+  return all.filter(
+    (dir) => !all.some((other) => other !== dir && other.startsWith(`${dir}/`)),
+  );
+}
+
+function applyFtpSettings(client, { verbose = false } = {}) {
+  client.ftp.verbose = verbose;
+  client.ftp.passive = config.ftp.passive !== false;
+}
+
+async function connectFtpClient({ verbose = false } = {}) {
+  const client = new Client(config.ftp.timeoutMs);
+  applyFtpSettings(client, { verbose });
+  await client.access({
+    host: config.ftp.host,
+    user: config.ftp.user,
+    password: config.ftp.password,
+    secure: config.ftp.secure,
+  });
+  return client;
+}
+
+async function connectFtpClientWithRetry(options = {}) {
+  return withRetry(() => connectFtpClient(options), { label: 'FTP connect' });
+}
+
+async function ensureRemoteDirsParallel(dirs, { onDirDone }) {
+  const leaves = leafEnsureDirs(dirs);
+  if (leaves.length === 0) return;
+
+  let nextIndex = 0;
+  let doneDirs = 0;
+  const workerCount = Math.min(config.ftp.dirConcurrency, leaves.length);
+  const loginStaggerMs = config.ftp.loginStaggerMs;
+
+  async function worker(workerId) {
+    if (workerId > 0 && loginStaggerMs > 0) {
+      await sleep(workerId * loginStaggerMs);
+    }
+
+    let client = await connectFtpClientWithRetry();
+    try {
+      while (true) {
+        const index = nextIndex;
+        nextIndex += 1;
+        if (index >= leaves.length) break;
+
+        const dir = leaves[index];
+        try {
+          await client.ensureDir(dir);
+        } catch (err) {
+          if (!isRetryableFtpError(err)) throw err;
+          client.close();
+          client = await connectFtpClientWithRetry();
+          await client.ensureDir(dir);
+        }
+        doneDirs += 1;
+        if (doneDirs === 1 || doneDirs === leaves.length || doneDirs % 10 === 0) {
+          onDirDone?.({ doneDirs, totalDirs: leaves.length, currentDir: dir });
+        }
+      }
+    } finally {
+      client.close();
+    }
+  }
+
+  await Promise.all(Array.from({ length: workerCount }, (_, i) => worker(i)));
+}
+
+/**
+ * Upload many small files in parallel — each worker keeps its own FTP connection.
+ * Workers start staggered so shared hosts are not hit with many logins at once.
+ */
+async function uploadEntriesParallel(entries, { remoteRoot, concurrency, onFileDone }) {
+  if (entries.length === 0) return;
+
+  let nextIndex = 0;
+  const workerCount = Math.min(concurrency, entries.length);
+  const loginStaggerMs = config.ftp.loginStaggerMs;
+
+  async function worker(workerId) {
+    if (workerId > 0 && loginStaggerMs > 0) {
+      await sleep(workerId * loginStaggerMs);
+    }
+
+    let client = await connectFtpClientWithRetry();
+    try {
+      while (true) {
+        const index = nextIndex;
+        nextIndex += 1;
+        if (index >= entries.length) break;
+
+        const entry = entries[index];
+        const remotePath = resolveRemotePath(remoteRoot, entry.rel);
+        try {
+          await client.uploadFrom(entry.file, remotePath);
+        } catch (err) {
+          if (!isRetryableFtpError(err)) throw err;
+          client.close();
+          client = await connectFtpClientWithRetry();
+          await client.uploadFrom(entry.file, remotePath);
+        }
+        onFileDone(entry);
+      }
+    } finally {
+      client.close();
+    }
+  }
+
+  await Promise.all(Array.from({ length: workerCount }, (_, i) => worker(i)));
+}
+
+async function uploadEntriesSequential(entries, { remoteRoot, onFileDone }) {
+  let client = await connectFtpClientWithRetry();
+  try {
+    for (const entry of entries) {
+      const remotePath = resolveRemotePath(remoteRoot, entry.rel);
+      try {
+        await client.uploadFrom(entry.file, remotePath);
+      } catch (err) {
+        if (!isRetryableFtpError(err)) throw err;
+        client.close();
+        client = await connectFtpClientWithRetry();
+        await client.uploadFrom(entry.file, remotePath);
+      }
+      onFileDone(entry);
+    }
+  } finally {
+    client.close();
+  }
 }
 
 export async function syncToFtp({ onProgress } = {}) {
@@ -163,25 +350,26 @@ export async function syncToFtp({ onProgress } = {}) {
     totalBytes: 0,
     uploadedBytes: 0,
     currentFile: '',
+    totalDirs: 0,
+    doneDirs: 0,
   };
   const report = (patch) => {
     Object.assign(state, patch);
     onProgress?.({ ...state });
   };
 
-  const client = new Client(config.ftp.timeoutMs);
-  client.ftp.verbose = config.nodeEnv !== 'production' && !onProgress;
+  let client = null;
 
   let remoteRoot = (config.ftp.remoteDir || '/').replace(/\/$/, '');
   if (!remoteRoot) remoteRoot = '/';
 
+  const smallMax = config.ftp.smallFileMaxBytes;
+  const concurrency = config.ftp.concurrency;
+
   try {
     report({ phase: 'connecting' });
-    await client.access({
-      host: config.ftp.host,
-      user: config.ftp.user,
-      password: config.ftp.password,
-      secure: config.ftp.secure,
+    client = await connectFtpClientWithRetry({
+      verbose: config.nodeEnv !== 'production' && !onProgress,
     });
 
     const localRoot = config.dataDir;
@@ -208,6 +396,28 @@ export async function syncToFtp({ onProgress } = {}) {
       await client.ensureDir(remoteRoot);
     }
 
+    const remoteDirs = new Set();
+    for (const entry of fileEntries) {
+      const remoteDir = path.posix.dirname(resolveRemotePath(remoteRoot, entry.rel));
+      if (remoteDir && remoteDir !== '.' && remoteDir !== '/') {
+        remoteDirs.add(remoteDir);
+      }
+    }
+
+    const leafDirCount = leafEnsureDirs(remoteDirs).length;
+    report({ phase: 'preparing', totalDirs: leafDirCount, doneDirs: 0 });
+    client.close();
+    client = null;
+
+    await ensureRemoteDirsParallel(remoteDirs, {
+      onDirDone: ({ doneDirs, totalDirs }) => {
+        report({ phase: 'preparing', doneDirs, totalDirs });
+      },
+    });
+
+    const smallEntries = fileEntries.filter((e) => e.size <= smallMax);
+    const largeEntries = fileEntries.filter((e) => e.size > smallMax);
+
     report({
       phase: 'uploading',
       totalFiles: fileEntries.length,
@@ -215,22 +425,44 @@ export async function syncToFtp({ onProgress } = {}) {
       uploadedFiles: 0,
       uploadedBytes: 0,
       currentFile: '',
+      workers: smallEntries.length > 0 ? Math.min(concurrency, smallEntries.length) : 0,
     });
 
     let uploadedFiles = 0;
     let uploadedBytes = 0;
-    for (const entry of fileEntries) {
-      const remotePath =
-        remoteRoot === '/' ? `/${entry.rel}` : path.posix.join(remoteRoot, entry.rel);
-      const remoteDir = path.posix.dirname(remotePath);
-      report({ currentFile: entry.rel });
-      if (remoteDir && remoteDir !== '.') {
-        await client.ensureDir(remoteDir);
-      }
-      await client.uploadFrom(entry.file, remotePath);
+    const parallelWorkers =
+      smallEntries.length > 0 ? Math.min(concurrency, smallEntries.length) : 0;
+    const onFileDone = (entry) => {
       uploadedFiles += 1;
       uploadedBytes += entry.size;
-      report({ uploadedFiles, uploadedBytes, currentFile: entry.rel });
+      const isLarge = entry.size > smallMax;
+      // Throttle progress updates — 900+ small files would flood the terminal.
+      if (
+        uploadedFiles === 1 ||
+        uploadedFiles === fileEntries.length ||
+        uploadedFiles === smallEntries.length ||
+        uploadedFiles % 25 === 0 ||
+        isLarge
+      ) {
+        report({
+          uploadedFiles,
+          uploadedBytes,
+          currentFile: entry.rel,
+          workers: uploadedFiles < smallEntries.length ? parallelWorkers : 0,
+        });
+      }
+    };
+
+    if (smallEntries.length > 0) {
+      await uploadEntriesParallel(smallEntries, { remoteRoot, concurrency, onFileDone });
+    }
+
+    if (largeEntries.length > 0) {
+      report({
+        workers: 0,
+        currentFile: largeEntries[0].rel,
+      });
+      await uploadEntriesSequential(largeEntries, { remoteRoot, onFileDone });
     }
 
     // Ensure Apache rewrite rules are present (some hosts skip dotfiles in bulk upload)
@@ -240,15 +472,29 @@ export async function syncToFtp({ onProgress } = {}) {
       const already = fileEntries.some((e) => e.rel === '.htaccess');
       if (!already) {
         const st = await fs.stat(htaccess);
-        report({ currentFile: '.htaccess' });
-        await client.uploadFrom(htaccess, remoteHtaccess);
+        report({ currentFile: '.htaccess', workers: 0 });
+        const htClient = await connectFtpClientWithRetry();
+        try {
+          await htClient.uploadFrom(htaccess, remoteHtaccess);
+        } finally {
+          htClient.close();
+        }
         uploadedFiles += 1;
         uploadedBytes += st.size;
         report({ uploadedFiles, uploadedBytes, currentFile: '.htaccess' });
       }
     }
 
-    const pwd = await client.pwd().catch(() => remoteRoot);
+    const pwdClient = await connectFtpClientWithRetry();
+    let pwd = remoteRoot;
+    try {
+      pwd = await pwdClient.pwd();
+    } catch {
+      // keep remoteRoot
+    } finally {
+      pwdClient.close();
+    }
+
     report({ phase: 'done', currentFile: '' });
 
     return {
@@ -262,7 +508,7 @@ export async function syncToFtp({ onProgress } = {}) {
   } catch (err) {
     throw new Error(`FTP sync failed: ${err.message}.${ftpHint(err)}`);
   } finally {
-    client.close();
+    client?.close();
   }
 }
 
@@ -271,13 +517,16 @@ export async function testFtpConnection() {
     throw new Error('FTP not configured');
   }
   const client = new Client(config.ftp.timeoutMs);
+  applyFtpSettings(client);
   try {
-    await client.access({
-      host: config.ftp.host,
-      user: config.ftp.user,
-      password: config.ftp.password,
-      secure: config.ftp.secure,
-    });
+    await withRetry(() =>
+      client.access({
+        host: config.ftp.host,
+        user: config.ftp.user,
+        password: config.ftp.password,
+        secure: config.ftp.secure,
+      }),
+    );
     const pwd = await client.pwd();
     const list = await client.list();
     return {

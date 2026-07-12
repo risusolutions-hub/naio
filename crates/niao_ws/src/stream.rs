@@ -67,6 +67,7 @@ fn tls_config() -> Result<ClientConfig, WsError> {
     for cert in load_native_certs().certs {
         let _ = roots.add(cert);
     }
+    let _ = rustls::crypto::aws_lc_rs::default_provider().install_default();
     let cfg = ClientConfig::builder()
         .with_root_certificates(roots)
         .with_no_client_auth();

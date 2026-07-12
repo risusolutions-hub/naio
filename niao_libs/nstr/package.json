@@ -1,6 +1,6 @@
 {
     "name": "nstr",
-    "version": "0.2.2",
+    "version": "0.2.3",
     "kind": "native",
     "description": "String toolkit: case conversions, trim/pad/wrap, split/join, search, slugify, edit distance",
     "import_paths": [

@@ -4,7 +4,7 @@ mod bg;
 mod common;
 mod connection;
 pub(crate) mod handles;
-mod query;
+pub(crate) mod query;
 mod schema;
 mod stmt;
 pub(crate) mod types;

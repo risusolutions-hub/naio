@@ -190,7 +190,7 @@ export async function buildSitePayload() {
       lib: 'nm install <library>',
       libVersion: 'nm install <library>@<version>',
       verify: 'nm version',
-      examples: ['nm install --global', 'nm install nllm', 'nm install nrag@0.2.2'],
+      examples: ['nm install --global', 'nm install nllm', 'nm install nrag@0.2.3'],
     },
     nm: {
       registry: config.apiUrl,

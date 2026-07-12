@@ -85,6 +85,95 @@ impl Client {
         }
     }
 
+    pub fn mget(&mut self, keys: &[&str]) -> Result<Vec<Option<String>>, RedisError> {
+        if keys.is_empty() {
+            return Ok(Vec::new());
+        }
+        let mut parts: Vec<&[u8]> = vec![b"MGET"];
+        for k in keys {
+            parts.push(k.as_bytes());
+        }
+        let v = self.cmd(&parts)?;
+        match v {
+            Value::Array(items) => {
+                let mut out = Vec::with_capacity(items.len());
+                for item in items {
+                    match item {
+                        Value::BulkString(Some(b)) => {
+                            out.push(Some(String::from_utf8_lossy(&b).into_owned()))
+                        }
+                        Value::BulkString(None) | Value::Null => out.push(None),
+                        other => {
+                            return Err(RedisError(format!("unexpected MGET item: {other:?}")))
+                        }
+                    }
+                }
+                Ok(out)
+            }
+            other => Err(RedisError(format!("unexpected MGET reply: {other:?}"))),
+        }
+    }
+
+    pub fn mset(&mut self, pairs: &[(&str, &str)]) -> Result<(), RedisError> {
+        if pairs.is_empty() {
+            return Ok(());
+        }
+        let mut parts: Vec<&[u8]> = vec![b"MSET"];
+        for (k, v) in pairs {
+            parts.push(k.as_bytes());
+            parts.push(v.as_bytes());
+        }
+        self.cmd_ok(&parts)
+    }
+
+    pub fn hget(&mut self, key: &str, field: &str) -> Result<Option<String>, RedisError> {
+        let v = self.cmd(&[b"HGET", key.as_bytes(), field.as_bytes()])?;
+        match v {
+            Value::BulkString(Some(b)) => Ok(Some(String::from_utf8_lossy(&b).into_owned())),
+            Value::BulkString(None) | Value::Null => Ok(None),
+            other => Err(RedisError(format!("unexpected HGET reply: {other:?}"))),
+        }
+    }
+
+    pub fn hset(&mut self, key: &str, field: &str, value: &str) -> Result<(), RedisError> {
+        self.cmd_ok(&[b"HSET", key.as_bytes(), field.as_bytes(), value.as_bytes()])
+    }
+
+    pub fn hdel(&mut self, key: &str, field: &str) -> Result<(), RedisError> {
+        self.cmd_ok(&[b"HDEL", key.as_bytes(), field.as_bytes()])
+    }
+
+    pub fn hgetall(&mut self, key: &str) -> Result<Vec<(String, String)>, RedisError> {
+        let v = self.cmd(&[b"HGETALL", key.as_bytes()])?;
+        match v {
+            Value::Array(items) => {
+                if items.len() % 2 != 0 {
+                    return Err(RedisError("HGETALL odd element count".into()));
+                }
+                let mut out = Vec::with_capacity(items.len() / 2);
+                let mut it = items.into_iter();
+                while let (Some(k), Some(vv)) = (it.next(), it.next()) {
+                    let key_s = match k {
+                        Value::BulkString(Some(b)) => String::from_utf8_lossy(&b).into_owned(),
+                        other => return Err(RedisError(format!("HGETALL bad key: {other:?}"))),
+                    };
+                    let val_s = match vv {
+                        Value::BulkString(Some(b)) => String::from_utf8_lossy(&b).into_owned(),
+                        other => return Err(RedisError(format!("HGETALL bad value: {other:?}"))),
+                    };
+                    out.push((key_s, val_s));
+                }
+                Ok(out)
+            }
+            other => Err(RedisError(format!("unexpected HGETALL reply: {other:?}"))),
+        }
+    }
+
+    /// Public raw RESP command entry point.
+    pub fn raw_cmd(&mut self, parts: &[&[u8]]) -> Result<Value, RedisError> {
+        self.cmd(parts)
+    }
+
     fn auth(&mut self, password: &str) -> Result<(), RedisError> {
         self.cmd_ok(&[b"AUTH", password.as_bytes()])
     }

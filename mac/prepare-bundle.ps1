@@ -7,7 +7,7 @@ $LibsDest = Join-Path $MacHome "niao_libs"
 $SrcLibs = Join-Path $Root "niao_libs"
 $Engine = Join-Path $MacDir "engine"
 
-$Version = "0.2.2"
+$Version = "0.2.3"
 $Ts = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds().ToString()
 
 function Copy-LibManifest {

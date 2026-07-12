@@ -1,11 +1,11 @@
-﻿{
-    "name":  "re",
-    "version":  "0.2.2",
-    "kind":  "native",
-    "description":  "Regular expressions: match, find, replace, split",
-    "import_paths":  [
-                         "re",
-                         "std/re"
-                     ],
-    "builtin_count":  22
+{
+    "name": "re",
+    "version": "0.2.3",
+    "kind": "native",
+    "description": "Regular expressions: match, find, replace, split",
+    "import_paths": [
+        "re",
+        "std/re"
+    ],
+    "builtin_count": 22
 }

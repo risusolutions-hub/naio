@@ -1,6 +1,6 @@
 {
     "name":  "bignum",
-    "version":  "0.2.2",
+    "version":  "0.2.3",
     "kind":  "native",
     "description":  "Arbitrary-precision integer arithmetic",
     "import_paths":  [

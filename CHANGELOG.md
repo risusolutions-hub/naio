@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## 0.2.3 — 2026-07-13
+
+### Release
+- Toolchain (`niao`, `nm`) and distribution bundles bumped to **0.2.3**.
+- Standard library packages aligned to **0.2.3** (111 libs; `ahiru` remains at **0.3.0**).
+- Registry seeded with **113** packages (223 version tarballs including 0.2.2 + 0.2.3).
+- Windows x64/x86/ARM64 release artifacts published to `nm.c4compare.com`.
+
 ### Added
 - `niao_codec` crate (zero-deps base64, hex, UUID v4/v7, dotenv) with `codec` Niao module; replaces `base64`, `uuid`, and `dotenvy` in `ahiru_core` / `niao_runtime`.
 - `niao_json_core` crate (zero-deps JSON parse/stringify); wired into `niao_runtime` JSON builtins; replaces direct `serde_json` use in JSON hot paths.

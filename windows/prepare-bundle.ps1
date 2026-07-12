@@ -7,7 +7,7 @@ $PortableHome = Join-Path $WinDir "niao_home"
 $SrcLibs = Join-Path $Root "niao_libs"
 $ReleaseBin = Join-Path $Root "target\release"
 
-$Version = "0.2.2"
+$Version = "0.2.3"
 $Ts = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds().ToString()
 
 function Stage-Libs {

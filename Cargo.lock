@@ -24,7 +24,7 @@ dependencies = [
 
 [[package]]
 name = "ahiru_core"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "axum",
  "dashmap",
@@ -359,6 +359,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b4388bee8683e3d04af747c73422af53102d2bd24d9eadb6cbc100baef4b43f8"
 dependencies = [
  "serde_core",
+]
+
+[[package]]
+name = "bitmaps"
+version = "2.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "031043d04099746d8db04daf1fa424b2bc8bd69d92b25962dcde24da39ab64a2"
+dependencies = [
+ "typenum",
 ]
 
 [[package]]
@@ -2616,6 +2625,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "im-rc"
+version = "15.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "af1955a75fa080c677d3972822ec4bad316169ab1cfc6c257a942c2265dbe5fe"
+dependencies = [
+ "bitmaps",
+ "rand_core 0.6.4",
+ "rand_xoshiro",
+ "sized-chunks",
+ "typenum",
+ "version_check",
+]
+
+[[package]]
 name = "indexmap"
 version = "2.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3288,25 +3311,25 @@ checksum = "27b02d87554356db9e9a873add8782d4ea6e3e58ea071a9adb9a2e8ddb884a8b"
 
 [[package]]
 name = "niao_archive"
-version = "0.2.2"
+version = "0.2.3"
 
 [[package]]
 name = "niao_args"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "clap",
 ]
 
 [[package]]
 name = "niao_ast"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "serde",
 ]
 
 [[package]]
 name = "niao_bignum"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "num-bigint",
  "num-traits",
@@ -3314,7 +3337,7 @@ dependencies = [
 
 [[package]]
 name = "niao_bytecode"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "niao_ast",
  "niao_ir",
@@ -3326,7 +3349,7 @@ dependencies = [
 
 [[package]]
 name = "niao_classic"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "niao_tensor",
  "rand 0.8.6",
@@ -3335,7 +3358,7 @@ dependencies = [
 
 [[package]]
 name = "niao_cli"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "ahiru_core",
  "axum",
@@ -3359,11 +3382,11 @@ dependencies = [
 
 [[package]]
 name = "niao_codec"
-version = "0.2.2"
+version = "0.2.3"
 
 [[package]]
 name = "niao_collections"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "ahash",
  "indexmap",
@@ -3371,7 +3394,7 @@ dependencies = [
 
 [[package]]
 name = "niao_crypto"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "niao_codec",
  "niao_json_core",
@@ -3379,7 +3402,7 @@ dependencies = [
 
 [[package]]
 name = "niao_data"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "niao_tensor",
  "rand 0.8.6",
@@ -3388,7 +3411,7 @@ dependencies = [
 
 [[package]]
 name = "niao_db"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "niao_codec",
  "niao_crypto",
@@ -3397,7 +3420,7 @@ dependencies = [
 
 [[package]]
 name = "niao_docs"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "niao_ast",
  "niao_parser",
@@ -3405,14 +3428,14 @@ dependencies = [
 
 [[package]]
 name = "niao_errors"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "niao_ast",
 ]
 
 [[package]]
 name = "niao_format"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "niao_ast",
  "niao_parser",
@@ -3420,7 +3443,7 @@ dependencies = [
 
 [[package]]
 name = "niao_graph"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "niao_tensor",
  "rand 0.8.6",
@@ -3428,7 +3451,7 @@ dependencies = [
 
 [[package]]
 name = "niao_http"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "niao_archive",
  "niao_codec",
@@ -3439,7 +3462,7 @@ dependencies = [
 
 [[package]]
 name = "niao_interpreter"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "niao_ast",
  "niao_parser",
@@ -3448,14 +3471,14 @@ dependencies = [
 
 [[package]]
 name = "niao_io"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "socket2 0.5.10",
 ]
 
 [[package]]
 name = "niao_ir"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "niao_ast",
  "niao_runtime",
@@ -3463,14 +3486,14 @@ dependencies = [
 
 [[package]]
 name = "niao_json_core"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "serde",
 ]
 
 [[package]]
 name = "niao_lexer"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "niao_ast",
  "niao_errors",
@@ -3478,7 +3501,7 @@ dependencies = [
 
 [[package]]
 name = "niao_lint"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "niao_ast",
  "niao_parser",
@@ -3486,7 +3509,7 @@ dependencies = [
 
 [[package]]
 name = "niao_llm"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "candle-core",
  "candle-transformers",
@@ -3502,11 +3525,11 @@ dependencies = [
 
 [[package]]
 name = "niao_log"
-version = "0.2.2"
+version = "0.2.3"
 
 [[package]]
 name = "niao_ml"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "niao_data",
  "niao_graph",
@@ -3519,14 +3542,14 @@ dependencies = [
 
 [[package]]
 name = "niao_net_clients"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "suppaftp",
 ]
 
 [[package]]
 name = "niao_nm"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "clap",
  "niao_pkg",
@@ -3534,7 +3557,7 @@ dependencies = [
 
 [[package]]
 name = "niao_parser"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "niao_ast",
  "niao_errors",
@@ -3543,7 +3566,7 @@ dependencies = [
 
 [[package]]
 name = "niao_pkg"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "niao_archive",
  "niao_crypto",
@@ -3555,7 +3578,7 @@ dependencies = [
 
 [[package]]
 name = "niao_rag"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "fastembed",
  "niao_http",
@@ -3568,23 +3591,25 @@ dependencies = [
 
 [[package]]
 name = "niao_rand"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "rand 0.8.6",
 ]
 
 [[package]]
 name = "niao_regex"
-version = "0.2.2"
+version = "0.2.3"
 
 [[package]]
 name = "niao_runtime"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "ahiru_core",
  "bson",
  "futures",
+ "im-rc",
  "lettre",
+ "memmap2 0.9.11",
  "mongodb",
  "niao_archive",
  "niao_ast",
@@ -3603,6 +3628,7 @@ dependencies = [
  "niao_llm",
  "niao_ml",
  "niao_net_clients",
+ "niao_parser",
  "niao_rag",
  "niao_regex",
  "niao_tensor",
@@ -3620,7 +3646,7 @@ dependencies = [
 
 [[package]]
 name = "niao_tensor"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "candle-core",
  "criterion",
@@ -3632,11 +3658,11 @@ dependencies = [
 
 [[package]]
 name = "niao_time"
-version = "0.2.2"
+version = "0.2.3"
 
 [[package]]
 name = "niao_vm"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "ahiru_core",
  "cranelift-codegen",
@@ -3656,7 +3682,7 @@ dependencies = [
 
 [[package]]
 name = "niao_web"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "axum",
  "niao_ast",
@@ -3668,7 +3694,7 @@ dependencies = [
 
 [[package]]
 name = "niao_ws"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "niao_codec",
  "niao_crypto",
@@ -4337,6 +4363,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "rand_xoshiro"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6f97cdb2a36ed4183de61b2f824cc45c9f1037f28afe0a322e9fff4c108b5aaa"
+dependencies = [
+ "rand_core 0.6.4",
+]
+
+[[package]]
 name = "raw-cpuid"
 version = "10.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4950,6 +4985,16 @@ name = "simdutf8"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e3a9fe34e3e7a50316060351f37187a3f546bce95496156754b601a5fa71b76e"
+
+[[package]]
+name = "sized-chunks"
+version = "0.6.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "16d69225bde7a69b235da73377861095455d298f2b970996eec25ddbb42b3d1e"
+dependencies = [
+ "bitmaps",
+ "typenum",
+]
 
 [[package]]
 name = "slab"

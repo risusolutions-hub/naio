@@ -11,7 +11,7 @@ mod socket;
 mod smtp;
 mod tls;
 mod url;
-mod websocket;
+pub(crate) mod websocket;
 
 use crate::async_tasks::{
     cancel_task, spawn_async, task_done, task_result_value, task_wait_loop, with_task, AsyncValue,

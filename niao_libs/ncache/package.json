@@ -1,6 +1,6 @@
 {
     "name": "ncache",
-    "version": "0.2.2",
+    "version": "0.2.3",
     "kind": "native",
     "description": "In-memory LRU and TTL caches with hit/miss statistics",
     "import_paths": [

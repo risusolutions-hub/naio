@@ -1,6 +1,6 @@
 {
     "name": "ncolor",
-    "version": "0.2.2",
+    "version": "0.2.3",
     "kind": "native",
     "description": "Terminal styling: named colors, 256/truecolor, bold/underline, strip, NO_COLOR aware",
     "import_paths": [

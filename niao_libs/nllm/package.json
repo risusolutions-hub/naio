@@ -1,6 +1,6 @@
 {
     "name": "nllm",
-    "version": "0.2.2",
+    "version": "0.2.3",
     "kind": "native",
     "description": "Fast GGUF LLM inference: complete, chat, stream, tokenize via llama.cpp + Candle",
     "import_paths": [

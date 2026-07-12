@@ -1,5 +1,5 @@
 {
-    "niao_version":  "0.2.2",
+    "niao_version":  "0.2.3",
     "description":  "Niao standard library catalog — source packages for nm install",
     "libs":  [
                  "core",

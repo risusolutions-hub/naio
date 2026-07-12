@@ -40,6 +40,10 @@ On Windows you get Windows builds. Run the same command on a Linux or Mac machin
 |-----|--------|
 | `NIAO_SKIP_FTP=1` | Build only, no upload |
 | `NIAO_SKIP_SEED=1` | Skip catalog rebuild |
+| `FTP_CONCURRENCY=24` | Parallel FTP connections for small files (default 24, max 32) |
+| `FTP_DIR_CONCURRENCY=8` | Parallel connections while creating remote directories |
+| `FTP_RETRY_ATTEMPTS=3` | Retries on ECONNRESET / timeout |
+| `FTP_SMALL_FILE_MAX=524288` | Files ≤512 KB upload in parallel; larger files one-by-one |
 
 ## Quick start (local)
 

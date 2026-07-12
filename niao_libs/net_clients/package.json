@@ -1,6 +1,6 @@
 {
     "name": "net_clients",
-    "version": "0.2.2",
+    "version": "0.2.3",
     "kind": "native",
     "description": "SMTP and FTP client helpers",
     "import_paths": [

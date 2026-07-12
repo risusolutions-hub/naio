@@ -1,6 +1,6 @@
 {
     "name": "nfmt",
-    "version": "0.2.2",
+    "version": "0.2.3",
     "kind": "native",
     "description": "Formatting: {} templates, thousands separators, hex/oct/bin, humanized bytes/durations/counts",
     "import_paths": [

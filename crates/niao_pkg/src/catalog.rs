@@ -1,4 +1,6 @@
-use serde::{Deserialize, Serialize};
+use serde::de::{self, Visitor};
+use serde::{Deserialize, Deserializer, Serialize};
+use std::fmt;
 
 /// ahiru-server library version (may differ from toolchain for native lib updates).
 pub const AHIRU_LIB_VERSION: &str = "0.3.0";
@@ -6,12 +8,43 @@ pub const AHIRU_LIB_VERSION: &str = "0.3.0";
 /// Niao toolchain version (matches workspace `Cargo.toml`).
 pub const NIAO_TOOLCHAIN_VERSION: &str = env!("CARGO_PKG_VERSION");
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Default)]
 #[serde(rename_all = "lowercase")]
 pub enum LibKind {
     #[default]
     Native,
     Source,
+}
+
+impl<'de> Deserialize<'de> for LibKind {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct KindVisitor;
+
+        impl<'de> Visitor<'de> for KindVisitor {
+            type Value = LibKind;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+                formatter.write_str("\"native\" or \"source\"")
+            }
+
+            fn visit_str<E: de::Error>(self, value: &str) -> Result<Self::Value, E> {
+                match value {
+                    "native" | "Native" => Ok(LibKind::Native),
+                    "source" | "Source" => Ok(LibKind::Source),
+                    other => Err(de::Error::custom(format!("unknown lib kind: {other}"))),
+                }
+            }
+
+            fn visit_string<E: de::Error>(self, value: String) -> Result<Self::Value, E> {
+                self.visit_str(&value)
+            }
+        }
+
+        deserializer.deserialize_any(KindVisitor)
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

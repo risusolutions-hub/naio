@@ -53,6 +53,7 @@ fn default_tls_config() -> Result<ClientConfig, String> {
     for cert in native.certs {
         roots.add(cert).map_err(|e| format!("{e:?}"))?;
     }
+    let _ = rustls::crypto::aws_lc_rs::default_provider().install_default();
     Ok(ClientConfig::builder()
         .with_root_certificates(roots)
         .with_no_client_auth())

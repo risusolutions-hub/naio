@@ -102,7 +102,7 @@ async function main() {
   // 4. Package metadata
   try {
     const { res, data } = await json('GET', '/v1/packages/nllm');
-    if (!res.ok || data.version !== '0.2.2') throw new Error(JSON.stringify(data));
+    if (!res.ok || data.version !== '0.2.3') throw new Error(JSON.stringify(data));
     ok('GET /v1/packages/nllm');
   } catch (e) {
     fail('GET /v1/packages/nllm', e.message);
@@ -112,39 +112,39 @@ async function main() {
   let nllmShasum = '';
   let nllmTarballUrl = '';
   try {
-    const { res, data } = await json('GET', '/v1/packages/nllm/0.2.2');
+    const { res, data } = await json('GET', '/v1/packages/nllm/0.2.3');
     if (!res.ok || !data.dist?.tarball || !data.dist?.shasum) throw new Error(JSON.stringify(data));
     nllmShasum = data.dist.shasum;
     nllmTarballUrl = data.dist.tarball;
     if (!nllmTarballUrl.includes('taurus-tech.in') && !nllmTarballUrl.includes('c4compare.com')) {
       throw new Error(`unexpected tarball host: ${nllmTarballUrl}`);
     }
-    ok(`GET /v1/packages/nllm/0.2.2 (sha256 ${nllmShasum.slice(0, 12)}…)`);
+    ok(`GET /v1/packages/nllm/0.2.3 (sha256 ${nllmShasum.slice(0, 12)}…)`);
   } catch (e) {
-    fail('GET /v1/packages/nllm/0.2.2', e.message);
+    fail('GET /v1/packages/nllm/0.2.3', e.message);
   }
 
   // 6. Tarball download + checksum
   try {
-    const res = await fetch(`${base}/v1/packages/nllm/0.2.2/tarball`);
+    const res = await fetch(`${base}/v1/packages/nllm/0.2.3/tarball`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const buf = Buffer.from(await res.arrayBuffer());
     const hash = crypto.createHash('sha256').update(buf).digest('hex');
     if (nllmShasum && hash !== nllmShasum) throw new Error(`checksum mismatch: ${hash}`);
     await fs.mkdir(tmpDir, { recursive: true });
-    const tgz = path.join(tmpDir, 'nllm-0.2.2.tgz');
+    const tgz = path.join(tmpDir, 'nllm-0.2.3.tgz');
     await fs.writeFile(tgz, buf);
-    ok(`GET tarball nllm@0.2.2 (${buf.length} bytes, checksum OK)`);
+    ok(`GET tarball nllm@0.2.3 (${buf.length} bytes, checksum OK)`);
 
     // 7. Extract tarball
     const extractDir = path.join(tmpDir, 'extract-nllm');
     await fs.rm(extractDir, { recursive: true, force: true });
     await fs.mkdir(extractDir, { recursive: true });
     await tar.x({ file: tgz, cwd: extractDir });
-    const libJson = path.join(extractDir, 'nllm', '0.2.2', 'lib.json');
+    const libJson = path.join(extractDir, 'nllm', '0.2.3', 'lib.json');
     const lib = JSON.parse(await fs.readFile(libJson, 'utf8'));
     if (lib.name !== 'nllm') throw new Error('bad lib.json in tarball');
-    ok('tarball extracts valid nllm/0.2.2/lib.json');
+    ok('tarball extracts valid nllm/0.2.3/lib.json');
   } catch (e) {
     fail('tarball download/extract', e.message);
   }

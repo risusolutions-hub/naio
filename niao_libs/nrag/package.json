@@ -1,6 +1,6 @@
 {
     "name": "nrag",
-    "version": "0.2.2",
+    "version": "0.2.3",
     "kind": "native",
     "description": "Fast vector RAG: batch embeddings, parallel cosine search, index build/save",
     "import_paths": [

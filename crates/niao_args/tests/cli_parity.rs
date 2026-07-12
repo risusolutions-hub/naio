@@ -4,7 +4,7 @@ use clap::Parser;
 use fixtures::{nm_command, niao_command, snapshot_matches, Snapshot};
 use std::path::PathBuf;
 
-const VERSION: &str = "0.2.2";
+const VERSION: &str = "0.2.3";
 
 fn assert_parity_niao(argv: &[&str], clap_snap: Snapshot) {
     let cmd = niao_command(VERSION);

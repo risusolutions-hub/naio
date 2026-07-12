@@ -1,6 +1,6 @@
 {
     "name": "ntest",
-    "version": "0.2.2",
+    "version": "0.2.3",
     "kind": "native",
     "description": "Testing: case registration, runner with summaries, assert_eq/near/contains/error",
     "import_paths": [

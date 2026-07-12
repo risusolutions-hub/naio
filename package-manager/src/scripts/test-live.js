@@ -201,7 +201,7 @@ async function main() {
   });
 
   await testSection('Niao release endpoints', async () => {
-    const ver = health?.version || catalog?.niao_version || '0.2.2';
+    const ver = health?.version || catalog?.niao_version || '0.2.3';
     try {
       const { res, data } = await fetchJson(`${api}/v1/releases/niao`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);

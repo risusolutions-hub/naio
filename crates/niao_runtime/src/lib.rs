@@ -41,6 +41,81 @@ mod ntest;
 mod ncache;
 mod nvalid;
 mod ncolor;
+// --- expansion + advanced batch modules ---
+mod hw;
+mod nagent;
+mod narena;
+mod naws;
+mod nazure;
+mod nbatch;
+mod nbench;
+mod nbudget;
+mod ncanon;
+mod ncap;
+mod ncassette;
+mod ncolumnar;
+mod nconfig;
+mod ncontract;
+mod ncost;
+mod ncpu;
+mod ncrash;
+mod ncron;
+mod ncsv;
+mod nctx;
+mod ndebug;
+mod ndevice;
+mod ndiff;
+mod ndoc;
+mod nembed;
+mod nerrgen;
+mod neval;
+mod nexplain;
+mod nfallback;
+mod nfuzz;
+mod ngpu;
+mod nguard;
+mod nhotreload;
+mod nlazy;
+mod nlint;
+mod nmarkdown;
+mod nmigrate;
+mod nmem;
+mod nmmap;
+mod nmodel;
+mod nnpu;
+mod npace;
+mod npar;
+mod npersist;
+mod npipe;
+mod nprofile;
+mod nprompt;
+mod nprovider;
+mod nquota;
+mod nram;
+mod nredis;
+mod nreplay;
+mod nrepl;
+mod nscaffold;
+mod nschema;
+mod nsemver;
+mod nshell;
+mod nshape;
+mod nsimd;
+mod nsketch;
+mod nsmtp;
+mod nsnap;
+mod nsoa;
+mod nsupa;
+mod ntemplate;
+mod ntok;
+mod ntoml;
+mod ntrace;
+mod nurl;
+mod nvec;
+mod nwatch;
+mod nwhy;
+mod nworkspace;
+mod nws;
 #[cfg(feature = "nmongo")]
 pub mod nmongo;
 #[cfg(feature = "nrag")]
@@ -1508,6 +1583,79 @@ fn builtin_table() -> Vec<(&'static str, NativeFn)> {
     builtins.extend(nvis::builtins());
     builtins.extend(nenv::builtins());
     builtins.extend(ahiru::builtins());
+    builtins.extend(nagent::builtins());
+    builtins.extend(narena::builtins());
+    builtins.extend(naws::builtins());
+    builtins.extend(nazure::builtins());
+    builtins.extend(nbatch::builtins());
+    builtins.extend(nbench::builtins());
+    builtins.extend(nbudget::builtins());
+    builtins.extend(ncanon::builtins());
+    builtins.extend(ncap::builtins());
+    builtins.extend(ncassette::builtins());
+    builtins.extend(ncolumnar::builtins());
+    builtins.extend(nconfig::builtins());
+    builtins.extend(ncontract::builtins());
+    builtins.extend(ncost::builtins());
+    builtins.extend(ncpu::builtins());
+    builtins.extend(ncrash::builtins());
+    builtins.extend(ncron::builtins());
+    builtins.extend(ncsv::builtins());
+    builtins.extend(nctx::builtins());
+    builtins.extend(ndebug::builtins());
+    builtins.extend(ndevice::builtins());
+    builtins.extend(ndiff::builtins());
+    builtins.extend(ndoc::builtins());
+    builtins.extend(nembed::builtins());
+    builtins.extend(nerrgen::builtins());
+    builtins.extend(neval::builtins());
+    builtins.extend(nexplain::builtins());
+    builtins.extend(nfallback::builtins());
+    builtins.extend(nfuzz::builtins());
+    builtins.extend(ngpu::builtins());
+    builtins.extend(nguard::builtins());
+    builtins.extend(nhotreload::builtins());
+    builtins.extend(nlazy::builtins());
+    builtins.extend(nlint::builtins());
+    builtins.extend(nmarkdown::builtins());
+    builtins.extend(nmigrate::builtins());
+    builtins.extend(nmem::builtins());
+    builtins.extend(nmmap::builtins());
+    builtins.extend(nmodel::builtins());
+    builtins.extend(nnpu::builtins());
+    builtins.extend(npace::builtins());
+    builtins.extend(npar::builtins());
+    builtins.extend(npersist::builtins());
+    builtins.extend(npipe::builtins());
+    builtins.extend(nprofile::builtins());
+    builtins.extend(nprompt::builtins());
+    builtins.extend(nprovider::builtins());
+    builtins.extend(nquota::builtins());
+    builtins.extend(nram::builtins());
+    builtins.extend(nredis::builtins());
+    builtins.extend(nreplay::builtins());
+    builtins.extend(nrepl::builtins());
+    builtins.extend(nscaffold::builtins());
+    builtins.extend(nschema::builtins());
+    builtins.extend(nsemver::builtins());
+    builtins.extend(nshell::builtins());
+    builtins.extend(nshape::builtins());
+    builtins.extend(nsimd::builtins());
+    builtins.extend(nsketch::builtins());
+    builtins.extend(nsmtp::builtins());
+    builtins.extend(nsnap::builtins());
+    builtins.extend(nsoa::builtins());
+    builtins.extend(nsupa::builtins());
+    builtins.extend(ntemplate::builtins());
+    builtins.extend(ntok::builtins());
+    builtins.extend(ntoml::builtins());
+    builtins.extend(ntrace::builtins());
+    builtins.extend(nurl::builtins());
+    builtins.extend(nvec::builtins());
+    builtins.extend(nwatch::builtins());
+    builtins.extend(nwhy::builtins());
+    builtins.extend(nworkspace::builtins());
+    builtins.extend(nws::builtins());
     builtins
 }
 
@@ -1592,6 +1740,79 @@ pub fn install_native_modules(env: &Environment) {
     env.define(nml::MODULE_NAME.to_string(), nml::namespace().ref_cell());
     env.define(nvis::MODULE_NAME.to_string(), nvis::namespace().ref_cell());
     env.define(ahiru::MODULE_NAME.to_string(), ahiru::namespace().ref_cell());
+    env.define(nagent::MODULE_NAME.to_string(), nagent::namespace().ref_cell());
+    env.define(narena::MODULE_NAME.to_string(), narena::namespace().ref_cell());
+    env.define(naws::MODULE_NAME.to_string(), naws::namespace().ref_cell());
+    env.define(nazure::MODULE_NAME.to_string(), nazure::namespace().ref_cell());
+    env.define(nbatch::MODULE_NAME.to_string(), nbatch::namespace().ref_cell());
+    env.define(nbench::MODULE_NAME.to_string(), nbench::namespace().ref_cell());
+    env.define(nbudget::MODULE_NAME.to_string(), nbudget::namespace().ref_cell());
+    env.define(ncanon::MODULE_NAME.to_string(), ncanon::namespace().ref_cell());
+    env.define(ncap::MODULE_NAME.to_string(), ncap::namespace().ref_cell());
+    env.define(ncassette::MODULE_NAME.to_string(), ncassette::namespace().ref_cell());
+    env.define(ncolumnar::MODULE_NAME.to_string(), ncolumnar::namespace().ref_cell());
+    env.define(nconfig::MODULE_NAME.to_string(), nconfig::namespace().ref_cell());
+    env.define(ncontract::MODULE_NAME.to_string(), ncontract::namespace().ref_cell());
+    env.define(ncost::MODULE_NAME.to_string(), ncost::namespace().ref_cell());
+    env.define(ncpu::MODULE_NAME.to_string(), ncpu::namespace().ref_cell());
+    env.define(ncrash::MODULE_NAME.to_string(), ncrash::namespace().ref_cell());
+    env.define(ncron::MODULE_NAME.to_string(), ncron::namespace().ref_cell());
+    env.define(ncsv::MODULE_NAME.to_string(), ncsv::namespace().ref_cell());
+    env.define(nctx::MODULE_NAME.to_string(), nctx::namespace().ref_cell());
+    env.define(ndebug::MODULE_NAME.to_string(), ndebug::namespace().ref_cell());
+    env.define(ndevice::MODULE_NAME.to_string(), ndevice::namespace().ref_cell());
+    env.define(ndiff::MODULE_NAME.to_string(), ndiff::namespace().ref_cell());
+    env.define(ndoc::MODULE_NAME.to_string(), ndoc::namespace().ref_cell());
+    env.define(nembed::MODULE_NAME.to_string(), nembed::namespace().ref_cell());
+    env.define(nerrgen::MODULE_NAME.to_string(), nerrgen::namespace().ref_cell());
+    env.define(neval::MODULE_NAME.to_string(), neval::namespace().ref_cell());
+    env.define(nexplain::MODULE_NAME.to_string(), nexplain::namespace().ref_cell());
+    env.define(nfallback::MODULE_NAME.to_string(), nfallback::namespace().ref_cell());
+    env.define(nfuzz::MODULE_NAME.to_string(), nfuzz::namespace().ref_cell());
+    env.define(ngpu::MODULE_NAME.to_string(), ngpu::namespace().ref_cell());
+    env.define(nguard::MODULE_NAME.to_string(), nguard::namespace().ref_cell());
+    env.define(nhotreload::MODULE_NAME.to_string(), nhotreload::namespace().ref_cell());
+    env.define(nlazy::MODULE_NAME.to_string(), nlazy::namespace().ref_cell());
+    env.define(nlint::MODULE_NAME.to_string(), nlint::namespace().ref_cell());
+    env.define(nmarkdown::MODULE_NAME.to_string(), nmarkdown::namespace().ref_cell());
+    env.define(nmigrate::MODULE_NAME.to_string(), nmigrate::namespace().ref_cell());
+    env.define(nmem::MODULE_NAME.to_string(), nmem::namespace().ref_cell());
+    env.define(nmmap::MODULE_NAME.to_string(), nmmap::namespace().ref_cell());
+    env.define(nmodel::MODULE_NAME.to_string(), nmodel::namespace().ref_cell());
+    env.define(nnpu::MODULE_NAME.to_string(), nnpu::namespace().ref_cell());
+    env.define(npace::MODULE_NAME.to_string(), npace::namespace().ref_cell());
+    env.define(npar::MODULE_NAME.to_string(), npar::namespace().ref_cell());
+    env.define(npersist::MODULE_NAME.to_string(), npersist::namespace().ref_cell());
+    env.define(npipe::MODULE_NAME.to_string(), npipe::namespace().ref_cell());
+    env.define(nprofile::MODULE_NAME.to_string(), nprofile::namespace().ref_cell());
+    env.define(nprompt::MODULE_NAME.to_string(), nprompt::namespace().ref_cell());
+    env.define(nprovider::MODULE_NAME.to_string(), nprovider::namespace().ref_cell());
+    env.define(nquota::MODULE_NAME.to_string(), nquota::namespace().ref_cell());
+    env.define(nram::MODULE_NAME.to_string(), nram::namespace().ref_cell());
+    env.define(nredis::MODULE_NAME.to_string(), nredis::namespace().ref_cell());
+    env.define(nreplay::MODULE_NAME.to_string(), nreplay::namespace().ref_cell());
+    env.define(nrepl::MODULE_NAME.to_string(), nrepl::namespace().ref_cell());
+    env.define(nscaffold::MODULE_NAME.to_string(), nscaffold::namespace().ref_cell());
+    env.define(nschema::MODULE_NAME.to_string(), nschema::namespace().ref_cell());
+    env.define(nsemver::MODULE_NAME.to_string(), nsemver::namespace().ref_cell());
+    env.define(nshell::MODULE_NAME.to_string(), nshell::namespace().ref_cell());
+    env.define(nshape::MODULE_NAME.to_string(), nshape::namespace().ref_cell());
+    env.define(nsimd::MODULE_NAME.to_string(), nsimd::namespace().ref_cell());
+    env.define(nsketch::MODULE_NAME.to_string(), nsketch::namespace().ref_cell());
+    env.define(nsmtp::MODULE_NAME.to_string(), nsmtp::namespace().ref_cell());
+    env.define(nsnap::MODULE_NAME.to_string(), nsnap::namespace().ref_cell());
+    env.define(nsoa::MODULE_NAME.to_string(), nsoa::namespace().ref_cell());
+    env.define(nsupa::MODULE_NAME.to_string(), nsupa::namespace().ref_cell());
+    env.define(ntemplate::MODULE_NAME.to_string(), ntemplate::namespace().ref_cell());
+    env.define(ntok::MODULE_NAME.to_string(), ntok::namespace().ref_cell());
+    env.define(ntoml::MODULE_NAME.to_string(), ntoml::namespace().ref_cell());
+    env.define(ntrace::MODULE_NAME.to_string(), ntrace::namespace().ref_cell());
+    env.define(nurl::MODULE_NAME.to_string(), nurl::namespace().ref_cell());
+    env.define(nvec::MODULE_NAME.to_string(), nvec::namespace().ref_cell());
+    env.define(nwatch::MODULE_NAME.to_string(), nwatch::namespace().ref_cell());
+    env.define(nwhy::MODULE_NAME.to_string(), nwhy::namespace().ref_cell());
+    env.define(nworkspace::MODULE_NAME.to_string(), nworkspace::namespace().ref_cell());
+    env.define(nws::MODULE_NAME.to_string(), nws::namespace().ref_cell());
 }
 
 /// All native module import paths (flat builtins; no file lookup).
@@ -1609,6 +1830,24 @@ pub fn native_module_paths() -> &'static [&'static str] {
             "npg", "std/npg", "nmongo", "std/nmongo", "nrag", "std/nrag", "nllm", "std/nllm",
             "nos", "std/nos", "nenv", "std/nenv",
             "ncl", "std/ncl", "nml", "std/nml", "nvis", "std/nvis", "ahiru", "std/ahiru",
+            "nagent", "std/nagent", "narena", "std/narena", "naws", "std/naws", "nazure", "std/nazure",
+            "nbatch", "std/nbatch", "nbench", "std/nbench", "nbudget", "std/nbudget", "ncanon", "std/ncanon",
+            "ncap", "std/ncap", "ncassette", "std/ncassette", "ncolumnar", "std/ncolumnar", "nconfig", "std/nconfig",
+            "ncontract", "std/ncontract", "ncost", "std/ncost", "ncpu", "std/ncpu", "ncrash", "std/ncrash",
+            "ncron", "std/ncron", "ncsv", "std/ncsv", "nctx", "std/nctx", "ndebug", "std/ndebug",
+            "ndevice", "std/ndevice", "ndiff", "std/ndiff", "ndoc", "std/ndoc", "nembed", "std/nembed",
+            "nerrgen", "std/nerrgen", "neval", "std/neval", "nexplain", "std/nexplain", "nfallback", "std/nfallback",
+            "nfuzz", "std/nfuzz", "ngpu", "std/ngpu", "nguard", "std/nguard", "nhotreload", "std/nhotreload",
+            "nlazy", "std/nlazy", "nlint", "std/nlint", "nmarkdown", "std/nmarkdown", "nmigrate", "std/nmigrate",
+            "nmem", "std/nmem", "nmmap", "std/nmmap", "nmodel", "std/nmodel", "nnpu", "std/nnpu",
+            "npace", "std/npace", "npar", "std/npar", "npersist", "std/npersist", "npipe", "std/npipe",
+            "nprofile", "std/nprofile", "nprompt", "std/nprompt", "nprovider", "std/nprovider", "nquota", "std/nquota",
+            "nram", "std/nram", "nredis", "std/nredis", "nreplay", "std/nreplay", "nrepl", "std/nrepl",
+            "nscaffold", "std/nscaffold", "nschema", "std/nschema", "nsemver", "std/nsemver", "nshell", "std/nshell",
+            "nshape", "std/nshape", "nsimd", "std/nsimd", "nsketch", "std/nsketch", "nsmtp", "std/nsmtp",
+            "nsnap", "std/nsnap", "nsoa", "std/nsoa", "nsupa", "std/nsupa", "ntemplate", "std/ntemplate",
+            "ntok", "std/ntok", "ntoml", "std/ntoml", "ntrace", "std/ntrace", "nurl", "std/nurl",
+            "nvec", "std/nvec", "nwatch", "std/nwatch", "nwhy", "std/nwhy", "nworkspace", "std/nworkspace", "nws", "std/nws",
         ]
     }
     #[cfg(not(feature = "nmongo"))]
@@ -1624,6 +1863,24 @@ pub fn native_module_paths() -> &'static [&'static str] {
             "npg", "std/npg", "nrag", "std/nrag", "nllm", "std/nllm",
             "nos", "std/nos", "nenv", "std/nenv",
             "ncl", "std/ncl", "nml", "std/nml", "nvis", "std/nvis", "ahiru", "std/ahiru",
+            "nagent", "std/nagent", "narena", "std/narena", "naws", "std/naws", "nazure", "std/nazure",
+            "nbatch", "std/nbatch", "nbench", "std/nbench", "nbudget", "std/nbudget", "ncanon", "std/ncanon",
+            "ncap", "std/ncap", "ncassette", "std/ncassette", "ncolumnar", "std/ncolumnar", "nconfig", "std/nconfig",
+            "ncontract", "std/ncontract", "ncost", "std/ncost", "ncpu", "std/ncpu", "ncrash", "std/ncrash",
+            "ncron", "std/ncron", "ncsv", "std/ncsv", "nctx", "std/nctx", "ndebug", "std/ndebug",
+            "ndevice", "std/ndevice", "ndiff", "std/ndiff", "ndoc", "std/ndoc", "nembed", "std/nembed",
+            "nerrgen", "std/nerrgen", "neval", "std/neval", "nexplain", "std/nexplain", "nfallback", "std/nfallback",
+            "nfuzz", "std/nfuzz", "ngpu", "std/ngpu", "nguard", "std/nguard", "nhotreload", "std/nhotreload",
+            "nlazy", "std/nlazy", "nlint", "std/nlint", "nmarkdown", "std/nmarkdown", "nmigrate", "std/nmigrate",
+            "nmem", "std/nmem", "nmmap", "std/nmmap", "nmodel", "std/nmodel", "nnpu", "std/nnpu",
+            "npace", "std/npace", "npar", "std/npar", "npersist", "std/npersist", "npipe", "std/npipe",
+            "nprofile", "std/nprofile", "nprompt", "std/nprompt", "nprovider", "std/nprovider", "nquota", "std/nquota",
+            "nram", "std/nram", "nredis", "std/nredis", "nreplay", "std/nreplay", "nrepl", "std/nrepl",
+            "nscaffold", "std/nscaffold", "nschema", "std/nschema", "nsemver", "std/nsemver", "nshell", "std/nshell",
+            "nshape", "std/nshape", "nsimd", "std/nsimd", "nsketch", "std/nsketch", "nsmtp", "std/nsmtp",
+            "nsnap", "std/nsnap", "nsoa", "std/nsoa", "nsupa", "std/nsupa", "ntemplate", "std/ntemplate",
+            "ntok", "std/ntok", "ntoml", "std/ntoml", "ntrace", "std/ntrace", "nurl", "std/nurl",
+            "nvec", "std/nvec", "nwatch", "std/nwatch", "nwhy", "std/nwhy", "nworkspace", "std/nworkspace", "nws", "std/nws",
         ]
     }
 }
@@ -1718,6 +1975,79 @@ pub fn native_module_export_name(path: &str) -> Option<&'static str> {
     if ahiru::MODULE_PATHS.contains(&path) {
         return Some(ahiru::MODULE_NAME);
     }
+    if nagent::MODULE_PATHS.contains(&path) { return Some(nagent::MODULE_NAME); }
+    if narena::MODULE_PATHS.contains(&path) { return Some(narena::MODULE_NAME); }
+    if naws::MODULE_PATHS.contains(&path) { return Some(naws::MODULE_NAME); }
+    if nazure::MODULE_PATHS.contains(&path) { return Some(nazure::MODULE_NAME); }
+    if nbatch::MODULE_PATHS.contains(&path) { return Some(nbatch::MODULE_NAME); }
+    if nbench::MODULE_PATHS.contains(&path) { return Some(nbench::MODULE_NAME); }
+    if nbudget::MODULE_PATHS.contains(&path) { return Some(nbudget::MODULE_NAME); }
+    if ncanon::MODULE_PATHS.contains(&path) { return Some(ncanon::MODULE_NAME); }
+    if ncap::MODULE_PATHS.contains(&path) { return Some(ncap::MODULE_NAME); }
+    if ncassette::MODULE_PATHS.contains(&path) { return Some(ncassette::MODULE_NAME); }
+    if ncolumnar::MODULE_PATHS.contains(&path) { return Some(ncolumnar::MODULE_NAME); }
+    if nconfig::MODULE_PATHS.contains(&path) { return Some(nconfig::MODULE_NAME); }
+    if ncontract::MODULE_PATHS.contains(&path) { return Some(ncontract::MODULE_NAME); }
+    if ncost::MODULE_PATHS.contains(&path) { return Some(ncost::MODULE_NAME); }
+    if ncpu::MODULE_PATHS.contains(&path) { return Some(ncpu::MODULE_NAME); }
+    if ncrash::MODULE_PATHS.contains(&path) { return Some(ncrash::MODULE_NAME); }
+    if ncron::MODULE_PATHS.contains(&path) { return Some(ncron::MODULE_NAME); }
+    if ncsv::MODULE_PATHS.contains(&path) { return Some(ncsv::MODULE_NAME); }
+    if nctx::MODULE_PATHS.contains(&path) { return Some(nctx::MODULE_NAME); }
+    if ndebug::MODULE_PATHS.contains(&path) { return Some(ndebug::MODULE_NAME); }
+    if ndevice::MODULE_PATHS.contains(&path) { return Some(ndevice::MODULE_NAME); }
+    if ndiff::MODULE_PATHS.contains(&path) { return Some(ndiff::MODULE_NAME); }
+    if ndoc::MODULE_PATHS.contains(&path) { return Some(ndoc::MODULE_NAME); }
+    if nembed::MODULE_PATHS.contains(&path) { return Some(nembed::MODULE_NAME); }
+    if nerrgen::MODULE_PATHS.contains(&path) { return Some(nerrgen::MODULE_NAME); }
+    if neval::MODULE_PATHS.contains(&path) { return Some(neval::MODULE_NAME); }
+    if nexplain::MODULE_PATHS.contains(&path) { return Some(nexplain::MODULE_NAME); }
+    if nfallback::MODULE_PATHS.contains(&path) { return Some(nfallback::MODULE_NAME); }
+    if nfuzz::MODULE_PATHS.contains(&path) { return Some(nfuzz::MODULE_NAME); }
+    if ngpu::MODULE_PATHS.contains(&path) { return Some(ngpu::MODULE_NAME); }
+    if nguard::MODULE_PATHS.contains(&path) { return Some(nguard::MODULE_NAME); }
+    if nhotreload::MODULE_PATHS.contains(&path) { return Some(nhotreload::MODULE_NAME); }
+    if nlazy::MODULE_PATHS.contains(&path) { return Some(nlazy::MODULE_NAME); }
+    if nlint::MODULE_PATHS.contains(&path) { return Some(nlint::MODULE_NAME); }
+    if nmarkdown::MODULE_PATHS.contains(&path) { return Some(nmarkdown::MODULE_NAME); }
+    if nmigrate::MODULE_PATHS.contains(&path) { return Some(nmigrate::MODULE_NAME); }
+    if nmem::MODULE_PATHS.contains(&path) { return Some(nmem::MODULE_NAME); }
+    if nmmap::MODULE_PATHS.contains(&path) { return Some(nmmap::MODULE_NAME); }
+    if nmodel::MODULE_PATHS.contains(&path) { return Some(nmodel::MODULE_NAME); }
+    if nnpu::MODULE_PATHS.contains(&path) { return Some(nnpu::MODULE_NAME); }
+    if npace::MODULE_PATHS.contains(&path) { return Some(npace::MODULE_NAME); }
+    if npar::MODULE_PATHS.contains(&path) { return Some(npar::MODULE_NAME); }
+    if npersist::MODULE_PATHS.contains(&path) { return Some(npersist::MODULE_NAME); }
+    if npipe::MODULE_PATHS.contains(&path) { return Some(npipe::MODULE_NAME); }
+    if nprofile::MODULE_PATHS.contains(&path) { return Some(nprofile::MODULE_NAME); }
+    if nprompt::MODULE_PATHS.contains(&path) { return Some(nprompt::MODULE_NAME); }
+    if nprovider::MODULE_PATHS.contains(&path) { return Some(nprovider::MODULE_NAME); }
+    if nquota::MODULE_PATHS.contains(&path) { return Some(nquota::MODULE_NAME); }
+    if nram::MODULE_PATHS.contains(&path) { return Some(nram::MODULE_NAME); }
+    if nredis::MODULE_PATHS.contains(&path) { return Some(nredis::MODULE_NAME); }
+    if nreplay::MODULE_PATHS.contains(&path) { return Some(nreplay::MODULE_NAME); }
+    if nrepl::MODULE_PATHS.contains(&path) { return Some(nrepl::MODULE_NAME); }
+    if nscaffold::MODULE_PATHS.contains(&path) { return Some(nscaffold::MODULE_NAME); }
+    if nschema::MODULE_PATHS.contains(&path) { return Some(nschema::MODULE_NAME); }
+    if nsemver::MODULE_PATHS.contains(&path) { return Some(nsemver::MODULE_NAME); }
+    if nshell::MODULE_PATHS.contains(&path) { return Some(nshell::MODULE_NAME); }
+    if nshape::MODULE_PATHS.contains(&path) { return Some(nshape::MODULE_NAME); }
+    if nsimd::MODULE_PATHS.contains(&path) { return Some(nsimd::MODULE_NAME); }
+    if nsketch::MODULE_PATHS.contains(&path) { return Some(nsketch::MODULE_NAME); }
+    if nsmtp::MODULE_PATHS.contains(&path) { return Some(nsmtp::MODULE_NAME); }
+    if nsnap::MODULE_PATHS.contains(&path) { return Some(nsnap::MODULE_NAME); }
+    if nsoa::MODULE_PATHS.contains(&path) { return Some(nsoa::MODULE_NAME); }
+    if nsupa::MODULE_PATHS.contains(&path) { return Some(nsupa::MODULE_NAME); }
+    if ntemplate::MODULE_PATHS.contains(&path) { return Some(ntemplate::MODULE_NAME); }
+    if ntok::MODULE_PATHS.contains(&path) { return Some(ntok::MODULE_NAME); }
+    if ntoml::MODULE_PATHS.contains(&path) { return Some(ntoml::MODULE_NAME); }
+    if ntrace::MODULE_PATHS.contains(&path) { return Some(ntrace::MODULE_NAME); }
+    if nurl::MODULE_PATHS.contains(&path) { return Some(nurl::MODULE_NAME); }
+    if nvec::MODULE_PATHS.contains(&path) { return Some(nvec::MODULE_NAME); }
+    if nwatch::MODULE_PATHS.contains(&path) { return Some(nwatch::MODULE_NAME); }
+    if nwhy::MODULE_PATHS.contains(&path) { return Some(nwhy::MODULE_NAME); }
+    if nworkspace::MODULE_PATHS.contains(&path) { return Some(nworkspace::MODULE_NAME); }
+    if nws::MODULE_PATHS.contains(&path) { return Some(nws::MODULE_NAME); }
     None
 }
 

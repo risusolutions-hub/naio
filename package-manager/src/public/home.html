@@ -35,7 +35,7 @@
         <p class="hero-sub" id="tagline">
           Download the toolchain with <code class="font-mono hero-code">niao</code> runtime and <code class="font-mono hero-code">nm</code> package manager
         </p>
-        <span class="version-badge" id="version-badge">v0.2.2</span>
+        <span class="version-badge" id="version-badge">v0.2.3</span>
         <div class="hero-actions">
           <a class="btn btn-primary btn-install" href="#download">↓ Download installer</a>
           <a class="btn btn-ghost" href="#nm">nm guide</a>
@@ -427,7 +427,7 @@
     function renderNmExamples(examples) {
       const el = document.getElementById('nm-examples');
       if (!el) return;
-      const cmds = examples.length ? examples : ['nm install nllm', 'nm install nrag@0.2.2'];
+      const cmds = examples.length ? examples : ['nm install nllm', 'nm install nrag@0.2.3'];
       el.innerHTML = cmds.map((cmd, i) => `
         <div class="cmd-block cmd-block-sm">
           <code id="cmd-example-${i}">${esc(cmd)}</code>
@@ -454,7 +454,7 @@
     function renderReleasePanel(recommendedOverride) {
       const releases = site.releases || [];
       const sel = document.getElementById('release-select');
-      const fallbackVersion = site.latestRelease || site.version || '0.2.2';
+      const fallbackVersion = site.latestRelease || site.version || '0.2.3';
 
       if (!releases.length) {
         sel.innerHTML = `<option value="${esc(fallbackVersion)}" selected>v${esc(fallbackVersion)} (latest)</option>`;
@@ -512,7 +512,7 @@
       const website = links.website || 'https://niao.risu.in';
       const ecosystem = `${website}/ecosystem`;
 
-      document.getElementById('version-badge').textContent = `v${site.latestRelease || site.version || '0.2.2'}`;
+      document.getElementById('version-badge').textContent = `v${site.latestRelease || site.version || '0.2.3'}`;
       const taglineEl = document.getElementById('tagline');
       const tagline = site.tagline;
       if (tagline) {

@@ -70,8 +70,18 @@ export const config = {
     passive: process.env.FTP_PASSIVE !== 'false',
     timeoutMs: Number(process.env.FTP_TIMEOUT_MS || 90_000),
     autoSync: process.env.FTP_AUTO_SYNC !== 'false',
+    /** Parallel FTP connections for small files (lib.json, package.json, etc.) */
+    concurrency: Math.max(1, Math.min(32, Number(process.env.FTP_CONCURRENCY || 24))),
+    /** Files at or below this size upload in parallel; larger files go one-by-one */
+    smallFileMaxBytes: Number(process.env.FTP_SMALL_FILE_MAX || 512 * 1024),
+    /** Delay between parallel worker logins (ms) — avoids connection bursts on shared hosts */
+    loginStaggerMs: Number(process.env.FTP_LOGIN_STAGGER_MS || 150),
+    /** Retries for connect / upload on transient network errors */
+    retryAttempts: Math.max(1, Number(process.env.FTP_RETRY_ATTEMPTS || 3)),
+    /** Parallel connections while creating remote directories before upload */
+    dirConcurrency: Math.max(1, Math.min(12, Number(process.env.FTP_DIR_CONCURRENCY || 8))),
   },
-  niaoVersion: process.env.NIAO_VERSION || '0.2.2',
+  niaoVersion: process.env.NIAO_VERSION || '0.2.3',
   websiteUrl: (process.env.NIAO_WEBSITE_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://niao.risu.in').replace(/\/$/, ''),
   social: {
     discord: process.env.NIAO_DISCORD_URL || process.env.NEXT_PUBLIC_DISCORD_URL || 'https://discord.gg/XwmcDqxtm',

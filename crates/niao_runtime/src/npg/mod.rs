@@ -4,13 +4,13 @@ mod bg;
 mod common;
 mod config;
 mod connection;
-mod handles;
+pub(crate) mod handles;
 mod pg;
 mod pool;
-mod query;
+pub(crate) mod query;
 mod schema;
 mod stmt;
-mod types;
+pub(crate) mod types;
 
 use crate::{error_from_runtime, error_value, NativeFn, NiaoResult, RuntimeError, Value, ValueRef};
 use common::*;

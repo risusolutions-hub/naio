@@ -1,6 +1,6 @@
 {
     "name": "nvalid",
-    "version": "0.2.2",
+    "version": "0.2.3",
     "kind": "native",
     "description": "Data validation: schema rules, email/url/uuid/ipv4 checks, pattern matching",
     "import_paths": [

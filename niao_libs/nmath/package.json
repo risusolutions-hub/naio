@@ -1,6 +1,6 @@
 {
     "name": "nmath",
-    "version": "0.2.2",
+    "version": "0.2.3",
     "kind": "native",
     "description": "Scalar math and statistics: trig, logs, rounding, combinatorics, mean/median/stdev/percentile",
     "import_paths": [

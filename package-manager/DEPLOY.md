@@ -168,7 +168,7 @@ curl https://nms.taurus-tech.in/health
 curl https://nms.taurus-tech.in/v1/catalog
 
 # Static tarball (nm)
-curl -I https://nm.c4compare.com/v1/packages/nllm/0.2.2/tarball
+curl -I https://nm.c4compare.com/v1/packages/nllm/0.2.3/tarball
 
 # nm client
 nm install nllm
@@ -199,9 +199,9 @@ npm run deploy
 
 On Windows, `npm run deploy` builds **Windows x64** only. For Linux and macOS:
 
-1. Push tag `v0.2.2` or run GitHub Actions workflow **Niao Release**
+1. Push tag `v0.2.3` or run GitHub Actions workflow **Niao Release**
 2. Download artifacts from each matrix job
-3. Copy to `package-manager/data/releases/` as `niao-0.2.2-{platform}.{zip|tar.gz}`
+3. Copy to `package-manager/data/releases/` as `niao-0.2.3-{platform}.{zip|tar.gz}`
 4. Run `npm run write-manifest && npm run sync-ftp`
 
 Or set `NIAO_BUILD_ALL=1` with cross-compilation targets installed locally.
