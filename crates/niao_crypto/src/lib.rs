@@ -4,12 +4,14 @@ pub mod ct;
 pub mod hex;
 pub mod hmac;
 pub mod jwt;
+pub mod sha1;
 pub mod sha256;
 pub mod sha512;
 
 pub use ct::eq as constant_time_eq;
 pub use hmac::{hmac, hmac_sha256, hmac_sha512, HmacAlgorithm};
 pub use jwt::{sign_hs256, sign_hs512, verify, Validation, JwtError, Algorithm as JwtAlgorithm};
+pub use sha1::{hash as sha1, Sha1};
 pub use sha256::{hash as sha256, Sha256};
 pub use sha512::{hash as sha512, Sha512};
 

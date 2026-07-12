@@ -1,0 +1,9 @@
+// WebSocket client showcase.
+// Run:  niao run examples/ws_demo.niao
+import "net" as n
+
+fn main() {
+    print("WebSocket demo requires a live ws:// echo server.")
+    print("Example: net.ws_connect(\"ws://echo.websocket.events\")")
+    print("ws demo stub done")
+}

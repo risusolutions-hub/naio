@@ -10,6 +10,7 @@
 - `niao_regex` crate (Thompson NFA + Pike VM); replaces `regex` in `niao_runtime` `re` module with pattern LRU cache.
 - `niao_time` crate (civil date math, RFC3339/RFC2822, strftime subset, compact IANA tz); replaces `chrono` / `chrono-tz` in `niao_runtime` `time` module.
 - `niao_http` crate (HTTP/1.1 parser, sync client/server, URL utilities); replaces `ureq`, `httparse`, `tiny_http`, and direct `url` in `niao_runtime` / `niao_pkg`.
+- `niao_ws` crate (RFC 6455 WebSocket client/server); replaces `tungstenite` in `niao_runtime`; SHA-1 added to `niao_crypto` for handshake only.
 
 ## 0.2.2 — 2026-07-07
 

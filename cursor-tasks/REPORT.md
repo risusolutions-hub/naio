@@ -212,3 +212,34 @@ Run: `python benchmarks/benchmark_http.py` or `cargo run --release -p niao_http 
 - gzip response decode deferred to task 11.
 - Connection pool scaffold only (`Connection: close` per request for now).
 - `ahiru_core` stays on axum/hyper (per master plan).
+
+---
+
+## Task 08 — niao_ws (RFC 6455 WebSocket)
+
+### Status: complete
+
+### Removed direct dependencies
+- `tungstenite` removed from `crates/niao_runtime/Cargo.toml`.
+- `cargo tree -p niao_runtime -i tungstenite` — no match (transitive via `ahiru_core` → `tokio-tungstenite` remains until task 09).
+
+### Added
+- `crates/niao_ws` — handshake, frame codec (masking, fragmentation, ping/pong/close), ws/wss client, sync server accept.
+- `niao_crypto::sha1` (handshake-only, RFC 3174).
+- Wired `niao_runtime/src/net/websocket.rs` to `niao_ws`.
+- `examples/ws_demo.niao`, `benchmarks/benchmark_ws.py`, `ws_bench` binary.
+
+### Tests
+- Frame: masking rules, 16-bit length, invalid close codes, RFC6455 accept vector.
+- Integration: client↔server echo.
+
+### Benchmarks (release, 100k echo msgs on one connection, Windows)
+| Op | niao_ws |
+|---|---|
+| echo | **47,762 msg/s** |
+
+Run: `python benchmarks/benchmark_ws.py` or `cargo run --release -p niao_ws --bin ws_bench`.
+
+### Notes
+- `ahiru_core` keeps `tokio-tungstenite` for axum WebSocket until task 09 async migration map.
+- Auto-responds to ping with pong; interleaved ping during read returns after pong handled.

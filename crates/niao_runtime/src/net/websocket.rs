@@ -1,15 +1,14 @@
-//! WebSocket client via `tungstenite`.
+//! WebSocket client via `niao_ws`.
 
 use super::handles::{alloc_handle, remove_handle, with_handle_mut};
 use super::socket::NetHandle;
 use super::{bytes_to_int_array, net_error, ok_nil, ok_string, string_arg, NetResult};
 use niao_ast::Span;
 use niao_errors::codes;
-use tungstenite::{connect, Message};
-use tungstenite::stream::MaybeTlsStream;
+use niao_ws::{connect, Message, WebSocket, WsStream};
 
 pub struct WsConnection {
-    pub socket: tungstenite::WebSocket<MaybeTlsStream<std::net::TcpStream>>,
+    pub socket: WebSocket<WsStream>,
 }
 
 pub fn net_ws_connect(args: &[crate::ValueRef], span: Span) -> NetResult {
@@ -37,7 +36,7 @@ pub fn net_ws_send(args: &[crate::ValueRef], span: Span) -> NetResult {
         if let NetHandle::WebSocket(ws) = handle {
             let text = String::from_utf8_lossy(&msg).into_owned();
             ws.socket
-                .send(Message::Text(text.into()))
+                .send(Message::Text(text))
                 .map_err(|e| e.to_string())?;
             Ok(ok_nil())
         } else {
@@ -52,8 +51,8 @@ pub fn net_ws_recv(args: &[crate::ValueRef], span: Span) -> NetResult {
     with_handle_mut(id, "net_ws_recv", span, |handle| {
         if let NetHandle::WebSocket(ws) = handle {
             match ws.socket.read() {
-                Ok(Message::Text(s)) => Ok(ok_string(s.to_string())),
-                Ok(Message::Binary(b)) => Ok(bytes_to_int_array(b.to_vec())),
+                Ok(Message::Text(s)) => Ok(ok_string(s)),
+                Ok(Message::Binary(b)) => Ok(bytes_to_int_array(b)),
                 Ok(Message::Close(_)) => Ok(ok_nil()),
                 Ok(_) => Ok(ok_string(String::new())),
                 Err(e) => Err(e.to_string()),
@@ -66,7 +65,7 @@ pub fn net_ws_recv(args: &[crate::ValueRef], span: Span) -> NetResult {
 
 pub fn net_ws_close(args: &[crate::ValueRef], span: Span) -> NetResult {
     super::arity(args, 1, "net_ws_close", span)?;
-    let id = super::handle_arg(args, 0, "net_ws_close", span)?;
+    let id = super::handle_arg(args, 0, "net_ws_close", span)? as u64;
     if let Some(NetHandle::WebSocket(mut ws)) = remove_handle(id) {
         let _ = ws.socket.close(None);
         Ok(ok_nil())

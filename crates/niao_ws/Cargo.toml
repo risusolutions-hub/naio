@@ -1,0 +1,16 @@
+[package]
+name = "niao_ws"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+niao_http = { workspace = true }
+niao_crypto = { workspace = true }
+niao_codec = { workspace = true }
+rustls = "0.23"
+rustls-native-certs = "0.8"
+rustls-pki-types = "1"
+
+[[bin]]
+name = "ws_bench"
+path = "src/bin/ws_bench.rs"

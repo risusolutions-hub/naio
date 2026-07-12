@@ -3755,6 +3755,7 @@ dependencies = [
  "niao_regex",
  "niao_tensor",
  "niao_time",
+ "niao_ws",
  "num-bigint",
  "num-traits",
  "postgres",
@@ -3770,7 +3771,6 @@ dependencies = [
  "socket2 0.5.10",
  "suppaftp",
  "tokio",
- "tungstenite 0.26.2",
 ]
 
 [[package]]
@@ -3819,6 +3819,18 @@ dependencies = [
  "niao_parser",
  "niao_runtime",
  "tokio",
+]
+
+[[package]]
+name = "niao_ws"
+version = "0.2.2"
+dependencies = [
+ "niao_codec",
+ "niao_crypto",
+ "niao_http",
+ "rustls",
+ "rustls-native-certs",
+ "rustls-pki-types",
 ]
 
 [[package]]
@@ -6209,7 +6221,6 @@ dependencies = [
  "sha1",
  "thiserror 2.0.18",
  "utf-8",
- "webpki-roots 0.26.11",
 ]
 
 [[package]]
