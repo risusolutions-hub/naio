@@ -1,0 +1,9 @@
+[package]
+name = "niao_regex"
+version.workspace = true
+edition.workspace = true
+description = "Zero-dep Thompson NFA + Pike VM regex engine for Niao"
+
+[[bin]]
+name = "regex_bench"
+path = "src/bin/regex_bench.rs"

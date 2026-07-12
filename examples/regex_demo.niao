@@ -1,0 +1,15 @@
+// Regex demo — match, find, replace via native `re` module.
+import "re"
+
+let text = "Order #1042 shipped to alice@example.com on 2026-07-12"
+
+if re.test(r"\d{4}", text) {
+    print("found a 4-digit number")
+}
+
+let m = re.search(r"(\w+)@(\w+\.\w+)", text)
+if m != nil {
+    print("email match:", m.full)
+}
+
+print("replaced:", re.replace(r"#\d+", text, "#XXXX"))

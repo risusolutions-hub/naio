@@ -3740,6 +3740,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "niao_regex"
+version = "0.2.2"
+
+[[package]]
 name = "niao_runtime"
 version = "0.2.2"
 dependencies = [
@@ -3764,6 +3768,7 @@ dependencies = [
  "niao_llm",
  "niao_ml",
  "niao_rag",
+ "niao_regex",
  "niao_tensor",
  "num-bigint",
  "num-traits",
@@ -3771,7 +3776,6 @@ dependencies = [
  "r2d2",
  "r2d2_postgres",
  "rayon",
- "regex",
  "rusqlite",
  "rustls",
  "rustls-native-certs 0.8.4",

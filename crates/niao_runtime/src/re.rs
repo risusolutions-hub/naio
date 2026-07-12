@@ -9,7 +9,7 @@
 use crate::{NativeFn, NiaoResult, RuntimeError, Value, ValueRef};
 use niao_ast::Span;
 use niao_errors::codes;
-use regex::{Captures, Regex};
+use niao_regex::{escape, Captures, Match, Regex};
 use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -121,9 +121,30 @@ fn apply_flags(pattern: &str, flags: Option<&str>) -> String {
     }
 }
 
+thread_local! {
+    static RE_HANDLES: RefCell<HashMap<u64, Regex>> = RefCell::new(HashMap::new());
+    static NEXT_RE_HANDLE: Cell<u64> = const { Cell::new(1) };
+    static RE_PATTERN_CACHE: RefCell<HashMap<String, Regex>> = RefCell::new(HashMap::new());
+}
+
+const RE_CACHE_CAP: usize = 64;
+
 fn compile_pattern(pattern: &str, flags: Option<&str>, span: Span) -> NiaoResult<Regex> {
     let full = apply_flags(pattern, flags);
-    Regex::new(&full).map_err(|e| pattern_err(span, format!("invalid regex pattern: {e}")))
+    RE_PATTERN_CACHE.with(|cache| {
+        let mut map = cache.borrow_mut();
+        if let Some(re) = map.get(&full) {
+            return Ok(re.clone());
+        }
+        let re = Regex::new(&full).map_err(|e| pattern_err(span, format!("invalid regex pattern: {e}")))?;
+        if map.len() >= RE_CACHE_CAP {
+            if let Some(k) = map.keys().next().cloned() {
+                map.remove(&k);
+            }
+        }
+        map.insert(full, re.clone());
+        Ok(re)
+    })
 }
 
 fn match_object(caps: &Captures<'_>) -> Value {
@@ -162,14 +183,7 @@ fn simple_match_object(text: &str, start: usize, end: usize) -> Value {
 }
 
 fn is_full_match(re: &Regex, text: &str) -> bool {
-    re.find(text)
-        .map(|m| m.start() == 0 && m.end() == text.len())
-        .unwrap_or(false)
-}
-
-thread_local! {
-    static RE_HANDLES: RefCell<HashMap<u64, Regex>> = RefCell::new(HashMap::new());
-    static NEXT_RE_HANDLE: Cell<u64> = const { Cell::new(1) };
+    re.is_full_match(text)
 }
 
 fn alloc_regex(re: Regex) -> u64 {
@@ -220,7 +234,7 @@ fn re_valid(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
 fn re_escape(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity(args, 1, "re_escape", span)?;
     let text = string_arg(args, 0, "re_escape", span)?;
-    Ok(Value::String(regex::escape(&text)).ref_cell())
+    Ok(Value::String(escape(&text)).ref_cell())
 }
 
 fn re_compile(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {

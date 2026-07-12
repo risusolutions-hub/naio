@@ -7,6 +7,7 @@
 - `niao_json_core` crate (zero-deps JSON parse/stringify); wired into `niao_runtime` JSON builtins; replaces direct `serde_json` use in JSON hot paths.
 - TOML parser in `niao_json_core::toml`; replaces `toml` crate in `ahiru_core` / `niao_cli` config paths.
 - `niao_crypto` crate (SHA-256/512, HMAC, JWT HS256/HS512); replaces `sha2`, `hmac`, `jsonwebtoken` in `ahiru_core` and `sha2` in `niao_pkg`.
+- `niao_regex` crate (Thompson NFA + Pike VM); replaces `regex` in `niao_runtime` `re` module with pattern LRU cache.
 
 ## 0.2.2 — 2026-07-07
 

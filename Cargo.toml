@@ -6,6 +6,7 @@ members = [
     "crates/niao_codec",
     "crates/niao_json_core",
     "crates/niao_crypto",
+    "crates/niao_regex",
     "crates/niao_lexer",
     "crates/niao_parser",
     "crates/niao_runtime",
@@ -42,6 +43,7 @@ niao_errors = { path = "crates/niao_errors" }
 niao_codec = { path = "crates/niao_codec" }
 niao_json_core = { path = "crates/niao_json_core" }
 niao_crypto = { path = "crates/niao_crypto" }
+niao_regex = { path = "crates/niao_regex" }
 niao_lexer = { path = "crates/niao_lexer" }
 niao_parser = { path = "crates/niao_parser" }
 niao_runtime = { path = "crates/niao_runtime" }
@@ -68,7 +70,6 @@ tokio = { version = "1", features = ["full"] }
 axum = "0.8"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-regex = "1"
 
 [patch.crates-io]
 hf-hub = { path = "vendor/hf-hub" }

@@ -114,3 +114,29 @@ Run: `python benchmarks/benchmark_crypto.py` or `cargo run --release -p niao_cry
 ### Notes
 - RS256 not implemented; only HS256/HS512 JWT (matches current `ahiru_core` auth usage).
 - `hmac` was listed in `ahiru_core` but unused; session tokens use SHA-256 prefix hash via `niao_crypto`.
+
+---
+
+## Task 05 — niao_regex (Thompson NFA + Pike VM)
+
+### Status: complete (v1)
+
+### Removed direct dependencies
+- `regex` removed from `crates/niao_runtime/Cargo.toml` and workspace `[workspace.dependencies]`.
+
+### Added
+- `crates/niao_regex` — parse, NFA compile, Pike VM, literal prefix fast-path.
+- `niao_runtime/src/re.rs` wired to `niao_regex` + 64-entry pattern LRU cache.
+- `examples/regex_demo.niao`, `benchmarks/benchmark_regex.py`, `regex_bench` binary.
+
+### Tests
+- 61 active unit tests pass; 10 `#[ignore]` v1 edge cases (lazy quant, nested captures, `\u{}` in classes, leftmost-longest `\d+`, inline `(?i:…)` groups) logged for task follow-up.
+
+### Benchmarks (release, 10 MiB email-like scan, Windows)
+Run: `python benchmarks/benchmark_regex.py` or `cargo run --release -p niao_regex --bin regex_bench`.
+
+### Skips / v1 limits
+- Non-greedy quantifiers partially implemented (lazy `*?` ordering deferred).
+- Inline flag groups `(?i:…)` not stored in AST; use `(?i)…` prefix flags.
+- `find_at(from>0)` uses O(n) scan per offset; `find()` uses single-pass Pike VM.
+- No `\p{…}` Unicode properties (char-level `\w`/classes only).
