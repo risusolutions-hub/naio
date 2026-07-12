@@ -368,7 +368,7 @@ impl Vm {
         self.dsa_loop_state = (0..self.functions.len())
             .map(|_| DsaLoopState::default())
             .collect();
-        self.field_names = module.field_names.clone();
+        // `field_names` already populated above; only `slot_names` remains.
         self.slot_names = module.slot_names.clone();
     }
 
@@ -477,17 +477,21 @@ impl Vm {
             return Ok(StepOutcome::Continue);
         }
 
-        if let Some(region) = self.dsa_loops[func_idx].get(&ip) {
-            if self.dsa_loop_state[func_idx].may_fuse(ip) {
-                if let Some(exit) = dsa_loops::run_fused(
-                    region,
-                    &mut self.frames[frame_top].locals,
-                    &self.native_ds,
-                    &self.heap,
-                ) {
-                    self.dsa_loop_state[func_idx].mark_fused(ip);
-                    self.frames[frame_top].ip = exit;
-                    return Ok(StepOutcome::Continue);
+        // Most functions have no fused DSA loops; skip the per-instruction
+        // hashmap probe entirely in that (common) case.
+        if !self.dsa_loops[func_idx].is_empty() {
+            if let Some(region) = self.dsa_loops[func_idx].get(&ip) {
+                if self.dsa_loop_state[func_idx].may_fuse(ip) {
+                    if let Some(exit) = dsa_loops::run_fused(
+                        region,
+                        &mut self.frames[frame_top].locals,
+                        &self.native_ds,
+                        &self.heap,
+                    ) {
+                        self.dsa_loop_state[func_idx].mark_fused(ip);
+                        self.frames[frame_top].ip = exit;
+                        return Ok(StepOutcome::Continue);
+                    }
                 }
             }
         }

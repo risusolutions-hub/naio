@@ -55,6 +55,7 @@ impl super::Vm {
         self.gc_threshold = GC_THRESHOLD_INITIAL;
     }
 
+    #[inline]
     pub(crate) fn alloc_heap(&mut self, value: ValueRef) -> u32 {
         let idx = self.heap.len() as u32;
         self.heap.push(value);
@@ -70,6 +71,7 @@ impl super::Vm {
         FastVal::Native(idx)
     }
 
+    #[inline]
     pub(crate) fn maybe_collect(&mut self) {
         if self.gc_defer > 0 {
             return;
