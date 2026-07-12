@@ -17,3 +17,6 @@ target/
 .fastembed_cache/
 package-manager/.env
 package-manager/.test-*/
+package-manager/data/
+package-manager/node_modules/
+package-manager/public/

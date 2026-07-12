@@ -6,5 +6,10 @@ data/
 .DS_Store
 .test-tmp/
 .test-niao-home/
+.test-neko-home/
+.test-nm-*/
+.test-deploy-verify/
+.deploy-data-backup/
 .tools/
-public/
+.vercel
+.env*

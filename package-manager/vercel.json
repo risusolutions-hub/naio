@@ -1,12 +1,18 @@
 {
-  "installCommand": "npm install",
-  "buildCommand": "npm run vercel-build",
+  "framework": null,
+  "installCommand": "npm install && npm run vercel-build",
   "functions": {
     "api/index.js": {
-      "includeFiles": "src/public/**"
+      "includeFiles": "src/**",
+      "maxDuration": 30
     }
   },
   "rewrites": [
-    { "source": "/(.*)", "destination": "/api/index.js" }
+    { "source": "/assets/:path*", "destination": "/api/index" },
+    { "source": "/admin/:path*", "destination": "/api/index" },
+    { "source": "/v1/:path*", "destination": "/api/index" },
+    { "source": "/health", "destination": "/api/index" },
+    { "source": "/packages/:path*", "destination": "/api/index" },
+    { "source": "/", "destination": "/api/index" }
   ]
 }

@@ -86,7 +86,7 @@ fn fetch_text(url: &str) -> PkgResult<String> {
         .map_err(|e| PkgError::Message(format!("registry read failed: {e}")))
 }
 
-fn fetch_bytes(url: &str) -> PkgResult<Vec<u8>> {
+pub fn fetch_bytes(url: &str) -> PkgResult<Vec<u8>> {
     let response = ureq::get(url)
         .call()
         .map_err(|e| PkgError::Message(format!("registry download failed: {e}")))?;

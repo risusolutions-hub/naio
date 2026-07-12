@@ -216,12 +216,17 @@ async function buildWindowsInstaller() {
   const prepareScript = path.join(winDir, 'prepare-bundle.ps1');
   const installerDir = path.join(winDir, 'installer');
 
-  console.log('  Building NiaoSetup.exe…');
+  console.log('  Building NiaoUninstall.exe…');
+  execSync('cargo build --release --bin NiaoUninstall', { cwd: installerDir, stdio: 'inherit' });
+
+  console.log('  Staging Windows payload…');
   execSync(`powershell -NoProfile -ExecutionPolicy Bypass -File "${prepareScript}"`, {
     cwd: repoRoot,
     stdio: 'inherit',
   });
-  execSync('cargo build --release', { cwd: installerDir, stdio: 'inherit' });
+
+  console.log('  Building NiaoSetup.exe…');
+  execSync('cargo build --release --bin NiaoSetup', { cwd: installerDir, stdio: 'inherit' });
 
   const setupSrc = path.join(installerDir, 'target', 'release', 'NiaoSetup.exe');
   const outName = releaseInstallerFileName(version, 'windows-x64', platform);

@@ -95,7 +95,13 @@ function Write-InstallJson {
         source_root = ""
         libs = $Libs
     }
-    $install | ConvertTo-Json -Depth 6 | Set-Content (Join-Path $HomeRoot "install.json") -Encoding UTF8
+    Write-Utf8NoBom (Join-Path $HomeRoot "install.json") ($install | ConvertTo-Json -Depth 6)
+}
+
+function Write-Utf8NoBom {
+    param([string]$Path, [string]$Content)
+    $enc = New-Object System.Text.UTF8Encoding $false
+    [System.IO.File]::WriteAllText($Path, $Content, $enc)
 }
 
 Write-Host "== Preparing Windows bundle =="
@@ -117,11 +123,38 @@ $installPayload = @{
     niao_version = $Version
     mode = "global"
     installed_at = $Ts
-    root = "%USERPROFILE%\.niao"
+    root = "%LOCALAPPDATA%\Programs\Niao"
     source_root = ""
     libs = $libs
 }
-$installPayload | ConvertTo-Json -Depth 6 | Set-Content (Join-Path $Payload "install.json") -Encoding UTF8
+$installPayload | ConvertTo-Json -Depth 6 | ForEach-Object {
+    Write-Utf8NoBom (Join-Path $Payload "install.json") $_
+}
+
+$terminalCmd = @"
+@echo off
+setlocal EnableExtensions
+set "NIAO_HOME=%~dp0.."
+set "PATH=%~dp0;%PATH%"
+cd /d "%USERPROFILE%"
+title Niao $Version
+echo.
+echo   Niao $Version Terminal
+echo   Try: niao version ^| niao run examples\hello.niao ^| nm install nllm
+echo   Update: niao update ^| nm update --toolchain
+echo   Uninstall: niao uninstall
+echo.
+cmd /k
+"@
+Set-Content (Join-Path $Payload "bin\NiaoTerminal.cmd") $terminalCmd -Encoding ASCII
+
+$uninstallSrc = Join-Path $WinDir "installer\target\release\NiaoUninstall.exe"
+if (Test-Path $uninstallSrc) {
+    Copy-Item $uninstallSrc (Join-Path $Payload "bin\uninstall.exe") -Force
+    Write-Host "  bundled uninstall.exe"
+} else {
+    Write-Host "  (skip uninstall.exe - build NiaoUninstall first)"
+}
 
 $exPayload = Join-Path $Payload "examples"
 New-Item -ItemType Directory -Force -Path $exPayload | Out-Null

@@ -8,6 +8,7 @@ mod paths;
 mod registry;
 mod source;
 mod state;
+mod toolchain_update;
 mod uninstall;
 
 pub use catalog::{
@@ -31,5 +32,6 @@ pub use registry::{
     fetch_catalog, is_remote_lib, latest_lib_version, load_lib_from_registry, registry_cache_dir,
     registry_url, DEFAULT_REGISTRY_URL,
 };
+pub use toolchain_update::{update_toolchain, ToolchainUpdateOptions};
 pub use state::{InstalledLib, InstallState, LibsCatalog};
 pub use uninstall::{load_catalog_optional, uninstall_libs, UninstallReport};

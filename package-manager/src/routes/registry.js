@@ -9,23 +9,26 @@ import {
   readVersionManifest,
   tarballPath,
 } from '../services/storage.js';
-import { remoteTarballUrl } from '../services/remote-registry.js';
+import { remoteTarballUrl, packageFromCatalogEntry } from '../services/remote-registry.js';
 import { config } from '../config.js';
 import { publicDir } from '../lib/paths.js';
 import {
   buildSitePayload,
   hostedSourceExists,
   hostedSourcePath,
+  resolveReleaseDetail,
 } from '../services/site.js';
 import {
   getLatestReleaseFromDb,
-  getReleaseFromDb,
+  getPackageFromDb,
   getVersionFromDb,
   isMongoPrimary,
   listReleasesFromDb,
   DEFAULT_PLATFORMS,
+  normalizePublicDist,
+  distTarballUrl,
 } from '../db/registry-db.js';
-import { mongoEnabled, isDbReady } from '../db/mongo.js';
+import { isDbReady } from '../db/mongo.js';
 
 const homePage = path.join(publicDir, 'home.html');
 
@@ -54,7 +57,13 @@ export async function registryRoutes(app) {
     if (isMongoPrimary()) {
       const releases = await listReleasesFromDb();
       const latest = await getLatestReleaseFromDb();
-      return { releases, latest: latest?.version || config.niaoVersion };
+      if (releases.length > 0) {
+        return { releases, latest: latest?.version || config.niaoVersion };
+      }
+    }
+    const release = await resolveReleaseDetail(config.niaoVersion);
+    if (release) {
+      return { releases: [release], latest: release.version };
     }
     return {
       releases: [{ version: config.niaoVersion, status: 'active', is_latest: true }],
@@ -64,44 +73,22 @@ export async function registryRoutes(app) {
 
   app.get('/v1/releases/niao/:version', async (req, reply) => {
     const { version } = req.params;
-    if (isMongoPrimary()) {
-      const release = await getReleaseFromDb(version);
-      if (release) return release;
-    }
-    if (version === config.niaoVersion) {
-      return getReleaseFromDb(version).catch(() => ({
-        version,
-        status: 'active',
-        is_latest: true,
-        variants: [],
-      }));
-    }
+    const release = await resolveReleaseDetail(version);
+    if (release) return release;
     reply.code(404);
     return { error: `release not found: ${version}` };
   });
 
   app.get('/v1/releases/niao/:version/:variantId', async (req, reply) => {
     const { version, variantId } = req.params;
-    if (isMongoPrimary()) {
-      const release = await getReleaseFromDb(version);
-      const variant = release?.variants?.find((v) => v.id === variantId);
-      if (variant?.url) {
-        return reply.redirect(302, variant.url);
-      }
-      if (variant) {
-        const ext = variant.ext || 'zip';
-        return reply.redirect(302, `${config.filesUrl}/releases/niao-${version}-${variantId}.${ext}`);
-      }
-    }
-    const manifest = await fs.readFile(path.join(config.dataDir, 'releases', 'manifest.json'), 'utf8').catch(() => null);
-    if (manifest) {
-      const data = JSON.parse(manifest);
-      const variant = data.variants?.find((v) => v.id === variantId);
-      if (variant?.url) return reply.redirect(302, variant.url);
+    const release = await resolveReleaseDetail(version);
+    const variant = release?.variants?.find((v) => v.id === variantId);
+    if (variant?.url) {
+      return reply.redirect(variant.url, 302);
     }
     const platform = DEFAULT_PLATFORMS.find((p) => p.id === variantId);
-    const ext = platform?.ext || 'zip';
-    return reply.redirect(302, `${config.filesUrl}/releases/niao-${version}-${variantId}.${ext}`);
+    const ext = variant?.ext || platform?.ext || 'zip';
+    return reply.redirect(`${config.filesUrl}/releases/niao-${version}-${variantId}.${ext}`, 302);
   });
 
   app.get('/v1/releases/niao/:version/source.tgz', async (req, reply) => {
@@ -116,10 +103,7 @@ export async function registryRoutes(app) {
       return;
     }
     const tag = `v${version}`;
-    return reply.redirect(
-      302,
-      `${config.githubRepo}/archive/refs/tags/${tag}.tar.gz`,
-    );
+    return reply.redirect(`${config.githubRepo}/archive/refs/tags/${tag}.tar.gz`, 302);
   });
 
   app.get('/v1/catalog', async (_req, reply) => {
@@ -132,10 +116,34 @@ export async function registryRoutes(app) {
   });
 
   app.get('/v1/packages', async () => {
+    let catalog = null;
+    try {
+      catalog = await readCatalog();
+    } catch {
+      // listPackages may still work from mongo/local
+    }
+
     const names = await listPackages();
     const packages = [];
     for (const name of names) {
       try {
+        const entry = catalog?.libs?.[name];
+        if (entry && isMongoPrimary()) {
+          const fromDb = await getPackageFromDb(name);
+          if (!fromDb) {
+            packages.push({
+              ...packageFromCatalogEntry(name, entry),
+              latest: entry.versions?.at(-1) || entry.version,
+            });
+            continue;
+          }
+        } else if (entry && !isMongoPrimary()) {
+          packages.push({
+            ...packageFromCatalogEntry(name, entry),
+            latest: entry.versions?.at(-1) || entry.version,
+          });
+          continue;
+        }
         const pkg = await readPackageManifest(name);
         const versions = await listVersions(name);
         packages.push({ ...pkg, versions, latest: versions.at(-1) || pkg.version });
@@ -170,7 +178,7 @@ export async function registryRoutes(app) {
             status: ver.status,
             package: ver.package,
             lib: ver.lib,
-            dist: ver.dist,
+            dist: normalizePublicDist(ver.dist),
           };
         }
       }
@@ -199,8 +207,9 @@ export async function registryRoutes(app) {
     try {
       if (isMongoPrimary()) {
         const ver = await getVersionFromDb(name, version);
-        if (ver?.dist?.tarball_url && config.remoteReads) {
-          return reply.redirect(302, ver.dist.tarball_url);
+        const tarballUrl = distTarballUrl(ver?.dist);
+        if (tarballUrl && config.remoteReads) {
+          return reply.redirect(tarballUrl, 302);
         }
       }
       const tgz = tarballPath(name, version);
@@ -213,7 +222,7 @@ export async function registryRoutes(app) {
         return;
       }
       if (config.remoteReads) {
-        return reply.redirect(302, remoteTarballUrl(name, version));
+        return reply.redirect(remoteTarballUrl(name, version), 302);
       }
       reply.code(404).send({ error: `tarball not found: ${name}@${version}` });
     } catch {

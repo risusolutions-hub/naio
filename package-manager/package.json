@@ -15,12 +15,18 @@
     "migrate-mongo": "node src/scripts/migrate-mongo.js",
     "check-env": "node src/scripts/check-env.js",
     "test": "node src/scripts/test-all.js",
+    "test:live": "node src/scripts/test-live.js",
     "test-ftp": "node src/scripts/test-ftp.js",
     "build-release": "node src/scripts/build-release.js",
     "write-manifest": "node src/scripts/write-manifest.js",
     "release": "node src/scripts/build-release.js",
     "deploy": "npm run release",
-    "vercel-build": "node src/scripts/sync-public-assets.js"
+    "vercel-build": "node src/scripts/sync-public-assets.js",
+    "vercel:preview": "npm run vercel-build && npx vercel --yes",
+    "vercel:prod": "node src/scripts/vercel-deploy.js"
+  },
+  "devDependencies": {
+    "vercel": "^55.0.0"
   },
   "dependencies": {
     "@fastify/cors": "^10.0.2",

@@ -3,7 +3,8 @@ use niao_pkg::{
     find_project_package, find_source_root, install_from_package_json, install_global, install_libs,
     install_venv, is_remote_lib, load_catalog_optional, niao_bin_dir, niao_home, niao_libs_dir,
     registry_url, release_tool_binary, remote_libs, resolve_lib_name, standard_libs, uninstall_libs,
-    update_libs, InstallMode, InstallOptions, NIAO_TOOLCHAIN_VERSION,
+    update_libs, update_toolchain, InstallMode, InstallOptions, NIAO_TOOLCHAIN_VERSION,
+    ToolchainUpdateOptions,
 };
 use std::env;
 use std::fs;
@@ -100,6 +101,12 @@ enum Commands {
         /// Libraries to update (omit for all installed)
         #[arg(value_name = "LIB")]
         libs: Vec<String>,
+        /// Update niao and nm binaries to a release version (default: latest)
+        #[arg(long)]
+        toolchain: bool,
+        /// Toolchain version for --toolchain (e.g. 0.2.3)
+        #[arg(long, value_name = "VERSION")]
+        toolchain_version: Option<String>,
         #[arg(long)]
         venv: bool,
         #[arg(long, default_value = ".")]
@@ -190,12 +197,23 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         } => cmd_search(query.as_deref(), venv, &project),
         Commands::Update {
             libs,
+            toolchain,
+            toolchain_version,
             venv,
             project,
             force,
             source,
             registry,
-        } => cmd_update(libs, venv, &project, force, source, registry),
+        } => cmd_update(
+            libs,
+            toolchain,
+            toolchain_version,
+            venv,
+            &project,
+            force,
+            source,
+            registry,
+        ),
         Commands::Version { venv, project } => cmd_version(venv, &project),
         Commands::Info { name, venv, project } => cmd_info(&name, venv, &project),
         Commands::Venv { project, force } => cmd_venv(&project, force),
@@ -432,12 +450,23 @@ fn cmd_search(
 
 fn cmd_update(
     libs: Vec<String>,
+    toolchain: bool,
+    toolchain_version: Option<String>,
     venv: bool,
     project: &Path,
     force: bool,
     source: Option<PathBuf>,
     registry: Option<String>,
 ) -> Result<(), Box<dyn std::error::Error>> {
+    if toolchain {
+        let _ = registry;
+        return update_toolchain(
+            toolchain_version.as_deref(),
+            &ToolchainUpdateOptions { force },
+        )
+        .map_err(|e| e.to_string().into());
+    }
+
     let names: Vec<String> = libs
         .into_iter()
         .map(|n| resolve_lib_name(&n))

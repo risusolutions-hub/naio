@@ -7,6 +7,9 @@ edition.workspace = true
 name = "niao"
 path = "src/main.rs"
 
+[target.'cfg(windows)'.dependencies]
+winreg = "0.55"
+
 [dependencies]
 niao_ast = { workspace = true }
 niao_lexer = { workspace = true }
@@ -22,6 +25,7 @@ niao_docs = { workspace = true }
 niao_web = { workspace = true }
 ahiru_core = { workspace = true }
 axum = { workspace = true }
+niao_pkg = { workspace = true }
 toml = "0.8"
 clap = { workspace = true }
 tokio = { workspace = true }

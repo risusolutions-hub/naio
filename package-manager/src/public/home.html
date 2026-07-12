@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="Download the NIAO toolchain: niao runtime and nm package manager for every platform." />
   <title>Download NIAO</title>
-  <link rel="icon" href="/assets/brand/feather.svg" type="image/svg+xml" />
+  <link rel="icon" href="/assets/brand/feather-mark.png" type="image/png" />
   <!--SITE_DATA-->
   <link rel="stylesheet" href="/assets/css/niao.css" />
 </head>
@@ -13,7 +13,7 @@
   <header class="site-header">
     <div class="inner">
       <a class="brand-link" href="/" aria-label="NIAO home">
-        <img class="brand-feather-header" src="/assets/brand/feather.svg" alt="" aria-hidden="true" />
+        <img class="brand-feather-header" src="/assets/brand/feather-mark.png" alt="" aria-hidden="true" />
         <span class="brand-wordmark-text">NIAO</span>
       </a>
       <nav class="site-nav" aria-label="Main">
@@ -29,7 +29,7 @@
   <main>
     <section class="hero-dark section-pad">
       <div class="container">
-        <img class="feather-hero feather-mark" src="/assets/brand/feather.svg" alt="NIAO feather" />
+        <img class="feather-hero feather-mark" src="/assets/brand/feather-mark.png" alt="NIAO feather" />
         <p class="hero-eyebrow">Downloads</p>
         <h1 class="text-display-xl">Get NIAO</h1>
         <p class="hero-sub" id="tagline">
@@ -66,7 +66,7 @@
             Pick your platform below. Use the installer when available, or grab the archive (<code class="font-mono">.zip</code> / <code class="font-mono">.tar.gz</code>) for manual setup.
           </div>
 
-          <p class="text-caption section-lead">Installers for every platform. Your system is highlighted when we can detect it.</p>
+          <p class="text-caption section-lead" id="platform-lead">Checking available downloads…</p>
           <div class="platform-grid" id="binary-grid" aria-live="polite"></div>
         </div>
       </div>
@@ -90,16 +90,25 @@
             <h3 class="nm-flow-title">Get NIAO</h3>
             <p class="nm-flow-desc">Download &amp; install the toolchain</p>
           </article>
+          <span class="nm-flow-connector" aria-hidden="true">
+            <svg class="nm-flow-arrow" viewBox="0 0 24 24" fill="none"><path d="M5 12h12M13 7l5 5-5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </span>
           <article class="nm-flow-step">
             <span class="nm-flow-num">2</span>
             <h3 class="nm-flow-title">Verify <code class="font-mono">nm</code></h3>
             <p class="nm-flow-desc">Confirm the CLI is on your PATH</p>
           </article>
+          <span class="nm-flow-connector" aria-hidden="true">
+            <svg class="nm-flow-arrow" viewBox="0 0 24 24" fill="none"><path d="M5 12h12M13 7l5 5-5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </span>
           <article class="nm-flow-step">
             <span class="nm-flow-num">3</span>
             <h3 class="nm-flow-title">Install stdlib</h3>
             <p class="nm-flow-desc">One command for core libraries</p>
           </article>
+          <span class="nm-flow-connector" aria-hidden="true">
+            <svg class="nm-flow-arrow" viewBox="0 0 24 24" fill="none"><path d="M5 12h12M13 7l5 5-5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </span>
           <article class="nm-flow-step">
             <span class="nm-flow-num">4</span>
             <h3 class="nm-flow-title">Add packages</h3>
@@ -182,7 +191,7 @@
       <div class="footer-grid">
         <div class="footer-brand">
           <a class="brand-link" href="/" aria-label="NIAO home">
-            <img class="brand-feather-header" src="/assets/brand/feather.svg" alt="" aria-hidden="true" />
+            <img class="brand-feather-header" src="/assets/brand/feather-mark.png" alt="" aria-hidden="true" />
             <span class="brand-wordmark-text">NIAO</span>
           </a>
           <p class="text-caption">Download NIAO and manage packages with nm.</p>
@@ -239,21 +248,74 @@
       return d.innerHTML;
     }
 
-    function detectPlatformId() {
-      const ua = navigator.userAgent || '';
-      const plat = navigator.platform || '';
-      if (/Win/i.test(ua) || /Win/i.test(plat)) {
-        if (/ARM64|aarch64/i.test(ua)) return 'windows-arm64';
-        if (/WOW64|Win32/i.test(plat) && !/x64|Win64/i.test(plat)) return 'windows-x86';
-        return 'windows-x64';
+    function platformIdFromClientHints(platform, architecture, bitness) {
+      const p = (platform || '').toLowerCase();
+      const arch = (architecture || '').toLowerCase();
+      const bits = String(bitness || '');
+
+      if (p === 'windows') {
+        if (arch === 'arm') return 'windows-arm64';
+        if (arch === 'x86') return bits === '32' ? 'windows-x86' : bits === '64' ? 'windows-x64' : null;
+        return null;
       }
-      if (/Mac/i.test(plat) || /Mac/i.test(ua)) {
-        return navigator.userAgent.includes('Intel') ? 'macos-x64' : 'macos-arm64';
+      if (p === 'macos') {
+        if (arch === 'arm') return 'macos-arm64';
+        if (arch === 'x86' && bits === '64') return 'macos-x64';
+        return null;
       }
-      if (/Linux/i.test(plat) || /Linux/i.test(ua)) {
-        return ua.includes('aarch64') || ua.includes('arm64') ? 'linux-arm64' : 'linux-x64';
+      if (p === 'linux' || p === 'chrome os') {
+        if (arch === 'arm') return 'linux-arm64';
+        if (arch === 'x86' && bits === '64') return 'linux-x64';
+        return null;
       }
       return null;
+    }
+
+    function detectPlatformIdFromUserAgent() {
+      const ua = navigator.userAgent || '';
+      const plat = (navigator.platform || '').toLowerCase();
+
+      if (/Win/i.test(ua) || plat.startsWith('win')) {
+        if (/\b(aarch64|arm64)\b/i.test(ua)) return 'windows-arm64';
+        // WOW64 = 32-bit browser on 64-bit Windows — still x64 OS
+        if (/\b(WOW64|Win64|x64|amd64|x86_64)\b/i.test(ua)) return 'windows-x64';
+        // navigator.platform is "Win32" on all Windows versions; never use it alone for arch
+        return null;
+      }
+
+      if (/Mac/i.test(plat) || /Mac OS X|Macintosh/i.test(ua)) {
+        // Apple Silicon Safari spoofs "Intel Mac OS X" — only trust explicit arch tokens
+        if (/\b(x86_64|i386|Intel Mac)\b/i.test(ua)) return 'macos-x64';
+        if (/\b(aarch64|arm64)\b/i.test(ua)) return 'macos-arm64';
+        return null;
+      }
+
+      if (/Linux/i.test(plat) || /Linux|X11/i.test(ua)) {
+        if (/\b(aarch64|arm64|armv8)\b/i.test(ua)) return 'linux-arm64';
+        if (/\b(x86_64|amd64)\b/i.test(ua)) return 'linux-x64';
+        return null;
+      }
+
+      return null;
+    }
+
+    function detectPlatformId() {
+      return detectPlatformIdFromUserAgent();
+    }
+
+    async function detectPlatformIdAsync() {
+      const uaId = detectPlatformIdFromUserAgent();
+      if (uaId) return uaId;
+
+      const uaData = navigator.userAgentData;
+      if (!uaData?.getHighEntropyValues) return null;
+
+      try {
+        const hints = await uaData.getHighEntropyValues(['architecture', 'bitness', 'platform']);
+        return platformIdFromClientHints(hints.platform, hints.architecture, hints.bitness);
+      } catch {
+        return null;
+      }
     }
 
     const FALLBACK_PLATFORMS = [
@@ -297,13 +359,19 @@
     }
 
     function archiveAvailable(v) {
-      if (!v.url || variantInactive(v)) return false;
-      return Number(v.size) > 0 || !!v.shasum;
+      if (v.archive_available === false) return false;
+      if (v.archive_available === true) return Boolean(v.url);
+      return Boolean(v.url && !variantInactive(v));
     }
 
     function installerAvailable(v) {
-      if (!v.installer_url || variantInactive(v)) return false;
-      return Number(v.installer_size) > 0 || !!v.installer_shasum;
+      if (v.installer_available === false) return false;
+      if (v.installer_available === true) return Boolean(v.installer_url);
+      return Boolean(v.installer_url && !variantInactive(v));
+    }
+
+    function platformHasDownloads(v) {
+      return archiveAvailable(v) || installerAvailable(v);
     }
 
     function formatBytes(n) {
@@ -339,7 +407,7 @@
         const label = v.installer_label || (v.installer_ext === 'exe' ? 'NiaoSetup.exe' : 'install.sh');
         parts.push(downloadBtn(v.installer_url, label, formatBytes(v.installer_size), true));
         if (v.installer_ext === 'exe') {
-          parts.push('<span class="platform-hint">Double-click to install</span>');
+          parts.push('<span class="platform-hint">Start Menu → Niao → Niao Terminal</span>');
         } else if (v.installer_ext === 'sh') {
           parts.push(`<code class="platform-curl">curl -fsSL ${esc(v.installer_url)} | bash</code>`);
         }
@@ -350,7 +418,7 @@
       }
 
       if (!parts.length) {
-        return '<span class="coming-soon">Downloads coming soon. We\'re preparing this build.</span>';
+        return '<span class="platform-unavailable-msg">Currently not available</span>';
       }
 
       return parts.join('');
@@ -383,7 +451,7 @@
         </div>`).join('');
     }
 
-    function renderReleasePanel() {
+    function renderReleasePanel(recommendedOverride) {
       const releases = site.releases || [];
       const sel = document.getElementById('release-select');
       const fallbackVersion = site.latestRelease || site.version || '0.2.2';
@@ -402,18 +470,34 @@
         statusEl.className = `pill ${selectedRelease.is_latest ? 'pill-green' : 'pill-muted'}`;
       }
 
-      const platforms = mergePlatforms(site.platforms || FALLBACK_PLATFORMS, selectedRelease.variants);
-      const recommended = detectPlatformId();
+      const platforms = mergePlatforms(FALLBACK_PLATFORMS, selectedRelease.variants || []);
+      const availableCount = platforms.filter(platformHasDownloads).length;
+      const recommended = recommendedOverride !== undefined ? recommendedOverride : detectPlatformId();
+      const recommendedId = recommended && platforms.some((p) => p.id === recommended) ? recommended : null;
       const grid = document.getElementById('binary-grid');
+      const lead = document.getElementById('platform-lead');
+
+      if (lead) {
+        if (!availableCount) {
+          lead.textContent = 'Installers for every platform. Builds are not published for this version yet — check GitHub for source.';
+        } else if (availableCount === platforms.length) {
+          lead.textContent = 'Installers for every platform. Your system is highlighted when we can detect it.';
+        } else {
+          lead.textContent = `${availableCount} of ${platforms.length} platforms ready to download. Your system is highlighted when we can detect it.`;
+        }
+      }
 
       grid.innerHTML = platforms.map((v) => {
-        const isRec = recommended && v.id === recommended;
+        const isRec = recommendedId && v.id === recommendedId;
+        const unavailable = !platformHasDownloads(v);
         const icon = PLATFORM_ICONS[v.platform] || PLATFORM_ICONS.linux;
         const desc = PLATFORM_DESC[v.id] || `${v.platform} · ${v.arch || ''}`;
         const action = buildPlatformDownloads(v);
+        const recClass = isRec ? ' platform-recommended' : '';
+        const unavailClass = unavailable ? ' platform-unavailable' : '';
 
         return `
-        <article class="platform platform-${esc(v.platform)}${isRec ? ' platform-recommended' : ''}">
+        <article class="platform platform-${esc(v.platform)}${recClass}${unavailClass}">
           ${isRec ? '<span class="recommended-badge">Recommended for you</span>' : ''}
           <div class="platform-icon platform-icon-${esc(v.platform)}" aria-hidden="true">${icon}</div>
           <strong>${esc(v.label || v.id)}</strong>
@@ -473,9 +557,17 @@
       document.getElementById('footer-copy').textContent = `© ${new Date().getFullYear()} Risu Solutions`;
     }
 
+    function applyPlatformRecommendation() {
+      detectPlatformIdAsync().then((id) => {
+        if (!id || id === detectPlatformId()) return;
+        renderReleasePanel(id);
+      });
+    }
+
     document.getElementById('release-select')?.addEventListener('change', (e) => {
       selectedRelease = (site.releases || []).find((r) => r.version === e.target.value);
       renderReleasePanel();
+      applyPlatformRecommendation();
     });
 
     document.body.addEventListener('click', (e) => {
@@ -487,6 +579,7 @@
     });
 
     render();
+    applyPlatformRecommendation();
   </script>
 </body>
 </html>

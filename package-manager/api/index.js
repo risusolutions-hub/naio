@@ -1,18 +1,11 @@
-import { buildApp } from '../src/app.js';
+import { buildApp } from '../src/create-app.js';
 
-let appPromise;
-
-function getApp() {
-  if (!appPromise) {
-    appPromise = buildApp().then(async (app) => {
-      await app.ready();
-      return app;
-    });
-  }
-  return appPromise;
-}
+let app;
 
 export default async function handler(req, res) {
-  const app = await getApp();
-  app.server.emit('request', req, res);
+  if (!app) {
+    app = await buildApp();
+    await app.ready();
+  }
+  await app.routing(req, res);
 }

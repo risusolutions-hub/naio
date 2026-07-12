@@ -50,6 +50,19 @@ export function tarballPublicUrl(name, version) {
   return `${base}/v1/packages/${encodeURIComponent(name)}/${encodeURIComponent(version)}/tarball`;
 }
 
+/** API dist shape expected by nm (`tarball` + `shasum`). */
+export function normalizePublicDist(dist = {}) {
+  return {
+    tarball: dist.tarball || dist.tarball_url || '',
+    shasum: dist.shasum || dist.sha256 || '',
+    size: Number(dist.size) || 0,
+  };
+}
+
+export function distTarballUrl(dist = {}) {
+  return dist.tarball || dist.tarball_url || '';
+}
+
 export function releaseVariantUrl(version, variantId, ext = 'zip') {
   const base = config.filesUrl.replace(/\/$/, '');
   return `${base}/releases/niao-${version}-${variantId}.${ext}`;
@@ -398,11 +411,17 @@ function normalizeRelease(row) {
       hosted_url: `${config.filesUrl}/releases/niao-${row.version}-source.tgz`,
       ftp_path: `releases/niao-${row.version}-source.tgz`,
     },
-    variants: (row.variants || []).map((v) => ({
-      ...v,
-      url: v.url || releaseVariantUrl(row.version, v.id),
-      ftp_path: v.ftp_path || releaseVariantFtpPath(row.version, v.id),
-    })),
+    variants: (row.variants || []).map((v) => {
+      const platform = DEFAULT_PLATFORMS.find((p) => p.id === v.id) || {};
+      return {
+        ...v,
+        url: v.url || releaseVariantUrl(row.version, v.id, platform.ext || 'zip'),
+        ftp_path: v.ftp_path || releaseVariantFtpPath(row.version, v.id, platform.ext || 'zip'),
+        installer_url: v.installer_url || releaseInstallerUrl(row.version, v.id, platform),
+        installer_ext: v.installer_ext || platform.installer_ext || 'sh',
+        installer_label: v.installer_label || platform.installer_label || 'install.sh',
+      };
+    }),
   };
 }
 

@@ -1,6 +1,8 @@
 use clap::{Parser, Subcommand};
 mod cache;
 mod ahiru;
+#[cfg(windows)]
+mod uninstall_win;
 
 use cache::{build_to_cache, clean_bytecode_cache, default_cache_dir, load_or_compile};
 use niao_docs::generate_docs;
@@ -36,7 +38,8 @@ struct Cli {
 }
 
 const SUBCOMMANDS: &[&str] = &[
-    "run", "version", "new", "test", "format", "lint", "docs", "build", "serve", "bench", "clean", "ahiru", "help",
+    "run", "version", "new", "test", "format", "lint", "docs", "build", "serve", "bench", "clean",
+    "update", "uninstall", "ahiru", "help",
 ];
 
 /// Append `.niao` when the path has no extension and the `.niao` variant exists.
@@ -146,6 +149,16 @@ enum Commands {
         /// Remove the entire cache directory
         #[arg(long)]
         all: bool,
+    },
+    /// Uninstall Niao from this computer (Windows installer only)
+    Uninstall,
+    /// Update niao and nm to a release version (default: latest)
+    Update {
+        /// Target version (e.g. 0.2.3). Omit for latest release.
+        version: Option<String>,
+        /// Reinstall even when already on this version
+        #[arg(long)]
+        force: bool,
     },
     /// ahiru-server backend framework
     Ahiru {
@@ -297,6 +310,24 @@ fn main() -> Result {
         Commands::Serve { file, port } => serve_file(&resolve_niao_path(file), port)?,
         Commands::Bench { file, runs } => bench_file(&resolve_niao_path(file), runs)?,
         Commands::Clean { cache_dir, keep, all } => clean_caches(&cache_dir, keep, all)?,
+        Commands::Uninstall => {
+            #[cfg(windows)]
+            {
+                uninstall_win::run_uninstall()?
+            }
+            #[cfg(not(windows))]
+            {
+                return Err(err("niao uninstall is only available on Windows"));
+            }
+        }
+        Commands::Update { version, force } => {
+            use niao_pkg::{update_toolchain, ToolchainUpdateOptions};
+            update_toolchain(
+                version.as_deref(),
+                &ToolchainUpdateOptions { force },
+            )
+            .map_err(|e| err(e))?;
+        }
         Commands::Ahiru { command } => match command {
             AhiruCommands::Create { name, yes } => ahiru::run_create(&name, yes)?,
             AhiruCommands::Serve {

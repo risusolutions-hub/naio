@@ -55,9 +55,6 @@ export async function buildApp() {
   }
   await initAuth();
 
-  await registryRoutes(app);
-  await adminRoutes(app);
-
   await app.register(fastifyStatic, {
     root: assetsDir,
     prefix: '/assets/',
@@ -69,6 +66,9 @@ export async function buildApp() {
     prefix: '/admin/',
     decorateReply: false,
   });
+
+  await registryRoutes(app);
+  await adminRoutes(app);
 
   return app;
 }

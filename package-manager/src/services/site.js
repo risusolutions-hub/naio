@@ -1,7 +1,8 @@
 import path from 'node:path';
 import fs from 'node:fs/promises';
 import { config } from '../config.js';
-import { getLatestReleaseFromDb, listReleasesFromDb, isMongoPrimary, DEFAULT_PLATFORMS, releaseVariantUrl, releaseInstallerUrl } from '../db/registry-db.js';
+import { getLatestReleaseFromDb, getReleaseFromDb, listReleasesFromDb, isMongoPrimary, DEFAULT_PLATFORMS, releaseVariantUrl, releaseInstallerUrl } from '../db/registry-db.js';
+import { resolveAllVariants } from './release-availability.js';
 
 async function loadManifestFromDisk() {
   try {
@@ -69,6 +70,57 @@ function releaseFromEnv(version) {
   };
 }
 
+function enrichReleaseVariants(release) {
+  const fallback = releaseFromEnv(release.version);
+  const fallbackById = new Map(fallback.variants.map((v) => [v.id, v]));
+  return DEFAULT_PLATFORMS.map((p) => {
+    const fromRelease = (release.variants || []).find((v) => v.id === p.id) || {};
+    const fromFallback = fallbackById.get(p.id) || {};
+    return {
+      ...p,
+      ...fromFallback,
+      ...fromRelease,
+      id: p.id,
+      label: p.label,
+      status: fromRelease.status || fromFallback.status || 'active',
+      url: fromRelease.url || fromFallback.url,
+      installer_url: fromRelease.installer_url || fromFallback.installer_url,
+      installer_ext: fromRelease.installer_ext || fromFallback.installer_ext || p.installer_ext,
+      installer_label: fromRelease.installer_label || fromFallback.installer_label || p.installer_label,
+      size: fromRelease.size || fromFallback.size || 0,
+      installer_size: fromRelease.installer_size || fromFallback.installer_size || 0,
+      shasum: fromRelease.shasum || fromFallback.shasum || '',
+      installer_shasum: fromRelease.installer_shasum || fromFallback.installer_shasum || '',
+    };
+  });
+}
+
+async function enrichRelease(release) {
+  const variants = enrichReleaseVariants(release);
+  const resolved = await resolveAllVariants(variants, release.version);
+  return { ...release, variants: resolved };
+}
+
+/** Resolve release metadata with Mongo → manifest → env fallbacks. */
+export async function resolveReleaseDetail(version) {
+  if (isMongoPrimary()) {
+    const fromDb = await getReleaseFromDb(version);
+    if (fromDb) return enrichRelease(fromDb);
+  }
+
+  const manifest = await loadManifestFromDisk();
+  const fromManifest = releaseFromManifest(manifest);
+  if (fromManifest?.version === version) {
+    return enrichRelease(fromManifest);
+  }
+
+  if (version === config.niaoVersion) {
+    return enrichRelease(releaseFromEnv(version));
+  }
+
+  return null;
+}
+
 export async function buildSitePayload() {
   const version = config.niaoVersion;
 
@@ -84,13 +136,19 @@ export async function buildSitePayload() {
     const manifest = await loadManifestFromDisk();
     const fromManifest = releaseFromManifest(manifest);
     if (fromManifest) {
-      releases = [fromManifest];
-      latestRelease = fromManifest;
+      releases = [await enrichRelease(fromManifest)];
+      latestRelease = releases[0];
     } else {
       const fallback = releaseFromEnv(version);
-      releases = [fallback];
-      latestRelease = fallback;
+      const resolved = await resolveAllVariants(fallback.variants, fallback.version);
+      releases = [{ ...fallback, variants: resolved }];
+      latestRelease = releases[0];
     }
+  } else {
+    releases = await Promise.all(releases.map(enrichRelease));
+    latestRelease = latestRelease
+      ? releases.find((r) => r.version === latestRelease.version) || releases[0]
+      : releases[0];
   }
 
   return {

@@ -8,7 +8,11 @@ publish = false
 
 [[bin]]
 name = "NiaoSetup"
-path = "src/main.rs"
+path = "src/setup.rs"
+
+[[bin]]
+name = "NiaoUninstall"
+path = "src/uninstall.rs"
 
 [dependencies]
 rust-embed = { version = "8", features = ["compression"] }

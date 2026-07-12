@@ -92,12 +92,12 @@ async function readLocalCatalog() {
 }
 
 export async function readCatalog() {
+  let mongoCatalog = null;
   if (isMongoPrimary()) {
     try {
-      const catalog = await buildCatalogFromDb();
-      if (catalog && Object.keys(catalog.libs || {}).length > 0) {
-        await writeJson(config.catalogPath, catalog);
-        return catalog;
+      mongoCatalog = await buildCatalogFromDb();
+      if (mongoCatalog && Object.keys(mongoCatalog.libs || {}).length > 0) {
+        await writeJson(config.catalogPath, mongoCatalog);
       }
     } catch (err) {
       console.warn('MongoDB catalog read failed:', err.message);
@@ -107,16 +107,21 @@ export async function readCatalog() {
     try {
       const remote = await fetchCatalog();
       const remoteCount = Object.keys(remote?.libs || {}).length;
+      const mongoCount = Object.keys(mongoCatalog?.libs || {}).length;
       const local = await readLocalCatalog();
       const localCount = Object.keys(local?.libs || {}).length;
-      if (remoteCount > 0 && remoteCount >= localCount) {
+      if (remoteCount > 0 && remoteCount >= mongoCount && remoteCount >= localCount) {
         return remote;
       }
+      if (mongoCount > 0) return mongoCatalog;
       if (local) return local;
       if (remoteCount > 0) return remote;
     } catch {
       // fall through to local
     }
+  }
+  if (mongoCatalog && Object.keys(mongoCatalog.libs || {}).length > 0) {
+    return mongoCatalog;
   }
   const local = await readLocalCatalog();
   if (local) return local;
@@ -124,33 +129,34 @@ export async function readCatalog() {
 }
 
 export async function listPackages({ admin = false } = {}) {
+  const names = new Set();
+
   if (isMongoPrimary()) {
-    const names = await listPackagesFromDb({ admin });
-    if (names?.length) return names;
+    for (const name of (await listPackagesFromDb({ admin })) || []) {
+      names.add(name);
+    }
   }
+
   await ensureDirs();
-  let local = [];
   try {
     const entries = await fs.readdir(config.packagesDir, { withFileTypes: true });
-    local = entries.filter((e) => e.isDirectory()).map((e) => e.name);
+    for (const entry of entries) {
+      if (entry.isDirectory()) names.add(entry.name);
+    }
   } catch {
     // empty or missing
   }
-  if (admin || !config.remoteReads) {
-    return local.sort();
-  }
-  if (config.remoteReads) {
+
+  if (!admin && config.remoteReads) {
     try {
       const remote = await fetchPackageList();
-      if (remote.length > 0) {
-        const merged = new Set([...local, ...remote]);
-        return [...merged].sort();
-      }
+      for (const name of remote) names.add(name);
     } catch {
       // fall through
     }
   }
-  return local.sort();
+
+  return [...names].sort();
 }
 
 export async function listVersions(name, { admin = false } = {}) {
