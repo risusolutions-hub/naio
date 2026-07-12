@@ -6,6 +6,7 @@
                  "dsa",
                  "json",
                  "codec",
+                 "archive",
                  "io",
                  "re",
                  "net",

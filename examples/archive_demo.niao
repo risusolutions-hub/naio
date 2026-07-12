@@ -1,0 +1,10 @@
+import "archive"
+
+let text = "hello from archive demo"
+let gz = archive_gzip_encode(text)
+let back = archive_gzip_decode(gz)
+print("gzip roundtrip:", back)
+
+let raw = archive_deflate(text)
+let inflated = archive_inflate(raw)
+print("deflate roundtrip:", inflated)

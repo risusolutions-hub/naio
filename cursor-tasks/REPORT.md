@@ -303,3 +303,34 @@ Run: `python benchmarks/benchmark_io.py` or `cargo run --release -p niao_io --bi
 - Binary PG format deferred (text params only).
 
 Run bench: `NIAO_TEST_PG_URL=... python benchmarks/benchmark_db.py`
+
+---
+
+## Task 11 — niao_archive (deflate/gzip/tar/zip)
+
+### Status: complete
+
+### Removed direct dependencies
+- `flate2`, `tar`, `zip` removed from `niao_pkg`.
+
+### Added
+- `crates/niao_archive` — RFC 1951 inflate/deflate (fixed+dynamic Huffman), gzip wrapper, ustar/PAX tar, zip read/write (stored+deflate, zip64 read).
+- Wired `niao_pkg` registry tar.gz unpack and release zip/tar.gz extraction; `niao_http` client auto-decodes `Content-Encoding: gzip`.
+- `archive` native module (`archive_gzip_encode/decode`, `archive_deflate/inflate`); `niao_libs/archive`.
+- Fixtures under `crates/niao_archive/tests/fixtures/` (stdlib-generated); `examples/archive_demo.niao`, `benchmarks/benchmark_archive.py`.
+
+### Tests
+- Round-trip unit tests; cross-check fixtures (gzip/tar.gz/zip stored+deflate).
+- Full workspace green (cmake exclusions unchanged).
+
+### Benchmarks (release, 1 MiB payload, Windows)
+| Op | niao_archive |
+|---|---|
+| deflate_inflate | **898 MiB/s** |
+| gzip_decode | **331 MiB/s** |
+
+Run: `python benchmarks/benchmark_archive.py` or `cargo run --release -p niao_archive --bin archive_bench`.
+
+### Notes
+- Deflate encode uses fixed Huffman + greedy LZ77 (ratio below flate2; decode speed priority for package installs).
+

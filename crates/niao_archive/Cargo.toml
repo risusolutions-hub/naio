@@ -1,0 +1,8 @@
+[package]
+name = "niao_archive"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "archive_bench"
+path = "src/bin/archive_bench.rs"

@@ -5,6 +5,7 @@ edition.workspace = true
 
 [dependencies]
 niao_codec = { workspace = true }
+niao_archive = { workspace = true }
 rustls = "0.23"
 rustls-native-certs = "0.8"
 rustls-pki-types = "1"

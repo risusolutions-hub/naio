@@ -13,6 +13,7 @@
 - `niao_ws` crate (RFC 6455 WebSocket client/server); replaces `tungstenite` in `niao_runtime`; SHA-1 added to `niao_crypto` for handshake only.
 - `niao_io` crate (readiness poller, work-stealing executor, timers, TCP helpers); replaces custom mpsc thread pool in `niao_runtime::async_tasks`.
 - `niao_db` crate (RESP Redis client, PostgreSQL wire v3, generic pool); replaces `postgres`, `r2d2`, `r2d2_postgres`, and `redis` in `niao_runtime`/`ahiru_core` npg paths.
+- `niao_archive` crate (RFC 1951 deflate, gzip, ustar/PAX tar, zip stored+deflate); replaces `flate2`, `tar`, and `zip` in `niao_pkg`; gzip response decoding in `niao_http`.
 
 ## 0.2.2 — 2026-07-07
 

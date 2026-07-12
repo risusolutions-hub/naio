@@ -1,0 +1,6 @@
+{
+    "name": "archive",
+    "version": "0.2.2",
+    "description": "Gzip and deflate compression helpers",
+    "kind": "native"
+}

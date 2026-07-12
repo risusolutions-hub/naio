@@ -12,6 +12,7 @@ members = [
     "crates/niao_ws",
     "crates/niao_io",
     "crates/niao_db",
+    "crates/niao_archive",
     "crates/niao_lexer",
     "crates/niao_parser",
     "crates/niao_runtime",
@@ -54,6 +55,7 @@ niao_http = { path = "crates/niao_http" }
 niao_ws = { path = "crates/niao_ws" }
 niao_io = { path = "crates/niao_io" }
 niao_db = { path = "crates/niao_db" }
+niao_archive = { path = "crates/niao_archive" }
 niao_lexer = { path = "crates/niao_lexer" }
 niao_parser = { path = "crates/niao_parser" }
 niao_runtime = { path = "crates/niao_runtime" }

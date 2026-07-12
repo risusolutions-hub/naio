@@ -18,6 +18,7 @@ mod int_algos;
 mod int_heap;
 mod json;
 mod codec;
+mod archive;
 mod crypto;
 pub mod mem;
 mod oop;
@@ -1465,6 +1466,7 @@ fn builtin_table() -> Vec<(&'static str, NativeFn)> {
     builtins.extend(dsa::builtins());
     builtins.extend(json::builtins());
     builtins.extend(codec::builtins());
+    builtins.extend(archive::builtins());
     builtins.extend(crypto::builtins());
     builtins.extend(io::builtins());
     builtins.extend(re::builtins());
@@ -1527,6 +1529,10 @@ pub fn install_native_modules(env: &Environment) {
         codec::namespace().ref_cell(),
     );
     env.define(
+        archive::MODULE_NAME.to_string(),
+        archive::namespace().ref_cell(),
+    );
+    env.define(
         crypto::MODULE_NAME.to_string(),
         crypto::namespace().ref_cell(),
     );
@@ -1563,7 +1569,7 @@ pub fn native_module_paths() -> &'static [&'static str] {
     #[cfg(feature = "nmongo")]
     {
         &[
-            "dsa", "std/dsa", "json", "std/json", "codec", "std/codec", "crypto", "std/crypto", "io", "std/io", "re", "std/re", "net", "std/net",
+            "dsa", "std/dsa", "json", "std/json", "codec", "std/codec", "archive", "std/archive", "crypto", "std/crypto", "io", "std/io", "re", "std/re", "net", "std/net",
             "parallel", "std/parallel", "time", "std/time", "nsqlite", "std/nsqlite",
             "npg", "std/npg", "nmongo", "std/nmongo", "nrag", "std/nrag", "nllm", "std/nllm",
             "nos", "std/nos", "nenv", "std/nenv",
@@ -1573,7 +1579,7 @@ pub fn native_module_paths() -> &'static [&'static str] {
     #[cfg(not(feature = "nmongo"))]
     {
         &[
-            "dsa", "std/dsa", "json", "std/json", "codec", "std/codec", "crypto", "std/crypto", "io", "std/io", "re", "std/re", "net", "std/net",
+            "dsa", "std/dsa", "json", "std/json", "codec", "std/codec", "archive", "std/archive", "crypto", "std/crypto", "io", "std/io", "re", "std/re", "net", "std/net",
             "parallel", "std/parallel", "time", "std/time", "nsqlite", "std/nsqlite",
             "npg", "std/npg", "nrag", "std/nrag", "nllm", "std/nllm",
             "nos", "std/nos", "nenv", "std/nenv",
@@ -1590,6 +1596,9 @@ pub fn native_module_export_name(path: &str) -> Option<&'static str> {
     }
     if codec::MODULE_PATHS.contains(&path) {
         return Some(codec::MODULE_NAME);
+    }
+    if archive::MODULE_PATHS.contains(&path) {
+        return Some(archive::MODULE_NAME);
     }
     if crypto::MODULE_PATHS.contains(&path) {
         return Some(crypto::MODULE_NAME);

@@ -8,9 +8,7 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 niao_crypto = { workspace = true }
 niao_http = { workspace = true }
-flate2 = "1"
-tar = "0.4"
-zip = "2"
+niao_archive = { workspace = true }
 
 [target.'cfg(windows)'.dependencies]
 winreg = "0.55"

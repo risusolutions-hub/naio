@@ -3,13 +3,11 @@
 use crate::error::{PkgError, PkgResult};
 use crate::paths::{global_install_state_path, resolve_niao_home};
 use crate::registry::{fetch_bytes, registry_url};
-use flate2::read::GzDecoder;
+use niao_archive::{tar::Archive, zip::ZipArchive};
 use serde::Deserialize;
 use niao_crypto::{hex, sha256};
 use std::fs;
-use std::io::Read;
 use std::path::Path;
-use tar::Archive;
 
 #[derive(Debug, Deserialize)]
 struct ReleasesIndex {
@@ -240,27 +238,20 @@ fn extract_binaries(data: &[u8], ext: &str) -> PkgResult<(Vec<u8>, Vec<u8>)> {
 }
 
 fn extract_from_zip(data: &[u8]) -> PkgResult<(Vec<u8>, Vec<u8>)> {
-  let cursor = std::io::Cursor::new(data);
-  let mut archive =
-    zip::ZipArchive::new(cursor).map_err(|e| PkgError::Message(format!("open zip: {e}")))?;
+  let archive =
+    ZipArchive::open(data).map_err(|e| PkgError::Message(format!("open zip: {e}")))?;
   let mut niao = None;
   let mut nm = None;
   for i in 0..archive.len() {
-    let mut file = archive
+    let file = archive
       .by_index(i)
       .map_err(|e| PkgError::Message(format!("zip entry: {e}")))?;
-    let name = file.name().replace('\\', "/");
+    let name = file.name.replace('\\', "/");
     let base = name.rsplit('/').next().unwrap_or(&name);
     if base == "niao.exe" || base == "niao" {
-      let mut buf = Vec::new();
-      file.read_to_end(&mut buf)
-        .map_err(|e| PkgError::Message(format!("read niao from zip: {e}")))?;
-      niao = Some(buf);
+      niao = Some(file.data.clone());
     } else if base == "nm.exe" || base == "nm" {
-      let mut buf = Vec::new();
-      file.read_to_end(&mut buf)
-        .map_err(|e| PkgError::Message(format!("read nm from zip: {e}")))?;
-      nm = Some(buf);
+      nm = Some(file.data.clone());
     }
   }
   match (niao, nm) {
@@ -272,33 +263,17 @@ fn extract_from_zip(data: &[u8]) -> PkgResult<(Vec<u8>, Vec<u8>)> {
 }
 
 fn extract_from_tar_gz(data: &[u8]) -> PkgResult<(Vec<u8>, Vec<u8>)> {
-  let decoder = GzDecoder::new(data);
-  let mut archive = Archive::new(decoder);
+  let archive = Archive::open_gz(data)
+    .map_err(|e| PkgError::Message(format!("read tar.gz: {e}")))?;
   let mut niao = None;
   let mut nm = None;
-  for entry in archive
-    .entries()
-    .map_err(|e| PkgError::Message(format!("read tar.gz: {e}")))?
-  {
-    let mut entry = entry.map_err(|e| PkgError::Message(format!("tar entry: {e}")))?;
-    let path = entry
-      .path()
-      .map_err(|e| PkgError::Message(format!("tar path: {e}")))?
-      .to_string_lossy()
-      .replace('\\', "/");
+  for entry in archive.entries() {
+    let path = entry.path.replace('\\', "/");
     let base = path.rsplit('/').next().unwrap_or(&path);
     if base == "niao" {
-      let mut buf = Vec::new();
-      entry
-        .read_to_end(&mut buf)
-        .map_err(|e| PkgError::Message(format!("read niao from tar: {e}")))?;
-      niao = Some(buf);
+      niao = Some(entry.data.clone());
     } else if base == "nm" {
-      let mut buf = Vec::new();
-      entry
-        .read_to_end(&mut buf)
-        .map_err(|e| PkgError::Message(format!("read nm from tar: {e}")))?;
-      nm = Some(buf);
+      nm = Some(entry.data.clone());
     }
   }
   match (niao, nm) {

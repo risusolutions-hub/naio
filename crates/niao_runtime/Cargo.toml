@@ -15,6 +15,7 @@ niao_http = { workspace = true }
 niao_ws = { workspace = true }
 niao_io = { workspace = true }
 niao_db = { workspace = true }
+niao_archive = { workspace = true }
 num-bigint = "0.4"
 num-traits = "0.2"
 indexmap = "2"

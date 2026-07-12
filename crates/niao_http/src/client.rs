@@ -162,10 +162,11 @@ fn execute(
                 continue;
             }
         }
+        let body = maybe_decode_gzip(&resp.headers, resp.body)?;
         return Ok(Response {
             status: resp.status,
             headers: resp.headers,
-            body: resp.body,
+            body,
             url: current,
         });
     }
@@ -183,6 +184,18 @@ fn join_location(base: &Url, loc: &str) -> String {
             base.path.trim_end_matches('/'),
             loc
         )
+    }
+}
+
+fn maybe_decode_gzip(headers: &HeaderMap, body: Vec<u8>) -> Result<Vec<u8>, Error> {
+    let encoding = headers
+        .get("content-encoding")
+        .unwrap_or("")
+        .to_ascii_lowercase();
+    if encoding.split(',').any(|p| p.trim() == "gzip") {
+        niao_archive::gzip_decode(&body).map_err(|e| Error::Io(format!("gzip decode: {e}")))
+    } else {
+        Ok(body)
     }
 }
 

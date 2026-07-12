@@ -4,12 +4,11 @@ use crate::package::{
     is_latest_request, latest_version, pick_version, read_lib_package, version_matches, LibPackage,
 };
 use crate::paths::niao_home;
-use flate2::read::GzDecoder;
+use niao_archive::tar::Archive;
 use serde::Deserialize;
 use niao_crypto::{hex, sha256};
 use std::fs;
 use std::path::{Path, PathBuf};
-use tar::Archive;
 
 /// Default online registry for optional Niao libraries.
 pub const DEFAULT_REGISTRY_URL: &str = "https://nms.taurus-tech.in";
@@ -175,8 +174,8 @@ fn extract_tarball(bytes: &[u8], dest_root: &Path, expected_name: &str) -> PkgRe
     }
     fs::create_dir_all(dest_root)?;
 
-    let decoder = GzDecoder::new(bytes);
-    let mut archive = Archive::new(decoder);
+    let archive = Archive::open_gz(bytes)
+        .map_err(|e| PkgError::Message(format!("open registry tarball: {e}")))?;
     archive
         .unpack(dest_root)
         .map_err(|e| PkgError::Message(format!("extract registry tarball: {e}")))?;
