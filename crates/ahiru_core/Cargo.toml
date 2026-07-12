@@ -9,7 +9,6 @@ axum = { workspace = true, features = ["ws", "multipart"] }
 tokio = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
-toml = "0.8"
 tower = "0.5"
 tower-http = { version = "0.6", features = ["cors", "limit", "trace", "set-header", "compression-gzip", "compression-br", "fs"] }
 http = "1"
@@ -21,6 +20,7 @@ tokio-rustls = "0.26"
 tokio-tungstenite = { version = "0.26", features = ["rustls-tls-webpki-roots"] }
 futures-util = "0.3"
 niao_codec = { workspace = true }
+niao_json_core = { workspace = true }
 jsonwebtoken = "9"
 sha2 = "0.10"
 hmac = "0.12"

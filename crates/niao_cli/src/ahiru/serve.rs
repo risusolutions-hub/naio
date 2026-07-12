@@ -196,7 +196,7 @@ fn project_workers(project: &Path) -> usize {
     let config_path = project.join("ahiru.config.toml");
     if config_path.is_file() {
         if let Ok(text) = fs::read_to_string(&config_path) {
-            if let Ok(config) = toml::from_str::<ahiru_core::AhiruConfig>(&text) {
+            if let Ok(config) = ahiru_core::AhiruConfig::from_toml(&text) {
                 return config.server.workers.max(1);
             }
         }
@@ -314,7 +314,8 @@ pub fn run_routes(project: &Path) -> Result<(), Box<dyn std::error::Error>> {
     let config_path = project.join("ahiru.config.toml");
     if config_path.is_file() {
         let toml = fs::read_to_string(&config_path)?;
-        let config: ahiru_core::AhiruConfig = toml::from_str(&toml).map_err(|e| e.to_string())?;
+        let config: ahiru_core::AhiruConfig =
+            ahiru_core::AhiruConfig::from_toml(&toml).map_err(|e| e.to_string())?;
         println!("server: {}:{}", config.server.host, config.server.port);
         println!("auth: {}", config.auth.mode);
         println!("websocket: {}", config.websocket.mode);

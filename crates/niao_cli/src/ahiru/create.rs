@@ -197,7 +197,7 @@ fn scaffold_project(answers: &WizardAnswers) -> Result<(), Box<dyn std::error::E
         fs::create_dir_all(root.join("data"))?;
     }
 
-    let config_toml = toml::to_string_pretty(&answers.config)?;
+    let config_toml = ahiru_core::config_to_toml(&answers.config);
     fs::write(root.join("ahiru.config.toml"), config_toml)?;
 
     fs::write(

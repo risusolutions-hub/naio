@@ -64,3 +64,25 @@ Run: `python benchmarks/benchmark_json.py` or `cargo run --release -p niao_json_
 
 ### Workspace CI note
 Same cmake exclusion as task 01 for full workspace; `cargo check/test --exclude niao_llm --exclude niao_rag --exclude niao_cli` green after task 02.
+
+---
+
+## Task 03 — TOML config parser
+
+### Status: complete
+
+### Removed direct dependencies
+- `toml` removed from `crates/ahiru_core/Cargo.toml` and `crates/niao_cli/Cargo.toml`.
+
+### Added
+- `niao_json_core::toml` module (parse → nested `Value`, line/col errors).
+- `ahiru_core::value_de` (serde `Deserialize` from `niao_json_core::Value`).
+- `ahiru_core::toml_write::config_to_toml` for project scaffolding.
+
+### Tests
+- `niao_json_core` TOML: `examples/ahiru.config.toml`, `niao.config`, `[[array-of-tables]]`.
+- `ahiru_core::AhiruConfig::from_toml` round-trips sample config.
+
+### Skips
+- Full TOML spec coverage (dates as strings only; advanced inline/literal edge cases deferred).
+- `niao_cli` excluded from workspace CI (cmake); `ahiru_core` checks green.

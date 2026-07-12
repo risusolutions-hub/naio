@@ -298,7 +298,8 @@ pub struct ConfigError {
 
 impl AhiruConfig {
     pub fn from_toml(s: &str) -> Result<Self, String> {
-        toml::from_str(s).map_err(|e| e.to_string())
+        let value = niao_json_core::toml::parse_to_value(s).map_err(|e| e.to_string())?;
+        crate::value_de::from_value(&value)
     }
 
     pub fn from_file(path: &std::path::Path) -> Result<Self, String> {

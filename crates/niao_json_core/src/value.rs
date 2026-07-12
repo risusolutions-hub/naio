@@ -102,6 +102,14 @@ impl Value {
     }
 
     #[inline]
+    pub fn as_object_mut(&mut self) -> Option<&mut Object> {
+        match self {
+            Self::Object(o) => Some(o),
+            _ => None,
+        }
+    }
+
+    #[inline]
     pub fn get(&self, key: &str) -> Option<&Value> {
         self.as_object()?.get(key)
     }

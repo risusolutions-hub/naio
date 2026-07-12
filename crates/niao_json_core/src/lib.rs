@@ -6,6 +6,7 @@ pub mod object;
 pub mod parse;
 pub mod value;
 pub mod write;
+pub mod toml;
 
 pub use error::ParseError;
 pub use number::Number;
