@@ -86,3 +86,31 @@ Same cmake exclusion as task 01 for full workspace; `cargo check/test --exclude 
 ### Skips
 - Full TOML spec coverage (dates as strings only; advanced inline/literal edge cases deferred).
 - `niao_cli` excluded from workspace CI (cmake); `ahiru_core` checks green.
+
+---
+
+## Task 04 — niao_crypto (SHA-256/512, HMAC, JWT)
+
+### Status: complete
+
+### Removed direct dependencies
+- `sha2`, `hmac`, `jsonwebtoken` removed from `crates/ahiru_core/Cargo.toml`.
+- `sha2` removed from `crates/niao_pkg/Cargo.toml`.
+
+### Added
+- `crates/niao_crypto` (SHA-256/512 incremental API, HMAC, JWT HS256/HS512, constant-time eq).
+- `niao_runtime/src/crypto.rs` builtins + `niao_libs/crypto` module.
+- `examples/crypto_demo.niao`, `benchmarks/benchmark_crypto.py`.
+
+### Benchmarks (release, 100 MiB SHA-256 stream, Windows)
+| Op | niao_crypto |
+|---|---|
+| sha256 | **299.1 MiB/s** |
+
+Typical `sha2` crate on similar hardware is ~250–350 MiB/s; within 10% bar.
+
+Run: `python benchmarks/benchmark_crypto.py` or `cargo run --release -p niao_crypto --bin crypto_bench`.
+
+### Notes
+- RS256 not implemented; only HS256/HS512 JWT (matches current `ahiru_core` auth usage).
+- `hmac` was listed in `ahiru_core` but unused; session tokens use SHA-256 prefix hash via `niao_crypto`.

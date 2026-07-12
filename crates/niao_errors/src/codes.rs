@@ -58,6 +58,11 @@ pub const E1030_CODEC_ARITY: u32 = 1030;
 /// Codec encode/decode error.
 pub const E1031_CODEC_ERROR: u32 = 1031;
 
+/// Crypto builtin arity error.
+pub const E1040_CRYPTO_ARITY: u32 = 1040;
+/// Crypto operation error.
+pub const E1041_CRYPTO_ERROR: u32 = 1041;
+
 /// Unknown class name.
 pub const E1020_UNKNOWN_CLASS: u32 = 1020;
 /// Unknown method on class or instance.

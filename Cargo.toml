@@ -5,6 +5,7 @@ members = [
     "crates/niao_errors",
     "crates/niao_codec",
     "crates/niao_json_core",
+    "crates/niao_crypto",
     "crates/niao_lexer",
     "crates/niao_parser",
     "crates/niao_runtime",
@@ -40,6 +41,7 @@ niao_ast = { path = "crates/niao_ast" }
 niao_errors = { path = "crates/niao_errors" }
 niao_codec = { path = "crates/niao_codec" }
 niao_json_core = { path = "crates/niao_json_core" }
+niao_crypto = { path = "crates/niao_crypto" }
 niao_lexer = { path = "crates/niao_lexer" }
 niao_parser = { path = "crates/niao_parser" }
 niao_runtime = { path = "crates/niao_runtime" }

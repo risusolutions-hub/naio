@@ -6,6 +6,7 @@
 - `niao_codec` crate (zero-deps base64, hex, UUID v4/v7, dotenv) with `codec` Niao module; replaces `base64`, `uuid`, and `dotenvy` in `ahiru_core` / `niao_runtime`.
 - `niao_json_core` crate (zero-deps JSON parse/stringify); wired into `niao_runtime` JSON builtins; replaces direct `serde_json` use in JSON hot paths.
 - TOML parser in `niao_json_core::toml`; replaces `toml` crate in `ahiru_core` / `niao_cli` config paths.
+- `niao_crypto` crate (SHA-256/512, HMAC, JWT HS256/HS512); replaces `sha2`, `hmac`, `jsonwebtoken` in `ahiru_core` and `sha2` in `niao_pkg`.
 
 ## 0.2.2 — 2026-07-07
 

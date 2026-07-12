@@ -5,7 +5,7 @@ use crate::paths::{global_install_state_path, resolve_niao_home};
 use crate::registry::{fetch_bytes, registry_url};
 use flate2::read::GzDecoder;
 use serde::Deserialize;
-use sha2::{Digest, Sha256};
+use niao_crypto::{hex, sha256};
 use std::fs;
 use std::io::Read;
 use std::path::Path;
@@ -161,8 +161,7 @@ fn strip_utf8_bom(text: &str) -> &str {
 }
 
 fn verify_sha256(data: &[u8], expected: &str) -> PkgResult<()> {
-  let digest = Sha256::digest(data);
-  let got = hex::encode(digest);
+  let got = hex::encode(&sha256(data));
   if got.eq_ignore_ascii_case(expected.trim()) {
     Ok(())
   } else {
@@ -382,13 +381,3 @@ fn update_windows_uninstall_version(_home: &Path, _version: &str) -> PkgResult<(
   Ok(())
 }
 
-// hex encoding without adding a crate dependency beyond sha2's optional hex feature
-mod hex {
-  pub fn encode(bytes: impl AsRef<[u8]>) -> String {
-    bytes
-      .as_ref()
-      .iter()
-      .map(|b| format!("{b:02x}"))
-      .collect()
-  }
-}

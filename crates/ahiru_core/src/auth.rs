@@ -1,7 +1,8 @@
 use crate::context::RequestContext;
-use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, Validation};
+use crate::value_de;
+use niao_crypto::jwt::{self, Validation};
+use niao_json_core::{to_string, Value};
 use serde::{Deserialize, Serialize};
-use sha2::{Digest, Sha256};
 use std::collections::HashSet;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -77,16 +78,13 @@ impl AuthConfig {
             .strip_prefix("Bearer ")
             .or_else(|| auth.strip_prefix("bearer "))
             .ok_or("expected Bearer token")?;
-        let data = decode::<JwtClaims>(
-            token,
-            &DecodingKey::from_secret(self.jwt_secret.as_bytes()),
-            &Validation::new(Algorithm::HS256),
-        )
-        .map_err(|e| e.to_string())?;
+        let payload = jwt::verify(token, self.jwt_secret.as_bytes(), &Validation::default())
+            .map_err(|e| e.to_string())?;
+        let claims: JwtClaims = value_de::from_value(&payload)?;
         Ok(Some(UserContext {
-            id: data.claims.sub,
-            roles: data.claims.roles,
-            permissions: data.claims.permissions,
+            id: claims.sub,
+            roles: claims.roles,
+            permissions: claims.permissions,
         }))
     }
 
@@ -131,18 +129,46 @@ impl AuthConfig {
             permissions: permissions.to_vec(),
             exp,
         };
-        encode(
-            &Header::default(),
-            &claims,
-            &EncodingKey::from_secret(self.jwt_secret.as_bytes()),
-        )
-        .map_err(|e| e.to_string())
+        let payload = claims_to_json(&claims)?;
+        jwt::sign_hs256(jwt::default_header_hs256(), &payload, self.jwt_secret.as_bytes())
+            .map_err(|e| e.to_string())
     }
 
     pub fn issue_session_cookie(&self, user_id: &str, roles: &[String], permissions: &[String]) -> Result<String, String> {
         let token = sign_session_token(user_id, roles, permissions, &self.session_secret)?;
         Ok(format!("ahiru_session={token}; HttpOnly; Path=/; SameSite=Lax"))
     }
+}
+
+fn claims_to_json(claims: &JwtClaims) -> Result<String, String> {
+    let mut obj = niao_json_core::object::Object::new();
+    obj.insert("sub".into(), Value::String(claims.sub.clone()));
+    obj.insert("exp".into(), Value::Number(niao_json_core::Number::I64(claims.exp as i64)));
+    if !claims.roles.is_empty() {
+        obj.insert(
+            "roles".into(),
+            Value::Array(
+                claims
+                    .roles
+                    .iter()
+                    .map(|r| Value::String(r.clone()))
+                    .collect(),
+            ),
+        );
+    }
+    if !claims.permissions.is_empty() {
+        obj.insert(
+            "permissions".into(),
+            Value::Array(
+                claims
+                    .permissions
+                    .iter()
+                    .map(|p| Value::String(p.clone()))
+                    .collect(),
+            ),
+        );
+    }
+    Ok(to_string(&Value::Object(obj)))
 }
 
 fn sign_session_token(
@@ -157,10 +183,7 @@ fn sign_session_token(
         roles.join(","),
         permissions.join(",")
     );
-    let mut hasher = Sha256::new();
-    hasher.update(secret.as_bytes());
-    hasher.update(payload.as_bytes());
-    let sig = format!("{:x}", hasher.finalize());
+    let sig = jwt::sha256_hex_secret_prefix(secret.as_bytes(), payload.as_bytes());
     Ok(niao_codec::base64::encode_standard(format!("{payload}.{sig}").as_bytes()))
 }
 
@@ -168,10 +191,7 @@ fn verify_session_token(token: &str, secret: &str) -> Result<UserContext, String
     let decoded = niao_codec::base64::decode_standard(token).map_err(|e| e.to_string())?;
     let s = String::from_utf8(decoded).map_err(|e| e.to_string())?;
     let (payload, sig) = s.rsplit_once('.').ok_or("invalid session token")?;
-    let mut hasher = Sha256::new();
-    hasher.update(secret.as_bytes());
-    hasher.update(payload.as_bytes());
-    let expected = format!("{:x}", hasher.finalize());
+    let expected = jwt::sha256_hex_secret_prefix(secret.as_bytes(), payload.as_bytes());
     if sig != expected {
         return Err("session signature mismatch".into());
     }

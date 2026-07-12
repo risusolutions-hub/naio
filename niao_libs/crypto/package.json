@@ -1,0 +1,5 @@
+{
+  "name": "crypto",
+  "version": "0.2.2",
+  "description": "SHA-256/512 and HMAC helpers"
+}

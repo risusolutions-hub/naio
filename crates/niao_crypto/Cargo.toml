@@ -1,0 +1,13 @@
+[package]
+name = "niao_crypto"
+version.workspace = true
+edition.workspace = true
+description = "Zero-dep SHA-256/512, HMAC, and JWT (HS256/HS512) for Niao"
+
+[dependencies]
+niao_codec = { workspace = true }
+niao_json_core = { workspace = true }
+
+[[bin]]
+name = "crypto_bench"
+path = "src/bin/crypto_bench.rs"

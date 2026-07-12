@@ -1,0 +1,4 @@
+import "crypto"
+
+let digest = crypto.sha256("hello")
+print("sha256:", digest)

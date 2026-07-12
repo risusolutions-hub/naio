@@ -21,9 +21,7 @@ tokio-tungstenite = { version = "0.26", features = ["rustls-tls-webpki-roots"] }
 futures-util = "0.3"
 niao_codec = { workspace = true }
 niao_json_core = { workspace = true }
-jsonwebtoken = "9"
-sha2 = "0.10"
-hmac = "0.12"
+niao_crypto = { workspace = true }
 dashmap = "6"
 rusqlite = { version = "0.32", features = ["bundled"] }
 r2d2 = "0.8"

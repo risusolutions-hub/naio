@@ -7,6 +7,7 @@ edition.workspace = true
 niao_ast = { workspace = true }
 niao_errors = { workspace = true }
 niao_codec = { workspace = true }
+niao_crypto = { workspace = true }
 niao_json_core = { workspace = true }
 num-bigint = "0.4"
 num-traits = "0.2"

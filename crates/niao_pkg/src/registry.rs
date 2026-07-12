@@ -6,7 +6,7 @@ use crate::package::{
 use crate::paths::niao_home;
 use flate2::read::GzDecoder;
 use serde::Deserialize;
-use sha2::{Digest, Sha256};
+use niao_crypto::{hex, sha256};
 use std::fs;
 use std::io::Read;
 use std::path::{Path, PathBuf};
@@ -174,9 +174,7 @@ fn pick_registry_version(requested: &str, available: &[String]) -> PkgResult<Str
 }
 
 fn sha256_hex(data: &[u8]) -> String {
-    let mut hasher = Sha256::new();
-    hasher.update(data);
-    format!("{:x}", hasher.finalize())
+    hex::encode(&sha256(data))
 }
 
 fn extract_tarball(bytes: &[u8], dest_root: &Path, expected_name: &str) -> PkgResult<()> {
