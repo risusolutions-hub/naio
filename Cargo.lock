@@ -3606,7 +3606,6 @@ dependencies = [
  "niao_tensor",
  "rand 0.8.6",
  "serde",
- "serde_json",
 ]
 
 [[package]]
@@ -3656,6 +3655,10 @@ dependencies = [
  "niao_ast",
  "niao_runtime",
 ]
+
+[[package]]
+name = "niao_json_core"
+version = "0.2.2"
 
 [[package]]
 name = "niao_lexer"
@@ -3708,7 +3711,6 @@ version = "0.2.2"
 dependencies = [
  "clap",
  "niao_pkg",
- "serde_json",
 ]
 
 [[package]]
@@ -3767,6 +3769,7 @@ dependencies = [
  "niao_data",
  "niao_errors",
  "niao_graph",
+ "niao_json_core",
  "niao_llm",
  "niao_ml",
  "niao_rag",

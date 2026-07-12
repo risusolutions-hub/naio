@@ -1,4 +1,4 @@
-//! Native JSON standard library — fast parse/stringify via `serde_json`.
+//! Native JSON standard library — fast parse/stringify via `niao_json_core`.
 //!
 //! Registered as prefixed builtins (`json_parse`, `json_stringify`, ...).
 //! Import with `import "json"` (or `import "std/json"`).
@@ -8,11 +8,10 @@ use niao_ast::Span;
 use niao_errors::codes;
 use num_bigint::BigInt;
 use num_traits::cast::ToPrimitive;
-use serde::de::{self, DeserializeSeed, Deserializer, MapAccess, SeqAccess, Visitor};
-use serde_json::{Map, Number, Value as JsonValue};
+use niao_json_core::{Number as JNumber, Object as JObject, Value as JsonValue};
+use niao_json_core::{is_valid, parse as parse_json, to_string_pretty as json_pretty};
 use std::cell::RefCell;
 use std::collections::HashMap;
-use std::fmt;
 use std::rc::Rc;
 
 #[cfg(feature = "nmongo")]
@@ -62,30 +61,22 @@ fn int_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> NiaoResult<
     }
 }
 
-#[cfg(test)]
 fn json_to_value(j: JsonValue) -> Value {
     match j {
         JsonValue::Null => Value::Nil,
         JsonValue::Bool(b) => Value::Bool(b),
-        JsonValue::Number(n) => {
-            if let Some(i) = n.as_i64() {
-                Value::Int(i)
-            } else if let Some(u) = n.as_u64() {
-                if u <= i64::MAX as u64 {
-                    Value::Int(u as i64)
-                } else {
-                    Value::BigInt(BigInt::from(u))
-                }
-            } else if let Some(f) = n.as_f64() {
+        JsonValue::Number(n) => match n {
+            JNumber::I64(i) => Value::Int(i),
+            JNumber::U64(u) if u <= i64::MAX as u64 => Value::Int(u as i64),
+            JNumber::U64(u) => Value::BigInt(BigInt::from(u)),
+            JNumber::F64(f) => {
                 if f.fract() == 0.0 && f >= i64::MIN as f64 && f <= i64::MAX as f64 {
                     Value::Int(f as i64)
                 } else {
                     Value::Float(f)
                 }
-            } else {
-                Value::String(n.to_string())
             }
-        }
+        },
         JsonValue::String(s) => Value::String(s),
         JsonValue::Array(items) => {
             let mut out = Vec::with_capacity(items.len());
@@ -96,8 +87,8 @@ fn json_to_value(j: JsonValue) -> Value {
         }
         JsonValue::Object(map) => {
             let mut out = HashMap::with_capacity(map.len());
-            for (k, v) in map {
-                out.insert(k, json_to_value(v).ref_cell());
+            for (k, v) in map.iter() {
+                out.insert(k.to_string(), json_to_value(v.clone()).ref_cell());
             }
             Value::Object(out)
         }
@@ -108,12 +99,12 @@ fn value_to_json(v: &Value, span: Span) -> NiaoResult<JsonValue> {
     match v {
         Value::Nil => Ok(JsonValue::Null),
         Value::Bool(b) => Ok(JsonValue::Bool(*b)),
-        Value::Int(n) => Ok(JsonValue::Number(Number::from(*n))),
+        Value::Int(n) => Ok(JsonValue::Number(JNumber::I64(*n))),
         Value::BigInt(n) => {
             if let Some(i) = n.to_i64() {
-                Ok(JsonValue::Number(Number::from(i)))
+                Ok(JsonValue::Number(JNumber::I64(i)))
             } else if let Some(u) = n.to_u64() {
-                Ok(JsonValue::Number(Number::from(u)))
+                Ok(JsonValue::Number(JNumber::U64(u)))
             } else {
                 Err(type_err(
                     span,
@@ -125,17 +116,14 @@ fn value_to_json(v: &Value, span: Span) -> NiaoResult<JsonValue> {
             if !f.is_finite() {
                 Ok(JsonValue::Null)
             } else {
-                Ok(JsonValue::Number(
-                    Number::from_f64(*f)
-                        .ok_or_else(|| type_err(span, format!("json_stringify: invalid float {f}")))?,
-                ))
+                Ok(JsonValue::Number(JNumber::F64(*f)))
             }
         }
         Value::String(s) => Ok(JsonValue::String(s.clone())),
         Value::IntArray(items) => {
             let mut out = Vec::with_capacity(items.len());
             for &n in items {
-                out.push(JsonValue::Number(Number::from(n)));
+                out.push(JsonValue::Number(JNumber::I64(n)));
             }
             Ok(JsonValue::Array(out))
         }
@@ -145,10 +133,7 @@ fn value_to_json(v: &Value, span: Span) -> NiaoResult<JsonValue> {
                 if !f.is_finite() {
                     out.push(JsonValue::Null);
                 } else {
-                    out.push(JsonValue::Number(
-                        Number::from_f64(f)
-                            .ok_or_else(|| type_err(span, format!("json_stringify: invalid float {f}")))?,
-                    ));
+                    out.push(JsonValue::Number(JNumber::F64(f)));
                 }
             }
             Ok(JsonValue::Array(out))
@@ -163,7 +148,7 @@ fn value_to_json(v: &Value, span: Span) -> NiaoResult<JsonValue> {
         Value::ByteArray(items) => {
             let mut out = Vec::with_capacity(items.len());
             for &b in items {
-                out.push(JsonValue::Number(Number::from(b as i64)));
+                out.push(JsonValue::Number(JNumber::I64(b as i64)));
             }
             Ok(JsonValue::Array(out))
         }
@@ -182,7 +167,7 @@ fn value_to_json(v: &Value, span: Span) -> NiaoResult<JsonValue> {
             Ok(JsonValue::Array(out))
         }
         Value::Object(map) => {
-            let mut out = Map::new();
+            let mut out = JObject::with_capacity(map.len());
             let mut keys: Vec<&String> = map.keys().collect();
             keys.sort();
             for k in keys {
@@ -192,7 +177,7 @@ fn value_to_json(v: &Value, span: Span) -> NiaoResult<JsonValue> {
         }
         #[cfg(feature = "nmongo")]
         Value::BsonDoc(buf) => {
-            let mut out = Map::new();
+            let mut out = JObject::new();
             for elem in buf.iter() {
                 let (k, v) = elem.map_err(|e| type_err(span, e.to_string()))?;
                 out.insert(
@@ -203,7 +188,7 @@ fn value_to_json(v: &Value, span: Span) -> NiaoResult<JsonValue> {
             Ok(JsonValue::Object(out))
         }
         Value::Instance(inst) => {
-            let mut out = Map::new();
+            let mut out = JObject::new();
             let mut keys: Vec<&String> = inst.fields.keys().collect();
             keys.sort();
             for k in keys {
@@ -648,90 +633,12 @@ fn clone_json_value(v: &Value) -> Value {
     }
 }
 
-// ---------------------------------------------------------------------------
-// Direct parse (serde visitor → Niao Value, no JsonValue tree)
-// ---------------------------------------------------------------------------
-
-struct NiaoJsonVisitor;
-
-struct NiaoJsonSeed;
-
-impl<'de> DeserializeSeed<'de> for NiaoJsonSeed {
-    type Value = Value;
-
-    fn deserialize<D: Deserializer<'de>>(self, deserializer: D) -> Result<Self::Value, D::Error> {
-        deserializer.deserialize_any(NiaoJsonVisitor)
-    }
-}
-
-impl<'de> Visitor<'de> for NiaoJsonVisitor {
-    type Value = Value;
-
-    fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        formatter.write_str("JSON value")
-    }
-
-    fn visit_bool<E: de::Error>(self, v: bool) -> Result<Self::Value, E> {
-        Ok(Value::Bool(v))
-    }
-
-    fn visit_i64<E: de::Error>(self, v: i64) -> Result<Self::Value, E> {
-        Ok(Value::Int(v))
-    }
-
-    fn visit_u64<E: de::Error>(self, v: u64) -> Result<Self::Value, E> {
-        if v <= i64::MAX as u64 {
-            Ok(Value::Int(v as i64))
-        } else {
-            Ok(Value::BigInt(BigInt::from(v)))
-        }
-    }
-
-    fn visit_f64<E: de::Error>(self, v: f64) -> Result<Self::Value, E> {
-        if v.fract() == 0.0 && v >= i64::MIN as f64 && v <= i64::MAX as f64 {
-            Ok(Value::Int(v as i64))
-        } else {
-            Ok(Value::Float(v))
-        }
-    }
-
-    fn visit_str<E: de::Error>(self, v: &str) -> Result<Self::Value, E> {
-        Ok(Value::String(v.to_string()))
-    }
-
-    fn visit_string<E: de::Error>(self, v: String) -> Result<Self::Value, E> {
-        Ok(Value::String(v))
-    }
-
-    fn visit_none<E: de::Error>(self) -> Result<Self::Value, E> {
-        Ok(Value::Nil)
-    }
-
-    fn visit_unit<E: de::Error>(self) -> Result<Self::Value, E> {
-        Ok(Value::Nil)
-    }
-
-    fn visit_seq<A: SeqAccess<'de>>(self, mut seq: A) -> Result<Self::Value, A::Error> {
-        let mut out = Vec::with_capacity(seq.size_hint().unwrap_or(0));
-        while let Some(v) = seq.next_element_seed(NiaoJsonSeed)? {
-            out.push(v.ref_cell());
-        }
-        Ok(Value::Array(out))
-    }
-
-    fn visit_map<A: MapAccess<'de>>(self, mut map: A) -> Result<Self::Value, A::Error> {
-        let mut out = HashMap::with_capacity(map.size_hint().unwrap_or(0));
-        while let Some(key) = map.next_key::<String>()? {
-            let v = map.next_value_seed(NiaoJsonSeed)?;
-            out.insert(key, v.ref_cell());
-        }
-        Ok(Value::Object(out))
-    }
+fn json_core_to_niao(j: JsonValue) -> Value {
+    json_to_value(j)
 }
 
 fn parse_json_text(text: &str, span: Span) -> NiaoResult<Value> {
-    let mut de = serde_json::Deserializer::from_slice(text.as_bytes());
-    NiaoJsonSeed.deserialize(&mut de).map_err(|e| {
+    parse_json(text).map(json_core_to_niao).map_err(|e| {
         RuntimeError::at(
             span,
             codes::E1013_JSON_PARSE,
@@ -769,10 +676,12 @@ fn append_json_number(n: i64, out: &mut String) {
 }
 
 fn append_json_float(f: f64, out: &mut String) {
-    if let Some(n) = Number::from_f64(f) {
-        out.push_str(&n.to_string());
-    } else {
+    if !f.is_finite() {
         out.push_str("null");
+    } else if f == 0.0 && f.is_sign_negative() {
+        out.push_str("-0");
+    } else {
+        out.push_str(&JNumber::F64(f).to_string());
     }
 }
 
@@ -1036,21 +945,7 @@ fn json_stringify_pretty(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> 
         ));
     }
     let j = value_to_json(&args[0].borrow(), span)?;
-    let out = serde_json::to_string_pretty(&j).map_err(|e| {
-        RuntimeError::at(
-            span,
-            codes::E1014_JSON_TYPE,
-            format!("json_stringify_pretty: {e}"),
-        )
-    })?;
-    // serde_json pretty always uses 2-space indent; re-indent if needed via manual replace is wasteful.
-    // For custom indent, format manually when != 2
-    let out = if indent == 2 {
-        out
-    } else {
-        let space = " ".repeat(indent as usize);
-        out.replace("  ", &space)
-    };
+    let out = json_pretty(&j, indent as usize);
     Ok(Value::String(out).ref_cell())
 }
 
@@ -1069,7 +964,7 @@ fn json_valid(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
             ));
         }
     };
-    Ok(Value::Bool(serde_json::from_slice::<JsonValue>(text.as_bytes()).is_ok()).ref_cell())
+    Ok(Value::Bool(is_valid(text)).ref_cell())
 }
 
 fn json_type(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
@@ -1308,9 +1203,9 @@ mod tests {
         map.insert("version".into(), Value::Int(1).ref_cell());
         let val = Value::Object(map).ref_cell();
         let j = value_to_json(&val.borrow(), span).unwrap();
-        let s = serde_json::to_string(&j).unwrap();
+        let s = niao_json_core::to_string(&j);
         assert_eq!(s, r#"{"name":"Niao","version":1}"#);
-        let back = json_to_value(serde_json::from_str(&s).unwrap());
+        let back = json_to_value(parse_json(&s).unwrap());
         assert!(json_deep_equal(&val.borrow(), &back));
     }
 
