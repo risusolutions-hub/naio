@@ -17,6 +17,7 @@ mod dsa_storage;
 mod int_algos;
 mod int_heap;
 mod json;
+mod codec;
 pub mod mem;
 mod oop;
 mod re;
@@ -1462,6 +1463,7 @@ fn builtin_table() -> Vec<(&'static str, NativeFn)> {
     ];
     builtins.extend(dsa::builtins());
     builtins.extend(json::builtins());
+    builtins.extend(codec::builtins());
     builtins.extend(io::builtins());
     builtins.extend(re::builtins());
     builtins.extend(net::builtins());
@@ -1518,6 +1520,10 @@ pub fn install_native_modules(env: &Environment) {
         json::MODULE_NAME.to_string(),
         json::namespace().ref_cell(),
     );
+    env.define(
+        codec::MODULE_NAME.to_string(),
+        codec::namespace().ref_cell(),
+    );
     env.define(re::MODULE_NAME.to_string(), re::namespace().ref_cell());
     env.define(
         parallel::MODULE_NAME.to_string(),
@@ -1551,7 +1557,7 @@ pub fn native_module_paths() -> &'static [&'static str] {
     #[cfg(feature = "nmongo")]
     {
         &[
-            "dsa", "std/dsa", "json", "std/json", "io", "std/io", "re", "std/re", "net", "std/net",
+            "dsa", "std/dsa", "json", "std/json", "codec", "std/codec", "io", "std/io", "re", "std/re", "net", "std/net",
             "parallel", "std/parallel", "time", "std/time", "nsqlite", "std/nsqlite",
             "npg", "std/npg", "nmongo", "std/nmongo", "nrag", "std/nrag", "nllm", "std/nllm",
             "nos", "std/nos", "nenv", "std/nenv",
@@ -1561,7 +1567,7 @@ pub fn native_module_paths() -> &'static [&'static str] {
     #[cfg(not(feature = "nmongo"))]
     {
         &[
-            "dsa", "std/dsa", "json", "std/json", "io", "std/io", "re", "std/re", "net", "std/net",
+            "dsa", "std/dsa", "json", "std/json", "codec", "std/codec", "io", "std/io", "re", "std/re", "net", "std/net",
             "parallel", "std/parallel", "time", "std/time", "nsqlite", "std/nsqlite",
             "npg", "std/npg", "nrag", "std/nrag", "nllm", "std/nllm",
             "nos", "std/nos", "nenv", "std/nenv",
@@ -1575,6 +1581,9 @@ pub fn native_module_export_name(path: &str) -> Option<&'static str> {
     let path = path.trim_matches('"');
     if json::MODULE_PATHS.contains(&path) {
         return Some(json::MODULE_NAME);
+    }
+    if codec::MODULE_PATHS.contains(&path) {
+        return Some(codec::MODULE_NAME);
     }
     if re::MODULE_PATHS.contains(&path) {
         return Some(re::MODULE_NAME);

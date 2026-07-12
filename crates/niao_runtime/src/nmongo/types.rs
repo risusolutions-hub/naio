@@ -318,7 +318,8 @@ pub fn niao_value_to_bson(val: &Value, span: Span) -> Result<Bson, RuntimeError>
                                 _ => None,
                             })
                             .ok_or_else(|| bson_err(span, "missing base64 in $binary"))?;
-                        let bytes = base64_decode(&b64).map_err(|e| bson_err(span, e))?;
+                        let bytes = niao_codec::base64::decode_standard(&b64)
+                            .map_err(|e| bson_err(span, e))?;
                         let _subtype = bm
                             .get("subType")
                             .and_then(|v| match &*v.borrow() {
@@ -550,48 +551,6 @@ pub fn bson_doc_to_niao_ref(doc: &Document) -> ValueRef {
 
 fn bson_err<E: std::fmt::Display>(span: Span, e: E) -> RuntimeError {
     RuntimeError::at(span, codes::E1924_NMONGO_BSON, e.to_string())
-}
-
-fn base64_decode(s: &str) -> Result<Vec<u8>, String> {
-    const TABLE: [i8; 128] = {
-        let mut t = [-1i8; 128];
-        let mut i = 0u8;
-        while i < 26 {
-            t[(b'A' + i) as usize] = i as i8;
-            i += 1;
-        }
-        let mut i = 0u8;
-        while i < 26 {
-            t[(b'a' + i) as usize] = (26 + i) as i8;
-            i += 1;
-        }
-        let mut i = 0u8;
-        while i < 10 {
-            t[(b'0' + i) as usize] = (52 + i) as i8;
-            i += 1;
-        }
-        t[b'+' as usize] = 62;
-        t[b'/' as usize] = 63;
-        t
-    };
-    let s = s.trim_end_matches('=');
-    let mut out = Vec::with_capacity(s.len() * 3 / 4);
-    let bytes = s.as_bytes();
-    let mut i = 0;
-    while i + 3 < bytes.len() {
-        let a = TABLE[bytes[i] as usize];
-        let b = TABLE[bytes[i + 1] as usize];
-        let c = TABLE[bytes[i + 2] as usize];
-        let d = TABLE[bytes[i + 3] as usize];
-        if a < 0 || b < 0 || c < 0 || d < 0 {
-            return Err("invalid base64".into());
-        }
-        out.push(((a as u8) << 2) | ((b as u8) >> 4));
-        out.push(((b as u8) << 4) | ((c as u8) >> 2));
-        out.push(((c as u8) << 6) | (d as u8));
-        i += 4;
-    }
-    Ok(out)
 }
 
 pub fn is_object_id_hex(hex: &str) -> bool {

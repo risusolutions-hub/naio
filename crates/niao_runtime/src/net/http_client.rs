@@ -16,7 +16,7 @@ fn apply_opts(mut request: ureq::Request, opts: &HttpOpts) -> ureq::Request {
     if let Some((user, pass)) = &opts.auth {
         request = request.set(
             "Authorization",
-            &format!("Basic {}", base64_encode(&format!("{user}:{pass}"))),
+            &format!("Basic {}", niao_codec::base64::encode_standard(format!("{user}:{pass}").as_bytes())),
         );
     }
     for (k, v) in &opts.headers {
@@ -91,31 +91,6 @@ fn send_body(request: ureq::Request, opts: &HttpOpts) -> Result<ureq::Response, 
     } else {
         request.call()
     }
-}
-
-fn base64_encode(input: &str) -> String {
-    const TABLE: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-    let bytes = input.as_bytes();
-    let mut out = String::new();
-    for chunk in bytes.chunks(3) {
-        let b0 = chunk[0] as u32;
-        let b1 = chunk.get(1).copied().unwrap_or(0) as u32;
-        let b2 = chunk.get(2).copied().unwrap_or(0) as u32;
-        let n = (b0 << 16) | (b1 << 8) | b2;
-        out.push(TABLE[((n >> 18) & 63) as usize] as char);
-        out.push(TABLE[((n >> 12) & 63) as usize] as char);
-        if chunk.len() > 1 {
-            out.push(TABLE[((n >> 6) & 63) as usize] as char);
-        } else {
-            out.push('=');
-        }
-        if chunk.len() > 2 {
-            out.push(TABLE[(n & 63) as usize] as char);
-        } else {
-            out.push('=');
-        }
-    }
-    out
 }
 
 fn response_to_value(resp: ureq::Response, url: &str) -> crate::ValueRef {

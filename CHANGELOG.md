@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- `niao_codec` crate (zero-deps base64, hex, UUID v4/v7, dotenv) with `codec` Niao module; replaces `base64`, `uuid`, and `dotenvy` in `ahiru_core` / `niao_runtime`.
+
 ## 0.2.2 — 2026-07-07
 
 ### Release

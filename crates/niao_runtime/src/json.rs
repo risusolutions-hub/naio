@@ -247,7 +247,9 @@ fn json_type_name(v: &Value) -> &'static str {
         Value::Int(_) | Value::BigInt(_) | Value::Float(_) => "number",
         Value::String(_) => "string",
         Value::IntArray(_) | Value::FloatArray(_) | Value::BoolArray(_) | Value::ByteArray(_) | Value::StringArray(_) | Value::Array(_) => "array",
-        Value::Object(_) | Value::BsonDoc(_) => "object",
+        Value::Object(_) => "object",
+        #[cfg(feature = "nmongo")]
+        Value::BsonDoc(_) => "object",
         Value::Instance(_) => "object",
         Value::Function(_) | Value::NativeFunction(_) => "unsupported",
         Value::Native(_) | Value::Error(_) | Value::NclHandle(_) | Value::NmlHandle(_) => "unsupported",
@@ -268,8 +270,9 @@ fn is_json_value(v: &Value) -> bool {
         | Value::ByteArray(_)
         | Value::StringArray(_)
         | Value::Array(_)
-        | Value::Object(_)
-        | Value::BsonDoc(_) => true,
+        | Value::Object(_) => true,
+        #[cfg(feature = "nmongo")]
+        Value::BsonDoc(_) => true,
         Value::Function(_)
         | Value::NativeFunction(_)
         | Value::Native(_)
@@ -895,13 +898,6 @@ fn stringify_value(v: &Value, out: &mut String, span: Span) -> NiaoResult<()> {
                 )?;
             }
             out.push('}');
-        }
-        #[cfg(not(feature = "nmongo"))]
-        Value::BsonDoc(_) => {
-            return Err(type_err(
-                span,
-                "json_stringify: BSON documents require the nmongo feature",
-            ));
         }
         Value::Instance(inst) => {
             out.push('{');

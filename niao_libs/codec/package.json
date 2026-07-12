@@ -1,0 +1,11 @@
+{
+    "name":  "codec",
+    "version":  "0.2.2",
+    "kind":  "native",
+    "description":  "Base64, hex, UUID, and dotenv helpers",
+    "import_paths":  [
+                         "codec",
+                         "std/codec"
+                     ],
+    "builtin_count":  7
+}

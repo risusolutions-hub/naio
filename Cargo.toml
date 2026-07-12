@@ -3,6 +3,7 @@ resolver = "2"
 members = [
     "crates/niao_ast",
     "crates/niao_errors",
+    "crates/niao_codec",
     "crates/niao_lexer",
     "crates/niao_parser",
     "crates/niao_runtime",
@@ -36,6 +37,7 @@ authors = ["Niao Contributors"]
 [workspace.dependencies]
 niao_ast = { path = "crates/niao_ast" }
 niao_errors = { path = "crates/niao_errors" }
+niao_codec = { path = "crates/niao_codec" }
 niao_lexer = { path = "crates/niao_lexer" }
 niao_parser = { path = "crates/niao_parser" }
 niao_runtime = { path = "crates/niao_runtime" }

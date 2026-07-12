@@ -40,7 +40,7 @@ use tower_http::cors::{Any, CorsLayer};
 use tower_http::limit::RequestBodyLimitLayer;
 use tower_http::services::ServeDir;
 use tower_http::set_header::SetResponseHeaderLayer;
-use uuid::Uuid;
+use niao_codec::uuid::Uuid;
 
 #[derive(Debug)]
 pub enum ServeError {

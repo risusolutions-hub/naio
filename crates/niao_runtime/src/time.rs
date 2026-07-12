@@ -890,10 +890,11 @@ mod tests {
             Value::String("UTC".into()).ref_cell(),
         ];
         let built = time_from_parts(&args, span()).unwrap();
-        match &*built.borrow() {
-            Value::Int(n) => assert_eq!(*n, ms),
+        let got = match &*built.borrow() {
+            Value::Int(n) => *n,
             other => panic!("expected int, got {other:?}"),
-        }
+        };
+        assert_eq!(got, ms);
     }
 
     #[test]

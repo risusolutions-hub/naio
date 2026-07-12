@@ -156,13 +156,7 @@ fn object_from_pairs(pairs: &[(String, String)]) -> ValueRef {
 }
 
 fn parse_dotenv_reader<R: BufRead>(reader: R) -> Result<Vec<(String, String)>, String> {
-    let iter = dotenvy::from_read_iter(reader);
-    let mut pairs = Vec::new();
-    for item in iter {
-        let (k, v) = item.map_err(|e| e.to_string())?;
-        pairs.push((k, v));
-    }
-    Ok(pairs)
+    niao_codec::parse_dotenv_reader(reader).map_err(|e| e.to_string())
 }
 
 fn parse_dotenv_file(path: &Path) -> Result<Vec<(String, String)>, String> {

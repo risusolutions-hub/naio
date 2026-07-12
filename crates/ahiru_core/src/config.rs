@@ -307,7 +307,7 @@ impl AhiruConfig {
     }
 
     pub fn load_with_env(base_path: &std::path::Path) -> Result<Self, String> {
-        let _ = dotenvy::dotenv();
+        let _ = niao_codec::load_dotenv();
         let mut config = Self::from_file(base_path)?;
         if let Ok(env) = std::env::var("AHIRU_ENV") {
             let overlay = base_path.with_file_name(format!(

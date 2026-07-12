@@ -1,0 +1,23 @@
+// Codec standard library showcase.
+// Run: niao run examples/codec_demo.niao
+import "codec" as c
+
+fn main() {
+    print("== base64 ==")
+    let raw = "Hello, Niao!"
+    let enc = c.b64encode(raw)
+    print("encoded: " + enc)
+    print("decoded: " + c.b64decode(enc))
+
+    print("== hex ==")
+    let hx = c.hexencode(raw)
+    print("hex: " + hx)
+    print("from hex: " + c.hexdecode(hx))
+
+    print("== uuid ==")
+    let u4 = c.uuid4()
+    let u7 = c.uuid7()
+    print("uuid4: " + u4)
+    print("uuid7: " + u7)
+    print("parsed: " + c.uuid_parse(u4))
+}

@@ -53,6 +53,11 @@ pub const E1013_JSON_PARSE: u32 = 1013;
 /// JSON stringify / unsupported type error.
 pub const E1014_JSON_TYPE: u32 = 1014;
 
+/// Codec builtin arity error.
+pub const E1030_CODEC_ARITY: u32 = 1030;
+/// Codec encode/decode error.
+pub const E1031_CODEC_ERROR: u32 = 1031;
+
 /// Unknown class name.
 pub const E1020_UNKNOWN_CLASS: u32 = 1020;
 /// Unknown method on class or instance.

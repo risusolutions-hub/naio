@@ -161,15 +161,11 @@ fn sign_session_token(
     hasher.update(secret.as_bytes());
     hasher.update(payload.as_bytes());
     let sig = format!("{:x}", hasher.finalize());
-    Ok(base64::Engine::encode(
-        &base64::engine::general_purpose::STANDARD,
-        format!("{payload}.{sig}"),
-    ))
+    Ok(niao_codec::base64::encode_standard(format!("{payload}.{sig}").as_bytes()))
 }
 
 fn verify_session_token(token: &str, secret: &str) -> Result<UserContext, String> {
-    let decoded = base64::Engine::decode(&base64::engine::general_purpose::STANDARD, token)
-        .map_err(|e| e.to_string())?;
+    let decoded = niao_codec::base64::decode_standard(token).map_err(|e| e.to_string())?;
     let s = String::from_utf8(decoded).map_err(|e| e.to_string())?;
     let (payload, sig) = s.rsplit_once('.').ok_or("invalid session token")?;
     let mut hasher = Sha256::new();

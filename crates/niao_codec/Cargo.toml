@@ -1,0 +1,9 @@
+[package]
+name = "niao_codec"
+version.workspace = true
+edition.workspace = true
+description = "Zero-dependency base64, hex, UUID, and dotenv utilities for Niao"
+
+[[bin]]
+name = "codec_bench"
+path = "src/bin/codec_bench.rs"

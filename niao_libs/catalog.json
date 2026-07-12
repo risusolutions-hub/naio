@@ -5,6 +5,7 @@
                  "core",
                  "dsa",
                  "json",
+                 "codec",
                  "io",
                  "re",
                  "net",
