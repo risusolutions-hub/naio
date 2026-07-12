@@ -13,6 +13,7 @@ niao_regex = { workspace = true }
 niao_time = { workspace = true }
 niao_http = { workspace = true }
 niao_ws = { workspace = true }
+niao_io = { workspace = true }
 num-bigint = "0.4"
 num-traits = "0.2"
 indexmap = "2"

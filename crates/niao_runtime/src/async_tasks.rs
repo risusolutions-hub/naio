@@ -14,8 +14,6 @@ use std::sync::atomic::{AtomicU64, Ordering};
 
 use std::sync::{mpsc, Arc, Condvar, Mutex, OnceLock};
 
-use std::thread;
-
 
 
 /// Result payload for a completed background task (all variants are `Send`).
@@ -144,19 +142,9 @@ pub(crate) struct AsyncTask {
 
 
 
-struct ThreadPool {
-
-    sender: mpsc::Sender<Box<dyn FnOnce() + Send + 'static>>,
-
-}
-
-
-
 static ASYNC_TASKS: OnceLock<Mutex<HashMap<u64, AsyncTask>>> = OnceLock::new();
 
 static NEXT_ASYNC_TASK: AtomicU64 = AtomicU64::new(1);
-
-static THREAD_POOL: OnceLock<ThreadPool> = OnceLock::new();
 
 static TOKIO_RUNTIME: OnceLock<tokio::runtime::Runtime> = OnceLock::new();
 
@@ -176,46 +164,8 @@ pub(crate) fn async_tasks() -> &'static Mutex<HashMap<u64, AsyncTask>> {
 
 
 
-fn thread_pool() -> &'static ThreadPool {
-
-    THREAD_POOL.get_or_init(|| {
-
-        let (sender, receiver) = mpsc::channel::<Box<dyn FnOnce() + Send + 'static>>();
-
-        let receiver = Arc::new(Mutex::new(receiver));
-
-        let workers = thread::available_parallelism()
-
-            .map(|n| n.get())
-
-            .unwrap_or(4)
-
-            .clamp(2, 16);
-
-        for _ in 0..workers {
-
-            let receiver = Arc::clone(&receiver);
-
-            thread::spawn(move || loop {
-
-                let job = receiver.lock().unwrap().recv();
-
-                match job {
-
-                    Ok(job) => job(),
-
-                    Err(_) => break,
-
-                }
-
-            });
-
-        }
-
-        ThreadPool { sender }
-
-    })
-
+fn thread_pool() -> &'static niao_io::Executor {
+    niao_io::Executor::global()
 }
 
 
@@ -274,7 +224,7 @@ where
 
     let job_inner = Arc::clone(&inner);
 
-    let _ = thread_pool().sender.send(Box::new(move || {
+    let _ = thread_pool().spawn(move || {
 
         if cancel_rx.try_recv().is_ok() {
 
@@ -288,7 +238,7 @@ where
 
         finish_task(&job_inner, AsyncState::Done(result));
 
-    }));
+    });
 
 
 

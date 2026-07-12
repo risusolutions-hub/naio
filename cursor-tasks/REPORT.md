@@ -243,3 +243,36 @@ Run: `python benchmarks/benchmark_ws.py` or `cargo run --release -p niao_ws --bi
 ### Notes
 - `ahiru_core` keeps `tokio-tungstenite` for axum WebSocket until task 09 async migration map.
 - Auto-responds to ping with pong; interleaved ping during read returns after pong handled.
+
+---
+
+## Task 09 — niao_io (async foundation phase 1)
+
+### Status: complete
+
+### Removed / replaced
+- Custom mpsc `ThreadPool` in `niao_runtime/src/async_tasks.rs` replaced with `niao_io::Executor::global()`.
+- `spawn_tokio` + shared `tokio::Runtime` retained for `nmongo` optional path only (ahiru stays on tokio per plan).
+
+### Added
+- `crates/niao_io` — WSAPoll (Windows) / epoll (Linux) / kqueue (macOS) poller, timer min-heap, work-stealing executor, mpsc channel, TCP connect/listen/accept + readiness wait.
+- Wired `niao_runtime::spawn_async` → `niao_io::spawn`.
+- `crates/niao_io/MIGRATION_ahiru.md` — axum/tower/tokio feature map for future ahiru migration.
+- `examples/io_demo.niao`, `benchmarks/benchmark_io.py`, `io_bench` binary.
+
+### Design choice
+- **Callback model** (not `Future` polling in VM): matches existing `spawn_async(F: FnOnce)` contract; zero VM bytecode changes.
+
+### Tests
+- Executor 100 jobs; poller create; idle poll sleeps ≥40ms (no busy-loop); timer ±80ms; TCP echo stress (10k unix / 500 Windows).
+
+### Benchmarks (release, 200k spawn jobs, Windows)
+| Op | niao_io |
+|---|---|
+| spawn | **4.68M jobs/s** |
+
+Run: `python benchmarks/benchmark_io.py` or `cargo run --release -p niao_io --bin io_bench`.
+
+### Notes
+- IOCP deferred; WSAPoll acceptable for phase 1.
+- `ahiru_core` unchanged (tokio + axum + tokio-tungstenite).

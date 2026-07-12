@@ -1,0 +1,8 @@
+[package]
+name = "niao_io"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "io_bench"
+path = "src/bin/io_bench.rs"
