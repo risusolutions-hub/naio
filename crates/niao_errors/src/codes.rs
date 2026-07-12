@@ -1130,6 +1130,54 @@ pub const E4004_NNUM_SINGULAR: u32 = 4004;
 /// e4005 nnum non-convergence.
 pub const E4005_NNUM_NON_CONVERGENCE: u32 = 4005;
 
+/// e4010 nframe arity.
+pub const E4010_NFRAME_ARITY: u32 = 4010;
+/// e4011 nframe error.
+pub const E4011_NFRAME_ERROR: u32 = 4011;
+/// e4012 nframe type.
+pub const E4012_NFRAME_TYPE: u32 = 4012;
+/// e4013 nframe bad column.
+pub const E4013_NFRAME_COLUMN: u32 = 4013;
+/// e4014 nframe length mismatch.
+pub const E4014_NFRAME_LENGTH: u32 = 4014;
+/// e4015 nframe dtype.
+pub const E4015_NFRAME_DTYPE: u32 = 4015;
+
+/// e4020 nstats arity.
+pub const E4020_NSTATS_ARITY: u32 = 4020;
+/// e4021 nstats error.
+pub const E4021_NSTATS_ERROR: u32 = 4021;
+/// e4022 nstats type.
+pub const E4022_NSTATS_TYPE: u32 = 4022;
+/// e4023 nstats domain.
+pub const E4023_NSTATS_DOMAIN: u32 = 4023;
+/// e4024 nstats non-convergence.
+pub const E4024_NSTATS_NON_CONVERGENCE: u32 = 4024;
+
+/// e4030 noptim arity.
+pub const E4030_NOPTIM_ARITY: u32 = 4030;
+/// e4031 noptim error.
+pub const E4031_NOPTIM_ERROR: u32 = 4031;
+/// e4032 noptim type.
+pub const E4032_NOPTIM_TYPE: u32 = 4032;
+/// e4033 noptim non-convergence.
+pub const E4033_NOPTIM_NON_CONVERGENCE: u32 = 4033;
+/// e4034 noptim bad bounds.
+pub const E4034_NOPTIM_BOUNDS: u32 = 4034;
+/// e4035 noptim infeasible.
+pub const E4035_NOPTIM_INFEASIBLE: u32 = 4035;
+
+/// e4040 nplot arity.
+pub const E4040_NPLOT_ARITY: u32 = 4040;
+/// e4041 nplot error.
+pub const E4041_NPLOT_ERROR: u32 = 4041;
+/// e4042 nplot type.
+pub const E4042_NPLOT_TYPE: u32 = 4042;
+/// e4043 nplot invalid handle.
+pub const E4043_NPLOT_HANDLE: u32 = 4043;
+/// e4044 nplot render/encode.
+pub const E4044_NPLOT_RENDER: u32 = 4044;
+
 /// Division by zero.
 pub const E2001_DIVISION_BY_ZERO: u32 = 2001;
 /// Reference to undefined variable.
@@ -1226,6 +1274,10 @@ pub fn runtime_kind_name(code: u32) -> &'static str {
         E3360_NMMAP_ARITY..=E3363_NMMAP_INVALID_HANDLE => "nmmap_error",
         E2830_NMODEL_ARITY..=E2833_NMODEL_SCHEMA => "nmodel_error",
         E4000_NNUM_ARITY..=E4005_NNUM_NON_CONVERGENCE => "nnum_error",
+        E4010_NFRAME_ARITY..=E4015_NFRAME_DTYPE => "nframe_error",
+        E4020_NSTATS_ARITY..=E4024_NSTATS_NON_CONVERGENCE => "nstats_error",
+        E4030_NOPTIM_ARITY..=E4035_NOPTIM_INFEASIBLE => "noptim_error",
+        E4040_NPLOT_ARITY..=E4044_NPLOT_RENDER => "nplot_error",
         E2730_NNPU_ARITY..=E2732_NNPU_TYPE => "nnpu_error",
         E3020_NPACE_ARITY..=E3022_NPACE_TYPE => "npace_error",
         E3390_NPAR_ARITY..=E3392_NPAR_TYPE => "npar_error",

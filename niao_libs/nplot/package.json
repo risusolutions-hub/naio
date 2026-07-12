@@ -1,0 +1,11 @@
+{
+    "name": "nplot",
+    "version": "0.2.3",
+    "kind": "native",
+    "description": "SVG-first plotting for EDA and model diagnostics (matplotlib/seaborn subset)",
+    "import_paths": [
+        "nplot",
+        "std/nplot"
+    ],
+    "builtin_count": 18
+}

@@ -1,0 +1,11 @@
+[package]
+name = "niao_optim"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+niao_num = { workspace = true }
+niao_errors = { workspace = true }
+
+[dev-dependencies]
+

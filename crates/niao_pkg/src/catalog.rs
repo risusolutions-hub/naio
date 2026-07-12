@@ -252,6 +252,34 @@ pub fn standard_libs() -> Vec<LibSpec> {
             13,
         ),
         native_lib(
+            "nframe",
+            NIAO_TOOLCHAIN_VERSION,
+            "Columnar DataFrame / Series (pandas/polars subset)",
+            &["nframe", "std/nframe"],
+            3,
+        ),
+        native_lib(
+            "nstats",
+            NIAO_TOOLCHAIN_VERSION,
+            "Probability, hypothesis tests, correlation, OLS (scipy.stats subset)",
+            &["nstats", "std/nstats"],
+            4,
+        ),
+        native_lib(
+            "noptim",
+            NIAO_TOOLCHAIN_VERSION,
+            "Function minimization, root finding, least squares (scipy.optimize subset)",
+            &["noptim", "std/noptim"],
+            2,
+        ),
+        native_lib(
+            "nplot",
+            NIAO_TOOLCHAIN_VERSION,
+            "SVG plotting (matplotlib/seaborn subset)",
+            &["nplot", "std/nplot"],
+            2,
+        ),
+        native_lib(
             "nnum",
             NIAO_TOOLCHAIN_VERSION,
             "Numeric foundation: n-dim arrays, linear algebra, FFT (numpy/scipy.linalg/scipy.fft subset)",
@@ -292,7 +320,7 @@ pub fn remote_libs() -> &'static [&'static str] {
 /// Alias used by install code.
 pub const STANDARD_LIBS: &[&str] = &[
     "core", "dsa", "json", "io", "re", "net", "parallel", "time", "nsqlite", "npg", "nmongo", "nos", "nenv", "ncl", "nml", "nvis",
-    "nstr", "nmath", "nnum", "nrand", "nfmt", "nlog", "nargs", "ntest", "ncache", "nvalid", "ncolor", "ahiru",
+    "nstr", "nmath", "nnum", "nframe", "nstats", "noptim", "nplot", "nrand", "nfmt", "nlog", "nargs", "ntest", "ncache", "nvalid", "ncolor", "ahiru",
 ];
 
 /// Map user-facing names (e.g. `ahiru-server`) to catalog lib names (`ahiru`).

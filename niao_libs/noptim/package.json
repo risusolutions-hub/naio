@@ -1,0 +1,11 @@
+{
+    "name": "noptim",
+    "version": "0.2.3",
+    "kind": "native",
+    "description": "Optimization: minimize, root finding, least squares, LP (scipy.optimize subset)",
+    "import_paths": [
+        "noptim",
+        "std/noptim"
+    ],
+    "builtin_count": 8
+}

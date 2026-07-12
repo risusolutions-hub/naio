@@ -35,6 +35,10 @@ mod nargs;
 mod nlog;
 mod nmath;
 mod nnum;
+mod nframe;
+mod nstats;
+mod noptim;
+mod nplot;
 mod nrand;
 mod nstr;
 mod nfmt;
@@ -1563,6 +1567,10 @@ fn builtin_table() -> Vec<(&'static str, NativeFn)> {
     builtins.extend(nlog::builtins());
     builtins.extend(nmath::builtins());
     builtins.extend(nnum::builtins());
+    builtins.extend(nframe::builtins());
+    builtins.extend(nstats::builtins());
+    builtins.extend(noptim::builtins());
+    builtins.extend(nplot::builtins());
     builtins.extend(nrand::builtins());
     builtins.extend(nstr::builtins());
     builtins.extend(nfmt::builtins());
@@ -1716,6 +1724,10 @@ pub fn install_native_modules(env: &Environment) {
     env.define(nlog::MODULE_NAME.to_string(), nlog::namespace().ref_cell());
     env.define(nmath::MODULE_NAME.to_string(), nmath::namespace().ref_cell());
     env.define(nnum::MODULE_NAME.to_string(), nnum::namespace().ref_cell());
+    env.define(nframe::MODULE_NAME.to_string(), nframe::namespace().ref_cell());
+    env.define(nstats::MODULE_NAME.to_string(), nstats::namespace().ref_cell());
+    env.define(noptim::MODULE_NAME.to_string(), noptim::namespace().ref_cell());
+    env.define(nplot::MODULE_NAME.to_string(), nplot::namespace().ref_cell());
     env.define(nrand::MODULE_NAME.to_string(), nrand::namespace().ref_cell());
     env.define(nstr::MODULE_NAME.to_string(), nstr::namespace().ref_cell());
     env.define(nfmt::MODULE_NAME.to_string(), nfmt::namespace().ref_cell());
@@ -1826,6 +1838,7 @@ pub fn native_module_paths() -> &'static [&'static str] {
             "dsa", "std/dsa", "json", "std/json", "codec", "std/codec", "archive", "std/archive", "crypto", "std/crypto", "io", "std/io", "re", "std/re", "net", "std/net",
             "parallel", "std/parallel", "time", "std/time",
             "nargs", "std/nargs", "nlog", "std/nlog", "nmath", "std/nmath", "nnum", "std/nnum",
+            "nframe", "std/nframe", "nstats", "std/nstats", "noptim", "std/noptim", "nplot", "std/nplot",
             "nrand", "std/nrand", "nstr", "std/nstr", "nfmt", "std/nfmt",
             "ntest", "std/ntest", "ncache", "std/ncache", "nvalid", "std/nvalid",
             "ncolor", "std/ncolor",
@@ -1859,6 +1872,7 @@ pub fn native_module_paths() -> &'static [&'static str] {
             "dsa", "std/dsa", "json", "std/json", "codec", "std/codec", "archive", "std/archive", "crypto", "std/crypto", "io", "std/io", "re", "std/re", "net", "std/net",
             "parallel", "std/parallel", "time", "std/time",
             "nargs", "std/nargs", "nlog", "std/nlog", "nmath", "std/nmath", "nnum", "std/nnum",
+            "nframe", "std/nframe", "nstats", "std/nstats", "noptim", "std/noptim", "nplot", "std/nplot",
             "nrand", "std/nrand", "nstr", "std/nstr", "nfmt", "std/nfmt",
             "ntest", "std/ntest", "ncache", "std/ncache", "nvalid", "std/nvalid",
             "ncolor", "std/ncolor",
@@ -1923,6 +1937,18 @@ pub fn native_module_export_name(path: &str) -> Option<&'static str> {
     }
     if nnum::MODULE_PATHS.contains(&path) {
         return Some(nnum::MODULE_NAME);
+    }
+    if nframe::MODULE_PATHS.contains(&path) {
+        return Some(nframe::MODULE_NAME);
+    }
+    if nstats::MODULE_PATHS.contains(&path) {
+        return Some(nstats::MODULE_NAME);
+    }
+    if noptim::MODULE_PATHS.contains(&path) {
+        return Some(noptim::MODULE_NAME);
+    }
+    if nplot::MODULE_PATHS.contains(&path) {
+        return Some(nplot::MODULE_NAME);
     }
     if nrand::MODULE_PATHS.contains(&path) {
         return Some(nrand::MODULE_NAME);

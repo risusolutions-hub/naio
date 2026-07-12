@@ -1,0 +1,15 @@
+[package]
+name = "niao_stats"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+niao_num = { workspace = true }
+niao_rand = { workspace = true }
+niao_errors = { workspace = true }
+
+[dev-dependencies]
+
+[[example]]
+name = "bench_norm"
+path = "examples/bench_norm.rs"

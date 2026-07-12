@@ -43,6 +43,10 @@ niao_graph = { path = "../niao_graph" }
 niao_rag = { path = "../niao_rag", optional = true }
 niao_llm = { path = "../niao_llm", optional = true }
 niao_num = { workspace = true }
+niao_stats = { workspace = true }
+niao_frame = { workspace = true }
+niao_optim = { workspace = true }
+niao_plot = { workspace = true }
 
 [features]
 default = []

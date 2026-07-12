@@ -1,0 +1,17 @@
+[package]
+name = "niao_frame"
+version.workspace = true
+edition.workspace = true
+license = "MIT"
+description = "Columnar DataFrame / Series for Niao (pandas/polars subset)"
+
+[dependencies]
+niao_num = { workspace = true }
+niao_data = { workspace = true }
+niao_errors = { workspace = true }
+
+[[example]]
+name = "bench_groupby_join"
+path = "examples/bench_groupby_join.rs"
+
+[dev-dependencies]

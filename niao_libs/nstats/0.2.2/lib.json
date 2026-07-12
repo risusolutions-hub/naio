@@ -1,0 +1,11 @@
+{
+    "name": "nstats",
+    "version": "0.2.2",
+    "kind": "native",
+    "description": "Statistics: distributions, hypothesis tests, correlation, OLS (scipy.stats + statsmodels core)",
+    "import_paths": [
+        "nstats",
+        "std/nstats"
+    ],
+    "builtin_count": 24
+}

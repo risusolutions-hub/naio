@@ -1,0 +1,13 @@
+[package]
+name = "niao_plot"
+version.workspace = true
+edition.workspace = true
+description = "SVG-first plotting for Niao (matplotlib/seaborn subset)"
+
+[dependencies]
+niao_num = { workspace = true }
+niao_errors = { workspace = true }
+
+[[bin]]
+name = "plot_bench"
+path = "src/bin/plot_bench.rs"

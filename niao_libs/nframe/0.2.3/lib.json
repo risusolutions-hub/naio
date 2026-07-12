@@ -1,0 +1,11 @@
+{
+  "name": "nframe",
+  "version": "0.2.3",
+  "kind": "native",
+  "description": "Columnar DataFrame / Series: groupby, join, reshape, rolling, CSV/JSON IO (pandas/polars subset)",
+  "import_paths": [
+    "nframe",
+    "std/nframe"
+  ],
+  "builtin_count": 24
+}

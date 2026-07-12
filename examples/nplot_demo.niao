@@ -1,0 +1,33 @@
+// nplot demo — saves a multi-chart SVG for EDA.
+// Run: niao run examples/nplot_demo.niao
+// Requires runtime wiring of nplot builtins (orchestrator task).
+
+import "nplot"
+import "nnum"
+
+fn main() {
+    print("=== nplot demo ===")
+
+    // Line chart via convenience API
+    let x = nnum.linspace(0.0, 6.283, 50)
+    let xs = nnum.to_float_array(x)
+    let ys = xs.map(fn(v) { v.sin() * 5.0 + 5.0 })
+
+    let fig = nplot.quick_line(xs, ys)
+    nplot.set_title(nplot.axes(fig, 0), "Sine wave")
+    nplot.set_xlabel(nplot.axes(fig, 0), "x")
+    nplot.set_ylabel(nplot.axes(fig, 0), "sin(x)")
+
+    let out = "nplot_demo.svg"
+    nplot.save_svg(fig, out)
+    print("saved:", out)
+
+    // Confusion matrix
+    let cm = [8.0, 2.0, 1.0, 9.0]
+    let labels = ["neg", "pos"]
+    let cm_fig = nplot.quick_confusion(cm, 2, labels)
+    nplot.save_svg(cm_fig, "nplot_confusion.svg")
+    print("saved: nplot_confusion.svg")
+
+    print("open the .svg files in a browser to view charts")
+}

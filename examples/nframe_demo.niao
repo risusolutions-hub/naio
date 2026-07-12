@@ -1,0 +1,31 @@
+// nframe demo — load → groupby → join → to_nnum
+// Run (after runtime wiring): niao run examples/nframe_demo.niao
+import "nframe"
+import "nnum"
+
+fn main() {
+    print("=== build frame ===")
+    let sales = nframe.dataframe({
+        region: ["east", "east", "west", "west", "east"],
+        sku: [1, 2, 1, 2, 1],
+        qty: [10.0, 20.0, 15.0, 5.0, 8.0],
+    })
+    print("shape:", nframe.shape(sales))
+
+    print("=== groupby region ===")
+    let by_region = nframe.group_by(sales, ["region"]).agg({qty: "sum"})
+    print("columns:", nframe.columns(by_region))
+
+    print("=== join prices ===")
+    let prices = nframe.dataframe({
+        sku: [1, 2],
+        price: [3.5, 9.0],
+    })
+    let joined = nframe.join(sales, prices, ["sku"], "inner")
+    print("joined rows:", nframe.shape(joined)[0])
+
+    print("=== to_nnum feature matrix ===")
+    let x = nframe.to_nnum(joined, ["qty", "price"])
+    print("matrix shape:", nnum.shape(x))
+    print("data:", nnum.to_float_array(x))
+}

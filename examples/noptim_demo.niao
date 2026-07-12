@@ -1,0 +1,24 @@
+// noptim demo — minimize Rosenbrock via a Niao closure.
+// Run: niao run examples/noptim_demo.niao
+import "noptim"
+
+fn rosenbrock(x) {
+    let a = 1.0 - x[0]
+    let b = x[1] - x[0] * x[0]
+    return a * a + 100.0 * b * b
+}
+
+fn main() {
+    print("=== Rosenbrock minimize (L-BFGS) ===")
+    let x0 = [-1.2, 1.0]
+    let res = noptim.minimize(rosenbrock, x0, "l-bfgs")
+    print("x*:", res.x)
+    print("f*:", res.fun)
+    print("nit:", res.nit)
+    print("success:", res.success)
+    print("message:", res.message)
+
+    print("=== root_scalar cos(x)-x ===")
+    let root = noptim.root_scalar(|x| x.cos() - x, 0.0, 1.0, "brent")
+    print("root:", root.x[0])
+}

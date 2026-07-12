@@ -3442,6 +3442,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "niao_frame"
+version = "0.2.3"
+dependencies = [
+ "niao_data",
+ "niao_errors",
+ "niao_num",
+]
+
+[[package]]
 name = "niao_graph"
 version = "0.2.3"
 dependencies = [
@@ -3565,6 +3574,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "niao_optim"
+version = "0.2.3"
+dependencies = [
+ "niao_errors",
+ "niao_num",
+]
+
+[[package]]
 name = "niao_parser"
 version = "0.2.3"
 dependencies = [
@@ -3583,6 +3600,14 @@ dependencies = [
  "niao_json_core",
  "serde",
  "winreg",
+]
+
+[[package]]
+name = "niao_plot"
+version = "0.2.3"
+dependencies = [
+ "niao_errors",
+ "niao_num",
 ]
 
 [[package]]
@@ -3630,6 +3655,7 @@ dependencies = [
  "niao_data",
  "niao_db",
  "niao_errors",
+ "niao_frame",
  "niao_graph",
  "niao_http",
  "niao_io",
@@ -3638,9 +3664,12 @@ dependencies = [
  "niao_ml",
  "niao_net_clients",
  "niao_num",
+ "niao_optim",
  "niao_parser",
+ "niao_plot",
  "niao_rag",
  "niao_regex",
+ "niao_stats",
  "niao_tensor",
  "niao_time",
  "niao_ws",
@@ -3652,6 +3681,15 @@ dependencies = [
  "serde",
  "serde_json",
  "tokio",
+]
+
+[[package]]
+name = "niao_stats"
+version = "0.2.3"
+dependencies = [
+ "niao_errors",
+ "niao_num",
+ "niao_rand",
 ]
 
 [[package]]
