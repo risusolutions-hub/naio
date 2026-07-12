@@ -10,6 +10,7 @@ niao_codec = { workspace = true }
 niao_crypto = { workspace = true }
 niao_json_core = { workspace = true }
 niao_regex = { workspace = true }
+niao_time = { workspace = true }
 num-bigint = "0.4"
 num-traits = "0.2"
 indexmap = "2"
@@ -27,8 +28,6 @@ tungstenite = { version = "0.26", features = ["rustls-tls-webpki-roots"] }
 lettre = { version = "0.11", default-features = false, features = ["rustls-tls", "smtp-transport", "builder"] }
 suppaftp = { version = "6", features = ["rustls"] }
 socket2 = { version = "0.5", features = ["all"] }
-chrono = { version = "0.4", features = ["clock"] }
-chrono-tz = "0.10"
 rusqlite = { version = "0.32", features = ["bundled", "backup", "blob", "functions", "limits"] }
 rayon = "1"
 mongodb = { version = "3.1", optional = true }

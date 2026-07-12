@@ -1,16 +1,17 @@
 //! Native time standard library — wall clock, formatting, parsing, time zones,
-//! and date arithmetic via `chrono` / `chrono-tz`.
+//! and date arithmetic via `niao_time`.
 //!
 //! Registered as prefixed builtins (`time_now_unix_ms`, `time_format`, ...).
 //! Import with `import "time"` (or `import "std/time"`) for the namespace API.
 
 use crate::{error_value, NativeFn, NiaoResult, RuntimeError, Value, ValueRef};
-use chrono::{
-    DateTime, Datelike, Local, NaiveDate, NaiveDateTime, NaiveTime, Offset, TimeZone, Timelike, Utc,
-};
-use chrono_tz::Tz;
 use niao_ast::Span;
 use niao_errors::codes;
+use niao_time::{
+    days_from_civil, days_in_month, format_datetime, is_leap_year, is_valid_date, list_timezones,
+    parse_datetime, to_rfc3339, weekday_from_days, civil_to_ms, ms_to_civil, CivilDateTime,
+    DateTime, Timezone, WEEKDAY_NAMES,
+};
 use std::collections::HashMap;
 use std::rc::Rc;
 use std::sync::OnceLock;
@@ -25,10 +26,6 @@ fn perf_now_us() -> i64 {
         .elapsed()
         .as_micros() as i64
 }
-
-// ---------------------------------------------------------------------------
-// Argument helpers
-// ---------------------------------------------------------------------------
 
 fn type_err(span: Span, msg: impl Into<String>) -> RuntimeError {
     RuntimeError::TypeError {
@@ -112,10 +109,6 @@ fn ok_string(s: impl Into<String>) -> ValueRef {
     Value::String(s.into()).ref_cell()
 }
 
-// ---------------------------------------------------------------------------
-// Core conversions
-// ---------------------------------------------------------------------------
-
 fn system_now_unix_ms() -> i64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -123,47 +116,8 @@ fn system_now_unix_ms() -> i64 {
         .unwrap_or(0)
 }
 
-fn ms_to_utc(ms: i64) -> Option<DateTime<Utc>> {
-    let secs = ms.div_euclid(1000);
-    let sub_ms = ms.rem_euclid(1000);
-    DateTime::from_timestamp(secs, (sub_ms * 1_000_000) as u32)
-}
-
-fn utc_to_ms(dt: DateTime<Utc>) -> i64 {
-    dt.timestamp_millis()
-}
-
-const WEEKDAY_NAMES: [&str; 7] = [
-    "Monday",
-    "Tuesday",
-    "Wednesday",
-    "Thursday",
-    "Friday",
-    "Saturday",
-    "Sunday",
-];
-
-enum TzChoice {
-    Utc,
-    Local,
-    Named(Tz),
-}
-
-fn resolve_tz(name: &str) -> Result<TzChoice, String> {
-    let lower = name.trim().to_ascii_lowercase();
-    match lower.as_str() {
-        "utc" | "gmt" | "z" => Ok(TzChoice::Utc),
-        "local" => Ok(TzChoice::Local),
-        _ => name
-            .parse::<Tz>()
-            .map(TzChoice::Named)
-            .map_err(|e| format!("unknown timezone '{name}': {e}")),
-    }
-}
-
-fn local_datetime(ms: i64) -> Result<DateTime<Local>, String> {
-    let utc = ms_to_utc(ms).ok_or_else(|| format!("invalid unix timestamp: {ms}"))?;
-    Ok(utc.with_timezone(&Local))
+fn resolve_tz(name: &str) -> Result<Timezone, String> {
+    Timezone::named(name)
 }
 
 struct DateTimeFields {
@@ -178,36 +132,24 @@ struct DateTimeFields {
     timezone: String,
 }
 
-fn extract_fields(dt: impl Datelike + Timelike, timezone: String) -> DateTimeFields {
+fn extract_fields(civil: &CivilDateTime, timezone: String) -> DateTimeFields {
+    let wd = weekday_from_days(days_from_civil(civil.year, civil.month, civil.day));
     DateTimeFields {
-        year: dt.year(),
-        month: dt.month(),
-        day: dt.day(),
-        hour: dt.hour(),
-        minute: dt.minute(),
-        second: dt.second(),
-        millisecond: dt.nanosecond() / 1_000_000,
-        weekday: dt.weekday().num_days_from_monday() as usize,
+        year: civil.year,
+        month: civil.month,
+        day: civil.day,
+        hour: civil.hour,
+        minute: civil.minute,
+        second: civil.second,
+        millisecond: civil.millisecond,
+        weekday: wd,
         timezone,
     }
 }
 
-fn view_in_tz(ms: i64, tz: &TzChoice) -> Result<DateTimeFields, String> {
-    match tz {
-        TzChoice::Utc => {
-            let dt = ms_to_utc(ms).ok_or_else(|| format!("invalid unix timestamp: {ms}"))?;
-            Ok(extract_fields(dt, "UTC".to_string()))
-        }
-        TzChoice::Local => {
-            let dt = local_datetime(ms)?;
-            Ok(extract_fields(dt, "local".to_string()))
-        }
-        TzChoice::Named(t) => {
-            let utc = ms_to_utc(ms).ok_or_else(|| format!("invalid unix timestamp: {ms}"))?;
-            let dt = utc.with_timezone(t);
-            Ok(extract_fields(dt, t.name().to_string()))
-        }
-    }
+fn view_in_tz(ms: i64, tz: &Timezone) -> Result<DateTimeFields, String> {
+    let civil = ms_to_civil(ms, tz)?;
+    Ok(extract_fields(&civil, tz.name().to_string()))
 }
 
 fn datetime_object(fields: &DateTimeFields, unix_ms: i64, utc_offset_ms: i64) -> Value {
@@ -239,59 +181,22 @@ fn datetime_object(fields: &DateTimeFields, unix_ms: i64, utc_offset_ms: i64) ->
     Value::Object(map)
 }
 
-fn make_datetime_object(ms: i64, tz: &TzChoice) -> Result<Value, String> {
+fn make_datetime_object(ms: i64, tz: &Timezone) -> Result<Value, String> {
     let fields = view_in_tz(ms, tz)?;
-    let utc = ms_to_utc(ms).ok_or_else(|| format!("invalid unix timestamp: {ms}"))?;
-    let offset_ms = match tz {
-        TzChoice::Utc => 0,
-        TzChoice::Local => {
-            let local = utc.with_timezone(&Local);
-            local.offset().local_minus_utc() as i64 * 1000
-        }
-        TzChoice::Named(t) => {
-            let zoned = utc.with_timezone(t);
-            zoned.offset().fix().local_minus_utc() as i64 * 1000
-        }
-    };
+    let offset_ms = tz.offset_at_ms(ms)? as i64 * 1000;
     Ok(datetime_object(&fields, ms, offset_ms))
 }
 
-fn parse_with_tz(text: &str, fmt: &str, tz: &TzChoice) -> Result<i64, String> {
-    let naive = NaiveDateTime::parse_from_str(text, fmt)
-        .map_err(|e| format!("parse failed: {e}"))?;
-    let ms = match tz {
-        TzChoice::Utc => utc_to_ms(Utc.from_utc_datetime(&naive)),
-        TzChoice::Local => {
-            let local = Local
-                .from_local_datetime(&naive)
-                .single()
-                .ok_or_else(|| "ambiguous or invalid local time".to_string())?;
-            utc_to_ms(local.with_timezone(&Utc))
-        }
-        TzChoice::Named(t) => {
-            let zoned = t
-                .from_local_datetime(&naive)
-                .single()
-                .ok_or_else(|| format!("ambiguous or invalid time in {}", t.name()))?;
-            utc_to_ms(zoned.with_timezone(&Utc))
-        }
-    };
-    Ok(ms)
+fn parse_with_tz(text: &str, fmt: &str, tz: &Timezone) -> Result<i64, String> {
+    let civil = parse_datetime(text, fmt)?;
+    civil_to_ms(&civil, tz)
 }
 
-fn format_with_tz(ms: i64, fmt: &str, tz: &TzChoice) -> Result<String, String> {
-    let utc = ms_to_utc(ms).ok_or_else(|| format!("invalid unix timestamp: {ms}"))?;
-    let formatted = match tz {
-        TzChoice::Utc => utc.format(fmt).to_string(),
-        TzChoice::Local => utc.with_timezone(&Local).format(fmt).to_string(),
-        TzChoice::Named(t) => utc.with_timezone(t).format(fmt).to_string(),
-    };
-    Ok(formatted)
+fn format_with_tz(ms: i64, fmt: &str, tz: &Timezone) -> Result<String, String> {
+    let civil = ms_to_civil(ms, tz)?;
+    let offset = tz.offset_at_ms(ms)?;
+    format_datetime(&civil, fmt, offset)
 }
-
-// ---------------------------------------------------------------------------
-// Builtin implementations
-// ---------------------------------------------------------------------------
 
 fn time_now_unix_ms(_args: &[ValueRef], _span: Span) -> NiaoResult<ValueRef> {
     Ok(ok_int(system_now_unix_ms()))
@@ -351,14 +256,16 @@ fn time_now_unix_s(_args: &[ValueRef], _span: Span) -> NiaoResult<ValueRef> {
 
 fn time_now_iso(_args: &[ValueRef], _span: Span) -> NiaoResult<ValueRef> {
     let ms = system_now_unix_ms();
-    let utc = ms_to_utc(ms).unwrap_or_else(Utc::now);
-    Ok(ok_string(utc.to_rfc3339()))
+    Ok(ok_string(
+        to_rfc3339(ms, &Timezone::utc()).unwrap_or_else(|_| "1970-01-01T00:00:00.000Z".into()),
+    ))
 }
 
 fn time_now_iso_local(_args: &[ValueRef], _span: Span) -> NiaoResult<ValueRef> {
     let ms = system_now_unix_ms();
-    let local = local_datetime(ms).unwrap_or_else(|_| Local::now());
-    Ok(ok_string(local.to_rfc3339()))
+    Ok(ok_string(
+        to_rfc3339(ms, &Timezone::local()).unwrap_or_else(|_| "1970-01-01T00:00:00.000Z".into()),
+    ))
 }
 
 fn time_now(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
@@ -367,7 +274,7 @@ fn time_now(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let tz = if args.len() == 1 {
         resolve_tz(&string_arg(args, 0, "time_now", span)?).map_err(|e| type_err(span, e))?
     } else {
-        TzChoice::Local
+        Timezone::local()
     };
     match make_datetime_object(ms, &tz) {
         Ok(obj) => Ok(obj.ref_cell()),
@@ -382,7 +289,7 @@ fn time_format(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let tz = if args.len() == 3 {
         resolve_tz(&string_arg(args, 2, "time_format", span)?).map_err(|e| type_err(span, e))?
     } else {
-        TzChoice::Utc
+        Timezone::utc()
     };
     match format_with_tz(ms, &fmt, &tz) {
         Ok(s) => Ok(ok_string(s)),
@@ -397,7 +304,7 @@ fn time_parse(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let tz = if args.len() == 3 {
         resolve_tz(&string_arg(args, 2, "time_parse", span)?).map_err(|e| type_err(span, e))?
     } else {
-        TzChoice::Utc
+        Timezone::utc()
     };
     match parse_with_tz(&text, &fmt, &tz) {
         Ok(ms) => Ok(ok_int(ms)),
@@ -411,9 +318,9 @@ fn time_to_iso(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let tz = if args.len() == 2 {
         resolve_tz(&string_arg(args, 1, "time_to_iso", span)?).map_err(|e| type_err(span, e))?
     } else {
-        TzChoice::Utc
+        Timezone::utc()
     };
-    match format_with_tz(ms, "%Y-%m-%dT%H:%M:%S%.3f%:z", &tz) {
+    match to_rfc3339(ms, &tz) {
         Ok(s) => Ok(ok_string(s)),
         Err(msg) => Ok(time_error(span, msg)),
     }
@@ -425,7 +332,7 @@ fn time_decompose(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let tz = if args.len() == 2 {
         resolve_tz(&string_arg(args, 1, "time_decompose", span)?).map_err(|e| type_err(span, e))?
     } else {
-        TzChoice::Local
+        Timezone::local()
     };
     match make_datetime_object(ms, &tz) {
         Ok(obj) => Ok(obj.ref_cell()),
@@ -461,33 +368,25 @@ fn time_from_parts(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let tz = if args.len() > 7 {
         resolve_tz(&string_arg(args, 7, "time_from_parts", span)?).map_err(|e| type_err(span, e))?
     } else {
-        TzChoice::Local
+        Timezone::local()
     };
 
-    let date = NaiveDate::from_ymd_opt(year, month, day)
-        .ok_or_else(|| type_err(span, "invalid year/month/day"))?;
-    let time = NaiveTime::from_hms_milli_opt(hour, minute, second, millisecond)
-        .ok_or_else(|| type_err(span, "invalid hour/minute/second/millisecond"))?;
-    let naive = NaiveDateTime::new(date, time);
-
-    let result = match tz {
-        TzChoice::Utc => utc_to_ms(Utc.from_utc_datetime(&naive)),
-        TzChoice::Local => {
-            let local = Local
-                .from_local_datetime(&naive)
-                .single()
-                .ok_or_else(|| type_err(span, "ambiguous or invalid local time"))?;
-            utc_to_ms(local.with_timezone(&Utc))
-        }
-        TzChoice::Named(t) => {
-            let zoned = t
-                .from_local_datetime(&naive)
-                .single()
-                .ok_or_else(|| type_err(span, format!("ambiguous or invalid time in {}", t.name())))?;
-            utc_to_ms(zoned.with_timezone(&Utc))
-        }
+    if !is_valid_date(year, month, day) {
+        return Err(type_err(span, "invalid year/month/day"));
+    }
+    let civil = CivilDateTime {
+        year,
+        month,
+        day,
+        hour,
+        minute,
+        second,
+        millisecond,
     };
-    Ok(ok_int(result))
+    match civil_to_ms(&civil, &tz) {
+        Ok(ms) => Ok(ok_int(ms)),
+        Err(msg) => Ok(time_error(span, msg)),
+    }
 }
 
 fn time_add_ms(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
@@ -541,44 +440,23 @@ fn time_utc_offset_ms(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     } else {
         system_now_unix_ms()
     };
-    let utc = ms_to_utc(ms).ok_or_else(|| type_err(span, "invalid unix timestamp"))?;
-    let offset = match tz {
-        TzChoice::Utc => 0,
-        TzChoice::Local => utc.with_timezone(&Local).offset().local_minus_utc() as i64,
-        TzChoice::Named(t) => utc
-            .with_timezone(&t)
-            .offset()
-            .fix()
-            .local_minus_utc() as i64,
-    };
-    Ok(ok_int(offset * 1000))
+    match tz.offset_at_ms(ms) {
+        Ok(off) => Ok(ok_int(off as i64 * 1000)),
+        Err(msg) => Ok(time_error(span, msg)),
+    }
 }
 
 fn time_is_leap_year(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity(args, 1, "time_is_leap_year", span)?;
     let year = int_arg(args, 0, "time_is_leap_year", span)? as i32;
-    Ok(ok_bool(NaiveDate::from_ymd_opt(year, 1, 1)
-        .map(|d| d.leap_year())
-        .unwrap_or(false)))
+    Ok(ok_bool(is_leap_year(year)))
 }
 
 fn time_days_in_month(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity(args, 2, "time_days_in_month", span)?;
     let year = int_arg(args, 0, "time_days_in_month", span)? as i32;
     let month = int_arg(args, 1, "time_days_in_month", span)? as u32;
-    let days = NaiveDate::from_ymd_opt(year, month, 1)
-        .and_then(|d| d.with_day(1))
-        .map(|d| {
-            if month == 12 {
-                NaiveDate::from_ymd_opt(year + 1, 1, 1)
-            } else {
-                NaiveDate::from_ymd_opt(year, month + 1, 1)
-            }
-            .map(|next| (next - d).num_days())
-        })
-        .flatten()
-        .unwrap_or(0);
-    Ok(ok_int(days))
+    Ok(ok_int(days_in_month(year, month) as i64))
 }
 
 fn time_is_valid_date(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
@@ -586,33 +464,21 @@ fn time_is_valid_date(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let year = int_arg(args, 0, "time_is_valid_date", span)? as i32;
     let month = int_arg(args, 1, "time_is_valid_date", span)? as u32;
     let day = int_arg(args, 2, "time_is_valid_date", span)? as u32;
-    Ok(ok_bool(
-        NaiveDate::from_ymd_opt(year, month, day).is_some(),
-    ))
+    Ok(ok_bool(is_valid_date(year, month, day)))
 }
 
-fn start_of_day_ms(ms: i64, tz: &TzChoice) -> Result<i64, String> {
+fn start_of_day_ms(ms: i64, tz: &Timezone) -> Result<i64, String> {
     let fields = view_in_tz(ms, tz)?;
-    let date = NaiveDate::from_ymd_opt(fields.year, fields.month, fields.day)
-        .ok_or_else(|| "invalid date components".to_string())?;
-    let naive = NaiveDateTime::new(date, NaiveTime::from_hms_opt(0, 0, 0).unwrap());
-    match tz {
-        TzChoice::Utc => Ok(utc_to_ms(Utc.from_utc_datetime(&naive))),
-        TzChoice::Local => {
-            let local = Local
-                .from_local_datetime(&naive)
-                .single()
-                .ok_or_else(|| "ambiguous or invalid local time".to_string())?;
-            Ok(utc_to_ms(local.with_timezone(&Utc)))
-        }
-        TzChoice::Named(t) => {
-            let zoned = t
-                .from_local_datetime(&naive)
-                .single()
-                .ok_or_else(|| format!("ambiguous or invalid time in {}", t.name()))?;
-            Ok(utc_to_ms(zoned.with_timezone(&Utc)))
-        }
-    }
+    let civil = CivilDateTime {
+        year: fields.year,
+        month: fields.month,
+        day: fields.day,
+        hour: 0,
+        minute: 0,
+        second: 0,
+        millisecond: 0,
+    };
+    civil_to_ms(&civil, tz)
 }
 
 fn time_start_of_day(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
@@ -621,7 +487,7 @@ fn time_start_of_day(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let tz = if args.len() == 2 {
         resolve_tz(&string_arg(args, 1, "time_start_of_day", span)?).map_err(|e| type_err(span, e))?
     } else {
-        TzChoice::Local
+        Timezone::local()
     };
     match start_of_day_ms(ms, &tz) {
         Ok(v) => Ok(ok_int(v)),
@@ -635,7 +501,7 @@ fn time_end_of_day(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let tz = if args.len() == 2 {
         resolve_tz(&string_arg(args, 1, "time_end_of_day", span)?).map_err(|e| type_err(span, e))?
     } else {
-        TzChoice::Local
+        Timezone::local()
     };
     match start_of_day_ms(ms, &tz) {
         Ok(start) => Ok(ok_int(start.saturating_add(86_399_999))),
@@ -654,14 +520,9 @@ fn time_sleep_ms(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
 }
 
 fn time_list_timezones(_args: &[ValueRef], _span: Span) -> NiaoResult<ValueRef> {
-    let mut names: Vec<String> = chrono_tz::TZ_VARIANTS
+    let zones: Vec<ValueRef> = list_timezones()
         .iter()
-        .map(|tz| tz.name().to_string())
-        .collect();
-    names.sort_unstable();
-    let zones: Vec<ValueRef> = names
-        .into_iter()
-        .map(|z| Value::String(z).ref_cell())
+        .map(|z| Value::String(z.to_string()).ref_cell())
         .collect();
     Ok(Value::Array(zones).ref_cell())
 }
@@ -672,7 +533,7 @@ fn time_year(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let tz = if args.len() == 2 {
         resolve_tz(&string_arg(args, 1, "time_year", span)?).map_err(|e| type_err(span, e))?
     } else {
-        TzChoice::Local
+        Timezone::local()
     };
     let fields = view_in_tz(ms, &tz).map_err(|e| type_err(span, e))?;
     Ok(ok_int(fields.year as i64))
@@ -684,7 +545,7 @@ fn time_month(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let tz = if args.len() == 2 {
         resolve_tz(&string_arg(args, 1, "time_month", span)?).map_err(|e| type_err(span, e))?
     } else {
-        TzChoice::Local
+        Timezone::local()
     };
     let fields = view_in_tz(ms, &tz).map_err(|e| type_err(span, e))?;
     Ok(ok_int(fields.month as i64))
@@ -696,7 +557,7 @@ fn time_day(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let tz = if args.len() == 2 {
         resolve_tz(&string_arg(args, 1, "time_day", span)?).map_err(|e| type_err(span, e))?
     } else {
-        TzChoice::Local
+        Timezone::local()
     };
     let fields = view_in_tz(ms, &tz).map_err(|e| type_err(span, e))?;
     Ok(ok_int(fields.day as i64))
@@ -708,7 +569,7 @@ fn time_hour(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let tz = if args.len() == 2 {
         resolve_tz(&string_arg(args, 1, "time_hour", span)?).map_err(|e| type_err(span, e))?
     } else {
-        TzChoice::Local
+        Timezone::local()
     };
     let fields = view_in_tz(ms, &tz).map_err(|e| type_err(span, e))?;
     Ok(ok_int(fields.hour as i64))
@@ -720,7 +581,7 @@ fn time_minute(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let tz = if args.len() == 2 {
         resolve_tz(&string_arg(args, 1, "time_minute", span)?).map_err(|e| type_err(span, e))?
     } else {
-        TzChoice::Local
+        Timezone::local()
     };
     let fields = view_in_tz(ms, &tz).map_err(|e| type_err(span, e))?;
     Ok(ok_int(fields.minute as i64))
@@ -732,7 +593,7 @@ fn time_second(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let tz = if args.len() == 2 {
         resolve_tz(&string_arg(args, 1, "time_second", span)?).map_err(|e| type_err(span, e))?
     } else {
-        TzChoice::Local
+        Timezone::local()
     };
     let fields = view_in_tz(ms, &tz).map_err(|e| type_err(span, e))?;
     Ok(ok_int(fields.second as i64))
@@ -744,7 +605,7 @@ fn time_weekday(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let tz = if args.len() == 2 {
         resolve_tz(&string_arg(args, 1, "time_weekday", span)?).map_err(|e| type_err(span, e))?
     } else {
-        TzChoice::Local
+        Timezone::local()
     };
     let fields = view_in_tz(ms, &tz).map_err(|e| type_err(span, e))?;
     Ok(ok_int(fields.weekday as i64))
@@ -756,15 +617,11 @@ fn time_weekday_name(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let tz = if args.len() == 2 {
         resolve_tz(&string_arg(args, 1, "time_weekday_name", span)?).map_err(|e| type_err(span, e))?
     } else {
-        TzChoice::Local
+        Timezone::local()
     };
     let fields = view_in_tz(ms, &tz).map_err(|e| type_err(span, e))?;
     Ok(ok_string(WEEKDAY_NAMES[fields.weekday]))
 }
-
-// ---------------------------------------------------------------------------
-// Registration
-// ---------------------------------------------------------------------------
 
 fn all_builtins() -> Vec<(&'static str, NativeFn)> {
     vec![
@@ -807,7 +664,6 @@ fn all_builtins() -> Vec<(&'static str, NativeFn)> {
     ]
 }
 
-/// Short-name time module object for `time.now`, `time.format`, etc.
 pub fn namespace() -> Value {
     let mut map = HashMap::new();
     let bind = |map: &mut HashMap<String, ValueRef>, name: &str, f: NativeFn| {
@@ -871,14 +727,14 @@ mod tests {
     #[test]
     fn unix_roundtrip() {
         let ms = system_now_unix_ms();
-        let formatted = format_with_tz(ms, "%Y-%m-%d %H:%M:%S", &TzChoice::Utc).unwrap();
-        let parsed = parse_with_tz(&formatted, "%Y-%m-%d %H:%M:%S", &TzChoice::Utc).unwrap();
+        let formatted = format_with_tz(ms, "%Y-%m-%d %H:%M:%S", &Timezone::utc()).unwrap();
+        let parsed = parse_with_tz(&formatted, "%Y-%m-%d %H:%M:%S", &Timezone::utc()).unwrap();
         assert!((parsed - ms).abs() < 1000);
     }
 
     #[test]
     fn from_parts_utc() {
-        let ms = parse_with_tz("2026-07-03 12:00:00", "%Y-%m-%d %H:%M:%S", &TzChoice::Utc).unwrap();
+        let ms = parse_with_tz("2026-07-03 12:00:00", "%Y-%m-%d %H:%M:%S", &Timezone::utc()).unwrap();
         let args = [
             Value::Int(2026).ref_cell(),
             Value::Int(7).ref_cell(),

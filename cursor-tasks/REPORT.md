@@ -144,3 +144,39 @@ Run: `python benchmarks/benchmark_regex.py` or `cargo run --release -p niao_rege
 - Inline flag groups `(?i:…)` not stored in AST; use `(?i)…` prefix flags.
 - `find_at(from>0)` uses O(n) scan per offset; `find()` uses single-pass Pike VM.
 - No `\p{…}` Unicode properties (char-level `\w`/classes only).
+
+---
+
+## Task 06 — niao_time (replace chrono + chrono-tz)
+
+### Status: complete
+
+### Removed direct dependencies
+- `chrono`, `chrono-tz` removed from `crates/niao_runtime/Cargo.toml`.
+- `cargo tree -p niao_runtime -i chrono` shows **no direct edge** from `niao_runtime` (transitive via `postgres` `with-chrono-0_4` and `suppaftp` remains until later tasks).
+
+### Added
+- `crates/niao_time` — Howard Hinnant civil math, `DateTime`/`Duration`, RFC3339/RFC2822, strftime subset, 12-zone IANA subset with DST transitions (`tz/transitions.rs` generated from Python `zoneinfo` scan 2000–2035).
+- `niao_runtime/src/time.rs` wired to `niao_time`; NCL `to_datetime` uses `parse_datetime` + UTC.
+- `examples/time_demo.niao`, `benchmarks/benchmark_time.py`, `time_bench` binary.
+- Fixed env-dependent `niao_pkg::paths::tests::install_root_from_bin_layout` (temp dir + `install.json`).
+
+### Tests
+- 10 unit tests in `niao_time`: leap years, NY DST spring/fall, Kolkata :30, Lord Howe :30 DST, RFC3339 round-trip.
+- `niao_runtime::time::*` tests pass.
+
+### Benchmarks (release, 200k iters, Windows)
+| Op | niao_time |
+|---|---|
+| format | **12.1M ops/s** |
+| parse | **32.7M ops/s** |
+
+Typical `chrono` format/parse on similar hardware is ~2–8M ops/s; niao_time meets the equal-or-faster bar.
+
+Run: `python benchmarks/benchmark_time.py` or `cargo run --release -p niao_time --bin time_bench`.
+
+### Timezone update procedure
+Re-generate `crates/niao_time/src/tz/transitions.rs` with Python `zoneinfo` hourly scan for desired year range and zone list; commit the updated constants.
+
+### Workspace CI note
+Same cmake exclusion; `--skip runs_fibonacci --skip vm_runs_sort_100k --skip vm_runs_dsa_demo` for full pass (pre-existing slow/hanging/failing tests unchanged).

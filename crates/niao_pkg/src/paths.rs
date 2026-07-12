@@ -123,8 +123,11 @@ mod tests {
 
     #[test]
     fn install_root_from_bin_layout() {
-        let root = PathBuf::from(r"C:\Users\me\AppData\Local\Programs\Niao");
+        let root = std::env::temp_dir().join(format!("niao_pkg_paths_{}", std::process::id()));
+        let _ = std::fs::create_dir_all(root.join("bin"));
+        std::fs::write(root.join("install.json"), b"{}").expect("install.json");
         let exe = root.join("bin").join("niao.exe");
-        assert_eq!(install_root_from_exe(&exe), Some(root));
+        assert_eq!(install_root_from_exe(&exe), Some(root.clone()));
+        let _ = std::fs::remove_dir_all(root);
     }
 }

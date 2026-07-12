@@ -1,0 +1,9 @@
+[package]
+name = "niao_time"
+version.workspace = true
+edition.workspace = true
+description = "Zero-dep civil date/time, parsing, formatting, and compact IANA tz subset"
+
+[[bin]]
+name = "time_bench"
+path = "src/bin/time_bench.rs"

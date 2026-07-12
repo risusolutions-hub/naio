@@ -859,17 +859,14 @@ fn ncl_to_datetime(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
                 Column::String(sa) => (0..sa.len()).map(|i| sa.get(i).unwrap_or_default()).collect::<Vec<_>>(),
                 _ => return Err("to_datetime requires string column".into()),
             };
+            let utc = niao_time::resolve_timezone("UTC")
+                .map_err(|e| format!("UTC timezone: {e}"))?;
             let mut epochs = Vec::with_capacity(strings.len());
             for st in strings {
-                let ms = if let Ok(nd) = chrono::NaiveDate::parse_from_str(&st, &fmt) {
-                    nd.and_hms_opt(0, 0, 0)
-                        .map(|dt| dt.and_utc().timestamp_millis())
-                        .unwrap_or(i64::MIN)
-                } else if let Ok(ndt) = chrono::NaiveDateTime::parse_from_str(&st, &fmt) {
-                    ndt.and_utc().timestamp_millis()
-                } else {
-                    i64::MIN
-                };
+                let ms = niao_time::parse_datetime(&st, &fmt)
+                    .ok()
+                    .and_then(|civil| niao_time::civil_to_ms(&civil, &utc).ok())
+                    .unwrap_or(i64::MIN);
                 epochs.push(ms);
             }
             Ok(alloc_handle(NclHandle::Series(Series::from_int_array(

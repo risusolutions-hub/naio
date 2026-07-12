@@ -8,6 +8,7 @@
 - TOML parser in `niao_json_core::toml`; replaces `toml` crate in `ahiru_core` / `niao_cli` config paths.
 - `niao_crypto` crate (SHA-256/512, HMAC, JWT HS256/HS512); replaces `sha2`, `hmac`, `jsonwebtoken` in `ahiru_core` and `sha2` in `niao_pkg`.
 - `niao_regex` crate (Thompson NFA + Pike VM); replaces `regex` in `niao_runtime` `re` module with pattern LRU cache.
+- `niao_time` crate (civil date math, RFC3339/RFC2822, strftime subset, compact IANA tz); replaces `chrono` / `chrono-tz` in `niao_runtime` `time` module.
 
 ## 0.2.2 — 2026-07-07
 
