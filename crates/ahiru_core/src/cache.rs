@@ -1,5 +1,6 @@
 use dashmap::DashMap;
-use std::sync::Arc;
+use niao_db::redis::Client as RedisClient;
+use std::sync::{Arc, Mutex};
 
 #[derive(Debug, Clone)]
 pub enum CacheDriver {
@@ -12,7 +13,7 @@ pub enum CacheDriver {
 pub struct CacheManager {
     memory: Arc<DashMap<String, String>>,
     #[cfg(feature = "redis")]
-    redis: Option<redis::aio::ConnectionManager>,
+    redis: Option<Arc<Mutex<RedisClient>>>,
     default_driver: CacheDriver,
 }
 
@@ -28,14 +29,10 @@ impl CacheManager {
 
     #[cfg(feature = "redis")]
     pub async fn connect_redis(url: &str) -> Result<Self, String> {
-        let client = redis::Client::open(url).map_err(|e| e.to_string())?;
-        let conn = client
-            .get_connection_manager()
-            .await
-            .map_err(|e| e.to_string())?;
+        let client = RedisClient::open(url).map_err(|e| e.to_string())?;
         Ok(Self {
             memory: Arc::new(DashMap::new()),
-            redis: Some(conn),
+            redis: Some(Arc::new(Mutex::new(client))),
             default_driver: CacheDriver::Redis,
         })
     }
@@ -46,9 +43,8 @@ impl CacheManager {
             #[cfg(feature = "redis")]
             CacheDriver::Redis => {
                 if let Some(conn) = &self.redis {
-                    use redis::AsyncCommands;
-                    let mut c = conn.clone();
-                    c.get(key).await.ok()
+                    let mut c = conn.lock().unwrap();
+                    c.get(key).ok().flatten()
                 } else {
                     None
                 }
@@ -65,9 +61,8 @@ impl CacheManager {
             #[cfg(feature = "redis")]
             CacheDriver::Redis => {
                 if let Some(conn) = &self.redis {
-                    use redis::AsyncCommands;
-                    let mut c = conn.clone();
-                    c.set(key, value).await.map_err(|e| e.to_string())
+                    let mut c = conn.lock().unwrap();
+                    conn_set(&mut c, key, value)
                 } else {
                     Err("redis unavailable (E2301)".into())
                 }
@@ -86,9 +81,8 @@ impl CacheManager {
             #[cfg(feature = "redis")]
             CacheDriver::Redis => {
                 if let Some(conn) = &self.redis {
-                    use redis::AsyncCommands;
-                    let mut c = conn.clone();
-                    c.incr(key, 1i64).await.map_err(|e| e.to_string())
+                    let mut c = conn.lock().unwrap();
+                    c.incr(key, 1).map_err(|e| e.to_string())
                 } else {
                     Err("redis unavailable (E2301)".into())
                 }
@@ -105,9 +99,8 @@ impl CacheManager {
             #[cfg(feature = "redis")]
             CacheDriver::Redis => {
                 if let Some(conn) = &self.redis {
-                    use redis::AsyncCommands;
-                    let mut c = conn.clone();
-                    c.del(key).await.map_err(|e| e.to_string())
+                    let mut c = conn.lock().unwrap();
+                    c.del(key).map_err(|e| e.to_string())
                 } else {
                     Err("redis unavailable (E2301)".into())
                 }
@@ -121,18 +114,19 @@ impl CacheManager {
             #[cfg(feature = "redis")]
             CacheDriver::Redis => {
                 if let Some(conn) = &self.redis {
-                    use redis::AsyncCommands;
-                    let mut c = conn.clone();
-                    redis::cmd("PING")
-                        .query_async::<String>(&mut c)
-                        .await
-                        .is_ok()
+                    let mut c = conn.lock().unwrap();
+                    c.ping().map(|s| s.eq_ignore_ascii_case("PONG")).unwrap_or(false)
                 } else {
                     false
                 }
             }
         }
     }
+}
+
+#[cfg(feature = "redis")]
+fn conn_set(c: &mut RedisClient, key: &str, value: &str) -> Result<(), String> {
+    c.set(key, value).map_err(|e| e.to_string())
 }
 
 pub type SharedCacheManager = Arc<CacheManager>;

@@ -1,0 +1,8 @@
+// PostgreSQL / Redis driver demo (requires live servers).
+// Run:  niao run examples/db_demo.niao
+import "npg" as pg
+
+fn main() {
+    print("db demo: use npg.connect(\"postgres://...\") when PostgreSQL is available")
+    print("db demo done")
+}

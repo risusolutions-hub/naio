@@ -1,17 +1,39 @@
 use crate::config::DatabaseConfig;
-use r2d2::Pool;
-use r2d2_postgres::PostgresConnectionManager;
-use r2d2_sqlite::SqliteConnectionManager;
+use niao_db::postgres::{Client, Config, tls::NoTls};
+use niao_db::{ManageConnection, Pool, PoolError};
 use sqlx::mysql::MySqlPoolOptions;
 use sqlx::postgres::PgPoolOptions;
 use sqlx::{MySql, Pool as SqlxPool, Postgres};
 use std::collections::HashMap;
 use std::sync::Arc;
 
+struct SqliteManager {
+    path: String,
+}
+
+impl ManageConnection for SqliteManager {
+    type Connection = rusqlite::Connection;
+    fn connect(&self) -> Result<rusqlite::Connection, String> {
+        rusqlite::Connection::open(&self.path).map_err(|e| e.to_string())
+    }
+}
+
+#[derive(Clone)]
+struct PostgresManager {
+    config: Config,
+}
+
+impl ManageConnection for PostgresManager {
+    type Connection = Client;
+    fn connect(&self) -> Result<Client, String> {
+        Client::connect(&self.config, NoTls).map_err(|e| e.to_string())
+    }
+}
+
 #[derive(Clone)]
 pub enum DbPool {
-    Sqlite(Pool<SqliteConnectionManager>),
-    Postgres(Pool<PostgresConnectionManager<postgres::tls::NoTls>>),
+    Sqlite(Arc<Pool<SqliteManager>>),
+    Postgres(Arc<Pool<PostgresManager>>),
     SqlxPostgres(SqlxPool<Postgres>),
     SqlxMysql(SqlxPool<MySql>),
 }
@@ -45,10 +67,9 @@ impl DbManager {
                     .strip_prefix("sqlite://")
                     .unwrap_or(&cfg.url)
                     .to_string();
-                let manager = SqliteConnectionManager::file(&path);
-                let pool = Pool::builder()
+                let pool = Pool::<SqliteManager>::builder()
                     .max_size(cfg.pool_size)
-                    .build(manager)
+                    .build(SqliteManager { path })
                     .map_err(|e| e.to_string())?;
                 Ok(DbPool::Sqlite(pool))
             }
@@ -61,11 +82,10 @@ impl DbManager {
                         .map_err(|e| e.to_string())?;
                     return Ok(DbPool::SqlxPostgres(pool));
                 }
-                let config = cfg.url.parse::<postgres::Config>().map_err(|e| e.to_string())?;
-                let manager = PostgresConnectionManager::new(config, postgres::tls::NoTls);
-                let pool = Pool::builder()
+                let config = cfg.url.parse::<Config>().map_err(|e| e.to_string())?;
+                let pool = Pool::<PostgresManager>::builder()
                     .max_size(cfg.pool_size)
-                    .build(manager)
+                    .build(PostgresManager { config })
                     .map_err(|e| e.to_string())?;
                 Ok(DbPool::Postgres(pool))
             }
@@ -89,7 +109,7 @@ impl DbManager {
         let pool = self.pools.get(name).ok_or_else(|| format!("db '{name}' not found"))?;
         match pool {
             DbPool::Sqlite(p) => {
-                let conn = p.get().map_err(|e| e.to_string())?;
+                let conn = p.get().map_err(|e: PoolError| e.to_string())?;
                 conn.execute_batch(sql).map_err(|e| e.to_string())?;
                 Ok(conn.changes() as u64)
             }
@@ -101,7 +121,7 @@ impl DbManager {
         let pool = self.pools.get(name).ok_or_else(|| format!("db '{name}' not found"))?;
         match pool {
             DbPool::Sqlite(p) => {
-                let conn = p.get().map_err(|e| e.to_string())?;
+                let conn = p.get().map_err(|e: PoolError| e.to_string())?;
                 let mut stmt = conn.prepare(sql).map_err(|e| e.to_string())?;
                 let cols: Vec<String> = stmt
                     .column_names()
@@ -149,7 +169,7 @@ impl DbManager {
         for (name, pool) in &self.pools {
             match pool {
                 DbPool::Sqlite(p) => {
-                    let conn = p.get().map_err(|e| e.to_string())?;
+                    let conn = p.get().map_err(|e: PoolError| e.to_string())?;
                     conn.execute_batch("SELECT 1")
                         .map_err(|e| format!("{name}: {e}"))?;
                 }
@@ -166,7 +186,7 @@ impl DbManager {
                         .map_err(|e| format!("{name}: {e}"))?;
                 }
                 DbPool::Postgres(p) => {
-                    let mut conn = p.get().map_err(|e| e.to_string())?;
+                    let mut conn = p.get().map_err(|e: PoolError| e.to_string())?;
                     conn.execute("SELECT 1", &[])
                         .map_err(|e| format!("{name}: {e}"))?;
                 }

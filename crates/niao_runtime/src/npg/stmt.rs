@@ -79,8 +79,7 @@ pub fn npg_stmt_exec(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
         }
         let boxes = bound_to_sql_params(&params);
         let refs = sql_param_refs(&boxes);
-        let stmt_prepared = conn.client_mut().prepare(&sql).map_err(|e| e.to_string())?;
-        let n = conn.client_mut().execute(&stmt_prepared, &refs).map_err(|e| e.to_string())?;
+        let n = conn.client_mut().execute(&sql, &refs).map_err(|e| e.to_string())?;
         Ok(n as i64)
     })
     .map(ok_int)

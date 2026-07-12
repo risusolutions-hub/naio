@@ -1,6 +1,5 @@
 //! PostgreSQL-specific: LISTEN/NOTIFY, advisory locks, COPY.
 
-use postgres::fallible_iterator::FallibleIterator;
 use crate::{error_from_runtime, error_value, NiaoResult, Value, ValueRef};
 use niao_ast::Span;
 use niao_errors::codes;
@@ -87,24 +86,14 @@ pub fn npg_poll_notify(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
         } else {
             let _ = handle.client_mut().execute("SELECT 1", &[]);
         }
+        let notes = handle.client_mut().notifications();
         let mut out = Vec::new();
-        let mut notes = handle.client_mut().notifications();
-        let mut iter = notes.iter();
-        loop {
-            match iter.next() {
-                Ok(Some(n)) => {
-                    let mut map = HashMap::new();
-                    map.insert("channel".to_string(), Value::String(n.channel().to_string()).ref_cell());
-                    map.insert(
-                        "payload".to_string(),
-                        Value::String(n.payload().to_string()).ref_cell(),
-                    );
-                    map.insert("pid".to_string(), Value::Int(n.process_id() as i64).ref_cell());
-                    out.push(Value::Object(map).ref_cell());
-                }
-                Ok(None) => break,
-                Err(e) => return Err(e.to_string()),
-            }
+        for n in notes {
+            let mut map = HashMap::new();
+            map.insert("channel".to_string(), Value::String(n.channel).ref_cell());
+            map.insert("payload".to_string(), Value::String(n.payload).ref_cell());
+            map.insert("pid".to_string(), Value::Int(n.pid as i64).ref_cell());
+            out.push(Value::Object(map).ref_cell());
         }
         Ok(Value::Array(out))
     })

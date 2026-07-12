@@ -1,11 +1,11 @@
-//! r2d2 connection pool builtins.
+//! Connection pool builtins.
 
-use super::config::{pool_manager, pool_opts_from_map};
+use super::config::{pool_manager, pool_opts_from_map, PgPool};
 use super::handles::{self, alloc_pooled_conn, alloc_pool};
 use crate::{error_from_runtime, error_value, NiaoResult, RuntimeError, Value, ValueRef};
 use niao_ast::Span;
+use niao_db::Pool;
 use niao_errors::codes;
-use r2d2::Pool;
 use std::collections::HashMap;
 
 use super::common::*;
@@ -37,14 +37,14 @@ pub fn npg_pool(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
         pool_opts_from_map(&opts).map_err(|msg| RuntimeError::at(span, codes::E1907_NPG_TLS, msg))?;
 
     let manager = pool_manager(&config).map_err(|msg| RuntimeError::at(span, codes::E1907_NPG_TLS, msg))?;
-    let mut builder = Pool::builder()
+    let mut builder = niao_db::Pool::<super::config::PostgresConnectionManager>::builder()
         .max_size(max_size)
         .min_idle(Some(min_idle))
         .connection_timeout(connection_timeout);
     if let Some(lifetime) = max_lifetime {
         builder = builder.max_lifetime(Some(lifetime));
     }
-    let pool = builder.build(manager).map_err(|e| {
+    let pool: PgPool = builder.build(manager).map_err(|e| {
         RuntimeError::at(span, codes::E1907_NPG_TLS, e.to_string())
     })?;
 

@@ -1,0 +1,13 @@
+[package]
+name = "niao_db"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+niao_crypto = { workspace = true }
+niao_codec = { workspace = true }
+niao_json_core = { workspace = true }
+
+[[bin]]
+name = "db_bench"
+path = "src/bin/db_bench.rs"

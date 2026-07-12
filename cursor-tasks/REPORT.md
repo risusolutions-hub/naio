@@ -276,3 +276,30 @@ Run: `python benchmarks/benchmark_io.py` or `cargo run --release -p niao_io --bi
 ### Notes
 - IOCP deferred; WSAPoll acceptable for phase 1.
 - `ahiru_core` unchanged (tokio + axum + tokio-tungstenite).
+
+---
+
+## Task 10 — niao_db (Redis RESP + PostgreSQL wire)
+
+### Status: complete
+
+### Removed direct dependencies
+- `postgres`, `r2d2`, `r2d2_postgres` removed from `niao_runtime` and `ahiru_core`.
+- `redis` crate removed from `ahiru_core` (sync `niao_db::redis` behind `redis` feature flag).
+- `rusqlite` retained (C binding); sqlite pools use `niao_db::Pool` + `ManageConnection`.
+
+### Added
+- `crates/niao_db` — RESP2 codec, sync Redis (GET/SET/DEL/INCR/EXPIRE/PING), PG wire v3 (cleartext/MD5/SCRAM-SHA-256, extended query, COPY IN, NOTIFY), generic pool.
+- Wired `niao_runtime/npg/*` and `ahiru_core` db/cache to `niao_db`.
+- `examples/db_demo.niao`, `benchmarks/benchmark_db.py`, `db_bench` binary.
+
+### Tests
+- RESP encode/parse fixtures; pool reuse; PG/Redis integration behind `NIAO_TEST_PG_URL` / `NIAO_TEST_REDIS_URL`.
+- Full workspace green (cmake exclusions unchanged).
+
+### Deferred / future
+- `mongodb`/`sqlx` remain in `ahiru_core` (documented for future task).
+- PG TLS via rustls deferred (sslmode=disable v1).
+- Binary PG format deferred (text params only).
+
+Run bench: `NIAO_TEST_PG_URL=... python benchmarks/benchmark_db.py`

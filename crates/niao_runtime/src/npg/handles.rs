@@ -1,16 +1,15 @@
 //! Thread-local handle tables for PostgreSQL connections, pools, and statements.
 
+use niao_db::postgres::Client;
+use niao_db::PooledConnection;
 use niao_ast::Span;
 use niao_errors::codes;
-use postgres::Client;
-use postgres::tls::NoTls;
-use r2d2::Pool;
-use r2d2_postgres::PostgresConnectionManager;
 use std::cell::RefCell;
 use std::collections::HashMap as StdHashMap;
 
-pub type PooledConn = r2d2::PooledConnection<PostgresConnectionManager<NoTls>>;
-pub type PgPool = Pool<PostgresConnectionManager<NoTls>>;
+use super::config::{PgPool, PostgresConnectionManager};
+
+pub type PooledConn = PooledConnection<PostgresConnectionManager>;
 
 pub enum ConnInner {
     Direct(Client),

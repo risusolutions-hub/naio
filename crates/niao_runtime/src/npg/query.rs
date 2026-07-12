@@ -3,7 +3,7 @@
 use super::handles::ConnHandle;
 use super::types::{bound_to_sql_params, pg_to_niao, rewrite_placeholders, row_column_names, sql_param_refs};
 use crate::Value;
-use postgres::Row;
+use niao_db::postgres::Row;
 use std::collections::HashMap;
 use std::io::Write;
 

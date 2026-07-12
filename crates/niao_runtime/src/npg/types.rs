@@ -3,8 +3,8 @@
 use crate::Value;
 use niao_ast::Span;
 use niao_errors::codes;
-use postgres::types::ToSql;
-use postgres::Row;
+use niao_db::postgres::types::ToSql;
+use niao_db::postgres::Row;
 use serde_json::Value as JsonValue;
 use std::collections::HashMap;
 
@@ -95,7 +95,7 @@ pub fn bound_to_sql_params(params: &[BoundValue]) -> Vec<Box<dyn ToSql + Sync>> 
                 BoundValue::Bool(b) => Box::new(*b),
                 BoundValue::Text(s) => Box::new(s.clone()),
                 BoundValue::Blob(b) => Box::new(b.clone()),
-                BoundValue::Json(j) => Box::new(j.clone()),
+                BoundValue::Json(j) => Box::new(j.to_string()),
                 BoundValue::Array(items) => {
                     let texts: Vec<String> = items
                         .iter()
@@ -138,8 +138,14 @@ pub fn pg_to_niao(row: &Row, i: usize) -> Value {
     if let Ok(v) = row.try_get::<_, Option<Vec<u8>>>(i) {
         return v.map(Value::ByteArray).unwrap_or(Value::Nil);
     }
-    if let Ok(v) = row.try_get::<_, Option<JsonValue>>(i) {
-        return v.map(|j| json_to_niao(&j)).unwrap_or(Value::Nil);
+    if let Ok(v) = row.try_get::<_, Option<String>>(i) {
+        if let Some(s) = v {
+            if let Ok(j) = serde_json::from_str(&s) {
+                return json_to_niao(&j);
+            }
+            return Value::String(s);
+        }
+        return Value::Nil;
     }
     if let Ok(v) = row.try_get::<_, Option<Vec<String>>>(i) {
         return v
@@ -244,8 +250,5 @@ pub fn value_to_async(val: &Value) -> crate::async_tasks::AsyncValue {
 }
 
 pub fn row_column_names(row: &Row) -> Vec<String> {
-    row.columns()
-        .iter()
-        .map(|c| c.name().to_string())
-        .collect()
+    row.columns().to_vec()
 }
