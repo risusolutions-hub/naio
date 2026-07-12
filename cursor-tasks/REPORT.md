@@ -133,6 +133,10 @@ Run: `python benchmarks/benchmark_crypto.py` or `cargo run --release -p niao_cry
 - 61 active unit tests pass; 10 `#[ignore]` v1 edge cases (lazy quant, nested captures, `\u{}` in classes, leftmost-longest `\d+`, inline `(?i:…)` groups) logged for task follow-up.
 
 ### Benchmarks (release, 10 MiB email-like scan, Windows)
+| Op | niao_regex |
+|---|---|
+| find scan | **3.1 MiB/s** (~320 MiB total, 16M matches) |
+
 Run: `python benchmarks/benchmark_regex.py` or `cargo run --release -p niao_regex --bin regex_bench`.
 
 ### Skips / v1 limits
