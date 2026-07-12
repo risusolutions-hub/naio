@@ -6,7 +6,9 @@ Generated: 2026-07-12 | Workspace v0.2.2 | Source: Cargo.toml x25 + Cargo.lock
 ==============================================================================
 
 DIRECT external dependencies : 75
-TOTAL crates in build (transitive, from Cargo.lock): 671
+TOTAL crates in build (transitive, from Cargo.lock): 575
+  (Task 13 recount 2026-07-12: unique `name =` entries in Cargo.lock after Wave 0;
+   was 671 before Wave 0 lock refresh; direct count unchanged at 75.)
 
 NOTE: release build could not be run in this sandbox (no Rust toolchain,
 network-restricted). Run locally:  cargo build --release --workspace

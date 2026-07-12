@@ -183,7 +183,7 @@ impl<'a> Lexer<'a> {
             '*' => TokenKind::Star,
             '/' => {
                 if self.match_char('/') {
-                    if self.slash_slash_is_floor_div() {
+                    if self.slash_slash_is_floor_div(start) {
                         TokenKind::FloorDiv
                     } else {
                         while matches!(self.peek(), Some(c) if c != '\n') {
@@ -439,7 +439,16 @@ impl<'a> Lexer<'a> {
     }
 
     /// `//` is floor division when it begins a numeric/unary operand, not a line comment.
-    fn slash_slash_is_floor_div(&mut self) -> bool {
+    fn slash_slash_is_floor_div(&mut self, slash_start: usize) -> bool {
+        if self.slash_slash_at_line_start(slash_start) {
+            return false;
+        }
+        if matches!(
+            self.prev_non_whitespace_before(slash_start),
+            Some(')' | ']' | '}' | '"')
+        ) {
+            return false;
+        }
         self.skip_spaces_on_line();
         match self.peek() {
             None | Some('\n') => false,
@@ -463,6 +472,18 @@ impl<'a> Lexer<'a> {
             Some(c) if c.is_ascii_alphabetic() || c == '_' => false,
             _ => false,
         }
+    }
+
+    fn slash_slash_at_line_start(&self, slash_start: usize) -> bool {
+        let prefix = &self.source[..slash_start];
+        match prefix.rfind('\n') {
+            Some(nl) => prefix[nl + 1..].chars().all(|c| c.is_whitespace()),
+            None => prefix.chars().all(|c| c.is_whitespace()),
+        }
+    }
+
+    fn prev_non_whitespace_before(&self, pos: usize) -> Option<char> {
+        self.source[..pos].chars().rev().find(|c| !c.is_whitespace())
     }
 
     fn peek_ahead(&mut self, n: usize) -> Option<char> {
@@ -522,5 +543,19 @@ mod tests {
     fn decorative_comment_dashes() {
         let src = "fn main() {\n    // ---- section ----\n    let x = 1\n}";
         lex(src).unwrap();
+    }
+
+    #[test]
+    fn trailing_numeric_annotation_is_comment() {
+        let src = "print(list_get(l, 1))          // 2\nlet mid = n // 2\n";
+        let tokens = lex(src).unwrap();
+        assert!(tokens.iter().any(|t| matches!(&t.kind, TokenKind::FloorDiv)));
+        assert_eq!(
+            tokens
+                .iter()
+                .filter(|t| matches!(&t.kind, TokenKind::Int(2)))
+                .count(),
+            1
+        );
     }
 }

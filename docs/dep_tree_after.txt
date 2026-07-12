@@ -1,0 +1,891 @@
+﻿cargo :     Blocking waiting for file lock on package cache
+At C:\Users\vivek\AppData\Local\Temp\ps-script-99271ec2-e990-405b-b736-6e5ea5c9d21c.ps1:91 char:1
++ cargo test -p niao_runtime --lib ncanon:: --no-run 2>&1 | Out-File -E ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (    Blocking wa...n package cache:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+warning: variable does not need to be mutable
+  --> crates\niao_json_core\src\toml\parse.rs:10:9
+   |
+10 |     let mut p = TomlParser::new(s);
+   |         ----^
+   |         |
+   |         help: remove this `mut`
+   |
+   = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+
+warning: field `col` is never read
+  --> crates\niao_json_core\src\toml\parse.rs:17:5
+   |
+14 | struct TomlParser<'a> {
+   |        ---------- field in this struct
+...
+17 |     col: usize,
+   |     ^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `niao_json_core` (lib) generated 2 warnings (run `cargo fix --lib -p niao_json_core` to apply 1 suggestion)
+warning: unused variable: `cd_size`
+   --> crates\niao_archive\src\zip.rs:171:9
+    |
+171 |     let cd_size = u64::from_le_bytes(data[pos + 40..pos + 48].try_into().unwrap()) as usize;
+    |         ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_cd_size`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `std::io::Write`
+ --> crates\niao_db\src\postgres\auth.rs:4:5
+  |
+4 | use std::io::Write;
+  |     ^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `super::*`
+   --> crates\niao_db\src\postgres\wire.rs:168:9
+    |
+168 |     use super::*;
+    |         ^^^^^^^^
+
+warning: unused variable: `nonce`
+  --> crates\niao_db\src\postgres\auth.rs:55:22
+   |
+55 |     let (salt, iter, nonce, server_nonce) = parse_server_first(&server_first, &client_nonce)?;
+   |                      ^^^^^ help: if this is intentional, prefix it with an underscore: `_nonce`
+   |
+   = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: `niao_archive` (lib) generated 1 warning (run `cargo fix --lib -p niao_archive` to apply 1 suggestion)
+warning: `niao_db` (lib) generated 3 warnings (run `cargo fix --lib -p niao_db` to apply 3 suggestions)
+warning: variable does not need to be mutable
+  --> crates\niao_http\src\client.rs:90:16
+   |
+90 |     pub fn set(mut self, name: impl Into<String>, value: impl Into<String>) -> Self {
+   |                ----^^^^
+   |                |
+   |                help: remove this `mut`
+   |
+   = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+
+warning: variable does not need to be mutable
+   --> crates\niao_http\src\client.rs:147:5
+    |
+147 |     mut opts: ClientOptions,
+    |     ----^^^^
+    |     |
+    |     help: remove this `mut`
+
+warning: function `utc_ms_to_civil` is never used
+   --> crates\niao_time\src\tz\mod.rs:147:8
+    |
+147 | pub fn utc_ms_to_civil(unix_ms: i64, tz: &Timezone) -> Result<crate::civil::CivilDateTime, String> {
+    |        ^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `civil_to_utc_ms` is never used
+   --> crates\niao_time\src\tz\mod.rs:152:8
+    |
+152 | pub fn civil_to_utc_ms(civil: &crate::civil::CivilDateTime, tz: &Timezone) -> Result<i64, String> {
+    |        ^^^^^^^^^^^^^^^
+
+warning: variable does not need to be mutable
+   --> crates\niao_regex\src\parse.rs:559:20
+    |
+559 |         Ast::Class(mut c) => {
+    |                    ----^
+    |                    |
+    |                    help: remove this `mut`
+    |
+    = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `slice`
+   --> crates\niao_regex\src\lib.rs:273:13
+    |
+273 |         let slice = &self.hay[self.at..];
+    |             ^^^^^ help: if this is intentional, prefix it with an underscore: `_slice`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `scan_first_char` is never used
+  --> crates\niao_regex\src\literal.rs:86:8
+   |
+86 | pub fn scan_first_char(hay: &str, ch: u32, flags: Flags) -> Option<usize> {
+   |        ^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `niao_http` (lib) generated 2 warnings (run `cargo fix --lib -p niao_http` to apply 2 suggestions)
+warning: `niao_time` (lib) generated 2 warnings
+warning: `niao_regex` (lib) generated 3 warnings (run `cargo fix --lib -p niao_regex` to apply 2 suggestions)
+warning: unused import: `niao_db::redis::Client as RedisClient`
+ --> crates\ahiru_core\src\cache.rs:2:5
+  |
+2 | use niao_db::redis::Client as RedisClient;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `Mutex`
+ --> crates\ahiru_core\src\cache.rs:3:22
+  |
+3 | use std::sync::{Arc, Mutex};
+  |                      ^^^^^
+
+warning: type `SqliteManager` is more private than the item `DbPool::Sqlite::0`
+  --> crates\ahiru_core\src\db.rs:35:12
+   |
+35 |     Sqlite(Arc<Pool<SqliteManager>>),
+   |            ^^^^^^^^^^^^^^^^^^^^^^^^ field `DbPool::Sqlite::0` is reachable at visibility `pub`
+   |
+note: but type `SqliteManager` is only usable at visibility `pub(self)`
+  --> crates\ahiru_core\src\db.rs:10:1
+   |
+10 | struct SqliteManager {
+   | ^^^^^^^^^^^^^^^^^^^^
+   = note: `#[warn(private_interfaces)]` on by default
+
+warning: type `PostgresManager` is more private than the item `DbPool::Postgres::0`
+  --> crates\ahiru_core\src\db.rs:36:14
+   |
+36 |     Postgres(Arc<Pool<PostgresManager>>),
+   |              ^^^^^^^^^^^^^^^^^^^^^^^^^^ field `DbPool::Postgres::0` is reachable at visibility `pub`
+   |
+note: but type `PostgresManager` is only usable at visibility `pub(self)`
+  --> crates\ahiru_core\src\db.rs:22:1
+   |
+22 | struct PostgresManager {
+   | ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: `ahiru_core` (lib) generated 4 warnings (run `cargo fix --lib -p ahiru_core` to apply 2 suggestions)
+   Compiling niao_runtime v0.2.2 (C:\Risu\Neko\crates\niao_runtime)
+warning: unused import: `Match`
+  --> crates\niao_runtime\src\re.rs:12:36
+   |
+12 | use niao_regex::{escape, Captures, Match, Regex};
+   |                                    ^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `DateTime`
+  --> crates\niao_runtime\src\time.rs:13:5
+   |
+13 |     DateTime, Timezone, WEEKDAY_NAMES,
+   |     ^^^^^^^^
+
+warning: unused import: `niao_db::Pool`
+ --> crates\niao_runtime\src\npg\pool.rs:7:5
+  |
+7 | use niao_db::Pool;
+  |     ^^^^^^^^^^^^^
+
+warning: unused import: `Value`
+ --> crates\niao_runtime\src\naws\ssm.rs:4:13
+  |
+4 | use crate::{Value, ValueRef};
+  |             ^^^^^
+
+warning: unused imports: `Method` and `request`
+ --> crates\niao_runtime\src\nsupa\storage.rs:8:23
+  |
+8 | use niao_http::{post, request, Method};
+  |                       ^^^^^^^  ^^^^^^
+
+error[E0277]: the trait bound `std::string::String: Borrow<&std::string::String>` is not satisfied
+   --> crates\niao_runtime\src\ntoml.rs:366:50
+    |
+366 |         if let Value::Object(nested) = &*map.get(*key).unwrap().borrow() {
+    |                                              --- ^^^^ the trait `Borrow<&std::string::String>` is not 
+implemented for `std::string::String`
+    |                                              |
+    |                                              required by a bound introduced by this call
+    |
+note: required by a bound in `std::collections::HashMap::<K, V, S, A>::get`
+   --> /rustc/31fca3adb283cc9dfd56b49cdee9a96eb9c96ffd/library\std\src\collections\hash\map.rs:1030:4
+help: consider borrowing here
+    |
+366 |         if let Value::Object(nested) = &*map.get(&*key).unwrap().borrow() {
+    |                                                  +
+
+error[E0277]: the trait bound `std::string::String: Borrow<&std::string::String>` is not satisfied
+   --> crates\niao_runtime\src\ntoml.rs:375:48
+    |
+375 |         if let Value::Array(items) = &*map.get(*key).unwrap().borrow() {
+    |                                            --- ^^^^ the trait `Borrow<&std::string::String>` is not implemented 
+for `std::string::String`
+    |                                            |
+    |                                            required by a bound introduced by this call
+    |
+note: required by a bound in `std::collections::HashMap::<K, V, S, A>::get`
+   --> /rustc/31fca3adb283cc9dfd56b49cdee9a96eb9c96ffd/library\std\src\collections\hash\map.rs:1030:4
+help: consider borrowing here
+    |
+375 |         if let Value::Array(items) = &*map.get(&*key).unwrap().borrow() {
+    |                                                +
+
+error[E0369]: binary operation `==` cannot be applied to type `Option<Value>`
+   --> crates\niao_runtime\src\ntoml.rs:536:17
+    |
+536 | /                 assert_eq!(
+537 | |                     map.get("name").map(|v| v.borrow().clone()),
+538 | |                     Some(Value::String("niao-demo".into()))
+539 | |                 );
+    | |                 ^
+    | |                 |
+    | |_________________Option<Value>
+    |                   Option<Value>
+    |
+note: an implementation of `PartialEq` might be missing for `Value`
+   --> crates\niao_runtime\src\lib.rs:399:1
+    |
+399 | pub enum Value {
+    | ^^^^^^^^^^^^^^ must implement `PartialEq`
+help: consider annotating `Value` with `#[derive(PartialEq)]`
+   --> crates\niao_runtime\src\lib.rs:399:1
+    |
+399 + #[derive(PartialEq)]
+400 | pub enum Value {
+    |
+
+error[E0369]: binary operation `==` cannot be applied to type `Option<Value>`
+   --> crates\niao_runtime\src\ntoml.rs:540:17
+    |
+540 | /                 assert_eq!(
+541 | |                     map.get("port").map(|v| v.borrow().clone()),
+542 | |                     Some(Value::Int(3001))
+543 | |                 );
+    | |                 ^
+    | |                 |
+    | |_________________Option<Value>
+    |                   Option<Value>
+    |
+note: an implementation of `PartialEq` might be missing for `Value`
+   --> crates\niao_runtime\src\lib.rs:399:1
+    |
+399 | pub enum Value {
+    | ^^^^^^^^^^^^^^ must implement `PartialEq`
+help: consider annotating `Value` with `#[derive(PartialEq)]`
+   --> crates\niao_runtime\src\lib.rs:399:1
+    |
+399 + #[derive(PartialEq)]
+400 | pub enum Value {
+    |
+
+error[E0369]: binary operation `==` cannot be applied to type `Option<Value>`
+   --> crates\niao_runtime\src\ntoml.rs:544:17
+    |
+544 | /                 assert_eq!(
+545 | |                     map.get("enabled").map(|v| v.borrow().clone()),
+546 | |                     Some(Value::Bool(true))
+547 | |                 );
+    | |                 ^
+    | |                 |
+    | |_________________Option<Value>
+    |                   Option<Value>
+    |
+note: an implementation of `PartialEq` might be missing for `Value`
+   --> crates\niao_runtime\src\lib.rs:399:1
+    |
+399 | pub enum Value {
+    | ^^^^^^^^^^^^^^ must implement `PartialEq`
+help: consider annotating `Value` with `#[derive(PartialEq)]`
+   --> crates\niao_runtime\src\lib.rs:399:1
+    |
+399 + #[derive(PartialEq)]
+400 | pub enum Value {
+    |
+
+warning: unused import: `std::io::Write`
+ --> crates\niao_runtime\src\npg\query.rs:8:5
+  |
+8 | use std::io::Write;
+  |     ^^^^^^^^^^^^^^
+
+warning: variable does not need to be mutable
+  --> crates\niao_runtime\src\net\url.rs:92:9
+   |
+92 |     let mut built = url.to_string_full();
+   |         ----^^^^^
+   |         |
+   |         help: remove this `mut`
+   |
+   = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `bad_id`
+   --> crates\niao_runtime\src\naws\mod.rs:313:13
+    |
+313 |         let bad_id = Value::Int(999_999).ref_cell();
+    |             ^^^^^^ help: if this is intentional, prefix it with an underscore: `_bad_id`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+error[E0597]: `rows` does not live long enough
+   --> crates\niao_runtime\src\ncsv.rs:560:17
+    |
+559 |         let rows = parse_csv_text(text, &opts, span()).unwrap();
+    |             ---- binding `rows` declared here
+560 |         match &*rows.borrow() {
+    |                 ^^^^---------
+    |                 |
+    |                 borrowed value does not live long enough
+    |                 a temporary with access to the borrow is created here ...
+...
+576 |     }
+    |     -
+    |     |
+    |     `rows` dropped here while still borrowed
+    |     ... and the borrow might be used here, when that temporary is dropped and runs the destructor for type 
+`std::cell::Ref<'_, Value>`
+    |
+help: consider adding semicolon after the expression so its temporaries are dropped sooner, before the local variables 
+declared by the block are dropped
+    |
+575 |         };
+    |          +
+
+error[E0597]: `rows` does not live long enough
+   --> crates\niao_runtime\src\ncsv.rs:588:17
+    |
+587 |         let rows = parse_csv_text(text, &opts, span()).unwrap();
+    |             ---- binding `rows` declared here
+588 |         match &*rows.borrow() {
+    |                 ^^^^---------
+    |                 |
+    |                 borrowed value does not live long enough
+    |                 a temporary with access to the borrow is created here ...
+...
+601 |     }
+    |     -
+    |     |
+    |     `rows` dropped here while still borrowed
+    |     ... and the borrow might be used here, when that temporary is dropped and runs the destructor for type 
+`std::cell::Ref<'_, Value>`
+    |
+help: consider adding semicolon after the expression so its temporaries are dropped sooner, before the local variables 
+declared by the block are dropped
+    |
+600 |         };
+    |          +
+
+warning: unused variable: `rest`
+   --> crates\niao_runtime\src\nsemver.rs:346:24
+    |
+346 |     } else if let Some(rest) = token.strip_prefix("!=") {
+    |                        ^^^^ help: if this is intentional, prefix it with an underscore: `_rest`
+
+error[E0597]: `result` does not live long enough
+   --> crates\niao_runtime\src\nshell.rs:456:17
+    |
+455 |         let result = nshell_run(&[cmd, Value::Object(opts).ref_cell()], span()).unwrap();
+    |             ------ binding `result` declared here
+456 |         match &*result.borrow() {
+    |                 ^^^^^^---------
+    |                 |
+    |                 borrowed value does not live long enough
+    |                 a temporary with access to the borrow is created here ...
+...
+467 |     }
+    |     -
+    |     |
+    |     `result` dropped here while still borrowed
+    |     ... and the borrow might be used here, when that temporary is dropped and runs the destructor for type 
+`std::cell::Ref<'_, Value>`
+    |
+help: consider adding semicolon after the expression so its temporaries are dropped sooner, before the local variables 
+declared by the block are dropped
+    |
+466 |         };
+    |          +
+
+error[E0597]: `via_run` does not live long enough
+   --> crates\niao_runtime\src\nshell.rs:479:16
+    |
+476 |         let via_run = nshell_run(&[Rc::clone(&cmd)], span()).unwrap();
+    |             ------- binding `via_run` declared here
+...
+479 |             (&*via_run.borrow(), &*via_capture.borrow())
+    |                ^^^^^^^---------
+    |                |
+    |                borrowed value does not live long enough
+    |                a temporary with access to the borrow is created here ...
+...
+489 |     }
+    |     -
+    |     |
+    |     `via_run` dropped here while still borrowed
+    |     ... and the borrow might be used here, when that temporary is dropped and runs the destructor for type 
+`std::cell::Ref<'_, Value>`
+    |
+help: consider adding semicolon after the expression so its temporaries are dropped sooner, before the local variables 
+declared by the block are dropped
+    |
+488 |         };
+    |          +
+
+error[E0597]: `via_capture` does not live long enough
+   --> crates\niao_runtime\src\nshell.rs:479:36
+    |
+477 |         let via_capture = nshell_run_capture(&[cmd], span()).unwrap();
+    |             ----------- binding `via_capture` declared here
+478 |         if let (Value::Object(run_map), Value::String(cap)) =
+479 |             (&*via_run.borrow(), &*via_capture.borrow())
+    |                                    ^^^^^^^^^^^---------
+    |                                    |
+    |                                    borrowed value does not live long enough
+    |                                    a temporary with access to the borrow is created here ...
+...
+489 |     }
+    |     -
+    |     |
+    |     `via_capture` dropped here while still borrowed
+    |     ... and the borrow might be used here, when that temporary is dropped and runs the destructor for type 
+`std::cell::Ref<'_, Value>`
+    |
+help: consider adding semicolon after the expression so its temporaries are dropped sooner, before the local variables 
+declared by the block are dropped
+    |
+488 |         };
+    |          +
+
+error[E0597]: `g2` does not live long enough
+   --> crates\niao_runtime\src\nbudget.rs:486:17
+    |
+485 |         let g2 = nbudget_get(&[], span()).unwrap();
+    |             -- binding `g2` declared here
+486 |         match &*g2.borrow() {
+    |                 ^^---------
+    |                 |
+    |                 borrowed value does not live long enough
+    |                 a temporary with access to the borrow is created here ...
+...
+490 |     }
+    |     -
+    |     |
+    |     `g2` dropped here while still borrowed
+    |     ... and the borrow might be used here, when that temporary is dropped and runs the destructor for type 
+`std::cell::Ref<'_, Value>`
+    |
+help: consider adding semicolon after the expression so its temporaries are dropped sooner, before the local variables 
+declared by the block are dropped
+    |
+489 |         };
+    |          +
+
+error[E0597]: `chk` does not live long enough
+   --> crates\niao_runtime\src\nbudget.rs:512:17
+    |
+511 |         let chk = nbudget_check(&[obj(&[("tokens", i(70))])], span()).unwrap();
+    |             --- binding `chk` declared here
+512 |         match &*chk.borrow() {
+    |                 ^^^---------
+    |                 |
+    |                 borrowed value does not live long enough
+    |                 a temporary with access to the borrow is created here ...
+...
+522 |     }
+    |     -
+    |     |
+    |     `chk` dropped here while still borrowed
+    |     ... and the borrow might be used here, when that temporary is dropped and runs the destructor for type 
+`std::cell::Ref<'_, Value>`
+    |
+help: consider adding semicolon after the expression so its temporaries are dropped sooner, before the local variables 
+declared by the block are dropped
+    |
+521 |         };
+    |          +
+
+error[E0597]: `r` does not live long enough
+   --> crates\niao_runtime\src\ncost.rs:473:17
+    |
+464 |         let r = ncost_price(
+    |             - binding `r` declared here
+...
+473 |         match &*r.borrow() {
+    |                 ^---------
+    |                 |
+    |                 borrowed value does not live long enough
+    |                 a temporary with access to the borrow is created here ...
+...
+477 |     }
+    |     -
+    |     |
+    |     `r` dropped here while still borrowed
+    |     ... and the borrow might be used here, when that temporary is dropped and runs the destructor for type 
+`std::cell::Ref<'_, Value>`
+    |
+help: consider adding semicolon after the expression so its temporaries are dropped sooner, before the local variables 
+declared by the block are dropped
+    |
+476 |         };
+    |          +
+
+error[E0597]: `t` does not live long enough
+   --> crates\niao_runtime\src\ncost.rs:569:17
+    |
+568 |         let t = ncost_table(&[], span()).unwrap();
+    |             - binding `t` declared here
+569 |         match &*t.borrow() {
+    |                 ^---------
+    |                 |
+    |                 borrowed value does not live long enough
+    |                 a temporary with access to the borrow is created here ...
+...
+591 |     }
+    |     -
+    |     |
+    |     `t` dropped here while still borrowed
+    |     ... and the borrow might be used here, when that temporary is dropped and runs the destructor for type 
+`std::cell::Ref<'_, Value>`
+    |
+help: consider adding semicolon after the expression so its temporaries are dropped sooner, before the local variables 
+declared by the block are dropped
+    |
+590 |         };
+    |          +
+
+error[E0597]: `r` does not live long enough
+   --> crates\niao_runtime\src\ncost.rs:622:17
+    |
+621 |         let r = ncost_estimate(&[Value::Object(obj).ref_cell()], span()).unwrap();
+    |             - binding `r` declared here
+622 |         match &*r.borrow() {
+    |                 ^---------
+    |                 |
+    |                 borrowed value does not live long enough
+    |                 a temporary with access to the borrow is created here ...
+...
+642 |     }
+    |     -
+    |     |
+    |     `r` dropped here while still borrowed
+    |     ... and the borrow might be used here, when that temporary is dropped and runs the destructor for type 
+`std::cell::Ref<'_, Value>`
+    |
+help: consider adding semicolon after the expression so its temporaries are dropped sooner, before the local variables 
+declared by the block are dropped
+    |
+641 |         };
+    |          +
+
+error[E0597]: `r` does not live long enough
+   --> crates\niao_runtime\src\nexplain.rs:354:17
+    |
+353 |         let r = nexplain_of(&[msg], span()).unwrap();
+    |             - binding `r` declared here
+354 |         match &*r.borrow() {
+    |                 ^---------
+    |                 |
+    |                 borrowed value does not live long enough
+    |                 a temporary with access to the borrow is created here ...
+...
+363 |     }
+    |     -
+    |     |
+    |     `r` dropped here while still borrowed
+    |     ... and the borrow might be used here, when that temporary is dropped and runs the destructor for type 
+`std::cell::Ref<'_, Value>`
+    |
+help: consider adding semicolon after the expression so its temporaries are dropped sooner, before the local variables 
+declared by the block are dropped
+    |
+362 |         };
+    |          +
+
+error[E0597]: `r` does not live long enough
+   --> crates\niao_runtime\src\nexplain.rs:370:17
+    |
+369 |         let r = nexplain_of(&[err], span()).unwrap();
+    |             - binding `r` declared here
+370 |         match &*r.borrow() {
+    |                 ^---------
+    |                 |
+    |                 borrowed value does not live long enough
+    |                 a temporary with access to the borrow is created here ...
+...
+377 |     }
+    |     -
+    |     |
+    |     `r` dropped here while still borrowed
+    |     ... and the borrow might be used here, when that temporary is dropped and runs the destructor for type 
+`std::cell::Ref<'_, Value>`
+    |
+help: consider adding semicolon after the expression so its temporaries are dropped sooner, before the local variables 
+declared by the block are dropped
+    |
+376 |         };
+    |          +
+
+error[E0597]: `r2` does not live long enough
+   --> crates\niao_runtime\src\nexplain.rs:401:17
+    |
+400 |         let r2 = nexplain_of(&[Value::String("operation timeout".into()).ref_cell()], span()).unwrap();
+    |             -- binding `r2` declared here
+401 |         match &*r2.borrow() {
+    |                 ^^---------
+    |                 |
+    |                 borrowed value does not live long enough
+    |                 a temporary with access to the borrow is created here ...
+...
+407 |     }
+    |     -
+    |     |
+    |     `r2` dropped here while still borrowed
+    |     ... and the borrow might be used here, when that temporary is dropped and runs the destructor for type 
+`std::cell::Ref<'_, Value>`
+    |
+help: consider adding semicolon after the expression so its temporaries are dropped sooner, before the local variables 
+declared by the block are dropped
+    |
+406 |         };
+    |          +
+
+error[E0597]: `s` does not live long enough
+   --> crates\niao_runtime\src\nexplain.rs:444:17
+    |
+439 |         let s = nexplain_format(
+    |             - binding `s` declared here
+...
+444 |         match &*s.borrow() {
+    |                 ^---------
+    |                 |
+    |                 borrowed value does not live long enough
+    |                 a temporary with access to the borrow is created here ...
+...
+453 |     }
+    |     -
+    |     |
+    |     `s` dropped here while still borrowed
+    |     ... and the borrow might be used here, when that temporary is dropped and runs the destructor for type 
+`std::cell::Ref<'_, Value>`
+    |
+help: consider adding semicolon after the expression so its temporaries are dropped sooner, before the local variables 
+declared by the block are dropped
+    |
+452 |         };
+    |          +
+
+error[E0597]: `r` does not live long enough
+   --> crates\niao_runtime\src\nexplain.rs:460:21
+    |
+459 |             let r = nexplain_of(&[Value::String(msg.into()).ref_cell()], span()).unwrap();
+    |                 - binding `r` declared here
+460 |             match &*r.borrow() {
+    |                     ^---------
+    |                     |
+    |                     borrowed value does not live long enough
+    |                     a temporary with access to the borrow is created here ...
+...
+466 |         }
+    |         -
+    |         |
+    |         `r` dropped here while still borrowed
+    |         ... and the borrow might be used here, when that temporary is dropped and runs the destructor for type 
+`std::cell::Ref<'_, Value>`
+    |
+help: consider adding semicolon after the expression so its temporaries are dropped sooner, before the local variables 
+declared by the block are dropped
+    |
+465 |             };
+    |              +
+
+error[E0597]: `r` does not live long enough
+   --> crates\niao_runtime\src\nexplain.rs:477:17
+    |
+472 |         let r = nexplain_of(
+    |             - binding `r` declared here
+...
+477 |         match &*r.borrow() {
+    |                 ^---------
+    |                 |
+    |                 borrowed value does not live long enough
+    |                 a temporary with access to the borrow is created here ...
+...
+484 |     }
+    |     -
+    |     |
+    |     `r` dropped here while still borrowed
+    |     ... and the borrow might be used here, when that temporary is dropped and runs the destructor for type 
+`std::cell::Ref<'_, Value>`
+    |
+help: consider adding semicolon after the expression so its temporaries are dropped sooner, before the local variables 
+declared by the block are dropped
+    |
+483 |         };
+    |          +
+
+error[E0597]: `v` does not live long enough
+   --> crates\niao_runtime\src\npace.rs:321:17
+    |
+320 |         let v = npace_delays(&[], span()).unwrap();
+    |             - binding `v` declared here
+321 |         match &*v.borrow() {
+    |                 ^---------
+    |                 |
+    |                 borrowed value does not live long enough
+    |                 a temporary with access to the borrow is created here ...
+...
+330 |     }
+    |     -
+    |     |
+    |     `v` dropped here while still borrowed
+    |     ... and the borrow might be used here, when that temporary is dropped and runs the destructor for type 
+`std::cell::Ref<'_, Value>`
+    |
+help: consider adding semicolon after the expression so its temporaries are dropped sooner, before the local variables 
+declared by the block are dropped
+    |
+329 |         };
+    |          +
+
+error[E0597]: `v` does not live long enough
+   --> crates\niao_runtime\src\nfuzz.rs:385:21
+    |
+384 |             let v = nfuzz_int(&[i(-3), i(3)], span()).unwrap();
+    |                 - binding `v` declared here
+385 |             match &*v.borrow() {
+    |                     ^---------
+    |                     |
+    |                     borrowed value does not live long enough
+    |                     a temporary with access to the borrow is created here ...
+...
+389 |         }
+    |         -
+    |         |
+    |         `v` dropped here while still borrowed
+    |         ... and the borrow might be used here, when that temporary is dropped and runs the destructor for type 
+`std::cell::Ref<'_, Value>`
+    |
+help: consider adding semicolon after the expression so its temporaries are dropped sooner, before the local variables 
+declared by the block are dropped
+    |
+388 |             };
+    |              +
+
+error[E0597]: `v` does not live long enough
+   --> crates\niao_runtime\src\nfuzz.rs:397:21
+    |
+396 |             let v = nfuzz_float(&[f(1.0), f(2.0)], span()).unwrap();
+    |                 - binding `v` declared here
+397 |             match &*v.borrow() {
+    |                     ^---------
+    |                     |
+    |                     borrowed value does not live long enough
+    |                     a temporary with access to the borrow is created here ...
+...
+401 |         }
+    |         -
+    |         |
+    |         `v` dropped here while still borrowed
+    |         ... and the borrow might be used here, when that temporary is dropped and runs the destructor for type 
+`std::cell::Ref<'_, Value>`
+    |
+help: consider adding semicolon after the expression so its temporaries are dropped sooner, before the local variables 
+declared by the block are dropped
+    |
+400 |             };
+    |              +
+
+error[E0597]: `s` does not live long enough
+   --> crates\niao_runtime\src\nfuzz.rs:411:17
+    |
+410 |         let s = nfuzz_string(&[], span()).unwrap();
+    |             - binding `s` declared here
+411 |         match &*s.borrow() {
+    |                 ^---------
+    |                 |
+    |                 borrowed value does not live long enough
+    |                 a temporary with access to the borrow is created here ...
+...
+418 |     }
+    |     -
+    |     |
+    |     `s` dropped here while still borrowed
+    |     ... and the borrow might be used here, when that temporary is dropped and runs the destructor for type 
+`std::cell::Ref<'_, Value>`
+    |
+help: consider adding semicolon after the expression so its temporaries are dropped sooner, before the local variables 
+declared by the block are dropped
+    |
+417 |         };
+    |          +
+
+error[E0597]: `shuffled` does not live long enough
+   --> crates\niao_runtime\src\nfuzz.rs:440:17
+    |
+434 |         let shuffled = nfuzz_shuffle(&[arr.clone()], span()).unwrap();
+    |             -------- binding `shuffled` declared here
+...
+440 |         match &*shuffled.borrow() {
+    |                 ^^^^^^^^---------
+    |                 |
+    |                 borrowed value does not live long enough
+    |                 a temporary with access to the borrow is created here ...
+...
+455 |     }
+    |     -
+    |     |
+    |     `shuffled` dropped here while still borrowed
+    |     ... and the borrow might be used here, when that temporary is dropped and runs the destructor for type 
+`std::cell::Ref<'_, Value>`
+    |
+help: consider adding semicolon after the expression so its temporaries are dropped sooner, before the local variables 
+declared by the block are dropped
+    |
+454 |         };
+    |          +
+
+error[E0597]: `cases` does not live long enough
+   --> crates\niao_runtime\src\nfuzz.rs:467:17
+    |
+466 |         let cases = nfuzz_cases(&[i(50), i(0), i(9)], span()).unwrap();
+    |             ----- binding `cases` declared here
+467 |         match &*cases.borrow() {
+    |                 ^^^^^---------
+    |                 |
+    |                 borrowed value does not live long enough
+    |                 a temporary with access to the borrow is created here ...
+...
+474 |     }
+    |     -
+    |     |
+    |     `cases` dropped here while still borrowed
+    |     ... and the borrow might be used here, when that temporary is dropped and runs the destructor for type 
+`std::cell::Ref<'_, Value>`
+    |
+help: consider adding semicolon after the expression so its temporaries are dropped sooner, before the local variables 
+declared by the block are dropped
+    |
+473 |         };
+    |          +
+
+error[E0597]: `v` does not live long enough
+   --> crates\niao_runtime\src\nreplay.rs:543:17
+    |
+542 |         let v = nreplay_len(&[i(424_242)], span()).unwrap();
+    |             - binding `v` declared here
+543 |         match &*v.borrow() {
+    |                 ^---------
+    |                 |
+    |                 borrowed value does not live long enough
+    |                 a temporary with access to the borrow is created here ...
+...
+547 |     }
+    |     -
+    |     |
+    |     `v` dropped here while still borrowed
+    |     ... and the borrow might be used here, when that temporary is dropped and runs the destructor for type 
+`std::cell::Ref<'_, Value>`
+    |
+help: consider adding semicolon after the expression so its temporaries are dropped sooner, before the local variables 
+declared by the block are dropped
+    |
+546 |         };
+    |          +
+
+Some errors have detailed explanations: E0277, E0369, E0597.
+For more information about an error, try `rustc --explain E0277`.
+warning: `niao_runtime` (lib test) generated 9 warnings
+error: could not compile `niao_runtime` (lib test) due to 28 previous errors; 9 warnings emitted

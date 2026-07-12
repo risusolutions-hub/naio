@@ -18,6 +18,7 @@
 - **Wave 0** native stdlib crates: `niao_collections` (ahash + indexmap), `niao_bignum` (num-bigint), `niao_rand`, `niao_log` (tracing), `niao_net_clients` (suppaftp FTP); `niao_http` extended with http-types + URL modules.
 - Wave 0 orchestrator: wired `niao_runtime` to `niao_bignum`, `niao_collections`, `niao_io` (socket), `niao_net_clients` (FTP); registered `nargs`, `nlog`, `nmath`, `nrand`, `nstr`, `nfmt` native modules; `ahiru_core` logging via `niao_log`; added `niao_log` workspace member.
 - VM/runtime polish: bytecode cache content-hash sidecar, call-bridge arg scratch buffer, GC threshold tune, hot-path `get_unchecked` in dispatch; `scripts/bench_gate.ps1` + `benchmarks/baseline.json`; `docs/perf_notes.md`.
+- Task 13 verification: CMake installed (Kitware 4.4.0); full `cargo check/test --workspace` green; `niao_pkg`/`niao_bytecode` migrated off direct `serde_json`; lexer `//` disambiguation for comments vs floor-div; slow VM/interpreter tests fixed (no `#[ignore]`).
 
 ## 0.2.2 — 2026-07-07
 
