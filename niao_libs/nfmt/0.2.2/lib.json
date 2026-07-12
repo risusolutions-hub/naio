@@ -1,0 +1,11 @@
+{
+    "name": "nfmt",
+    "version": "0.2.2",
+    "kind": "native",
+    "description": "Formatting: {} templates, thousands separators, hex/oct/bin, humanized bytes/durations/counts",
+    "import_paths": [
+        "nfmt",
+        "std/nfmt"
+    ],
+    "builtin_count": 14
+}

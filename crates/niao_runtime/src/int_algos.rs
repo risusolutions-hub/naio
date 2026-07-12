@@ -1,6 +1,6 @@
 //! Hot-path integer array algorithms for DSA builtins and VM loop fusion.
 
-use ahash::{HashSetExt, RandomState};
+use niao_collections::{HashSetExt, RandomState};
 use std::collections::HashSet;
 
 type IntHashSet = HashSet<i64, RandomState>;

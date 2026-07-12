@@ -6,8 +6,7 @@
 use crate::{NativeFn, NiaoResult, RuntimeError, Value, ValueRef};
 use niao_ast::Span;
 use niao_errors::codes;
-use num_bigint::BigInt;
-use num_traits::cast::ToPrimitive;
+use niao_bignum::BigInt;
 use niao_json_core::{Number as JNumber, Object as JObject, Value as JsonValue};
 use niao_json_core::{is_valid, parse as parse_json, to_string_pretty as json_pretty};
 use std::cell::RefCell;

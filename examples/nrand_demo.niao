@@ -1,0 +1,37 @@
+// nrand demo — fast xoshiro256** randomness with reproducible streams.
+// Run: niao run examples/nrand_demo.niao
+import "nrand"
+
+fn main() {
+    print("=== default generator ===")
+    nrand.seed(42)                     // comment out for time-based entropy
+    print(nrand.int(1, 6))             // dice roll (inclusive)
+    print(nrand.float())               // [0, 1)
+    print(nrand.float(-5.0, 5.0))
+    print(nrand.bool(0.75))
+    print(nrand.hex(16))
+    print(nrand.alphanum(12))
+    print(nrand.string(8, "niao鳥"))
+
+    print("=== collections ===")
+    let fruits = ["apple", "banana", "cherry", "durian"]
+    print(nrand.choice(fruits))
+    print(nrand.weighted(["common", "rare", "epic"], [80, 18, 2]))
+    let nums = [1, 2, 3, 4, 5, 6, 7, 8]
+    nrand.shuffle(nums)
+    print(nums)
+    print(nrand.sample(nums, 3))
+
+    print("=== distributions ===")
+    print(nrand.normal(100.0, 15.0))   // IQ-style
+    print(nrand.exponential(0.5))
+
+    print("=== reproducible seeded streams ===")
+    let g1 = nrand.new_gen(1234)
+    let g2 = nrand.new_gen(1234)
+    print(nrand.gen_int(g1, 0, 999))
+    print(nrand.gen_int(g2, 0, 999))   // same value — same seed
+    print(nrand.gen_normal(g1))
+    nrand.close_gen(g1)
+    nrand.close_gen(g2)
+}

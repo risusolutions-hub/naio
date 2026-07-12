@@ -1,0 +1,11 @@
+// Logging demo — the native structured logger now lives in "nlog".
+// See examples/nlog_demo.niao for the full tour and docs/NLOG.md for the API.
+// Run: niao run examples/log_demo.niao
+import "nlog"
+
+nlog.init("info")
+nlog.info("server ready", "port", 8080)
+let request_id = 42
+nlog.context({request_id: request_id})
+nlog.info("handling request")
+nlog.clear_context()

@@ -1,0 +1,31 @@
+// nlog demo — structured logging with levels, fields, and sinks.
+// Run: niao run examples/nlog_demo.niao
+import "nlog"
+
+fn main() {
+    // Text logs to stderr at info level
+    nlog.init("info")
+    nlog.info("server ready", "port", 8080, "workers", 4)
+    nlog.warn("slow query", "ms", 250, "table", "users")
+    nlog.debug("this is hidden")            // below level — costs ~1ns
+
+    // Global context fields ride on every record
+    nlog.context({service: "api", region: "eu"})
+    nlog.error("db down", "attempts", 3)
+    nlog.clear_context()
+
+    // Level control
+    print(nlog.get_level())                  // info
+    nlog.set_level("debug")
+    nlog.debug("now visible", "detail", true)
+    print(nlog.enabled("trace"))             // false
+
+    // JSON mode (great for log shippers)
+    nlog.init("info", {format: "json"})
+    nlog.info("structured", "user_id", 42, "ok", true)
+
+    // File sink
+    nlog.init("info", {file: "demo.log", timestamps: false})
+    nlog.info("written to demo.log", "n", 1)
+    print("check demo.log")
+}

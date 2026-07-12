@@ -1,0 +1,24 @@
+// URL parse, join, encode demo — uses net builtins backed by niao_http.
+// Run:  niao run examples/url_demo.niao
+import "net" as n
+
+fn main() {
+    print("== parse ==")
+    let u = n.url_parse("https://user:pass@example.com:8080/api?q=1#top")
+    print(u.scheme)
+    print(u.host)
+    print(u.port)
+    print(u.path)
+    print(u.query)
+    print(u.fragment)
+
+    print("== join ==")
+    let joined = n.url_join("https://example.com/a/b/", "../c?x=1")
+    print(joined)
+
+    print("== encode/decode ==")
+    print(n.url_encode("a b+c"))
+    print(n.url_decode("a+b%3Dc"))
+
+    print("url demo done")
+}

@@ -33,7 +33,7 @@ pub fn find_source_root() -> Option<PathBuf> {
     }
 
     if let Ok(data) = crate::package::read_json_text(&crate::paths::global_install_state_path()) {
-        if let Ok(state) = serde_json::from_str::<crate::state::InstallState>(&data) {
+        if let Ok(state) = crate::json::parse_struct::<crate::state::InstallState>(&data) {
             let root = PathBuf::from(&state.source_root);
             if !state.source_root.is_empty() && is_source_root(&root) {
                 return Some(root);

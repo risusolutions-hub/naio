@@ -90,6 +90,23 @@ impl Object {
         }
     }
 
+    pub fn remove(&mut self, key: &str) -> Option<Value> {
+        if let Some(idx) = &mut self.index {
+            let pos = idx.remove(key)?;
+            let (_, value) = self.pairs.remove(pos);
+            for (_, slot) in idx.iter_mut() {
+                if *slot > pos {
+                    *slot -= 1;
+                }
+            }
+            Some(value)
+        } else if let Some(pos) = self.pairs.iter().position(|(k, _)| k == key) {
+            Some(self.pairs.remove(pos).1)
+        } else {
+            None
+        }
+    }
+
     fn build_index(&mut self) {
         let mut map = HashMap::with_capacity(self.pairs.len());
         for (i, (k, _)) in self.pairs.iter().enumerate() {

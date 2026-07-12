@@ -99,7 +99,7 @@ pub fn fetch_bytes(url: &str) -> PkgResult<Vec<u8>> {
 pub fn fetch_catalog(base: &str) -> PkgResult<RegistryCatalog> {
     let url = format!("{base}/v1/catalog");
     let text = fetch_text(&url)?;
-    serde_json::from_str(&text).map_err(|e| PkgError::Message(format!("parse registry catalog: {e}")))
+    crate::json::parse_struct(&text).map_err(|e| PkgError::Message(format!("parse registry catalog: {e}")))
 }
 
 pub fn fetch_package_versions(base: &str, name: &str) -> PkgResult<Vec<String>> {
@@ -113,7 +113,7 @@ pub fn fetch_package_versions(base: &str, name: &str) -> PkgResult<Vec<String>> 
             installable_versions: Vec<String>,
             version: String,
         }
-        let pkg: Pkg = serde_json::from_str(&text)
+        let pkg: Pkg = crate::json::parse_struct(&text)
             .map_err(|e| PkgError::Message(format!("parse registry package: {e}")))?;
         if !pkg.installable_versions.is_empty() {
             return Ok(pkg.installable_versions);
@@ -141,7 +141,7 @@ pub fn fetch_package_versions(base: &str, name: &str) -> PkgResult<Vec<String>> 
 pub fn fetch_version_meta(base: &str, name: &str, version: &str) -> PkgResult<RegistryVersionMeta> {
     let url = format!("{base}/v1/packages/{name}/{version}");
     let text = fetch_text(&url)?;
-    serde_json::from_str(&text)
+    crate::json::parse_struct(&text)
         .map_err(|e| PkgError::Message(format!("parse registry version meta: {e}")))
 }
 

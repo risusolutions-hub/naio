@@ -26,17 +26,16 @@ dependencies = [
 name = "ahiru_core"
 version = "0.2.2"
 dependencies = [
- "ahash",
  "axum",
  "dashmap",
  "futures-util",
- "http",
  "hyper",
  "hyper-util",
  "niao_codec",
  "niao_crypto",
  "niao_db",
  "niao_json_core",
+ "niao_log",
  "rusqlite",
  "rustls",
  "rustls-pemfile",
@@ -48,8 +47,6 @@ dependencies = [
  "tokio-tungstenite 0.26.2",
  "tower",
  "tower-http",
- "tracing",
- "tracing-subscriber",
 ]
 
 [[package]]
@@ -3043,15 +3040,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "670fdfda89751bc4a84ac13eaa63e205cf0fd22b4c9a5fbfa085b63c1f1d3a30"
 
 [[package]]
-name = "matchers"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d1525a2a28c7f4fa0fc98bb91ae755d1e2d1505079e05539e35bc876b5d65ae9"
-dependencies = [
- "regex-automata",
-]
-
-[[package]]
 name = "matchit"
 version = "0.8.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3303,10 +3291,25 @@ name = "niao_archive"
 version = "0.2.2"
 
 [[package]]
+name = "niao_args"
+version = "0.2.2"
+dependencies = [
+ "clap",
+]
+
+[[package]]
 name = "niao_ast"
 version = "0.2.2"
 dependencies = [
  "serde",
+]
+
+[[package]]
+name = "niao_bignum"
+version = "0.2.2"
+dependencies = [
+ "num-bigint",
+ "num-traits",
 ]
 
 [[package]]
@@ -3315,10 +3318,10 @@ version = "0.2.2"
 dependencies = [
  "niao_ast",
  "niao_ir",
+ "niao_json_core",
  "niao_parser",
  "niao_runtime",
  "serde",
- "serde_json",
 ]
 
 [[package]]
@@ -3357,6 +3360,14 @@ dependencies = [
 [[package]]
 name = "niao_codec"
 version = "0.2.2"
+
+[[package]]
+name = "niao_collections"
+version = "0.2.2"
+dependencies = [
+ "ahash",
+ "indexmap",
+]
 
 [[package]]
 name = "niao_crypto"
@@ -3438,6 +3449,9 @@ dependencies = [
 [[package]]
 name = "niao_io"
 version = "0.2.2"
+dependencies = [
+ "socket2 0.5.10",
+]
 
 [[package]]
 name = "niao_ir"
@@ -3450,6 +3464,9 @@ dependencies = [
 [[package]]
 name = "niao_json_core"
 version = "0.2.2"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "niao_lexer"
@@ -3484,6 +3501,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "niao_log"
+version = "0.2.2"
+
+[[package]]
 name = "niao_ml"
 version = "0.2.2"
 dependencies = [
@@ -3494,6 +3515,13 @@ dependencies = [
  "rand_distr 0.4.3",
  "rayon",
  "serde",
+]
+
+[[package]]
+name = "niao_net_clients"
+version = "0.2.2"
+dependencies = [
+ "suppaftp",
 ]
 
 [[package]]
@@ -3520,8 +3548,8 @@ dependencies = [
  "niao_archive",
  "niao_crypto",
  "niao_http",
+ "niao_json_core",
  "serde",
- "serde_json",
  "winreg",
 ]
 
@@ -3539,6 +3567,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "niao_rand"
+version = "0.2.2"
+dependencies = [
+ "rand 0.8.6",
+]
+
+[[package]]
 name = "niao_regex"
 version = "0.2.2"
 
@@ -3546,17 +3581,17 @@ version = "0.2.2"
 name = "niao_runtime"
 version = "0.2.2"
 dependencies = [
- "ahash",
  "ahiru_core",
  "bson",
  "futures",
- "indexmap",
  "lettre",
  "mongodb",
  "niao_archive",
  "niao_ast",
+ "niao_bignum",
  "niao_classic",
  "niao_codec",
+ "niao_collections",
  "niao_crypto",
  "niao_data",
  "niao_db",
@@ -3567,13 +3602,12 @@ dependencies = [
  "niao_json_core",
  "niao_llm",
  "niao_ml",
+ "niao_net_clients",
  "niao_rag",
  "niao_regex",
  "niao_tensor",
  "niao_time",
  "niao_ws",
- "num-bigint",
- "num-traits",
  "rayon",
  "rusqlite",
  "rustls",
@@ -3581,8 +3615,6 @@ dependencies = [
  "rustls-pki-types",
  "serde",
  "serde_json",
- "socket2 0.5.10",
- "suppaftp",
  "tokio",
 ]
 
@@ -3613,13 +3645,13 @@ dependencies = [
  "cranelift-module",
  "cranelift-native",
  "niao_ast",
+ "niao_bignum",
  "niao_bytecode",
  "niao_errors",
  "niao_ir",
  "niao_llm",
  "niao_parser",
  "niao_runtime",
- "num-bigint",
 ]
 
 [[package]]
@@ -3663,15 +3695,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "df9761775871bdef83bee530e60050f7e54b1105350d6884eb0fb4f46c2f9405"
 dependencies = [
  "memchr",
-]
-
-[[package]]
-name = "nu-ansi-term"
-version = "0.50.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7957b9740744892f114936ab4a57b3f487491bbeafaf8083688b16841a4240e5"
-dependencies = [
- "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -4875,15 +4898,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sharded-slab"
-version = "0.1.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f40ca3c46823713e0d4209592e8d6e826aa57e928f09752619fc696c499637f6"
-dependencies = [
- "lazy_static",
-]
-
-[[package]]
 name = "shlex"
 version = "1.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5409,15 +5423,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "thread_local"
-version = "1.1.9"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f60246a4944f24f6e018aa17cdeffb7818b76356965d03b07d6a9886e8962185"
-dependencies = [
- "cfg-if",
-]
-
-[[package]]
 name = "time"
 version = "0.3.53"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5768,35 +5773,6 @@ checksum = "db97caf9d906fbde555dd62fa95ddba9eecfd14cb388e4f491a66d74cd5fb79a"
 dependencies = [
  "once_cell",
  "valuable",
-]
-
-[[package]]
-name = "tracing-log"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ee855f1f400bd0e5c02d150ae5de3840039a3f54b025156404e34c23c03f47c3"
-dependencies = [
- "log",
- "once_cell",
- "tracing-core",
-]
-
-[[package]]
-name = "tracing-subscriber"
-version = "0.3.23"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cb7f578e5945fb242538965c2d0b04418d38ec25c79d160cd279bf0731c8d319"
-dependencies = [
- "matchers",
- "nu-ansi-term",
- "once_cell",
- "regex-automata",
- "sharded-slab",
- "smallvec",
- "thread_local",
- "tracing",
- "tracing-core",
- "tracing-log",
 ]
 
 [[package]]

@@ -1,0 +1,48 @@
+// nargs demo — declarative CLI parsing with generated help.
+// Run: niao run examples/nargs_demo.niao
+import "nargs"
+
+fn main() {
+    let spec = {
+        name: "greet",
+        about: "Greets people, fast",
+        flags: [
+            {name: "verbose", short: "v", help: "Chatty output"},
+            {name: "loud", short: "l", help: "UPPERCASE mode"}
+        ],
+        options: [
+            {name: "port", short: "p", type: "int", default: 8080, help: "Listen port"},
+            {name: "rate", type: "float", default: 1.0, help: "Speed multiplier"}
+        ],
+        positionals: [
+            {name: "input", required: true, help: "Input file"},
+            {name: "extras", variadic: true, help: "More files"}
+        ]
+    }
+
+    // Generated help text
+    print(nargs.help(spec))
+
+    // Parse a sample argv (use nargs.parse_env(spec) for the real one)
+    let argv = ["-vl", "--port=9090", "in.txt", "a.txt", "b.txt"]
+    let r = nargs.parse(spec, argv)
+    if is_error(r) {
+        print("parse error:", r)
+        return
+    }
+    print("verbose:", r.values.verbose)     // true
+    print("loud:", r.values.loud)           // true
+    print("port:", r.values.port)           // 9090
+    print("rate:", r.values.rate)           // 1.0 (default)
+    print("input:", r.values.input)         // in.txt
+    print("extras:", r.values.extras)       // [a.txt, b.txt]
+    print("rest:", r.rest)
+
+    // Errors are catchable values
+    let bad = nargs.parse(spec, ["--bogus"])
+    print("unknown option is error:", is_error(bad))
+
+    // --help short-circuits
+    let h = nargs.parse(spec, ["--help"])
+    print("help requested:", h.help)
+}

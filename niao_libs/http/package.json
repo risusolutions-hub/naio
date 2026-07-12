@@ -1,0 +1,5 @@
+{
+  "name": "http",
+  "version": "0.2.2",
+  "description": "HTTP types: Method, StatusCode, HeaderMap, Uri"
+}

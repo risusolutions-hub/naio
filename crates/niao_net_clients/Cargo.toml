@@ -1,0 +1,15 @@
+[package]
+name = "niao_net_clients"
+version.workspace = true
+edition.workspace = true
+description = "Zero-dependency SMTP/FTP clients for Niao"
+
+[dependencies]
+
+[dev-dependencies]
+suppaftp = { version = "6", features = ["rustls"] }
+
+[[test]]
+name = "ftp_bench"
+path = "tests/ftp_bench.rs"
+harness = false

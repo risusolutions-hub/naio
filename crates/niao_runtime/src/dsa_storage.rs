@@ -4,8 +4,7 @@
 //! `Rc<RefCell<Value>>`. Mixed-type values promote once to the generic path.
 
 use crate::{Value, ValueRef};
-use ahash::{HashMapExt, HashSetExt, RandomState};
-use indexmap::{IndexMap, IndexSet};
+use niao_collections::{HashMapExt, HashSetExt, IndexMap, IndexSet, RandomState};
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::rc::Rc;
 

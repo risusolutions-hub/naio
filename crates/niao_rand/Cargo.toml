@@ -1,0 +1,13 @@
+[package]
+name = "niao_rand"
+version = "0.2.2"
+edition = "2021"
+license = "MIT"
+description = "Zero-dependency PRNG utilities for Niao (PCG64, xoshiro256**, OS entropy)"
+
+[[bench]]
+name = "rand_bench"
+harness = false
+
+[dev-dependencies]
+rand = "0.8"

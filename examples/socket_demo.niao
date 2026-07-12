@@ -1,0 +1,15 @@
+// Socket options demo — TCP connect with timeouts via net builtins.
+// Native socket2 replacement lives in niao_io (Rust); runtime wiring pending.
+// Run:  niao run examples/socket_demo.niao
+import "net"
+
+fn main() {
+    print("== TCP socket connect ==")
+    let sock = net_tcp_connect("example.com", 80)
+    net_set_timeout(sock, 5000)
+    net_tcp_send(sock, "GET / HTTP/1.1\r\nHost: example.com\r\nConnection: close\r\n\r\n")
+    let bytes = net_tcp_recv(sock, 256)
+    print("received bytes:", len(bytes))
+    net_tcp_close(sock)
+    print("socket demo done")
+}

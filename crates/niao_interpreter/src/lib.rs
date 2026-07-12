@@ -1197,7 +1197,12 @@ mod tests {
     #[test]
     fn runs_fibonacci() {
         let src = include_str!("../../../examples/fibonacci.niao");
-        run(src).unwrap();
+        let src = if cfg!(debug_assertions) {
+            src.replace("fib(40)", "fib(32)")
+        } else {
+            src.to_string()
+        };
+        run(&src).unwrap();
     }
 
     #[test]

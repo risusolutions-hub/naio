@@ -473,12 +473,15 @@ impl AhiruApp {
             host = "0.0.0.0".into();
         }
 
-        let _ = tracing_subscriber::fmt()
-            .with_env_filter(
-                tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| {
-                    tracing_subscriber::EnvFilter::new(&self.config.logging.level)
-                }),
+        let _ = niao_log::SubscriberBuilder::new()
+            .with_max_level(
+                self.config
+                    .logging
+                    .level
+                    .parse()
+                    .unwrap_or(niao_log::LevelFilter::Info),
             )
+            .with_fmt()
             .try_init();
 
         let policy = if opts.explicit_port {

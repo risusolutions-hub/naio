@@ -1,0 +1,37 @@
+// Fast-hashing showcase (niao_collections replaces the `ahash` crate).
+// The dsa map/set builtins are backed by niao_collections::RandomState, so
+// every insert/lookup below rides the fast AES-NI / wyhash hasher.
+// Run:  niao run examples/hash_demo.niao
+import "dsa"
+
+fn main() {
+    print("== hash map: bulk insert + lookup ==")
+    let m = map_new()
+    let n = 5000
+    let i = 0
+    while i < n {
+        map_set(m, "key-" + str(i), i * i)
+        i = i + 1
+    }
+    print(len(m))                       // 5000
+    print(map_get(m, "key-1234"))       // 1522756
+    print(map_has(m, "key-9999"))       // false
+
+    print("== hash set: dedup + membership ==")
+    let dupes = []
+    let j = 0
+    while j < 2000 {
+        push(dupes, j % 500)            // each value repeated 4x
+        j = j + 1
+    }
+    let uniq = set_from_array(dupes)
+    print(len(uniq))                    // 500
+    print(set_contains(uniq, 499))      // true
+    print(set_contains(uniq, 500))      // false
+
+    print("== set algebra ==")
+    let a = set_from_array([1, 2, 3, 4, 5])
+    let b = set_from_array([4, 5, 6, 7])
+    print(set_to_array(set_intersect(a, b)))  // [4, 5]
+    print(set_to_array(set_diff(a, b)))       // [1, 2, 3]
+}

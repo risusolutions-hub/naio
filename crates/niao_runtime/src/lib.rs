@@ -1,5 +1,5 @@
 use niao_ast::{BinOp, ClassDef, FnDef, Span, StructDef, TraitDef, UnaryOp};
-use num_bigint::BigInt;
+use niao_bignum::BigInt;
 use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
 use std::cmp::Ordering;
@@ -31,6 +31,16 @@ mod ncl;
 pub mod nml;
 pub mod nvis;
 mod nenv;
+mod nargs;
+mod nlog;
+mod nmath;
+mod nrand;
+mod nstr;
+mod nfmt;
+mod ntest;
+mod ncache;
+mod nvalid;
+mod ncolor;
 #[cfg(feature = "nmongo")]
 pub mod nmongo;
 #[cfg(feature = "nrag")]
@@ -663,8 +673,8 @@ fn add_values(left: &Value, right: &Value, span: Span) -> NiaoResult<Value> {
     match (left, right) {
         (Value::Int(a), Value::Int(b)) => Ok(int_add(*a, *b)),
         (Value::BigInt(a), Value::BigInt(b)) => Ok(Value::BigInt(a + b)),
-        (Value::BigInt(a), Value::Int(b)) => Ok(Value::BigInt(a + BigInt::from(*b))),
-        (Value::Int(a), Value::BigInt(b)) => Ok(Value::BigInt(BigInt::from(*a) + b)),
+        (Value::BigInt(a), Value::Int(b)) => Ok(Value::BigInt(a + &BigInt::from(*b))),
+        (Value::Int(a), Value::BigInt(b)) => Ok(Value::BigInt(&BigInt::from(*a) + b)),
         (Value::Float(a), Value::Float(b)) => Ok(Value::Float(a + b)),
         (Value::Int(a), Value::Float(b)) => Ok(Value::Float(*a as f64 + b)),
         (Value::Float(a), Value::Int(b)) => Ok(Value::Float(a + *b as f64)),
@@ -683,8 +693,8 @@ fn sub_values(left: &Value, right: &Value, span: Span) -> NiaoResult<Value> {
     match (left, right) {
         (Value::Int(a), Value::Int(b)) => Ok(int_sub(*a, *b)),
         (Value::BigInt(a), Value::BigInt(b)) => Ok(Value::BigInt(a - b)),
-        (Value::BigInt(a), Value::Int(b)) => Ok(Value::BigInt(a - BigInt::from(*b))),
-        (Value::Int(a), Value::BigInt(b)) => Ok(Value::BigInt(BigInt::from(*a) - b)),
+        (Value::BigInt(a), Value::Int(b)) => Ok(Value::BigInt(a - &BigInt::from(*b))),
+        (Value::Int(a), Value::BigInt(b)) => Ok(Value::BigInt(&BigInt::from(*a) - b)),
         (Value::Float(a), Value::Float(b)) => Ok(Value::Float(a - b)),
         (Value::Int(a), Value::Float(b)) => Ok(Value::Float(*a as f64 - b)),
         (Value::Float(a), Value::Int(b)) => Ok(Value::Float(a - *b as f64)),
@@ -700,8 +710,8 @@ fn mul_values(left: &Value, right: &Value, span: Span) -> NiaoResult<Value> {
     match (left, right) {
         (Value::Int(a), Value::Int(b)) => Ok(int_mul(*a, *b)),
         (Value::BigInt(a), Value::BigInt(b)) => Ok(Value::BigInt(a * b)),
-        (Value::BigInt(a), Value::Int(b)) => Ok(Value::BigInt(a * BigInt::from(*b))),
-        (Value::Int(a), Value::BigInt(b)) => Ok(Value::BigInt(BigInt::from(*a) * b)),
+        (Value::BigInt(a), Value::Int(b)) => Ok(Value::BigInt(a * &BigInt::from(*b))),
+        (Value::Int(a), Value::BigInt(b)) => Ok(Value::BigInt(&BigInt::from(*a) * b)),
         (Value::Float(a), Value::Float(b)) => Ok(Value::Float(a * b)),
         (Value::Int(a), Value::Float(b)) => Ok(Value::Float(*a as f64 * b)),
         (Value::Float(a), Value::Int(b)) => Ok(Value::Float(a * *b as f64)),
@@ -769,7 +779,7 @@ fn floor_div_values(left: &Value, right: &Value, span: Span) -> NiaoResult<Value
                     col: span.col,
                 })
             } else {
-                Ok(Value::BigInt(a / BigInt::from(*b)))
+                Ok(Value::BigInt(a / &BigInt::from(*b)))
             }
         }
         (Value::Int(a), Value::BigInt(b)) => {
@@ -779,7 +789,7 @@ fn floor_div_values(left: &Value, right: &Value, span: Span) -> NiaoResult<Value
                     col: span.col,
                 })
             } else {
-                Ok(Value::BigInt(BigInt::from(*a) / b))
+                Ok(Value::BigInt(&BigInt::from(*a) / b))
             }
         }
         (Value::Float(a), Value::Float(b)) => {
@@ -823,12 +833,12 @@ fn mod_values(left: &Value, right: &Value, span: Span) -> NiaoResult<Value> {
             line: span.line,
             col: span.col,
         }),
-        (Value::BigInt(a), Value::Int(b)) => Ok(Value::BigInt(a % BigInt::from(*b))),
+        (Value::BigInt(a), Value::Int(b)) => Ok(Value::BigInt(a % &BigInt::from(*b))),
         (Value::Int(a), Value::BigInt(b)) if *b == BigInt::from(0) => Err(RuntimeError::DivisionByZero {
             line: span.line,
             col: span.col,
         }),
-        (Value::Int(a), Value::BigInt(b)) => Ok(Value::BigInt(BigInt::from(*a) % b)),
+        (Value::Int(a), Value::BigInt(b)) => Ok(Value::BigInt(&BigInt::from(*a) % b)),
         _ => Err(RuntimeError::TypeError {
             message: "invalid operands for %".into(),
             line: span.line,
@@ -985,7 +995,7 @@ fn push_bigint(buf: &mut Vec<u8>, v: &BigInt) {
         return;
     }
     let (sign, digits) = v.to_radix_be(10);
-    if sign == num_bigint::Sign::Minus {
+    if sign == niao_bignum::Sign::Minus {
         buf.push(b'-');
     }
     for d in digits {
@@ -1024,10 +1034,10 @@ pub fn super_boom_factorial_compute(n: i64) -> Value {
             }
             None => {
                 let mut big = BigInt::from(acc);
-                big *= i;
+                big *= BigInt::from(i);
                 i += 1;
                 while i <= n {
-                    big *= i;
+                    big *= BigInt::from(i);
                     i += 1;
                 }
                 return Value::BigInt(big);
@@ -1473,6 +1483,16 @@ fn builtin_table() -> Vec<(&'static str, NativeFn)> {
     builtins.extend(net::builtins());
     builtins.extend(parallel::builtins());
     builtins.extend(time::builtins());
+    builtins.extend(nargs::builtins());
+    builtins.extend(nlog::builtins());
+    builtins.extend(nmath::builtins());
+    builtins.extend(nrand::builtins());
+    builtins.extend(nstr::builtins());
+    builtins.extend(nfmt::builtins());
+    builtins.extend(ntest::builtins());
+    builtins.extend(ncache::builtins());
+    builtins.extend(nvalid::builtins());
+    builtins.extend(ncolor::builtins());
     builtins.extend(mem::builtins());
     builtins.extend(nsqlite::builtins());
     builtins.extend(npg::builtins());
@@ -1542,6 +1562,16 @@ pub fn install_native_modules(env: &Environment) {
         parallel::namespace().ref_cell(),
     );
     env.define(time::MODULE_NAME.to_string(), time::namespace().ref_cell());
+    env.define(nargs::MODULE_NAME.to_string(), nargs::namespace().ref_cell());
+    env.define(nlog::MODULE_NAME.to_string(), nlog::namespace().ref_cell());
+    env.define(nmath::MODULE_NAME.to_string(), nmath::namespace().ref_cell());
+    env.define(nrand::MODULE_NAME.to_string(), nrand::namespace().ref_cell());
+    env.define(nstr::MODULE_NAME.to_string(), nstr::namespace().ref_cell());
+    env.define(nfmt::MODULE_NAME.to_string(), nfmt::namespace().ref_cell());
+    env.define(ntest::MODULE_NAME.to_string(), ntest::namespace().ref_cell());
+    env.define(ncache::MODULE_NAME.to_string(), ncache::namespace().ref_cell());
+    env.define(nvalid::MODULE_NAME.to_string(), nvalid::namespace().ref_cell());
+    env.define(ncolor::MODULE_NAME.to_string(), ncolor::namespace().ref_cell());
     env.define(
         nsqlite::MODULE_NAME.to_string(),
         nsqlite::namespace().ref_cell(),
@@ -1570,7 +1600,12 @@ pub fn native_module_paths() -> &'static [&'static str] {
     {
         &[
             "dsa", "std/dsa", "json", "std/json", "codec", "std/codec", "archive", "std/archive", "crypto", "std/crypto", "io", "std/io", "re", "std/re", "net", "std/net",
-            "parallel", "std/parallel", "time", "std/time", "nsqlite", "std/nsqlite",
+            "parallel", "std/parallel", "time", "std/time",
+            "nargs", "std/nargs", "nlog", "std/nlog", "nmath", "std/nmath",
+            "nrand", "std/nrand", "nstr", "std/nstr", "nfmt", "std/nfmt",
+            "ntest", "std/ntest", "ncache", "std/ncache", "nvalid", "std/nvalid",
+            "ncolor", "std/ncolor",
+            "nsqlite", "std/nsqlite",
             "npg", "std/npg", "nmongo", "std/nmongo", "nrag", "std/nrag", "nllm", "std/nllm",
             "nos", "std/nos", "nenv", "std/nenv",
             "ncl", "std/ncl", "nml", "std/nml", "nvis", "std/nvis", "ahiru", "std/ahiru",
@@ -1580,7 +1615,12 @@ pub fn native_module_paths() -> &'static [&'static str] {
     {
         &[
             "dsa", "std/dsa", "json", "std/json", "codec", "std/codec", "archive", "std/archive", "crypto", "std/crypto", "io", "std/io", "re", "std/re", "net", "std/net",
-            "parallel", "std/parallel", "time", "std/time", "nsqlite", "std/nsqlite",
+            "parallel", "std/parallel", "time", "std/time",
+            "nargs", "std/nargs", "nlog", "std/nlog", "nmath", "std/nmath",
+            "nrand", "std/nrand", "nstr", "std/nstr", "nfmt", "std/nfmt",
+            "ntest", "std/ntest", "ncache", "std/ncache", "nvalid", "std/nvalid",
+            "ncolor", "std/ncolor",
+            "nsqlite", "std/nsqlite",
             "npg", "std/npg", "nrag", "std/nrag", "nllm", "std/nllm",
             "nos", "std/nos", "nenv", "std/nenv",
             "ncl", "std/ncl", "nml", "std/nml", "nvis", "std/nvis", "ahiru", "std/ahiru",
@@ -1611,6 +1651,36 @@ pub fn native_module_export_name(path: &str) -> Option<&'static str> {
     }
     if time::MODULE_PATHS.contains(&path) {
         return Some(time::MODULE_NAME);
+    }
+    if nargs::MODULE_PATHS.contains(&path) {
+        return Some(nargs::MODULE_NAME);
+    }
+    if nlog::MODULE_PATHS.contains(&path) {
+        return Some(nlog::MODULE_NAME);
+    }
+    if nmath::MODULE_PATHS.contains(&path) {
+        return Some(nmath::MODULE_NAME);
+    }
+    if nrand::MODULE_PATHS.contains(&path) {
+        return Some(nrand::MODULE_NAME);
+    }
+    if nstr::MODULE_PATHS.contains(&path) {
+        return Some(nstr::MODULE_NAME);
+    }
+    if nfmt::MODULE_PATHS.contains(&path) {
+        return Some(nfmt::MODULE_NAME);
+    }
+    if ntest::MODULE_PATHS.contains(&path) {
+        return Some(ntest::MODULE_NAME);
+    }
+    if ncache::MODULE_PATHS.contains(&path) {
+        return Some(ncache::MODULE_NAME);
+    }
+    if nvalid::MODULE_PATHS.contains(&path) {
+        return Some(nvalid::MODULE_NAME);
+    }
+    if ncolor::MODULE_PATHS.contains(&path) {
+        return Some(ncolor::MODULE_NAME);
     }
     if nsqlite::MODULE_PATHS.contains(&path) {
         return Some(nsqlite::MODULE_NAME);

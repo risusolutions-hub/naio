@@ -1,0 +1,25 @@
+// CLI argument parsing demo — the native parser now lives in "nargs".
+// See examples/nargs_demo.niao for the full tour and docs/NARGS.md for the API.
+// Run: niao run examples/args_demo.niao -- --port 9090 input.txt
+import "nargs"
+
+let spec = {
+    name: "args_demo",
+    about: "Minimal nargs example",
+    flags: [{name: "verbose", short: "v", help: "Chatty output"}],
+    options: [{name: "port", short: "p", type: "int", default: 8080, help: "Port"}],
+    positionals: [{name: "input", help: "Input file"}]
+}
+
+let r = nargs.parse_env(spec)
+if is_error(r) {
+    print(r)
+} else {
+    if r.help {
+        print(r.text)
+    } else {
+        print("verbose:", r.values.verbose)
+        print("port:", r.values.port)
+        print("input:", r.values.input)
+    }
+}

@@ -1,0 +1,11 @@
+{
+    "name": "nargs",
+    "version": "0.2.2",
+    "kind": "native",
+    "description": "CLI argument parsing: flags, typed options, positionals, --key=value, generated help",
+    "import_paths": [
+        "nargs",
+        "std/nargs"
+    ],
+    "builtin_count": 4
+}

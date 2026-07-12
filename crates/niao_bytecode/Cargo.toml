@@ -8,7 +8,7 @@ niao_ast = { workspace = true }
 niao_ir = { workspace = true }
 niao_runtime = { workspace = true }
 serde = { workspace = true }
-serde_json = { workspace = true }
+niao_json_core = { workspace = true, features = ["serde"] }
 
 [dev-dependencies]
 niao_parser = { workspace = true }

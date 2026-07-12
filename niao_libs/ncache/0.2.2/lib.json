@@ -1,0 +1,11 @@
+{
+    "name": "ncache",
+    "version": "0.2.2",
+    "kind": "native",
+    "description": "In-memory LRU and TTL caches with hit/miss statistics",
+    "import_paths": [
+        "ncache",
+        "std/ncache"
+    ],
+    "builtin_count": 13
+}

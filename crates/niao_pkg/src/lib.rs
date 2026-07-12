@@ -3,6 +3,7 @@
 mod catalog;
 mod error;
 mod install;
+mod json;
 mod package;
 mod paths;
 mod registry;

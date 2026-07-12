@@ -2,7 +2,7 @@
 
 use crate::headers::HeaderMap;
 use crate::parser::{body_mode, parse_request, read_body, ParseError, RequestHead};
-use crate::status::Status;
+use crate::status::StatusCode;
 use std::io::{self, Read, Write};
 use std::net::{SocketAddr, TcpListener, TcpStream};
 use std::sync::{Arc, Mutex};
@@ -85,7 +85,7 @@ impl IncomingRequest {
 
     pub fn respond(mut self, response: OutgoingResponse) -> io::Result<()> {
         let status = response.status;
-        let reason = Status(status).reason();
+        let reason = StatusCode::from(status).reason();
         let mut out = format!("HTTP/1.1 {status} {reason}\r\n");
         let body = response.body;
         if !body.is_empty() {

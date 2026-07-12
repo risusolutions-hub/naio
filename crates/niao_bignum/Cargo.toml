@@ -1,0 +1,13 @@
+[package]
+name = "niao_bignum"
+version.workspace = true
+edition.workspace = true
+description = "Zero-dependency arbitrary-precision integers for Niao"
+
+[[example]]
+name = "bignum_bench"
+path = "examples/bignum_bench.rs"
+
+[dev-dependencies]
+num-bigint = "0.4"
+num-traits = "0.2"

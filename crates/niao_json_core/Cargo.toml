@@ -4,6 +4,13 @@ version.workspace = true
 edition.workspace = true
 description = "Zero-dependency JSON parse/stringify engine for Niao"
 
+[dependencies]
+serde = { version = "1", optional = true }
+
+[features]
+default = []
+serde = ["dep:serde"]
+
 [[bin]]
 name = "json_bench"
 path = "src/bin/json_bench.rs"

@@ -13,6 +13,12 @@ members = [
     "crates/niao_io",
     "crates/niao_db",
     "crates/niao_archive",
+    "crates/niao_bignum",
+    "crates/niao_net_clients",
+    "crates/niao_rand",
+    "crates/niao_args",
+    "crates/niao_collections",
+    "crates/niao_log",
     "crates/niao_lexer",
     "crates/niao_parser",
     "crates/niao_runtime",
@@ -56,6 +62,12 @@ niao_ws = { path = "crates/niao_ws" }
 niao_io = { path = "crates/niao_io" }
 niao_db = { path = "crates/niao_db" }
 niao_archive = { path = "crates/niao_archive" }
+niao_bignum = { path = "crates/niao_bignum" }
+niao_net_clients = { path = "crates/niao_net_clients" }
+niao_rand = { path = "crates/niao_rand" }
+niao_args = { path = "crates/niao_args" }
+niao_collections = { path = "crates/niao_collections" }
+niao_log = { path = "crates/niao_log" }
 niao_lexer = { path = "crates/niao_lexer" }
 niao_parser = { path = "crates/niao_parser" }
 niao_runtime = { path = "crates/niao_runtime" }

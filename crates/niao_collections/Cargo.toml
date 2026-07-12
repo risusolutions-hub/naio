@@ -1,0 +1,31 @@
+[package]
+name = "niao_collections"
+version.workspace = true
+edition.workspace = true
+description = "Zero-dependency insertion-ordered maps/sets and fast hashing for Niao"
+
+[features]
+default = []
+# Enables head-to-head bench vs the `indexmap` crate (orchestrator removes later).
+compare = ["dep:indexmap"]
+# Enables head-to-head hash bench vs the `ahash` crate (orchestrator removes later).
+compare-ahash = ["dep:ahash"]
+
+[dependencies]
+# Leaf crate: std only for the library. `indexmap` / `ahash` are optional,
+# used exclusively by the comparison benchmarks under the `compare*` features.
+indexmap = { version = "2", optional = true }
+ahash = { version = "0.8", optional = true }
+
+[dev-dependencies]
+indexmap = "2"
+
+[[bin]]
+name = "indexmap_bench"
+path = "src/bin/indexmap_bench.rs"
+required-features = ["compare"]
+
+[[bin]]
+name = "hash_bench"
+path = "src/bin/hash_bench.rs"
+required-features = ["compare-ahash"]

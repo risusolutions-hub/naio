@@ -6,3 +6,11 @@ edition.workspace = true
 [[bin]]
 name = "io_bench"
 path = "src/bin/io_bench.rs"
+
+[[test]]
+name = "socket_bench"
+path = "tests/socket_bench.rs"
+harness = false
+
+[dev-dependencies]
+socket2 = { version = "0.5", features = ["all"] }

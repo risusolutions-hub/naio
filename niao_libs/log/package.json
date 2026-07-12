@@ -1,0 +1,6 @@
+{
+    "name": "log",
+    "version": "0.2.2",
+    "description": "Structured logging, level filtering, and spans",
+    "kind": "native"
+}

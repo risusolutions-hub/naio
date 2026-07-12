@@ -1,0 +1,36 @@
+// ncolor demo — ANSI terminal styling.
+// Run: niao run examples/ncolor_demo.niao
+import "ncolor"
+
+fn main() {
+    print("=== named colors ===")
+    print(ncolor.green("✓ build passed"))
+    print(ncolor.red("✗ 2 tests failed"))
+    print(ncolor.yellow("! 3 warnings"))
+    print(ncolor.fg("bright blue text", "bright_blue"))
+    print(ncolor.bg("on red", "red"))
+
+    print("=== attributes ===")
+    print(ncolor.bold("bold"))
+    print(ncolor.underline("underline"))
+    print(ncolor.dim("dim"))
+    print(ncolor.strike("strike"))
+    print(ncolor.bold(ncolor.cyan("stacked styles")))
+
+    print("=== 256 / truecolor ===")
+    print(ncolor.c256("palette 208", 208))
+    print(ncolor.rgb("niao orange", 255, 128, 0))
+    print(ncolor.on_rgb("dark background", 30, 30, 30))
+
+    print("=== composite style ===")
+    print(ncolor.style("DEPLOY", {fg: "black", bg: "yellow", bold: true}))
+    print(ncolor.style("custom", {fg: [255, 100, 200], underline: true}))
+
+    print("=== strip & toggle ===")
+    let colored = ncolor.magenta("secret")
+    print(ncolor.strip(colored))          // plain "secret"
+    ncolor.set_enabled(false)
+    print(ncolor.red("no color when disabled"))
+    ncolor.set_enabled(true)
+    print("enabled:", ncolor.is_enabled())
+}

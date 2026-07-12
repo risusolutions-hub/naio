@@ -26,7 +26,7 @@ pub struct LibSpec {
 
 impl LibSpec {
     pub fn manifest_json(&self) -> String {
-        serde_json::to_string_pretty(self).unwrap_or_default()
+        crate::json::stringify_pretty(self)
     }
 }
 
@@ -163,6 +163,76 @@ pub fn standard_libs() -> Vec<LibSpec> {
             8,
         ),
         native_lib(
+            "nstr",
+            NIAO_TOOLCHAIN_VERSION,
+            "String toolkit: case conversions, trim/pad/wrap, split/join, search, slugify, edit distance",
+            &["nstr", "std/nstr"],
+            55,
+        ),
+        native_lib(
+            "nmath",
+            NIAO_TOOLCHAIN_VERSION,
+            "Scalar math and statistics: trig, logs, rounding, combinatorics, mean/median/stdev/percentile",
+            &["nmath", "std/nmath"],
+            48,
+        ),
+        native_lib(
+            "nrand",
+            NIAO_TOOLCHAIN_VERSION,
+            "Fast random numbers (xoshiro256**): ints, floats, strings, choice/shuffle/sample, distributions",
+            &["nrand", "std/nrand"],
+            20,
+        ),
+        native_lib(
+            "nfmt",
+            NIAO_TOOLCHAIN_VERSION,
+            "Formatting: {} templates, thousands separators, hex/oct/bin, humanized bytes/durations/counts",
+            &["nfmt", "std/nfmt"],
+            14,
+        ),
+        native_lib(
+            "nlog",
+            NIAO_TOOLCHAIN_VERSION,
+            "Structured logging: levels, key-value fields, text/JSON output, stderr/stdout/file sinks",
+            &["nlog", "std/nlog"],
+            11,
+        ),
+        native_lib(
+            "nargs",
+            NIAO_TOOLCHAIN_VERSION,
+            "CLI argument parsing: flags, typed options, positionals, --key=value, generated help",
+            &["nargs", "std/nargs"],
+            4,
+        ),
+        native_lib(
+            "ntest",
+            NIAO_TOOLCHAIN_VERSION,
+            "Testing: case registration, runner with summaries, assert_eq/near/contains/error",
+            &["ntest", "std/ntest"],
+            14,
+        ),
+        native_lib(
+            "ncache",
+            NIAO_TOOLCHAIN_VERSION,
+            "In-memory LRU and TTL caches with hit/miss statistics",
+            &["ncache", "std/ncache"],
+            13,
+        ),
+        native_lib(
+            "nvalid",
+            NIAO_TOOLCHAIN_VERSION,
+            "Data validation: schema rules, email/url/uuid/ipv4 checks, pattern matching",
+            &["nvalid", "std/nvalid"],
+            9,
+        ),
+        native_lib(
+            "ncolor",
+            NIAO_TOOLCHAIN_VERSION,
+            "Terminal styling: named colors, 256/truecolor, bold/underline, strip, NO_COLOR aware",
+            &["ncolor", "std/ncolor"],
+            24,
+        ),
+        native_lib(
             "ahiru",
             AHIRU_LIB_VERSION,
             "ahiru-server 0.3.0: state, custom middleware, groups, cache, jobs, metrics, CLI toolkit",
@@ -181,7 +251,8 @@ pub fn remote_libs() -> &'static [&'static str] {
 
 /// Alias used by install code.
 pub const STANDARD_LIBS: &[&str] = &[
-    "core", "dsa", "json", "io", "re", "net", "parallel", "time", "nsqlite", "npg", "nmongo", "nos", "nenv", "ncl", "nml", "nvis", "ahiru",
+    "core", "dsa", "json", "io", "re", "net", "parallel", "time", "nsqlite", "npg", "nmongo", "nos", "nenv", "ncl", "nml", "nvis",
+    "nstr", "nmath", "nrand", "nfmt", "nlog", "nargs", "ntest", "ncache", "nvalid", "ncolor", "ahiru",
 ];
 
 /// Map user-facing names (e.g. `ahiru-server`) to catalog lib names (`ahiru`).

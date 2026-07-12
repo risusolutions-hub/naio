@@ -13,3 +13,11 @@ rustls-pki-types = "1"
 [[bin]]
 name = "http_bench"
 path = "src/bin/http_bench.rs"
+
+[[bin]]
+name = "http_types_bench"
+path = "src/bin/http_types_bench.rs"
+
+[[bin]]
+name = "url_bench"
+path = "src/bin/url_bench.rs"

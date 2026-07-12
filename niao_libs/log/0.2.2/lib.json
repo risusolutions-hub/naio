@@ -1,0 +1,11 @@
+{
+    "name": "log",
+    "version": "0.2.2",
+    "kind": "native",
+    "description": "Structured logging, level filtering, and spans",
+    "import_paths": [
+        "log",
+        "std/log"
+    ],
+    "builtin_count": 8
+}

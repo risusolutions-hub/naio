@@ -624,7 +624,7 @@ fn write_venv_config(root: &Path, state: &InstallState) -> PkgResult<()> {
 }
 
 fn write_json<T: serde::Serialize>(path: &Path, value: &T) -> PkgResult<()> {
-    let data = serde_json::to_string_pretty(value)?;
+    let data = crate::json::stringify_pretty_result(value)?;
     fs::write(path, data)?;
     Ok(())
 }
@@ -639,14 +639,14 @@ fn exe_name(base: &str) -> String {
 
 pub fn load_install_state(path: &Path) -> PkgResult<InstallState> {
     let data = crate::package::read_json_text(path)?;
-    serde_json::from_str(&data).map_err(|e| {
+    crate::json::parse_struct(&data).map_err(|e| {
         PkgError::Message(format!("parse {}: {e}", path.display()))
     })
 }
 
 pub fn load_catalog(path: &Path) -> PkgResult<LibsCatalog> {
     let data = crate::package::read_json_text(path)?;
-    serde_json::from_str(&data).map_err(|e| {
+    crate::json::parse_struct(&data).map_err(|e| {
         PkgError::Message(format!("parse {}: {e}", path.display()))
     })
 }

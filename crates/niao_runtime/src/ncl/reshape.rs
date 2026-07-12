@@ -3,7 +3,7 @@
 use super::column::Column;
 use super::frame::DataFrame;
 use super::series::Series;
-use ahash::RandomState;
+use niao_collections::RandomState;
 use std::collections::HashMap;
 
 pub fn melt(df: &DataFrame, id_vars: &[String]) -> Result<DataFrame, String> {

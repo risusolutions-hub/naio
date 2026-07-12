@@ -14,6 +14,9 @@
 - `niao_io` crate (readiness poller, work-stealing executor, timers, TCP helpers); replaces custom mpsc thread pool in `niao_runtime::async_tasks`.
 - `niao_db` crate (RESP Redis client, PostgreSQL wire v3, generic pool); replaces `postgres`, `r2d2`, `r2d2_postgres`, and `redis` in `niao_runtime`/`ahiru_core` npg paths.
 - `niao_archive` crate (RFC 1951 deflate, gzip, ustar/PAX tar, zip stored+deflate); replaces `flate2`, `tar`, and `zip` in `niao_pkg`; gzip response decoding in `niao_http`.
+- `niao_args` crate (zero-deps CLI parser); clap-parity tests for `niao`/`nm` command trees; replaces `clap` in `niao_cli` / `niao_nm` (migration pending orchestrator pass).
+- **Wave 0** native stdlib crates: `niao_collections` (ahash + indexmap), `niao_bignum` (num-bigint), `niao_rand`, `niao_log` (tracing), `niao_net_clients` (suppaftp FTP); `niao_http` extended with http-types + URL modules.
+- Wave 0 orchestrator: wired `niao_runtime` to `niao_bignum`, `niao_collections`, `niao_io` (socket), `niao_net_clients` (FTP); registered `nargs`, `nlog`, `nmath`, `nrand`, `nstr`, `nfmt` native modules; `ahiru_core` logging via `niao_log`; added `niao_log` workspace member.
 - VM/runtime polish: bytecode cache content-hash sidecar, call-bridge arg scratch buffer, GC threshold tune, hot-path `get_unchecked` in dispatch; `scripts/bench_gate.ps1` + `benchmarks/baseline.json`; `docs/perf_notes.md`.
 
 ## 0.2.2 — 2026-07-07

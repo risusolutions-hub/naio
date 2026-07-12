@@ -1,0 +1,11 @@
+{
+    "name":  "args",
+    "version":  "0.2.2",
+    "kind":  "native",
+    "description":  "CLI argument parsing — flags, options, positionals, subcommands",
+    "import_paths":  [
+                         "args",
+                         "std/args"
+                     ],
+    "builtin_count":  6
+}

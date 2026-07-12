@@ -1,0 +1,11 @@
+{
+    "name": "net_clients",
+    "version": "0.2.2",
+    "kind": "native",
+    "description": "SMTP and FTP client helpers",
+    "import_paths": [
+        "net_clients",
+        "std/net_clients"
+    ],
+    "builtin_count": 8
+}

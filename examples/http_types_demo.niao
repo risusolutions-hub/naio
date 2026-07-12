@@ -1,0 +1,26 @@
+// HTTP types showcase (Method, StatusCode, HeaderMap, Uri).
+// Run:  niao run examples/http_types_demo.niao
+import "http" as h
+
+fn main() {
+    print("== method ==")
+    print(h.method_name("GET"))
+
+    print("== status ==")
+    print(h.status_code("404"))
+    print(h.status_reason(404))
+
+    print("== headers ==")
+    let map = h.header_map_new()
+    h.header_set(map, "Content-Type", "application/json")
+    h.header_set(map, "X-Token", "abc")
+    print(h.header_get(map, "content-type"))
+    print(h.header_get(map, "CONTENT-TYPE"))
+
+    print("== uri ==")
+    let uri = h.uri_parse("/api/v1/users?q=1")
+    print(uri.path)
+    print(uri.query)
+
+    print("http types demo done")
+}

@@ -1,0 +1,10 @@
+[package]
+name = "niao_log"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Zero-dependency structured logging and span instrumentation for Niao"
+
+[[bin]]
+name = "log_bench"
+path = "src/bin/log_bench.rs"

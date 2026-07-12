@@ -1,0 +1,38 @@
+// ncache demo — LRU and TTL caches with statistics.
+// Run: niao run examples/ncache_demo.niao
+import "ncache"
+import "time"
+
+fn main() {
+    print("=== LRU cache ===")
+    let lru = ncache.new_lru(2)
+    ncache.set(lru, "a", 1)
+    ncache.set(lru, "b", 2)
+    ncache.get(lru, "a")               // touch "a" — now "b" is coldest
+    ncache.set(lru, "c", 3)            // evicts "b"
+    print(ncache.get(lru, "a"))        // 1
+    print(ncache.get(lru, "b"))        // nil (evicted)
+    print(ncache.get(lru, "c"))        // 3
+    print(ncache.keys(lru))
+    print(ncache.stats(lru))           // hits, misses, len, capacity, hit_rate
+
+    print("=== TTL cache ===")
+    let ttl = ncache.new_ttl(60000)             // 60s default
+    ncache.set(ttl, "session", {user: "vivek"})
+    ncache.set(ttl, "flash", "gone soon", 50)   // 50ms override
+    print(ncache.get(ttl, "session"))
+    time.sleep_ms(80)
+    print(ncache.get(ttl, "flash"))             // nil (expired)
+    print(ncache.purge(ttl), "expired purged")
+
+    print("=== fallbacks & cleanup ===")
+    print(ncache.get_or(lru, "missing", "default"))
+    print(ncache.has(lru, "a"))
+    ncache.remove(lru, "a")
+    ncache.clear(lru)
+    print(ncache.len(lru))              // 0
+
+    ncache.close(lru)
+    ncache.close(ttl)
+    print(is_error(ncache.get(lru, "a")))   // true — closed handle
+}

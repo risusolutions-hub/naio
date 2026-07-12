@@ -1028,9 +1028,9 @@ impl Vm {
         &mut self,
         a: i64,
         b: i64,
-        f: fn(num_bigint::BigInt, num_bigint::BigInt) -> num_bigint::BigInt,
+        f: fn(niao_bignum::BigInt, niao_bignum::BigInt) -> niao_bignum::BigInt,
     ) -> Result<FastVal, VmError> {
-        use num_bigint::BigInt;
+        use niao_bignum::BigInt;
         let idx = self.alloc_heap(Value::BigInt(f(BigInt::from(a), BigInt::from(b))).ref_cell());
         Ok(FastVal::Heap(idx))
     }

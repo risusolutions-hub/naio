@@ -12,7 +12,7 @@ pub use crate::dsa_storage::{
 
 use crate::{apply_binop, values_equal, NativeFn, NiaoResult, RuntimeError, Value, ValueRef};
 use niao_ast::{BinOp, Span};
-use num_bigint::BigInt;
+use niao_bignum::BigInt;
 use std::cell::RefCell;
 use std::cmp::Ordering;
 use std::collections::{BinaryHeap, HashSet, VecDeque};
@@ -967,8 +967,8 @@ fn set_pair(
 fn set_union(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity(args, 2, "set_union", span)?;
     let (mut a, b) = set_pair(args, "set_union", span)?;
-    for k in b {
-        a.insert(k);
+    for k in b.iter() {
+        a.insert(k.clone());
     }
     Ok(new_ds(NativeDs::Set(SetData::from_any(a))))
 }
@@ -976,14 +976,24 @@ fn set_union(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
 fn set_intersect(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity(args, 2, "set_intersect", span)?;
     let (a, b) = set_pair(args, "set_intersect", span)?;
-    let out: AnySet = a.into_iter().filter(|k| b.contains(k)).collect();
+    let mut out = AnySet::with_capacity_and_hasher(a.len().min(b.len()), niao_collections::RandomState::new());
+    for k in a.iter() {
+        if b.contains(k) {
+            out.insert(k.clone());
+        }
+    }
     Ok(new_ds(NativeDs::Set(SetData::from_any(out))))
 }
 
 fn set_diff(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity(args, 2, "set_diff", span)?;
     let (a, b) = set_pair(args, "set_diff", span)?;
-    let out: AnySet = a.into_iter().filter(|k| !b.contains(k)).collect();
+    let mut out = AnySet::with_capacity_and_hasher(a.len(), niao_collections::RandomState::new());
+    for k in a.iter() {
+        if !b.contains(k) {
+            out.insert(k.clone());
+        }
+    }
     Ok(new_ds(NativeDs::Set(SetData::from_any(out))))
 }
 

@@ -4,7 +4,7 @@ use super::handles::{alloc_handle, remove_handle, with_handle_mut};
 use super::{bytes_to_int_array, net_error, ok_int, ok_nil, string_arg, NetResult};
 use niao_ast::Span;
 use niao_errors::codes;
-use socket2::{Domain, Socket, Type};
+use niao_io::socket::{Domain, Socket, Type};
 use std::io::{Read, Write};
 use std::net::{SocketAddr, TcpListener, TcpStream, UdpSocket};
 use std::time::Duration;
@@ -76,7 +76,7 @@ pub fn tcp_handle(stream: TcpStream) -> NetHandle {
 }
 
 fn create_tcp_socket() -> Result<TcpStream, String> {
-    let socket = Socket::new(Domain::IPV4, Type::STREAM, None).map_err(|e| e.to_string())?;
+    let socket = Socket::new(Domain::Ipv4, Type::Stream, None).map_err(|e| e.to_string())?;
     socket.set_nonblocking(false).map_err(|e| e.to_string())?;
     socket
         .bind(&"0.0.0.0:0".parse::<SocketAddr>().unwrap().into())

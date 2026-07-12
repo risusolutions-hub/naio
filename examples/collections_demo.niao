@@ -1,0 +1,25 @@
+// Insertion-ordered map/set demo (dsa map preserves insert order via IndexMap).
+// Native Rust API: niao_collections::IndexMap / IndexSet.
+// Run: niao run examples/collections_demo.niao
+import "dsa"
+
+fn main() {
+    print("== ordered map (IndexMap-backed) ==")
+    let m = map_new()
+    map_set(m, "first", 1)
+    map_set(m, "second", 2)
+    map_set(m, "third", 3)
+    map_set(m, "second", 22)
+    print(m)
+    print(map_get(m, "second"))
+
+    print("== ordered set ==")
+    let s = set_new()
+    set_add(s, "a")
+    set_add(s, "b")
+    set_add(s, "c")
+    set_add(s, "a")
+    print(s)
+    set_remove(s, "b")
+    print(s)
+}

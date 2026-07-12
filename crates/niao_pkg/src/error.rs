@@ -3,7 +3,7 @@ use std::fmt;
 #[derive(Debug)]
 pub enum PkgError {
     Io(std::io::Error),
-    Json(serde_json::Error),
+    Json(String),
     NotFound(String),
     AlreadyInstalled(String),
     Message(String),
@@ -29,8 +29,8 @@ impl From<std::io::Error> for PkgError {
     }
 }
 
-impl From<serde_json::Error> for PkgError {
-    fn from(e: serde_json::Error) -> Self {
+impl From<String> for PkgError {
+    fn from(e: String) -> Self {
         Self::Json(e)
     }
 }

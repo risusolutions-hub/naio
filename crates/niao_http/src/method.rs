@@ -1,6 +1,9 @@
 //! HTTP methods.
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+use std::fmt;
+use std::str::FromStr;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Method {
     Get,
     Head,
@@ -14,6 +17,16 @@ pub enum Method {
 }
 
 impl Method {
+    pub const GET: Method = Method::Get;
+    pub const HEAD: Method = Method::Head;
+    pub const POST: Method = Method::Post;
+    pub const PUT: Method = Method::Put;
+    pub const DELETE: Method = Method::Delete;
+    pub const PATCH: Method = Method::Patch;
+    pub const OPTIONS: Method = Method::Options;
+    pub const CONNECT: Method = Method::Connect;
+    pub const TRACE: Method = Method::Trace;
+
     #[inline]
     pub fn as_str(self) -> &'static str {
         match self {
@@ -29,6 +42,7 @@ impl Method {
         }
     }
 
+    #[inline]
     pub fn parse(s: &str) -> Option<Self> {
         match s {
             "GET" => Some(Self::Get),
@@ -42,5 +56,36 @@ impl Method {
             "TRACE" => Some(Self::Trace),
             _ => None,
         }
+    }
+}
+
+impl fmt::Display for Method {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl FromStr for Method {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Self::parse(s).ok_or(())
+    }
+}
+
+impl AsRef<str> for Method {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn from_str_roundtrip() {
+        assert_eq!(Method::from_str("GET").unwrap(), Method::GET);
+        assert!(Method::from_str("INVALID").is_err());
     }
 }

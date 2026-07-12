@@ -5,10 +5,10 @@ edition.workspace = true
 
 [dependencies]
 serde = { workspace = true }
-serde_json = { workspace = true }
 niao_crypto = { workspace = true }
 niao_http = { workspace = true }
 niao_archive = { workspace = true }
+niao_json_core = { workspace = true, features = ["serde"] }
 
 [target.'cfg(windows)'.dependencies]
 winreg = "0.55"

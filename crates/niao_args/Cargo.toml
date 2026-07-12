@@ -1,0 +1,8 @@
+[package]
+name = "niao_args"
+version.workspace = true
+edition.workspace = true
+description = "Zero-dependency CLI argument parser replacing clap v4 for Niao"
+
+[dev-dependencies]
+clap = { workspace = true }

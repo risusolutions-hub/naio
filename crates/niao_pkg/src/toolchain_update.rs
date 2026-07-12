@@ -4,6 +4,8 @@ use crate::error::{PkgError, PkgResult};
 use crate::paths::{global_install_state_path, resolve_niao_home};
 use crate::registry::{fetch_bytes, registry_url};
 use niao_archive::{tar::Archive, zip::ZipArchive};
+use niao_json_core::object::Object;
+use niao_json_core::{parse, to_string_pretty, Value};
 use serde::Deserialize;
 use niao_crypto::{hex, sha256};
 use std::fs;
@@ -139,14 +141,14 @@ fn fetch_json<T: for<'de> Deserialize<'de>>(url: &str) -> PkgResult<T> {
   let text = response
     .into_string()
     .map_err(|e| PkgError::Message(format!("release read failed: {e}")))?;
-  serde_json::from_str(&text)
+  crate::json::parse_struct(&text)
     .map_err(|e| PkgError::Message(format!("parse release JSON: {e}")))
 }
 
 fn installed_toolchain_version() -> Option<String> {
   let path = global_install_state_path();
   let text = fs::read_to_string(path).ok()?;
-  let value: serde_json::Value = serde_json::from_str(strip_utf8_bom(&text)).ok()?;
+  let value: Value = parse(strip_utf8_bom(&text)).ok()?;
   value
     .get("niao_version")
     .and_then(|v| v.as_str())
@@ -300,41 +302,41 @@ fn update_install_json_version(home: &Path, version: &str) -> PkgResult<()> {
   let path = home.join("install.json");
   let mut value = if path.is_file() {
     let text = fs::read_to_string(&path).map_err(PkgError::from)?;
-    match serde_json::from_str::<serde_json::Value>(strip_utf8_bom(&text)) {
+    match parse(strip_utf8_bom(&text)) {
       Ok(v) => v,
       Err(e) => {
         eprintln!("warning: repairing invalid install.json ({e})");
-        serde_json::json!({})
+        Value::Object(Object::new())
       }
     }
   } else {
-    serde_json::json!({})
+    Value::Object(Object::new())
   };
 
   if let Some(obj) = value.as_object_mut() {
-    obj.insert(
-      "niao_version".to_string(),
-      serde_json::Value::String(version.to_string()),
-    );
+    obj.insert("niao_version".to_string(), Value::String(version.to_string()));
     obj.insert(
       "updated_at".to_string(),
-      serde_json::Value::String(crate::state::chrono_now_public()),
+      Value::String(crate::state::chrono_now_public()),
     );
-    obj.entry("mode".to_string())
-      .or_insert(serde_json::Value::String("global".to_string()));
-    obj.entry("root".to_string())
-      .or_insert(serde_json::Value::String(home.to_string_lossy().to_string()));
-    obj.entry("source_root".to_string())
-      .or_insert(serde_json::Value::String(String::new()));
-    obj.entry("libs".to_string())
-      .or_insert(serde_json::json!({}));
+    if obj.get("mode").is_none() {
+      obj.insert("mode".to_string(), Value::String("global".to_string()));
+    }
+    if obj.get("root").is_none() {
+      obj.insert(
+        "root".to_string(),
+        Value::String(home.to_string_lossy().to_string()),
+      );
+    }
+    if obj.get("source_root").is_none() {
+      obj.insert("source_root".to_string(), Value::String(String::new()));
+    }
+    if obj.get("libs").is_none() {
+      obj.insert("libs".to_string(), Value::Object(Object::new()));
+    }
   }
 
-  fs::write(
-    &path,
-    serde_json::to_string_pretty(&value).map_err(|e| PkgError::Message(e.to_string()))?,
-  )
-  .map_err(PkgError::from)?;
+  fs::write(&path, to_string_pretty(&value, 2)).map_err(PkgError::from)?;
   Ok(())
 }
 

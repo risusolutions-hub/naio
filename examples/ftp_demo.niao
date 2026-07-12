@@ -1,0 +1,6 @@
+// FTP client demo — native net_clients module (suppaftp replacement).
+// Requires runtime wiring of net_clients builtins; documents intended API.
+import "net_clients"
+
+print("FTP demo (mock): connect → login → put → get → list")
+print("Use ftp_connect(host, port) then ftp_login, ftp_get, ftp_put, ftp_list")

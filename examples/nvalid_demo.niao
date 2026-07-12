@@ -1,0 +1,43 @@
+// nvalid demo — schema validation and fast string checks.
+// Run: niao run examples/nvalid_demo.niao
+import "nvalid"
+
+fn main() {
+    print("=== quick checks ===")
+    print(nvalid.is_email("vivek@example.com"))       // true
+    print(nvalid.is_email("not-an-email"))            // false
+    print(nvalid.is_url("https://niao.risu.in/docs")) // true
+    print(nvalid.is_uuid("550e8400-e29b-41d4-a716-446655440000"))
+    print(nvalid.is_ipv4("192.168.0.1"))
+    print(nvalid.is_int_str("12345"))
+    print(nvalid.matches("v1.2.3", "^v[0-9]+\\.[0-9]+\\.[0-9]+$"))
+
+    print("=== schema validation ===")
+    let user = {name: "v", age: 200, role: "boss"}
+    let schema = {
+        name:  {type: "string", required: true, min_len: 2, max_len: 60},
+        age:   {type: "int", min: 0, max: 150},
+        email: {type: "string", required: true, email: true},
+        role:  {one_of: ["admin", "user", "guest"]}
+    }
+    let r = nvalid.check(user, schema)
+    print("ok:", r.ok)
+    for e in r.errors {
+        print(" -", e)
+    }
+
+    print("=== valid input passes ===")
+    let good = {name: "vivek", age: 27, email: "vivek@example.com", role: "admin"}
+    let r2 = nvalid.check(good, schema)
+    print("ok:", r2.ok)
+
+    print("=== assert returns value or error ===")
+    let checked = nvalid.assert(good, schema)
+    print(is_error(checked))            // false — returns the value
+    let bad = nvalid.assert(user, schema)
+    print(is_error(bad))                // true
+
+    print("=== single-value rule ===")
+    let port = nvalid.check(8080, {type: "int", min: 1, max: 65535})
+    print("port ok:", port.ok)
+}

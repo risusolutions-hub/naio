@@ -268,6 +268,80 @@ pub const E1986_NLLM_ERROR: u32 = 1986;
 /// nllm invalid or closed handle.
 pub const E1987_NLLM_INVALID_HANDLE: u32 = 1987;
 
+/// nstr builtin arity error.
+pub const E2600_NSTR_ARITY: u32 = 2600;
+/// nstr operation failed.
+pub const E2601_NSTR_ERROR: u32 = 2601;
+/// nstr type mismatch.
+pub const E2602_NSTR_TYPE: u32 = 2602;
+/// nstr index out of bounds.
+pub const E2603_NSTR_BOUNDS: u32 = 2603;
+
+/// nmath builtin arity error.
+pub const E2610_NMATH_ARITY: u32 = 2610;
+/// nmath operation failed.
+pub const E2611_NMATH_ERROR: u32 = 2611;
+/// nmath type mismatch.
+pub const E2612_NMATH_TYPE: u32 = 2612;
+/// nmath domain error (e.g. sqrt of negative, empty stats input).
+pub const E2613_NMATH_DOMAIN: u32 = 2613;
+
+/// nrand builtin arity error.
+pub const E2620_NRAND_ARITY: u32 = 2620;
+/// nrand operation failed.
+pub const E2621_NRAND_ERROR: u32 = 2621;
+/// nrand type mismatch.
+pub const E2622_NRAND_TYPE: u32 = 2622;
+/// nrand invalid or closed generator handle.
+pub const E2623_NRAND_INVALID_HANDLE: u32 = 2623;
+
+/// nfmt builtin arity error.
+pub const E2630_NFMT_ARITY: u32 = 2630;
+/// nfmt formatting failed.
+pub const E2631_NFMT_ERROR: u32 = 2631;
+/// nfmt type mismatch.
+pub const E2632_NFMT_TYPE: u32 = 2632;
+
+/// nlog builtin arity error.
+pub const E2640_NLOG_ARITY: u32 = 2640;
+/// nlog operation failed (sink I/O, bad level).
+pub const E2641_NLOG_ERROR: u32 = 2641;
+/// nlog type mismatch.
+pub const E2642_NLOG_TYPE: u32 = 2642;
+
+/// nargs builtin arity error.
+pub const E2650_NARGS_ARITY: u32 = 2650;
+/// nargs argv parse error (unknown flag, missing value, bad type).
+pub const E2651_NARGS_PARSE: u32 = 2651;
+/// nargs invalid spec object.
+pub const E2652_NARGS_SPEC: u32 = 2652;
+
+/// ntest builtin arity error.
+pub const E2660_NTEST_ARITY: u32 = 2660;
+/// ntest runner error.
+pub const E2661_NTEST_ERROR: u32 = 2661;
+/// ntest assertion failed.
+pub const E2662_NTEST_ASSERT: u32 = 2662;
+
+/// ncache builtin arity error.
+pub const E2670_NCACHE_ARITY: u32 = 2670;
+/// ncache operation failed.
+pub const E2671_NCACHE_ERROR: u32 = 2671;
+/// ncache invalid or closed cache handle.
+pub const E2672_NCACHE_INVALID_HANDLE: u32 = 2672;
+
+/// nvalid builtin arity error.
+pub const E2680_NVALID_ARITY: u32 = 2680;
+/// nvalid validation engine error.
+pub const E2681_NVALID_ERROR: u32 = 2681;
+/// nvalid invalid schema object.
+pub const E2682_NVALID_SCHEMA: u32 = 2682;
+
+/// ncolor builtin arity error.
+pub const E2690_NCOLOR_ARITY: u32 = 2690;
+/// ncolor type mismatch or unknown color.
+pub const E2691_NCOLOR_TYPE: u32 = 2691;
+
 /// Division by zero.
 pub const E2001_DIVISION_BY_ZERO: u32 = 2001;
 /// Reference to undefined variable.
@@ -314,6 +388,16 @@ pub fn runtime_kind_name(code: u32) -> &'static str {
         E1970_NML_ARITY..=E1975_NML_DEVICE => "nml_error",
         E1980_NRAG_ARITY..=E1982_NRAG_INVALID_HANDLE => "nrag_error",
         E1985_NLLM_ARITY..=E1987_NLLM_INVALID_HANDLE => "nllm_error",
+        E2600_NSTR_ARITY..=E2603_NSTR_BOUNDS => "nstr_error",
+        E2610_NMATH_ARITY..=E2613_NMATH_DOMAIN => "nmath_error",
+        E2620_NRAND_ARITY..=E2623_NRAND_INVALID_HANDLE => "nrand_error",
+        E2630_NFMT_ARITY..=E2632_NFMT_TYPE => "nfmt_error",
+        E2640_NLOG_ARITY..=E2642_NLOG_TYPE => "nlog_error",
+        E2650_NARGS_ARITY..=E2652_NARGS_SPEC => "nargs_error",
+        E2660_NTEST_ARITY..=E2662_NTEST_ASSERT => "ntest_error",
+        E2670_NCACHE_ARITY..=E2672_NCACHE_INVALID_HANDLE => "ncache_error",
+        E2680_NVALID_ARITY..=E2682_NVALID_SCHEMA => "nvalid_error",
+        E2690_NCOLOR_ARITY..=E2691_NCOLOR_TYPE => "ncolor_error",
         _ => "runtime_error",
     }
 }

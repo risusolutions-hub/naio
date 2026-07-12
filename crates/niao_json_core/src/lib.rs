@@ -7,6 +7,8 @@ pub mod parse;
 pub mod value;
 pub mod write;
 pub mod toml;
+#[cfg(feature = "serde")]
+pub mod serde;
 
 pub use error::ParseError;
 pub use number::Number;

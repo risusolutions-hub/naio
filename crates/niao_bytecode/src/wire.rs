@@ -1,5 +1,11 @@
 use crate::{BytecodeConst, BytecodeFunction, BytecodeModule, FastPath, OpCode};
 use niao_ast::{ClassDef, TraitDef};
+use serde::de::DeserializeOwned;
+
+fn parse_json_slice<T: DeserializeOwned>(data: &[u8]) -> Option<T> {
+    let value = niao_json_core::parse_bytes(data).ok()?;
+    niao_json_core::serde::from_value(&value).ok()
+}
 
 pub(crate) const MAGIC: &[u8] = b"NIAOBC";
 const WIRE_VERSION: u8 = 1;
@@ -465,8 +471,8 @@ pub(crate) fn encode(module: &BytecodeModule) -> Vec<u8> {
     for f in &module.functions {
         w.write_function(f);
     }
-    let classes_blob = serde_json::to_vec(&module.classes).unwrap_or_default();
-    let traits_blob = serde_json::to_vec(&module.traits).unwrap_or_default();
+    let classes_blob = niao_json_core::serde::to_vec_value(&module.classes).unwrap_or_default();
+    let traits_blob = niao_json_core::serde::to_vec_value(&module.traits).unwrap_or_default();
     w.write_blob(&classes_blob);
     w.write_blob(&traits_blob);
     w.into_bytes()
@@ -496,8 +502,8 @@ pub(crate) fn decode(data: &[u8]) -> Option<BytecodeModule> {
     if r.remaining() != 0 {
         return None;
     }
-    let classes: Vec<ClassDef> = serde_json::from_slice(&classes_blob).ok()?;
-    let traits: Vec<TraitDef> = serde_json::from_slice(&traits_blob).ok()?;
+    let classes: Vec<ClassDef> = parse_json_slice(&classes_blob)?;
+    let traits: Vec<TraitDef> = parse_json_slice(&traits_blob)?;
     Some(BytecodeModule {
         functions,
         constants,

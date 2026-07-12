@@ -1,0 +1,37 @@
+// nfmt demo — templates and human-friendly number formatting.
+// Run: niao run examples/nfmt_demo.niao
+import "nfmt"
+
+fn main() {
+    print("=== templates ===")
+    print(nfmt.fmt("{} + {} = {}", 1, 2, 3))
+    print(nfmt.fmt("{1} before {0}", "last", "first"))
+    print(nfmt.fmt("hello {name}, you are {role}", {name: "vivek", role: "builder"}))
+    print(nfmt.fmt("literal {{braces}} stay"))
+
+    print("=== numbers ===")
+    print(nfmt.number(1234567))            // 1,234,567
+    print(nfmt.number(1234567.891, 2))     // 1,234,567.89
+    print(nfmt.number(9876543, 0, "_"))    // 9_876_543
+    print(nfmt.fixed(3.14159, 3))          // 3.142
+    print(nfmt.sci(123456.789, 2))         // 1.23e5
+    print(nfmt.percent(0.425))             // 42.5%
+    print(nfmt.currency(-1234.5, "$"))     // -$1,234.50
+
+    print("=== bases & ordinals ===")
+    print(nfmt.hex(255))                   // 0xff
+    print(nfmt.hex(255, 8))                // 0x000000ff
+    print(nfmt.bin(5))                     // 0b101
+    print(nfmt.oct(64))                    // 0o100
+    print(nfmt.ordinal(1))                 // 1st
+    print(nfmt.ordinal(22))                // 22nd
+    print(nfmt.ordinal(113))               // 113th
+
+    print("=== humanizers ===")
+    print(nfmt.bytes(1500000))             // 1.5 MB
+    print(nfmt.bytes_bin(1536))            // 1.5 KiB
+    print(nfmt.count(1200000))             // 1.2M
+    print(nfmt.duration_ms(500))           // 500ms
+    print(nfmt.duration_ms(63000))         // 1m 3s
+    print(nfmt.duration_ms(93784000))      // 1d 2h
+}

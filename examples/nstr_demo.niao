@@ -1,0 +1,45 @@
+// nstr demo — string toolkit: cases, padding, search, slugs, edit distance.
+// Run: niao run examples/nstr_demo.niao
+import "nstr"
+
+fn main() {
+    print("=== case conversions ===")
+    print(nstr.snake("HelloWorldHTTP"))       // hello_world_http
+    print(nstr.camel("hello_world_test"))     // helloWorldTest
+    print(nstr.pascal("hello world"))         // HelloWorld
+    print(nstr.kebab("HTTPServerV2"))         // http-server-v2
+    print(nstr.constant("helloWorld"))        // HELLO_WORLD
+    print(nstr.title("niao makes strings easy"))
+
+    print("=== pad / shape ===")
+    print(nstr.pad_start("7", 5, "0"))        // 00007
+    print(nstr.center("niao", 12, "*"))       // ****niao****
+    print(nstr.truncate("a very long sentence", 12))
+    print(nstr.wrap("one two three four five six", 10))
+    print(nstr.dedent("    indented\n      more\n    back"))
+
+    print("=== split / join / search ===")
+    let parts = nstr.split("a,b,c,d", ",")
+    print(parts)
+    print(nstr.join(parts, " | "))
+    print(nstr.split_ws("  spaces   between words "))
+    print(nstr.index_of("hello world", "world"))   // 6
+    print(nstr.count("banana", "an"))              // 2
+    print(nstr.replace("2025-01-01", "-", "/"))
+
+    print("=== unicode-aware ===")
+    print(nstr.char_len("héllo"))              // 5
+    print(nstr.byte_len("héllo"))              // 6
+    print(nstr.reverse("niao 鳥"))
+    print(nstr.substring("héllo", 1, 3))       // él
+
+    print("=== slugs & distance ===")
+    print(nstr.slugify("Hello, World! 42"))    // hello-world-42
+    print(nstr.levenshtein("kitten", "sitting"))  // 3
+    print(nstr.similarity("niao", "nia"))
+
+    print("=== checks ===")
+    print(nstr.is_digit("12345"))
+    print(nstr.is_blank("   "))
+    print(nstr.is_ascii("héllo"))
+}

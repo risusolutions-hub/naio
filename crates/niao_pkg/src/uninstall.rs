@@ -130,7 +130,7 @@ fn is_dir_empty(path: &std::path::Path) -> PkgResult<bool> {
 }
 
 fn write_json<T: serde::Serialize>(path: &std::path::Path, value: &T) -> PkgResult<()> {
-    let data = serde_json::to_string_pretty(value)?;
+    let data = crate::json::stringify_pretty_result(value)?;
     fs::write(path, data)?;
     Ok(())
 }

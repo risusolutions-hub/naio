@@ -3,6 +3,12 @@ mod wire;
 
 use niao_ast::{ClassDef, Program, TraitDef};
 use niao_ir::{lower, IrConst, IrInstr};
+use serde::de::DeserializeOwned;
+
+fn parse_json_slice<T: DeserializeOwned>(data: &[u8]) -> Option<T> {
+    let value = niao_json_core::parse_bytes(data).ok()?;
+    niao_json_core::serde::from_value(&value).ok()
+}
 
 #[derive(Debug)]
 pub enum CompileError {
@@ -136,7 +142,7 @@ impl BytecodeModule {
         let module = if data.starts_with(wire::MAGIC) {
             wire::decode(data)?
         } else if data.first() == Some(&b'{') {
-            serde_json::from_slice(data).ok()?
+            parse_json_slice(data)?
         } else {
             return None;
         };
@@ -301,18 +307,18 @@ impl serde::Serialize for BytecodeConst {
 
 impl<'de> serde::Deserialize<'de> for BytecodeConst {
     fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
-        let value = serde_json::Value::deserialize(deserializer)?;
+        let value = niao_json_core::serde::deserialize_to_value(deserializer)?;
         match value {
-            serde_json::Value::Number(n) => {
+            niao_json_core::Value::Number(n) => {
                 if let Some(i) = n.as_i64() {
                     Ok(BytecodeConst::Int(i))
                 } else {
                     Ok(BytecodeConst::Float(n.as_f64().unwrap_or(0.0)))
                 }
             }
-            serde_json::Value::String(s) => Ok(BytecodeConst::String(s)),
-            serde_json::Value::Bool(b) => Ok(BytecodeConst::Bool(b)),
-            serde_json::Value::Null => Ok(BytecodeConst::Nil),
+            niao_json_core::Value::String(s) => Ok(BytecodeConst::String(s)),
+            niao_json_core::Value::Bool(b) => Ok(BytecodeConst::Bool(b)),
+            niao_json_core::Value::Null => Ok(BytecodeConst::Nil),
             _ => Ok(BytecodeConst::Nil),
         }
     }
@@ -962,11 +968,11 @@ mod tests {
         let src = "fn main() { print(1) }";
         let program = parse(src).unwrap();
         let bc = compile_to_bytecode(&program).unwrap();
-        let mut legacy = serde_json::to_value(&bc).unwrap();
+        let mut legacy = niao_json_core::serde::to_value(&bc).unwrap();
         let obj = legacy.as_object_mut().unwrap();
         obj.remove("cache_version");
         obj.remove("builtin_fingerprint");
-        let bytes = serde_json::to_vec(&legacy).unwrap();
+        let bytes = niao_json_core::write::to_vec(&legacy);
         assert!(BytecodeModule::deserialize(&bytes).is_none());
     }
 
@@ -985,10 +991,10 @@ mod tests {
 
     #[test]
     fn legacy_json_cache_still_loads() {
-        let src = "fn main() { print(1) }";
+        let src = "fn main() { let x = 1 }";
         let program = parse(src).unwrap();
         let bc = compile_to_bytecode(&program).unwrap();
-        let json = serde_json::to_vec(&bc).unwrap();
+        let json = niao_json_core::serde::to_vec_value(&bc).unwrap();
         assert!(json.first() == Some(&b'{'));
         let loaded = BytecodeModule::deserialize(&json).unwrap();
         assert_eq!(loaded.functions[0].code, bc.functions[0].code);

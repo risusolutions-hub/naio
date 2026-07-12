@@ -1,0 +1,15 @@
+[workspace]
+
+[package]
+name = "tracing-disabled-baseline"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+# This is the retained crate being measured, not a niao_log dependency.
+tracing = "0.1"
+
+[[bin]]
+name = "tracing-disabled-baseline"
+path = "../tracing_disabled_baseline.rs"

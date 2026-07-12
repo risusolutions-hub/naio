@@ -183,13 +183,7 @@ impl<'a> Lexer<'a> {
             '*' => TokenKind::Star,
             '/' => {
                 if self.match_char('/') {
-                    self.skip_spaces_on_line();
-                    let next = self.peek();
-                    let is_floor_div = matches!(
-                        next,
-                        Some('0'..='9') | Some('(') | Some('-') | Some('+')
-                    );
-                    if is_floor_div {
+                    if self.slash_slash_is_floor_div() {
                         TokenKind::FloorDiv
                     } else {
                         while matches!(self.peek(), Some(c) if c != '\n') {
@@ -443,6 +437,37 @@ impl<'a> Lexer<'a> {
             self.advance();
         }
     }
+
+    /// `//` is floor division when it begins a numeric/unary operand, not a line comment.
+    fn slash_slash_is_floor_div(&mut self) -> bool {
+        self.skip_spaces_on_line();
+        match self.peek() {
+            None | Some('\n') => false,
+            Some('(') | Some('+') => true,
+            Some('-') => {
+                let next = self.peek_ahead(1);
+                matches!(next, Some('0'..='9') | Some('('))
+            }
+            Some('0'..='9') => {
+                let mut idx = 0;
+                while self
+                    .peek_ahead(idx)
+                    .is_some_and(|c| c.is_ascii_digit())
+                {
+                    idx += 1;
+                }
+                !self
+                    .peek_ahead(idx)
+                    .is_some_and(|c| c.is_ascii_alphabetic() || c == '_')
+            }
+            Some(c) if c.is_ascii_alphabetic() || c == '_' => false,
+            _ => false,
+        }
+    }
+
+    fn peek_ahead(&mut self, n: usize) -> Option<char> {
+        self.chars.clone().nth(n)
+    }
 }
 
 pub fn lex(source: &str) -> Result<Vec<Token>, LexError> {
@@ -483,5 +508,19 @@ mod tests {
     fn lexes_http_methods() {
         let tokens = lex(r#"GET "/users" { }"#).unwrap();
         assert!(tokens.iter().any(|t| matches!(&t.kind, TokenKind::Get)));
+    }
+
+    #[test]
+    fn slash_slash_in_comment_not_floor_div() {
+        let src = "// 1M int benchmark — packed\nlet mid = n // 2\n";
+        let tokens = lex(src).unwrap();
+        assert!(tokens.iter().any(|t| matches!(&t.kind, TokenKind::FloorDiv)));
+        assert!(!tokens.iter().any(|t| matches!(&t.kind, TokenKind::Ident(s) if s == "M")));
+    }
+
+    #[test]
+    fn decorative_comment_dashes() {
+        let src = "fn main() {\n    // ---- section ----\n    let x = 1\n}";
+        lex(src).unwrap();
     }
 }

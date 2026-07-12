@@ -1,0 +1,47 @@
+// ntest demo — register tests, run them, read the summary.
+// Run: niao run examples/ntest_demo.niao
+import "ntest"
+import "nstr"
+import "nmath"
+
+fn test_snake_case() {
+    ntest.assert_eq(nstr.snake("HelloWorld"), "hello_world")
+    ntest.assert_contains("hello world", "world")
+}
+
+fn test_float_math() {
+    ntest.assert_near(0.1 + 0.2, 0.3, 0.000001)
+    ntest.assert_true(nmath.gcd(12, 18) == 6)
+}
+
+fn test_error_values() {
+    let e = nmath.factorial(-1)
+    ntest.assert_error(e)
+    ntest.assert_not_error(nmath.factorial(5))
+}
+
+fn test_deliberate_failure() {
+    ntest.assert_eq(1, 2, "one is not two (expected failure)")
+}
+
+fn test_unfinished() {
+    ntest.fail("todo")
+}
+
+fn main() {
+    ntest.case("snake_case works", test_snake_case)
+    ntest.case("float math is near", test_float_math)
+    ntest.case("error values detected", test_error_values)
+    ntest.case("deliberate failure", test_deliberate_failure)
+    ntest.skip("unfinished feature", test_unfinished)
+
+    let summary = ntest.run()
+    print("")
+    print("ok:", summary.ok)
+    print("passed:", summary.passed)
+    print("failed:", summary.failed)
+    print("failures:", summary.failures)
+
+    // Filtered run — only tests whose name contains "math"
+    ntest.run("math")
+}

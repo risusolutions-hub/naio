@@ -16,7 +16,7 @@ niao_ir = { workspace = true }
 niao_runtime = { workspace = true, features = ["nmongo"] }
 niao_llm = { workspace = true, optional = true }
 niao_errors = { workspace = true }
-num-bigint = "0.4"
+niao_bignum = { workspace = true }
 
 [features]
 default = []

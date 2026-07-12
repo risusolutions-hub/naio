@@ -1,6 +1,6 @@
 use niao_ast::{BinOp, Span, UnaryOp};
 use niao_runtime::{apply_binop, apply_unaryop, RuntimeError, Value, ValueRef};
-use num_bigint::BigInt;
+use niao_bignum::BigInt;
 use std::rc::Rc;
 
 /// Arena allocation hook used by the VM heap GC.
@@ -216,15 +216,15 @@ fn heap_int_binop(
     if let Value::BigInt(a) = &mut *val {
         match op {
             BinOp::Mul => {
-                *a *= n;
+                *a *= BigInt::from(n);
                 return Ok(FastVal::Heap(idx));
             }
             BinOp::Add => {
-                *a += n;
+                *a = &*a + &BigInt::from(n);
                 return Ok(FastVal::Heap(idx));
             }
             BinOp::Sub if !int_on_left => {
-                *a -= n;
+                *a = &*a - &BigInt::from(n);
                 return Ok(FastVal::Heap(idx));
             }
             _ => {}

@@ -1,0 +1,46 @@
+// nmath demo — scalar math, combinatorics, statistics.
+// Run: niao run examples/nmath_demo.niao
+import "nmath"
+
+fn main() {
+    print("=== constants ===")
+    print(nmath.pi)
+    print(nmath.tau)
+
+    print("=== scalars ===")
+    print(nmath.sqrt(2.0))
+    print(nmath.pow(2, 10))            // 1024 (stays int)
+    print(nmath.log(8.0, 2.0))         // 3.0
+    print(nmath.hypot(3.0, 4.0))       // 5.0
+    print(nmath.atan2(1.0, 1.0))
+    print(nmath.deg(nmath.pi))         // 180.0
+
+    print("=== rounding & shaping ===")
+    print(nmath.round(2.5))            // 3
+    print(nmath.round_to(3.14159, 2))  // 3.14
+    print(nmath.clamp(15, 0, 10))      // 10
+    print(nmath.lerp(0.0, 100.0, 0.25))
+    print(nmath.map_range(5.0, 0.0, 10.0, 0.0, 1.0))
+
+    print("=== combinatorics ===")
+    print(nmath.gcd(12, 18))           // 6
+    print(nmath.lcm(4, 6))             // 12
+    print(nmath.factorial(10))         // 3628800
+    print(nmath.comb(10, 3))           // 120
+    print(nmath.perm(5, 2))            // 20
+
+    print("=== statistics ===")
+    let data = [12, 7, 3, 9, 21, 7, 14]
+    print(nmath.sum(data))
+    print(nmath.mean(data))
+    print(nmath.median(data))
+    print(nmath.mode(data))
+    print(nmath.stdev(data))
+    print(nmath.percentile(data, 90))
+    print(nmath.min(data))
+    print(nmath.max(3, 9, 4))
+
+    print("=== domain errors are catchable ===")
+    let bad = nmath.factorial(-1)
+    print(is_error(bad))               // true
+}

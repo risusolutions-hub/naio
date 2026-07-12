@@ -39,7 +39,7 @@ pub struct LibPackage {
 
 pub fn read_project_package(path: &Path) -> PkgResult<ProjectPackage> {
     let data = read_json_text(path)?;
-    serde_json::from_str(&data).map_err(|e| {
+    crate::json::parse_struct(&data).map_err(|e| {
         PkgError::Message(format!("parse {}: {e}", path.display()))
     })
 }
@@ -49,7 +49,7 @@ pub fn read_lib_package(path: &Path) -> PkgResult<LibPackage> {
     if data.trim().is_empty() {
         return Err(PkgError::Message(format!("empty json file: {}", path.display())));
     }
-    serde_json::from_str(&data).map_err(|e| {
+    crate::json::parse_struct(&data).map_err(|e| {
         PkgError::Message(format!("parse {}: {e}", path.display()))
     })
 }
