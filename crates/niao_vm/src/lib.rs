@@ -497,15 +497,18 @@ impl Vm {
 
         match op {
                 OpCode::Const(idx) => {
-                    self.stack.push(self.constants[*idx as usize]);
+                    debug_assert!((*idx as usize) < self.constants.len());
+                    let val = unsafe { *self.constants.get_unchecked(*idx as usize) };
+                    self.stack.push(val);
                 }
                 OpCode::Load(idx) => {
                     let slot = *idx as usize;
-                    let mut val = self.frames[frame_top]
-                        .locals
-                        .get(slot)
-                        .copied()
-                        .unwrap_or(FastVal::NIL);
+                    let frame = unsafe { self.frames.get_unchecked(frame_top) };
+                    let mut val = if slot < frame.locals.len() {
+                        unsafe { *frame.locals.get_unchecked(slot) }
+                    } else {
+                        FastVal::NIL
+                    };
                     if matches!(val, FastVal::Nil) {
                         if let Some(name) = self.slot_names.get(slot).filter(|n| !n.is_empty()) {
                             if let Some(global) = self.globals.get(name) {

@@ -14,6 +14,7 @@
 - `niao_io` crate (readiness poller, work-stealing executor, timers, TCP helpers); replaces custom mpsc thread pool in `niao_runtime::async_tasks`.
 - `niao_db` crate (RESP Redis client, PostgreSQL wire v3, generic pool); replaces `postgres`, `r2d2`, `r2d2_postgres`, and `redis` in `niao_runtime`/`ahiru_core` npg paths.
 - `niao_archive` crate (RFC 1951 deflate, gzip, ustar/PAX tar, zip stored+deflate); replaces `flate2`, `tar`, and `zip` in `niao_pkg`; gzip response decoding in `niao_http`.
+- VM/runtime polish: bytecode cache content-hash sidecar, call-bridge arg scratch buffer, GC threshold tune, hot-path `get_unchecked` in dispatch; `scripts/bench_gate.ps1` + `benchmarks/baseline.json`; `docs/perf_notes.md`.
 
 ## 0.2.2 — 2026-07-07
 

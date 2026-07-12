@@ -334,3 +334,26 @@ Run: `python benchmarks/benchmark_archive.py` or `cargo run --release -p niao_ar
 ### Notes
 - Deflate encode uses fixed Huffman + greedy LZ77 (ratio below flate2; decode speed priority for package installs).
 
+---
+
+## Task 12 — VM / runtime perfection pass
+
+### Status: complete
+
+### Changes
+- `.niaobc` cache: content fingerprint sidecar (`.niaobc.sha`), pre-sized load buffer.
+- VM: thread-local `CALL_ARG_SCRATCH` for native→Niao handler calls; `get_unchecked` on hot `Const`/`Load`; GC interval 16384 / threshold 24576.
+- `docs/perf_notes.md`, `benchmarks/baseline.json`, `scripts/bench_gate.ps1` (5% regression gate).
+
+### Tests
+- Cache hash sidecar unit test; full workspace green (cmake exclusions unchanged).
+
+### Benchmarks (release, Windows)
+| Benchmark | Result |
+|-----------|--------|
+| `vm_runs_math_stress` | ~0.05s |
+| archive inflate | 898 MiB/s (unchanged) |
+
+Run gate: `powershell -File scripts/bench_gate.ps1`
+
+

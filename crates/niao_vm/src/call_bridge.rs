@@ -1,6 +1,6 @@
 //! Bridge for invoking Niao user functions from native HTTP handlers while the VM runs.
 
-use crate::{fast_val::HeapMut, fast_val::value_to_fast, Vm, VmError};
+use crate::{fast_val::HeapMut, fast_val::value_to_fast, fast_val::FastVal, Vm, VmError};
 use niao_ast::Span;
 use niao_bytecode::BytecodeModule;
 use niao_runtime::{NiaoResult, RuntimeError as RtError, Value, ValueRef};
@@ -10,6 +10,7 @@ use std::sync::Arc;
 
 thread_local! {
     static ACTIVE_VM: RefCell<Option<*mut Vm>> = const { RefCell::new(None) };
+    static CALL_ARG_SCRATCH: RefCell<Vec<FastVal>> = RefCell::new(Vec::new());
 }
 
 /// Run bytecode and register a VM call hook for the duration (current thread only).
@@ -61,13 +62,16 @@ impl Vm {
         if idx >= self.functions.len() {
             return Err(VmError::UnknownFunction(format!("index {idx}")));
         }
-        for arg in args {
-            let fast = {
+        CALL_ARG_SCRATCH.with(|cell| {
+            let mut scratch = cell.borrow_mut();
+            scratch.clear();
+            scratch.reserve(args.len());
+            for arg in args {
                 let mut heap = HeapMut { vm: self };
-                value_to_fast(&arg.borrow(), &mut heap)
-            };
-            self.stack.push(fast);
-        }
+                scratch.push(value_to_fast(&arg.borrow(), &mut heap));
+            }
+            self.stack.extend_from_slice(&scratch);
+        });
         self.enter_frame(idx, args.len())?;
         self.dispatch()?;
         let ret = self.stack.pop().ok_or(VmError::StackUnderflow)?;

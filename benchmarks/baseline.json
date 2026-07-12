@@ -1,0 +1,9 @@
+{
+  "generated": "2026-07-12",
+  "tolerance_pct": 5,
+  "metrics": {
+    "niao_archive_deflate_inflate_mib_s": 850,
+    "niao_vm_math_stress_secs": 1.0,
+    "niao_io_spawn_jobs_per_s": 4400000
+  }
+}

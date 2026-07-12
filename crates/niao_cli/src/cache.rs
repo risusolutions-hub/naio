@@ -1,10 +1,34 @@
 use niao_bytecode::{compile_to_bytecode, BytecodeModule};
 use niao_parser::parse;
+use std::collections::hash_map::DefaultHasher;
 use std::error::Error;
 use std::fs;
+use std::hash::{Hash, Hasher};
+use std::io::Read;
 use std::path::{Path, PathBuf};
 
 const CACHE_DIR_NAME: &str = ".niao-build";
+const HASH_SUFFIX: &str = "niaobc.sha";
+
+fn source_fingerprint(bytes: &[u8]) -> u64 {
+    let mut hasher = DefaultHasher::new();
+    bytes.hash(&mut hasher);
+    hasher.finish()
+}
+
+fn hash_sidecar(cache: &Path) -> PathBuf {
+    cache.with_extension(HASH_SUFFIX)
+}
+
+fn read_hash_sidecar(path: &Path) -> Option<u64> {
+    let text = fs::read_to_string(path).ok()?;
+    text.trim().parse().ok()
+}
+
+fn write_hash_sidecar(path: &Path, fp: u64) -> Result<(), Box<dyn Error>> {
+    fs::write(path, format!("{fp}\n"))?;
+    Ok(())
+}
 
 /// Default bytecode cache directory: `<cwd>/.niao-build/`.
 pub fn default_cache_dir() -> PathBuf {
@@ -25,7 +49,7 @@ pub fn cache_path(source: &Path, cache_dir: &Path) -> PathBuf {
     cache_dir.join(format!("{key}.niaobc"))
 }
 
-pub fn cache_is_fresh(source: &Path, cache: &Path) -> bool {
+pub fn cache_is_fresh(source: &Path, cache: &Path, source_fp: Option<u64>) -> bool {
     let Ok(src_meta) = source.metadata() else {
         return false;
     };
@@ -38,26 +62,40 @@ pub fn cache_is_fresh(source: &Path, cache: &Path) -> bool {
     let Ok(cache_mod) = cache_meta.modified() else {
         return false;
     };
-    cache_mod >= src_mod
+    if cache_mod < src_mod {
+        return false;
+    }
+    if let Some(fp) = source_fp {
+        if read_hash_sidecar(&hash_sidecar(cache)) != Some(fp) {
+            return false;
+        }
+    }
+    true
 }
 
 pub fn try_load_cache(cache: &Path) -> Option<BytecodeModule> {
-    let bytes = fs::read(cache).ok()?;
-    BytecodeModule::deserialize(&bytes)
+    let meta = fs::metadata(cache).ok()?;
+    let mut file = fs::File::open(cache).ok()?;
+    let mut bytes = Vec::with_capacity(meta.len() as usize);
+    file.read_to_end(&mut bytes).ok()?;
+    let mut module = BytecodeModule::deserialize(&bytes)?;
+    module.ensure_fast_path();
+    Some(module)
 }
 
-pub fn write_cache_atomic(cache: &Path, module: &BytecodeModule) -> Result<(), Box<dyn Error>> {
+pub fn write_cache_atomic(cache: &Path, module: &BytecodeModule, source_fp: u64) -> Result<(), Box<dyn Error>> {
     if let Some(parent) = cache.parent() {
         fs::create_dir_all(parent)?;
     }
     let tmp = cache.with_extension("niaobc.tmp");
     fs::write(&tmp, module.serialize())?;
     fs::rename(&tmp, cache)?;
+    write_hash_sidecar(&hash_sidecar(cache), source_fp)?;
     Ok(())
 }
 
-pub fn write_cache(cache: &Path, module: &BytecodeModule) {
-    if let Err(e) = write_cache_atomic(cache, module) {
+pub fn write_cache(cache: &Path, module: &BytecodeModule, source_fp: u64) {
+    if let Err(e) = write_cache_atomic(cache, module, source_fp) {
         eprintln!("warning: failed to write bytecode cache {}: {e}", cache.display());
     }
 }
@@ -67,16 +105,16 @@ pub fn load_or_compile(
     cache_dir: &Path,
 ) -> Result<(BytecodeModule, std::time::Duration), Box<dyn Error>> {
     let compile_start = std::time::Instant::now();
+    let source = fs::read_to_string(file)?;
+    let source_fp = source_fingerprint(source.as_bytes());
     let cache = cache_path(file, cache_dir);
 
-    if cache.is_file() && cache_is_fresh(file, &cache) {
-        if let Some(mut module) = try_load_cache(&cache) {
-            module.ensure_fast_path();
+    if cache.is_file() && cache_is_fresh(file, &cache, Some(source_fp)) {
+        if let Some(module) = try_load_cache(&cache) {
             return Ok((module, compile_start.elapsed()));
         }
     }
 
-    let source = fs::read_to_string(file)?;
     let program = parse(&source).map_err(|e| e.to_string())?;
     let mut bytecode = compile_to_bytecode(&program).map_err(|e| e.to_string())?;
     bytecode.source_path = Some(
@@ -85,7 +123,7 @@ pub fn load_or_compile(
             .to_string_lossy()
             .into_owned(),
     );
-    write_cache(&cache, &bytecode);
+    write_cache(&cache, &bytecode, source_fp);
     Ok((bytecode, compile_start.elapsed()))
 }
 
@@ -166,6 +204,7 @@ pub fn build_to_cache(
     output: &Path,
 ) -> Result<PathBuf, Box<dyn Error>> {
     let source = fs::read_to_string(file)?;
+    let source_fp = source_fingerprint(source.as_bytes());
     let program = parse(&source).map_err(|e| e.to_string())?;
     let mut bytecode = compile_to_bytecode(&program).map_err(|e| e.to_string())?;
     bytecode.source_path = Some(
@@ -175,7 +214,7 @@ pub fn build_to_cache(
             .into_owned(),
     );
     let out_path = cache_path(file, output);
-    write_cache_atomic(&out_path, &bytecode)?;
+    write_cache_atomic(&out_path, &bytecode, source_fp)?;
     Ok(out_path)
 }
 
@@ -265,6 +304,25 @@ mod tests {
         let path_a = cache_path(Path::new("a/foo.niao"), &cache_dir);
         let path_b = cache_path(Path::new("b/foo.niao"), &cache_dir);
         assert_ne!(path_a, path_b);
+
+        std::env::set_current_dir(&prev).unwrap();
+        let _ = fs::remove_dir_all(&tmp);
+    }
+
+    #[test]
+    fn cache_writes_hash_sidecar() {
+        let _lock = CWD_LOCK.lock().unwrap();
+        let tmp = std::env::temp_dir().join(format!("niao_cache_hash_{}", std::process::id()));
+        let _ = fs::remove_dir_all(&tmp);
+        fs::create_dir_all(&tmp).unwrap();
+        let prev = std::env::current_dir().unwrap();
+        std::env::set_current_dir(&tmp).unwrap();
+
+        let source = write_fixture(&tmp, "hash.niao", "fn main() { print(1) }\n");
+        let cache_dir = default_cache_dir();
+        load_or_compile(&source, &cache_dir).unwrap();
+        let cache = cache_path(&source, &cache_dir);
+        assert!(hash_sidecar(&cache).is_file());
 
         std::env::set_current_dir(&prev).unwrap();
         let _ = fs::remove_dir_all(&tmp);

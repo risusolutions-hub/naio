@@ -8,9 +8,9 @@ use std::rc::Rc;
 use std::sync::Arc;
 
 /// Collect after this many arena allocations since the last collection.
-pub(crate) const GC_INTERVAL: u32 = 8192;
+pub(crate) const GC_INTERVAL: u32 = 16384;
 /// Initial combined heap + native slot threshold before a collection is considered.
-pub(crate) const GC_THRESHOLD_INITIAL: usize = 16384;
+pub(crate) const GC_THRESHOLD_INITIAL: usize = 24576;
 /// Maximum memoization entries per `@memoize` function.
 pub(crate) const MEMO_CACHE_CAP: usize = 65536;
 
