@@ -1,29 +1,32 @@
 // Random number standard library showcase.
 // Run: niao run examples/rand_demo.niao
-import "rand" as r
+import "nrand"
 
 fn main() {
     print("== seeded int range ==")
-    let rng = r.seed(42)
-    print(r.gen_range(rng, 1, 100))
-    print(r.gen_range(rng, 1, 100))
+    nrand_seed(42)
+    print(nrand_int(1, 100))
+    print(nrand_int(1, 100))
 
     print("== reproducibility ==")
-    let a = r.seed(99)
-    let b = r.seed(99)
-    print(r.next_u64(a))
-    print(r.next_u64(b))
+    let a = nrand_new_gen(99)
+    let b = nrand_new_gen(99)
+    print(nrand_gen_int(a, 0, 999999999999))
+    print(nrand_gen_int(b, 0, 999999999999))
 
     print("== float ==")
-    print(r.gen_float(rng))
+    print(nrand_float())
 
     print("== shuffle & choose ==")
     let items = [1, 2, 3, 4, 5]
-    r.shuffle(rng, items)
+    nrand_shuffle(items)
     print(items)
-    print(r.choose(rng, items))
+    print(nrand_choice(items))
 
     print("== os entropy ==")
-    print(r.rand_int(0, 1000))
+    nrand_seed(0)
+    print(nrand_int(0, 1000))
+    nrand_close_gen(a)
+    nrand_close_gen(b)
     print("rand demo done")
 }

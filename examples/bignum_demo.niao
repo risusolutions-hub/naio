@@ -1,8 +1,7 @@
 // BigInt standard library showcase (native builtins when wired).
 // Run:  niao run examples/bignum_demo.niao
 //
-// Until runtime switches to niao_bignum, this exercises VM bigint promotion
-// for factorial and large integer arithmetic.
+// Demonstrates VM bigint promotion via overflow — no oversized int literals.
 
 fn main() {
     print("== VM bigint promotion ==")
@@ -14,12 +13,16 @@ fn main() {
     let f50 = super_boom_factorial(50)
     print(f50)
 
-    print("== large mul ==")
-    let a = 999999999999999999999999999999
-    let b = 123456789012345678901234567890
+    print("== large mul via overflow ==")
+    let a = 9223372036854775807 * 9223372036854775807
+    let b = a + 9223372036854775807
     print(a * b)
     print(a / b)
     print(a % b)
+
+    print("== chained promotion ==")
+    let c = super_boom_factorial(20) * super_boom_factorial(15)
+    print(c)
 
     print("bignum demo done")
 }

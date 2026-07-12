@@ -425,6 +425,9 @@ pub fn builtins() -> Vec<(&'static str, NativeFn)> {
 mod tests {
     use super::*;
     use niao_ast::Span;
+    use std::sync::Mutex;
+
+    static TEST_LOCK: Mutex<()> = Mutex::new(());
 
     fn span() -> Span {
         Span::dummy()
@@ -443,12 +446,14 @@ mod tests {
 
     #[test]
     fn red_wraps_when_enabled() {
+        let _guard = TEST_LOCK.lock().unwrap();
         enabled_flag().store(true, Ordering::Relaxed);
         assert_eq!(expect_str(ncolor_red(&[s("hi")], span())), "\x1b[31mhi\x1b[0m");
     }
 
     #[test]
     fn disabled_passthrough() {
+        let _guard = TEST_LOCK.lock().unwrap();
         enabled_flag().store(false, Ordering::Relaxed);
         assert_eq!(expect_str(ncolor_red(&[s("hi")], span())), "hi");
         enabled_flag().store(true, Ordering::Relaxed);
@@ -456,6 +461,7 @@ mod tests {
 
     #[test]
     fn strip_removes_codes() {
+        let _guard = TEST_LOCK.lock().unwrap();
         enabled_flag().store(true, Ordering::Relaxed);
         let colored = expect_str(ncolor_rgb(&[s("x"), Value::Int(1).ref_cell(), Value::Int(2).ref_cell(), Value::Int(3).ref_cell()], span()));
         assert_eq!(strip_ansi(&colored), "x");
@@ -464,6 +470,7 @@ mod tests {
 
     #[test]
     fn style_composite() {
+        let _guard = TEST_LOCK.lock().unwrap();
         enabled_flag().store(true, Ordering::Relaxed);
         let mut opts = HashMap::new();
         opts.insert("bold".to_string(), Value::Bool(true).ref_cell());
