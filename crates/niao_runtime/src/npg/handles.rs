@@ -231,11 +231,11 @@ where
 }
 
 pub fn redact_conninfo(s: &str) -> String {
-    if let Ok(mut url) = url::Url::parse(s) {
-        if url.password().is_some() {
-            let _ = url.set_password(Some("***"));
+    if let Ok(mut url) = niao_http::parse_url(s) {
+        if !url.password.is_empty() {
+            url.password = "***".into();
         }
-        url.to_string()
+        url.to_string_full()
     } else {
         s.to_string()
     }

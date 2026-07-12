@@ -8,7 +8,6 @@ use flate2::read::GzDecoder;
 use serde::Deserialize;
 use niao_crypto::{hex, sha256};
 use std::fs;
-use std::io::Read;
 use std::path::{Path, PathBuf};
 use tar::Archive;
 
@@ -71,14 +70,13 @@ pub fn registry_cache_dir() -> PathBuf {
 }
 
 fn fetch_text(url: &str) -> PkgResult<String> {
-    let response = ureq::get(url)
+    let response = niao_http::get(url)
         .call()
         .map_err(|e| PkgError::Message(format!("registry request failed: {e}")))?;
-    if !(200..300).contains(&response.status()) {
+    if !(200..300).contains(&response.status) {
         return Err(PkgError::Message(format!(
             "registry HTTP {} for {}",
-            response.status(),
-            url
+            response.status, url
         )));
     }
     response
@@ -87,22 +85,16 @@ fn fetch_text(url: &str) -> PkgResult<String> {
 }
 
 pub fn fetch_bytes(url: &str) -> PkgResult<Vec<u8>> {
-    let response = ureq::get(url)
+    let response = niao_http::get(url)
         .call()
         .map_err(|e| PkgError::Message(format!("registry download failed: {e}")))?;
-    if !(200..300).contains(&response.status()) {
+    if !(200..300).contains(&response.status) {
         return Err(PkgError::Message(format!(
             "registry HTTP {} for {}",
-            response.status(),
-            url
+            response.status, url
         )));
     }
-    let mut buf = Vec::new();
-    response
-        .into_reader()
-        .read_to_end(&mut buf)
-        .map_err(|e| PkgError::Message(format!("registry download read failed: {e}")))?;
-    Ok(buf)
+    Ok(response.body)
 }
 
 pub fn fetch_catalog(base: &str) -> PkgResult<RegistryCatalog> {

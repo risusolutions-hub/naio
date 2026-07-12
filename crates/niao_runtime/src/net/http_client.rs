@@ -1,28 +1,28 @@
-//! HTTP/HTTPS client via `ureq`.
+//! HTTP/HTTPS client via `niao_http`.
 
 use super::{net_error, ok_string, parse_http_opts, string_arg, HttpOpts, NetResult};
 use niao_ast::Span;
 use niao_errors::codes;
+use niao_http::{get, head, post, put, delete, request, Method, RequestBuilder};
 use std::collections::HashMap;
 use std::fs;
+use std::time::Duration;
 
-fn apply_opts(mut request: ureq::Request, opts: &HttpOpts) -> ureq::Request {
+fn apply_opts(mut builder: RequestBuilder, opts: &HttpOpts) -> RequestBuilder {
     if let Some(ms) = opts.timeout_ms {
-        request = request.timeout(std::time::Duration::from_millis(ms));
+        builder = builder.timeout(Duration::from_millis(ms));
     }
     if let Some(ua) = &opts.user_agent {
-        request = request.set("User-Agent", ua);
+        builder = builder.set("User-Agent", ua);
     }
     if let Some((user, pass)) = &opts.auth {
-        request = request.set(
-            "Authorization",
-            &format!("Basic {}", niao_codec::base64::encode_standard(format!("{user}:{pass}").as_bytes())),
-        );
+        let enc = niao_codec::base64::encode_standard(format!("{user}:{pass}").as_bytes());
+        builder = builder.set("Authorization", format!("Basic {enc}"));
     }
     for (k, v) in &opts.headers {
-        request = request.set(k, v);
+        builder = builder.set(k.clone(), v.clone());
     }
-    request
+    builder
 }
 
 pub fn http_request(
@@ -31,7 +31,7 @@ pub fn http_request(
     opts: HttpOpts,
     span: Span,
 ) -> Result<crate::ValueRef, crate::ValueRef> {
-    let result = match method.to_uppercase().as_str() {
+    let builder = match method.to_uppercase().as_str() {
         "GET" => {
             if opts.body.is_some() || opts.body_bytes.is_some() {
                 return Err(net_error(
@@ -41,38 +41,29 @@ pub fn http_request(
                     "GET cannot include a body",
                 ));
             }
-            apply_opts(ureq::get(url), &opts).call()
+            apply_opts(get(url), &opts)
         }
-        "HEAD" => apply_opts(ureq::head(url), &opts).call(),
-        "POST" => {
-            let req = apply_opts(ureq::post(url), &opts);
-            send_body(req, &opts)
-        }
-        "PUT" => {
-            let req = apply_opts(ureq::put(url), &opts);
-            send_body(req, &opts)
-        }
-        "DELETE" => {
-            let req = apply_opts(ureq::delete(url), &opts);
-            send_body(req, &opts)
-        }
-        "PATCH" => {
-            let req = apply_opts(ureq::request("PATCH", url), &opts);
-            send_body(req, &opts)
-        }
+        "HEAD" => apply_opts(head(url), &opts),
+        "POST" => apply_opts(post(url), &opts),
+        "PUT" => apply_opts(put(url), &opts),
+        "DELETE" => apply_opts(delete(url), &opts),
+        "PATCH" => apply_opts(request(Method::Patch, url), &opts),
         other => {
-            return Err(net_error(
-                span,
-                codes::E1404_NET_HTTP,
-                "net_http_error",
-                format!("unsupported HTTP method: {other}"),
-            ))
+            let Some(m) = Method::parse(other) else {
+                return Err(net_error(
+                    span,
+                    codes::E1404_NET_HTTP,
+                    "net_http_error",
+                    format!("unsupported HTTP method: {other}"),
+                ));
+            };
+            apply_opts(request(m, url), &opts)
         }
     };
 
+    let result = send_body(builder, &opts);
     match result {
         Ok(resp) => Ok(response_to_value(resp, url)),
-        Err(ureq::Error::Status(_code, resp)) => Ok(response_to_value(resp, url)),
         Err(e) => Err(net_error(
             span,
             codes::E1401_NET_ERROR,
@@ -82,27 +73,30 @@ pub fn http_request(
     }
 }
 
-fn send_body(request: ureq::Request, opts: &HttpOpts) -> Result<ureq::Response, ureq::Error> {
+fn send_body(
+    builder: RequestBuilder,
+    opts: &HttpOpts,
+) -> Result<niao_http::Response, niao_http::Error> {
     if let Some(body) = &opts.body {
-        request.send_string(body)
+        builder.send_string(body)
     } else if let Some(bytes) = &opts.body_bytes {
         let data: Vec<u8> = bytes.iter().map(|&b| b as u8).collect();
-        request.send_bytes(&data)
+        builder.send_bytes(&data)
     } else {
-        request.call()
+        builder.send()
     }
 }
 
-fn response_to_value(resp: ureq::Response, url: &str) -> crate::ValueRef {
-    let status = resp.status() as i64;
-    let final_url = resp.get_url().to_string();
+fn response_to_value(resp: niao_http::Response, url: &str) -> crate::ValueRef {
+    let status = resp.status as i64;
+    let final_url = resp.url.clone();
     let mut headers = HashMap::new();
     for name in resp.headers_names() {
         if let Some(v) = resp.header(&name) {
             headers.insert(name.to_lowercase(), ok_string(v.to_string()));
         }
     }
-    let body_bytes = resp.into_string().map(|s| s.into_bytes()).unwrap_or_default();
+    let body_bytes = resp.body;
     let body = String::from_utf8_lossy(&body_bytes).into_owned();
     let ok = (200..300).contains(&(status as u16));
     let mut map = HashMap::new();

@@ -129,14 +129,13 @@ impl ReleaseVariant {
 }
 
 fn fetch_json<T: for<'de> Deserialize<'de>>(url: &str) -> PkgResult<T> {
-  let response = ureq::get(url)
+  let response = niao_http::get(url)
     .call()
     .map_err(|e| PkgError::Message(format!("release request failed: {e}")))?;
-  if !(200..300).contains(&response.status()) {
+  if !(200..300).contains(&response.status) {
     return Err(PkgError::Message(format!(
       "release HTTP {} for {}",
-      response.status(),
-      url
+      response.status, url
     )));
   }
   let text = response

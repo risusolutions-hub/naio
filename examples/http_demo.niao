@@ -1,0 +1,19 @@
+// HTTP client + URL showcase.
+// Run:  niao run examples/http_demo.niao
+import "net" as n
+
+fn main() {
+    print("== url ==")
+    let parts = n.url_parse("https://example.com/path?q=1#frag")
+    print(parts.scheme)
+    print(parts.host)
+    print(parts.path)
+
+    print("== http get ==")
+    let resp = n.http_get("https://httpbin.org/get")
+    print(resp.status)
+    print(resp.ok)
+    print(len(resp.body))
+
+    print("http demo done")
+}

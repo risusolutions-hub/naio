@@ -1,13 +1,13 @@
-//! Programmatic HTTP server via `tiny_http`.
+//! Programmatic HTTP server via `niao_http`.
 
 use super::{net_error, object_field, ok_nil, string_arg, NetResult};
 use crate::call_niao_function;
 use niao_ast::Span;
 use niao_errors::codes;
+use niao_http::{IncomingRequest, OutgoingResponse, Server};
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
-use tiny_http::{Header, Request, Response, Server, StatusCode};
 
 #[derive(Clone)]
 pub struct RouteEntry {
@@ -57,16 +57,15 @@ where
     })
 }
 
-fn build_request_object(req: &mut Request) -> crate::ValueRef {
+fn build_request_object(req: &IncomingRequest) -> crate::ValueRef {
     let mut headers = HashMap::new();
-    for h in req.headers() {
+    for (name, value) in req.headers().iter() {
         headers.insert(
-            h.field.as_str().as_str().to_lowercase(),
-            crate::Value::String(h.value.as_str().to_string()).ref_cell(),
+            name.to_string(),
+            crate::Value::String(value.to_string()).ref_cell(),
         );
     }
-    let mut body_bytes = Vec::new();
-    let _ = req.as_reader().read_to_end(&mut body_bytes);
+    let body_bytes = req.body.clone();
     let body = String::from_utf8_lossy(&body_bytes).into_owned();
     let path = req.url().to_string();
     let query = req
@@ -80,7 +79,7 @@ fn build_request_object(req: &mut Request) -> crate::ValueRef {
     let mut map = HashMap::new();
     map.insert(
         "method".into(),
-        crate::Value::String(req.method().as_str().to_string()).ref_cell(),
+        crate::Value::String(req.method().to_string()).ref_cell(),
     );
     map.insert("path".into(), crate::Value::String(path_only).ref_cell());
     map.insert("query".into(), crate::Value::String(query).ref_cell());
@@ -93,7 +92,7 @@ fn build_request_object(req: &mut Request) -> crate::ValueRef {
     crate::Value::Object(map).ref_cell()
 }
 
-fn response_from_value(val: &crate::Value) -> Result<Response<std::io::Cursor<Vec<u8>>>, String> {
+fn response_from_value(val: &crate::Value) -> Result<OutgoingResponse, String> {
     let status = object_field(val, "status")
         .and_then(|v| match &*v.borrow() {
             crate::Value::Int(n) => Some(*n as u16),
@@ -112,19 +111,17 @@ fn response_from_value(val: &crate::Value) -> Result<Response<std::io::Cursor<Ve
             _ => None,
         })
         .ok_or_else(|| "response.body must be string".to_string())?;
-    let mut resp = Response::from_data(body).with_status_code(StatusCode(status));
-    if let Ok(header) = Header::from_bytes(b"Content-Type", content_type.as_bytes()) {
-        resp.add_header(header);
-    }
-    Ok(resp)
+    Ok(OutgoingResponse::from_data(body)
+        .with_status(status)
+        .header("Content-Type", content_type))
 }
 
-fn dispatch(state: &HttpServerState, mut request: Request, span: Span) {
-    let method = request.method().as_str().to_string();
+fn dispatch(state: &HttpServerState, request: IncomingRequest, span: Span) {
+    let method = request.method().to_string();
     let path = request.url().split('?').next().unwrap_or("").to_string();
-    let req_obj = build_request_object(&mut request);
+    let req_obj = build_request_object(&request);
 
-    let mut response = Response::from_string("not found").with_status_code(StatusCode(404));
+    let mut response = OutgoingResponse::from_string("not found").with_status(404);
 
     for route in &state.routes {
         if route.method.eq_ignore_ascii_case(&method) && route.path == path {
@@ -138,7 +135,7 @@ fn dispatch(state: &HttpServerState, mut request: Request, span: Span) {
         }
     }
 
-    if response.status_code() == StatusCode(404) {
+    if response.status == 404 {
         if let Some(handler) = &state.fallback {
             if let Ok(resp_val) = call_niao_function(handler.clone(), &[req_obj], span) {
                 if let Ok(resp) = response_from_value(&resp_val.borrow()) {
@@ -323,6 +320,7 @@ pub fn net_http_stop(args: &[crate::ValueRef], span: Span) -> NetResult {
     let id = super::int_arg(args, 0, "net_http_stop", span)? as u64;
     with_server_mut(id, "net_http_stop", span, |state| {
         *state.stop.lock().unwrap() = true;
+        state.server.stop();
         Ok(ok_nil())
     })
 }

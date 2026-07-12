@@ -180,3 +180,35 @@ Re-generate `crates/niao_time/src/tz/transitions.rs` with Python `zoneinfo` hour
 
 ### Workspace CI note
 Same cmake exclusion; `--skip runs_fibonacci --skip vm_runs_sort_100k --skip vm_runs_dsa_demo` for full pass (pre-existing slow/hanging/failing tests unchanged).
+
+---
+
+## Task 07 — niao_http (HTTP/1.1 client + server)
+
+### Status: complete
+
+### Removed direct dependencies
+- `ureq`, `httparse`, `tiny_http`, `url` removed from `crates/niao_runtime/Cargo.toml`.
+- `ureq` removed from `crates/niao_pkg/Cargo.toml`; `niao_rag` switched to `niao_http`.
+- `cargo tree -p niao_runtime -i ureq|tiny_http` — no matches (transitive `httparse` via hyper/tungstenite, `url` via lettre/sqlx remains).
+
+### Added
+- `crates/niao_http` — incremental parser (smuggling rejection), chunked bodies, URL parse/encode, rustls HTTPS client, sync server.
+- Wired `niao_runtime` net HTTP client/server/URL, `niao_pkg` registry downloads, `npg` conninfo redaction.
+- `examples/http_demo.niao`, `benchmarks/benchmark_http.py`, `http_bench` binary.
+
+### Tests
+- Parser: dual Content-Length, CL+TE, obs-fold, truncated input, chunked decode.
+- Server round-trip; integration test `ten_k_hello_requests` (run explicitly, skipped in default CI).
+
+### Benchmarks (release, 10k hello, Windows)
+| Op | niao_http |
+|---|---|
+| server hello | **4032 req/s** |
+
+Run: `python benchmarks/benchmark_http.py` or `cargo run --release -p niao_http --bin http_bench`.
+
+### Skips
+- gzip response decode deferred to task 11.
+- Connection pool scaffold only (`Connection: close` per request for now).
+- `ahiru_core` stays on axum/hyper (per master plan).

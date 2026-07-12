@@ -11,4 +11,4 @@ fastembed = { version = "5", default-features = false, features = ["directml", "
 ort = { version = "2.0.0-rc.12", default-features = false, features = ["directml", "download-binaries", "tls-rustls"] }
 thiserror = "2"
 rayon = "1"
-ureq = "2"
+niao_http = { workspace = true }

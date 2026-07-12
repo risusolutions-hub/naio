@@ -80,8 +80,8 @@ impl Embedder {
     fn try_sidecar(base: &str) -> Option<Self> {
         let base = base.trim_end_matches('/');
         let url = format!("{base}/health");
-        let resp = ureq::get(&url).call().ok()?;
-        if resp.status() != 200 {
+        let resp = niao_http::get(&url).call().ok()?;
+        if resp.status != 200 {
             return None;
         }
         let body: serde_json::Value = resp
@@ -220,12 +220,12 @@ impl Embedder {
 fn sidecar_embed(base: &str, texts: &[&str]) -> Result<Vec<Vec<f32>>> {
     let url = format!("{}/embed", base.trim_end_matches('/'));
     let payload = serde_json::json!({ "texts": texts });
-    let resp = ureq::post(&url)
+    let resp = niao_http::post(&url)
         .set("Content-Type", "application/json")
         .send_string(&payload.to_string())
         .map_err(|e| RagError::Embed(format!("sidecar request failed: {e}")))?;
-    if resp.status() != 200 {
-        return Err(RagError::Embed(format!("sidecar HTTP {}", resp.status())));
+    if resp.status != 200 {
+        return Err(RagError::Embed(format!("sidecar HTTP {}", resp.status)));
     }
     let body: serde_json::Value = resp
         .into_string()

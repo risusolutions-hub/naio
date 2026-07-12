@@ -1,79 +1,56 @@
-//! URL parsing and encoding utilities.
+//! URL parsing and encoding utilities via `niao_http`.
 
 use super::{net_error, ok_string, string_arg, NetResult};
 use niao_ast::Span;
 use niao_errors::codes;
+use niao_http::{form_urlencode, join, parse_url, percent_decode, Url};
 use std::collections::HashMap;
-use url::form_urlencoded;
-use url::Url;
 
 pub fn net_url_parse(args: &[crate::ValueRef], span: Span) -> NetResult {
     super::arity(args, 1, "net_url_parse", span)?;
     let raw = string_arg(args, 0, "net_url_parse", span)?;
-    match Url::parse(&raw) {
+    match parse_url(&raw) {
         Ok(u) => {
             let mut map = HashMap::new();
-            map.insert("scheme".into(), ok_string(u.scheme().into()));
-            map.insert(
-                "host".into(),
-                ok_string(u.host_str().unwrap_or("").into()),
-            );
+            map.insert("scheme".into(), ok_string(u.scheme));
+            map.insert("host".into(), ok_string(u.host));
             map.insert(
                 "port".into(),
-                crate::Value::Int(u.port().unwrap_or(default_port(u.scheme())) as i64).ref_cell(),
+                crate::Value::Int(u.port as i64).ref_cell(),
             );
-            map.insert("path".into(), ok_string(u.path().into()));
-            map.insert(
-                "query".into(),
-                ok_string(u.query().unwrap_or("").into()),
-            );
-            map.insert(
-                "fragment".into(),
-                ok_string(u.fragment().unwrap_or("").into()),
-            );
-            map.insert(
-                "user".into(),
-                ok_string(u.username().into()),
-            );
-            map.insert(
-                "password".into(),
-                ok_string(u.password().unwrap_or("").into()),
-            );
+            map.insert("path".into(), ok_string(u.path));
+            map.insert("query".into(), ok_string(u.query));
+            map.insert("fragment".into(), ok_string(u.fragment));
+            map.insert("user".into(), ok_string(u.user));
+            map.insert("password".into(), ok_string(u.password));
             Ok(crate::Value::Object(map).ref_cell())
         }
         Err(e) => Ok(net_error(
             span,
             codes::E1403_NET_URL,
             "net_url_error",
-            e.to_string(),
+            e,
         )),
-    }
-}
-
-fn default_port(scheme: &str) -> u16 {
-    match scheme {
-        "http" => 80,
-        "https" => 443,
-        "ws" => 80,
-        "wss" => 443,
-        "ftp" => 21,
-        _ => 0,
     }
 }
 
 pub fn net_url_encode(args: &[crate::ValueRef], span: Span) -> NetResult {
     super::arity(args, 1, "net_url_encode", span)?;
     let s = string_arg(args, 0, "net_url_encode", span)?;
-    let encoded: String = form_urlencoded::byte_serialize(s.as_bytes()).collect();
-    Ok(ok_string(encoded))
+    Ok(ok_string(form_urlencode(s.as_bytes())))
 }
 
 pub fn net_url_decode(args: &[crate::ValueRef], span: Span) -> NetResult {
     super::arity(args, 1, "net_url_decode", span)?;
     let s = string_arg(args, 0, "net_url_decode", span)?;
-    match form_urlencoded::parse(s.as_bytes()).next() {
-        Some((decoded, _)) => Ok(ok_string(decoded.into_owned())),
-        None => Ok(ok_string(String::new())),
+    match percent_decode(&s) {
+        Ok(decoded) => Ok(ok_string(decoded)),
+        Err(e) => Ok(net_error(
+            span,
+            codes::E1403_NET_URL,
+            "net_url_error",
+            e,
+        )),
     }
 }
 
@@ -81,13 +58,13 @@ pub fn net_url_join(args: &[crate::ValueRef], span: Span) -> NetResult {
     super::arity(args, 2, "net_url_join", span)?;
     let base = string_arg(args, 0, "net_url_join", span)?;
     let reference = string_arg(args, 1, "net_url_join", span)?;
-    match Url::parse(&base).and_then(|b| b.join(&reference)) {
-        Ok(u) => Ok(ok_string(u.into())),
+    match parse_url(&base).and_then(|b| join(&b, &reference)) {
+        Ok(u) => Ok(ok_string(u.to_string_full())),
         Err(e) => Ok(net_error(
             span,
             codes::E1403_NET_URL,
             "net_url_error",
-            e.to_string(),
+            e,
         )),
     }
 }
@@ -102,32 +79,27 @@ pub fn net_url_build(args: &[crate::ValueRef], span: Span) -> NetResult {
     let fragment = super::object_string_field(&parts, "fragment", span).unwrap_or_default();
     let port = super::object_int_field(&parts, "port", span).ok();
 
-    let mut url = format!("{scheme}://{host}");
-    if let Some(p) = port {
-        if p > 0 {
-            url.push(':');
-            url.push_str(&p.to_string());
-        }
+    let url = Url {
+        scheme,
+        host,
+        port: port.filter(|&p| p > 0).unwrap_or(0) as u16,
+        path,
+        query,
+        fragment,
+        user: String::new(),
+        password: String::new(),
+    };
+    let mut built = url.to_string_full();
+    if port.is_some() && port.unwrap() > 0 {
+        // to_string_full already handles port when non-default
     }
-    if !path.starts_with('/') {
-        url.push('/');
-    }
-    url.push_str(&path);
-    if !query.is_empty() {
-        url.push('?');
-        url.push_str(&query);
-    }
-    if !fragment.is_empty() {
-        url.push('#');
-        url.push_str(&fragment);
-    }
-    match Url::parse(&url) {
-        Ok(u) => Ok(ok_string(u.into())),
+    match parse_url(&built) {
+        Ok(u) => Ok(ok_string(u.to_string_full())),
         Err(e) => Ok(net_error(
             span,
             codes::E1403_NET_URL,
             "net_url_error",
-            e.to_string(),
+            e,
         )),
     }
 }

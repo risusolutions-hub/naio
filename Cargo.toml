@@ -8,6 +8,7 @@ members = [
     "crates/niao_crypto",
     "crates/niao_regex",
     "crates/niao_time",
+    "crates/niao_http",
     "crates/niao_lexer",
     "crates/niao_parser",
     "crates/niao_runtime",
@@ -46,6 +47,7 @@ niao_json_core = { path = "crates/niao_json_core" }
 niao_crypto = { path = "crates/niao_crypto" }
 niao_regex = { path = "crates/niao_regex" }
 niao_time = { path = "crates/niao_time" }
+niao_http = { path = "crates/niao_http" }
 niao_lexer = { path = "crates/niao_lexer" }
 niao_parser = { path = "crates/niao_parser" }
 niao_runtime = { path = "crates/niao_runtime" }
