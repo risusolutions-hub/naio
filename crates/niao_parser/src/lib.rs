@@ -227,9 +227,8 @@ impl Parser {
     fn parse_visibility(&mut self) -> Visibility {
         if self.match_kind(&TokenKind::Private) {
             Visibility::Private
-        } else if self.match_kind(&TokenKind::Public) {
-            Visibility::Public
         } else {
+            let _ = self.match_kind(&TokenKind::Public);
             Visibility::Public
         }
     }

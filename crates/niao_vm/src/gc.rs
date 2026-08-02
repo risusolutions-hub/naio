@@ -33,8 +33,8 @@ impl MemoCache {
     }
 
     pub fn insert(&mut self, key: i64, val: FastVal) {
-        if self.map.contains_key(&key) {
-            self.map.insert(key, val);
+        if let std::collections::hash_map::Entry::Occupied(mut e) = self.map.entry(key) {
+            e.insert(val);
             return;
         }
         while self.map.len() >= MEMO_CACHE_CAP {
@@ -76,13 +76,11 @@ impl super::Vm {
         if self.gc_defer > 0 {
             return;
         }
-        if self.alloc_since_gc >= GC_INTERVAL
-            || self.heap.len() + self.native_ds.len() >= self.gc_threshold
-        {
-            if !self.frames.is_empty() || !self.stack.is_empty() {
+        if (self.alloc_since_gc >= GC_INTERVAL
+            || self.heap.len() + self.native_ds.len() >= self.gc_threshold)
+            && (!self.frames.is_empty() || !self.stack.is_empty()) {
                 self.collect();
             }
-        }
     }
 
     fn collect(&mut self) {
@@ -107,11 +105,9 @@ impl super::Vm {
                 mark_fastval(*v, &mut marked_heap, &mut marked_native);
             }
         }
-        for cache in &self.memo_caches {
-            if let Some(cache) = cache {
-                for v in cache.map.values() {
-                    mark_fastval(*v, &mut marked_heap, &mut marked_native);
-                }
+        for cache in self.memo_caches.iter().flatten() {
+            for v in cache.map.values() {
+                mark_fastval(*v, &mut marked_heap, &mut marked_native);
             }
         }
 
@@ -127,11 +123,9 @@ impl super::Vm {
         for locals in &mut self.frame_pool {
             remap_fastvals(locals, &heap_map, &native_map);
         }
-        for cache in &mut self.memo_caches {
-            if let Some(cache) = cache {
-                for v in cache.map.values_mut() {
-                    *v = remap_one(*v, &heap_map, &native_map);
-                }
+        for cache in self.memo_caches.iter_mut().flatten() {
+            for v in cache.map.values_mut() {
+                *v = remap_one(*v, &heap_map, &native_map);
             }
         }
 

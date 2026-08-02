@@ -83,13 +83,18 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-
 
-      # Hard gate for C02–C08 work. Workspace clippy remains advisory in `lint`.
+      # Hard gate for C02–C08. Run packages one-by-one with `--no-deps` so
+      # `-D warnings` does not fail on transitive workspace crates.
+      # Workspace clippy remains advisory in `lint`.
       - name: Clippy (core)
-        run: >
-          cargo clippy
-          -p niao_lexer -p niao_parser -p niao_ast -p niao_ir
-          -p niao_bytecode -p niao_vm -p niao_interpreter -p niao_errors
-          --all-targets -- -D warnings
+        shell: bash
+        run: |
+          set -euo pipefail
+          for crate in niao_lexer niao_parser niao_ast niao_ir niao_bytecode niao_vm niao_interpreter niao_errors; do
+            echo "::group::clippy $crate"
+            cargo clippy -p "$crate" --all-targets --no-deps -- -D warnings
+            echo "::endgroup::"
+          done
 
       - name: Check
         run: cargo check --workspace

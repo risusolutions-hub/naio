@@ -84,16 +84,11 @@ pub struct FieldDef {
     pub span: Span,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub enum Visibility {
+    #[default]
     Public,
     Private,
-}
-
-impl Default for Visibility {
-    fn default() -> Self {
-        Visibility::Public
-    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

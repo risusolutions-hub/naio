@@ -1,3 +1,10 @@
+// Hot-path / GC / turbo dispatch patterns; clear under C01b if rewritten.
+#![allow(clippy::needless_range_loop)]
+#![allow(clippy::large_enum_variant)]
+#![allow(clippy::arc_with_non_send_sync)]
+#![allow(clippy::redundant_guards)]
+#![allow(clippy::collapsible_match)]
+
 pub mod ahiru_pool;
 pub mod call_bridge;
 mod dsa_fast;
@@ -120,6 +127,12 @@ struct TryHandler {
 enum StepOutcome {
     Continue,
     Done,
+}
+
+impl Default for Vm {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Vm {
@@ -880,7 +893,7 @@ impl Vm {
                         self.stack
                             .pop()
                             .ok_or(VmError::StackUnderflow)?
-                            .to_value_ref(&self.heap, &refs),
+                            .to_value_ref(&self.heap, refs),
                     );
                 }
                 items.reverse();
@@ -1263,7 +1276,7 @@ impl Vm {
             .call_target_names
             .iter()
             .position(|n| n == &mangled)
-            .ok_or_else(|| VmError::UnknownFunction(mangled))?;
+            .ok_or(VmError::UnknownFunction(mangled))?;
         self.method_cache.insert(cache_key, func_idx);
         self.stack.push(receiver);
         for a in args {
@@ -1338,7 +1351,7 @@ impl Vm {
             .call_target_names
             .iter()
             .position(|n| n == &mangled)
-            .ok_or_else(|| VmError::UnknownFunction(mangled))?;
+            .ok_or(VmError::UnknownFunction(mangled))?;
 
         self.stack.push(self_val);
         for a in args {
@@ -1430,7 +1443,7 @@ impl Vm {
                 Value::FloatArray(items) => items.get(i).copied().map(Value::Float),
                 Value::BoolArray(items) => items.get(i).copied().map(|b| Value::Bool(b != 0)),
                 Value::ByteArray(items) => items.get(i).copied().map(|b| Value::Int(b as i64)),
-                Value::StringArray(items) => items.get(i).map(|s| Value::String(s)),
+                Value::StringArray(items) => items.get(i).map(Value::String),
                 Value::Array(items) => items.get(i).map(|slot| slot.borrow().clone()),
                 _ => None,
             }

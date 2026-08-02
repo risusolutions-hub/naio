@@ -523,11 +523,11 @@ mod tests {
 
     #[test]
     fn lexes_numbers_and_strings() {
-        let tokens = lex(r#"let x = 42; let y = 3.14; let s = "hello";"#).unwrap();
+        let tokens = lex(r#"let x = 42; let y = 2.5; let s = "hello";"#).unwrap();
         assert!(tokens.iter().any(|t| matches!(&t.kind, TokenKind::Int(42))));
         assert!(tokens
             .iter()
-            .any(|t| matches!(&t.kind, TokenKind::Float(f) if (*f - 3.14).abs() < 0.001)));
+            .any(|t| matches!(&t.kind, TokenKind::Float(f) if (*f - 2.5).abs() < 0.001)));
         assert!(tokens
             .iter()
             .any(|t| matches!(&t.kind, TokenKind::String(s) if s == "hello")));

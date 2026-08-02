@@ -231,7 +231,7 @@ fn try_fuse_drain_count(cond: &Expr, body: &Block, env: &Rc<Environment>) -> boo
     true
 }
 
-fn call_ident<'a>(expr: &'a Expr) -> Option<(&'a str, &'a [Expr])> {
+fn call_ident(expr: &Expr) -> Option<(&str, &[Expr])> {
     if let Expr::Call { callee, args, .. } = expr {
         if let Expr::Ident(name, _) = callee.as_ref() {
             return Some((name.as_str(), args.as_slice()));

@@ -12,7 +12,7 @@ use std::sync::Arc;
 
 thread_local! {
     static ACTIVE_VM: RefCell<Option<*mut Vm>> = const { RefCell::new(None) };
-    static CALL_ARG_SCRATCH: RefCell<Vec<FastVal>> = RefCell::new(Vec::new());
+    static CALL_ARG_SCRATCH: RefCell<Vec<FastVal>> = const { RefCell::new(Vec::new()) };
 }
 
 /// Run bytecode and register a VM call hook for the duration (current thread only).
@@ -53,9 +53,7 @@ pub fn install_thread_vm_hook(vm: &mut Vm) {
             let ptr = *slot.borrow().as_ref()?;
             // SAFETY: resolver is only used on the thread that set ACTIVE_VM.
             let vm = unsafe { &*ptr };
-            if vm.function_index(name).is_none() {
-                return None;
-            }
+            vm.function_index(name)?;
             Some(stub_function_value(name))
         })
     })));

@@ -1,3 +1,6 @@
+// Match-collapse noise in DSA fuse patterns; revisit with C01b if desired.
+#![allow(clippy::collapsible_match)]
+
 use niao_ast::*;
 use niao_parser::parse;
 use niao_runtime::*;
@@ -66,6 +69,12 @@ enum ExecResult {
     Return(ValueRef),
     Break,
     Continue,
+}
+
+impl Default for Interpreter {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Interpreter {
@@ -509,7 +518,6 @@ impl Interpreter {
             Stmt::VarDecl {
                 name,
                 init,
-                span: _,
                 ..
             } => {
                 let val = if let Some(expr) = init {
