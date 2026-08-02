@@ -5,7 +5,11 @@
 **/*.rs.bk
 *.pdb
 .niao-build/
+.neko-build/
 *.niaobc
+*.nekobc
+**/.niao/neko_libs/
+*.vsix
 build_*.txt
 err*.txt
 ncl_demo_out.csv
@@ -20,3 +24,19 @@ package-manager/.test-*/
 package-manager/data/
 package-manager/node_modules/
 package-manager/public/
+
+# scratch build/debug output
+*.log
+*.pid
+/nview_*
+/ngcp_*
+/rt_*
+/ns_*
+/iso_*
+/_*.txt
+/nmverify.txt
+/cargo_rt_*.txt
+/nreq_bench_*.txt
+/niao_rust_deps.txt
+/cli_log.txt
+/Untitled

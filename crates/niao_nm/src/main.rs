@@ -1,10 +1,10 @@
 use clap::{Parser, Subcommand};
 use niao_pkg::{
-    find_project_package, find_source_root, install_from_package_json, install_global, install_libs,
-    install_venv, is_remote_lib, load_catalog_optional, niao_bin_dir, niao_home, niao_libs_dir,
-    registry_url, release_tool_binary, remote_libs, resolve_lib_name, standard_libs, uninstall_libs,
-    update_libs, update_toolchain, InstallMode, InstallOptions, NIAO_TOOLCHAIN_VERSION,
-    ToolchainUpdateOptions,
+    find_project_package, find_source_root, install_from_package_json, install_global,
+    install_libs, install_venv, is_remote_lib, load_catalog_optional, niao_bin_dir, niao_home,
+    niao_libs_dir, registry_url, release_tool_binary, remote_libs, resolve_lib_name, standard_libs,
+    uninstall_libs, update_libs, update_toolchain, InstallMode, InstallOptions,
+    ToolchainUpdateOptions, NIAO_TOOLCHAIN_VERSION,
 };
 use std::env;
 use std::fs;
@@ -177,7 +177,9 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             niao_bin,
             nm_bin,
             registry,
-        } => cmd_install(libs, global, venv, &project, force, source, niao_bin, nm_bin, registry),
+        } => cmd_install(
+            libs, global, venv, &project, force, source, niao_bin, nm_bin, registry,
+        ),
         Commands::Uninstall {
             libs,
             venv,
@@ -215,7 +217,11 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             registry,
         ),
         Commands::Version { venv, project } => cmd_version(venv, &project),
-        Commands::Info { name, venv, project } => cmd_info(&name, venv, &project),
+        Commands::Info {
+            name,
+            venv,
+            project,
+        } => cmd_info(&name, venv, &project),
         Commands::Venv { project, force } => cmd_venv(&project, force),
         Commands::Home => {
             println!("{}", niao_home().display());
@@ -259,7 +265,15 @@ fn cmd_install(
     let use_venv = venv || (!global && libs.is_empty() && has_package_json);
     let use_global = global || (libs.is_empty() && !use_venv && !has_package_json);
 
-    let opts = install_opts(use_venv, project, force, source, niao_bin.clone(), nm_bin.clone(), registry);
+    let opts = install_opts(
+        use_venv,
+        project,
+        force,
+        source,
+        niao_bin.clone(),
+        nm_bin.clone(),
+        registry,
+    );
 
     let report = if !libs.is_empty() {
         install_libs(&libs, &opts)?
@@ -312,7 +326,10 @@ fn cmd_uninstall(
     println!("  root:      {}", report.root.display());
     println!("  removed:   {}", report.libs_removed.join(", "));
     if !report.not_installed.is_empty() {
-        println!("  skipped:   {} (not installed)", report.not_installed.join(", "));
+        println!(
+            "  skipped:   {} (not installed)",
+            report.not_installed.join(", ")
+        );
     }
     Ok(())
 }
@@ -394,7 +411,11 @@ fn print_lib_line(
             lib.name, lib.version, lib.description, kind, lib.builtin_count
         );
     } else {
-        let tag = if is_remote_lib(name) { "remote" } else { "available" };
+        let tag = if is_remote_lib(name) {
+            "remote"
+        } else {
+            "available"
+        };
         println!("  [{tag}] {} {} — {}", name, version, description);
         if is_remote_lib(name) {
             println!("      registry: {}", registry_url());
@@ -442,7 +463,10 @@ fn cmd_search(
         }
         println!("try: nm search io   or   nm search os");
     } else {
-        println!("\n{matches} librar{} found", if matches == 1 { "y" } else { "ies" });
+        println!(
+            "\n{matches} librar{} found",
+            if matches == 1 { "y" } else { "ies" }
+        );
         println!("install: nm install <name>   uninstall: nm uninstall <name>");
     }
     Ok(())
@@ -467,10 +491,7 @@ fn cmd_update(
         .map_err(|e| e.to_string().into());
     }
 
-    let names: Vec<String> = libs
-        .into_iter()
-        .map(|n| resolve_lib_name(&n))
-        .collect();
+    let names: Vec<String> = libs.into_iter().map(|n| resolve_lib_name(&n)).collect();
 
     let mut opts = install_opts(venv, project, force, source, None, None, registry);
     opts.force = force;
@@ -756,6 +777,7 @@ fn copy_to_cargo_bin(
     Ok(())
 }
 
+/// Migration path for pre-rename (`neko` → `niao`) installs; safe to remove after v0.3.
 fn remove_legacy_neko_shim(dir: &Path) {
     let legacy = dir.join(exe_name("neko"));
     if legacy.is_file() {

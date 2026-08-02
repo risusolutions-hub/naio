@@ -1,5 +1,7 @@
 # Niao
 
+[![CI](https://github.com/vivekgorasiya98/naio/actions/workflows/ci.yml/badge.svg)](https://github.com/vivekgorasiya98/naio/actions/workflows/ci.yml)
+
 **One language. One engine. Everything built-in.**
 
 Niao is a modern programming language and full development ecosystem — compiler, bytecode VM, package manager, standard libraries, web framework, and machine-learning stack — implemented in Rust.
@@ -359,12 +361,7 @@ See [vscode-niao/README.md](vscode-niao/README.md).
 
 ## Contributing
 
-Contributions are welcome. To get started:
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes and run `cargo test` / `niao test`
-4. Open a pull request
+Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for build, test, and PR requirements.
 
 For release builds and publishing packages, see [package-manager/README.md](package-manager/README.md).
 

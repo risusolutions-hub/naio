@@ -33,6 +33,7 @@ function Update-UserPath {
     $env:Path = ($segments + ($env:Path -split ';' | Where-Object { $_ })) -join ';'
 }
 
+# Migration path for pre-rename (neko → niao) installs; safe to remove after v0.3.
 function Remove-LegacyNekoShims {
     $legacy = @(
         (Join-Path $CargoBin "neko.exe"),

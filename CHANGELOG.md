@@ -3,9 +3,14 @@
 ## Unreleased
 
 ### Added
+- **Foundation (C01):** root `LICENSE` (MIT), `.github/workflows/ci.yml` (check/test/release build + `niao test tests` on Ubuntu/Windows/macOS; core-crate clippy `-D warnings` required; workspace fmt/clippy advisory pending C01b), and `CONTRIBUTING.md`.
+- Follow-up task `cursor-tasks/core/task-C01b-lint-debt.md` to clear workspace clippy `-D warnings` debt and make the `lint` job blocking.
 - **ML Wave 0 — `nnum`**: `niao_num` crate (NdArray, broadcasting, linalg, FFT), native `nnum` module, `docs/NNUM.md`, `examples/nnum_demo.niao`, error codes 4000–4009.
 - **ML Wave 1 — `nframe`, `nstats`, `noptim`, `nplot`**: four crates + native modules, docs/demos/benchmarks, error codes 4010–4049.
 - **ML Wave 2 — `nlearn`, `nboost`, `nts`, `nnlp`, `nvision`**: five crates, docs/demos/benchmarks, error codes 4050–4099 (runtime module wiring partial — expand in follow-up).
+
+### Removed
+- Legacy `neko` build artifacts (`.nekobc`, `.neko-build/`, `neko_libs` caches, `windows/NekoSetup.exe`, stale `neko-language-*.vsix`) and scratch debug dumps at the repo root.
 
 ## 0.2.3 — 2026-07-13
 

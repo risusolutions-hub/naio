@@ -1,0 +1,81 @@
+---
+description: Niao core language (lexer/parser/AST/sema/IR/bytecode/VM/interpreter) — conventions every agent must follow
+globs: ["crates/niao_lexer/**", "crates/niao_parser/**", "crates/niao_ast/**", "crates/niao_sema/**", "crates/niao_ir/**", "crates/niao_bytecode/**", "crates/niao_vm/**", "crates/niao_interpreter/**", "crates/niao_errors/**", "crates/niao_format/**", "crates/niao_lint/**", "crates/niao_cli/**", "docs/grammar.ebnf", "docs/LANGUAGE.md", "tests/**"]
+alwaysApply: false
+---
+
+You are working on the **core** of Niao — the compiler pipeline and both execution engines.
+This is not a library. Everything else in the repo depends on this code being correct.
+
+## The rule that governs all others
+
+**Two engines, one language.** `niao_vm` and `niao_interpreter` must produce identical
+observable behaviour for every program. Any change to language semantics lands in BOTH
+engines in the SAME commit, with a conformance test proving they agree. A feature that
+works in one engine and not the other is a bug, not a partial implementation.
+
+## Non-negotiable rules
+
+- **ZERO new third-party crates.** Only `std` + existing `niao_*` workspace crates.
+  This applies to the core with no exceptions — no `logos`, no `chumsky`, no `lalrpop`,
+  no `salsa`, no `codespan`. Hand-write it.
+- **Never silently ignore an AST node.** A `_ => {}` arm in a lowering or eval `match`
+  is forbidden. Every unhandled construct returns a typed error from `niao_errors::codes`.
+  If you add an AST variant, the compiler must force you to handle it everywhere —
+  prefer exhaustive matches over catch-alls.
+- **Never panic on user input.** `unwrap`/`expect`/`panic!` are banned in any code path
+  reachable from a `.niao` source file. Malformed source produces a `NiaoError` with a
+  code, a span, and a message. Panics are reserved for genuine internal invariants.
+- **Every error gets a code.** New failure modes get a new `E....`/`W....` constant in
+  `crates/niao_errors/src/codes.rs`, in the correct band, with a doc comment. Reuse
+  before inventing. Never emit a bare `format!` string as an error.
+- **Every error carries a span.** `line`, `col`, `start`, `end` — pointing at the
+  narrowest source range that is actually wrong, not the enclosing statement.
+- **Spans survive lowering.** Do not drop span information on the way to IR/bytecode.
+  Runtime errors must be traceable back to source.
+
+## Performance rules
+
+Niao's stated goal is to be the fastest language of its class. That is earned in the VM,
+not asserted in the README.
+
+- No allocation in hot loops. Pre-size `Vec`s. Prefer `&str`/`&[u8]` over `String`/`Vec<u8>`.
+- `#[inline]` on small hot functions; leave the rest to the optimizer.
+- Interning: identifiers, field names, and string constants are interned once at compile
+  time and referenced by index at runtime. Never hash a `String` in the dispatch loop.
+- **No performance regressions.** `benchmarks/baseline.json` is the gate. If a change
+  makes any benchmark slower, either fix it or record the number and justify it in the PR
+  description. Correctness changes may cost speed — say so explicitly, don't hide it.
+- When correctness and speed conflict, correctness wins and the slow path gets a `// PERF:`
+  comment describing what a faster version would look like.
+
+## Testing rules
+
+- The core is the least-tested part of this repo (49 tests across the whole pipeline vs
+  2,056 in the libraries). Every task must move that number. **A task that adds a feature
+  without adding tests is not done.**
+- Unit tests live next to the code (`#[cfg(test)] mod tests`).
+- Language-level tests are `.niao` files under `tests/`, using `assert`.
+- **Conformance tests** under `tests/conformance/` run through BOTH engines and diff the
+  output. Any new language feature adds at least one.
+- Error tests matter as much as success tests: assert the *code* and the *line/col*, not
+  just that something failed.
+- Fixed seeds. No flaky tests. No tests that depend on wall-clock time or network.
+
+## Before you say a task is done
+
+```
+cargo check --workspace
+cargo test --workspace
+cargo run --release --bin niao -- test tests
+```
+
+All three green. Then update `CHANGELOG.md` with one line under the current version.
+
+## Style
+
+- Match the surrounding code. This codebase is plain, readable Rust — keep it that way.
+- No `unsafe` in the front end (lexer/parser/AST/sema). `unsafe` in the VM requires a
+  `// SAFETY:` comment stating the invariant being upheld.
+- Public items get doc comments. Internal helpers get them when the name isn't enough.
+- Do not reformat or reorganise files you aren't changing. Keep diffs reviewable.

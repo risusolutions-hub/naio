@@ -5,10 +5,7 @@ use std::collections::HashMap;
 use std::io;
 use std::os::unix::io::AsRawFd;
 
-#[cfg(target_os = "linux")]
-mod linux;
-#[cfg(target_os = "macos")]
-mod macos;
+// linux / macos backends are defined as inline modules below (same file).
 
 pub struct UnixPoller {
     #[cfg(target_os = "linux")]
@@ -31,12 +28,7 @@ impl UnixPoller {
         })
     }
 
-    pub fn register(
-        &mut self,
-        token: usize,
-        raw: RawSocket,
-        interest: Interest,
-    ) -> io::Result<()> {
+    pub fn register(&mut self, token: usize, raw: RawSocket, interest: Interest) -> io::Result<()> {
         #[cfg(target_os = "linux")]
         return self.inner.register(token, raw, interest);
         #[cfg(target_os = "macos")]
@@ -136,8 +128,7 @@ mod linux {
 
         pub fn deregister(&mut self, raw: &RawSocket) -> io::Result<()> {
             let fd = raw.as_raw_fd();
-            let rc =
-                unsafe { epoll_ctl(self.epfd, EPOLL_CTL_DEL, fd, ptr::null_mut()) };
+            let rc = unsafe { epoll_ctl(self.epfd, EPOLL_CTL_DEL, fd, ptr::null_mut()) };
             if rc < 0 {
                 let err = io::Error::last_os_error();
                 if err.kind() != io::ErrorKind::NotFound {
@@ -150,14 +141,8 @@ mod linux {
         pub fn poll(&mut self, timeout_ms: Option<u32>) -> io::Result<Vec<usize>> {
             let mut events = [EpollEvent { events: 0, data: 0 }; 64];
             let timeout = timeout_ms.map(|t| t as i32).unwrap_or(-1);
-            let n = unsafe {
-                epoll_wait(
-                    self.epfd,
-                    events.as_mut_ptr(),
-                    events.len() as i32,
-                    timeout,
-                )
-            };
+            let n =
+                unsafe { epoll_wait(self.epfd, events.as_mut_ptr(), events.len() as i32, timeout) };
             if n < 0 {
                 return Err(io::Error::last_os_error());
             }
@@ -167,7 +152,6 @@ mod linux {
                 .collect())
         }
     }
-
 }
 
 #[cfg(target_os = "macos")]
