@@ -87,15 +87,14 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-
 
-      # Hard gate for C02–C08 front-end work.
-      # niao_ir / niao_vm / niao_interpreter depend on niao_runtime, which currently
-      # pulls niao_speech/niao_tts (alsa, whisper, espeak). Those stay in the
-      # advisory `lint` job / full check until speech is feature-gated (follow-up).
+      # Hard gate for C02 front-end work (no niao_runtime → no ALSA/whisper).
+      # niao_bytecode / niao_ir / niao_vm / niao_interpreter all depend on
+      # niao_runtime (speech/tts); keep them advisory until those are optional.
       - name: Clippy (core)
         shell: bash
         run: |
           set -euo pipefail
-          for crate in niao_lexer niao_parser niao_ast niao_errors niao_bytecode; do
+          for crate in niao_lexer niao_parser niao_ast niao_errors; do
             echo "::group::clippy $crate"
             cargo clippy -p "$crate" --all-targets --no-deps -- -D warnings
             echo "::endgroup::"
@@ -106,7 +105,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for crate in niao_ir niao_vm niao_interpreter; do
+          for crate in niao_bytecode niao_ir niao_vm niao_interpreter; do
             echo "::group::clippy $crate"
             cargo clippy -p "$crate" --all-targets --no-deps -- -D warnings
             echo "::endgroup::"
