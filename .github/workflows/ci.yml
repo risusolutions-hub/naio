@@ -87,18 +87,37 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-
 
-      # Hard gate for C02–C08. Run packages one-by-one with `--no-deps` so
-      # `-D warnings` does not fail on transitive workspace crates.
-      # Workspace clippy remains advisory in `lint`.
+      # Hard gate for C02–C08 front-end work.
+      # niao_ir / niao_vm / niao_interpreter depend on niao_runtime, which currently
+      # pulls niao_speech/niao_tts (alsa, whisper, espeak). Those stay in the
+      # advisory `lint` job / full check until speech is feature-gated (follow-up).
       - name: Clippy (core)
         shell: bash
         run: |
           set -euo pipefail
-          for crate in niao_lexer niao_parser niao_ast niao_ir niao_bytecode niao_vm niao_interpreter niao_errors; do
+          for crate in niao_lexer niao_parser niao_ast niao_errors niao_bytecode; do
             echo "::group::clippy $crate"
             cargo clippy -p "$crate" --all-targets --no-deps -- -D warnings
             echo "::endgroup::"
           done
+
+      - name: Clippy (engines, advisory)
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          for crate in niao_ir niao_vm niao_interpreter; do
+            echo "::group::clippy $crate"
+            cargo clippy -p "$crate" --all-targets --no-deps -- -D warnings
+            echo "::endgroup::"
+          done
+
+      - name: Install native deps (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libasound2-dev libclang-dev cmake pkg-config
 
       - name: Check
         run: cargo check --workspace

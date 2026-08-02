@@ -18,10 +18,11 @@ check / test / release build / `niao test tests` required. **`-D warnings` was
 not dropped** — it still runs in the lint job.
 
 A middle-ground guardrail is already in the required `ci` job: clippy with
-`-D warnings` for the **core crates only** (`niao_lexer`, `niao_parser`,
-`niao_ast`, `niao_ir`, `niao_bytecode`, `niao_vm`, `niao_interpreter`,
-`niao_errors`). This task is about making the **workspace-wide** lint job
-blocking.
+`-D warnings` for the **front-end core crates** (`niao_lexer`, `niao_parser`,
+`niao_ast`, `niao_errors`, `niao_bytecode`). Engines (`niao_ir`, `niao_vm`,
+`niao_interpreter`) are advisory until `niao_runtime` no longer unconditionally
+pulls `niao_speech` / `niao_tts` (native ALSA/whisper/espeak). This task is about
+making the **workspace-wide** lint job blocking.
 
 ## Goal
 
