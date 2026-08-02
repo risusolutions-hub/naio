@@ -1,0 +1,11 @@
+{
+    "name": "nxlsx",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": "Excel .xlsx read/write: sheets, styles, formulas,\n                    streaming rows.  ~openpyxl, xlsxwriter\n ...",
+    "import_paths": [
+        "nxlsx",
+        "std/nxlsx"
+    ],
+    "builtin_count": 39
+}

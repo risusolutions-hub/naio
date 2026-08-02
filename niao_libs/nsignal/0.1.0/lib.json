@@ -1,0 +1,22 @@
+{
+
+    "name": "nsignal",
+
+    "version": "0.1.0",
+
+    "kind": "native",
+
+    "description": "OS signal handlers, graceful-shutdown patterns, SIGTERM/SIGINT hooks. ~signal (stdlib subset)",
+
+    "import_paths": [
+
+        "nsignal",
+
+        "std/nsignal"
+
+    ],
+
+    "builtin_count": 19
+
+}
+

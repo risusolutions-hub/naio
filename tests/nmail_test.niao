@@ -1,0 +1,168 @@
+import "nmail"
+import "ntest"
+import "nstr"
+
+fn test_build_simple() {
+    let msg = nmail.build({
+        from: "ada@example.com",
+        to: "bob@example.com",
+        subject: "Hello",
+        text: "plain"
+    })
+    ntest.assert_eq(msg.subject, "Hello")
+    ntest.assert_eq(nmail.text(msg), "plain")
+    ntest.assert_eq(nmail.from_addr(msg), "ada@example.com")
+}
+
+fn test_html_alternative_roundtrip() {
+    let msg = nmail.build({
+        from: "a@b.com",
+        to: "c@d.com",
+        subject: "Alt",
+        text: "hello",
+        html: "<p>hello</p>"
+    })
+    let raw = nmail.emit(msg)
+    ntest.assert_true(nstr.contains(raw, "multipart/alternative"))
+    let back = nmail.parse(raw)
+    ntest.assert_eq(back.subject, "Alt")
+    ntest.assert_eq(nmail.text(back), "hello")
+    ntest.assert_true(nstr.contains(nmail.html(back), "hello"))
+}
+
+fn test_attachment_and_inline() {
+    let logo = [1, 2, 3, 4]
+    let msg = nmail.build({
+        from: "a@b.com",
+        to: "c@d.com",
+        subject: "Files",
+        text: "see attach",
+        html: "<img src=\"cid:logo\">",
+        attachments: [{
+            filename: "note.txt",
+            content_type: "text/plain",
+            data: "payload"
+        }],
+        inline: [{
+            cid: "logo",
+            content_type: "image/png",
+            data: logo
+        }]
+    })
+    let raw = nmail.emit(msg)
+    ntest.assert_true(nstr.contains(raw, "multipart/mixed"))
+    ntest.assert_true(nstr.contains(raw, "multipart/related"))
+    ntest.assert_true(nstr.contains(raw, "note.txt"))
+    ntest.assert_true(nstr.contains(raw, "Content-ID: <logo>"))
+    let back = nmail.parse(raw)
+    ntest.assert_true(nmail.is_multipart(back))
+    let atts = nmail.attachments(back)
+    ntest.assert_true(len(atts) >= 1)
+}
+
+fn test_attach_helper() {
+    let msg = nmail.build({from: "a@b.com", to: "c@d.com", text: "x"})
+    let msg2 = nmail.attach(msg, {filename: "a.bin", data: "abc", content_type: "application/octet-stream"})
+    let raw = nmail.emit(msg2)
+    ntest.assert_true(nstr.contains(raw, "a.bin"))
+}
+
+fn test_unicode_subject() {
+    let msg = nmail.build({
+        from: "a@b.com",
+        to: "c@d.com",
+        subject: "café",
+        text: "ok"
+    })
+    let raw = nmail.emit(msg)
+    ntest.assert_true(nstr.contains(raw, "=?UTF-8?B?") || nstr.contains(raw, "café"))
+    let back = nmail.parse(raw)
+    ntest.assert_true(nstr.contains(back.subject, "café") || nstr.contains(back.subject, "caf"))
+}
+
+fn test_header_encode_decode() {
+    let enc = nmail.encode_header("café")
+    ntest.assert_true(nstr.contains(enc, "=?UTF-8?B?"))
+    ntest.assert_eq(nmail.decode_header(enc), "café")
+    ntest.assert_eq(nmail.decode_header("=?UTF-8?Q?caf=C3=A9?="), "café")
+}
+
+fn test_addresses() {
+    let f = nmail.format_addr("Ada Lovelace", "ada@example.com")
+    ntest.assert_eq(f, "Ada Lovelace <ada@example.com>")
+    let p = nmail.parse_addr(f)
+    ntest.assert_eq(p.email, "ada@example.com")
+    ntest.assert_eq(p.name, "Ada Lovelace")
+    let list = nmail.parse_addrs("a@b.com, Bob <b@c.com>")
+    ntest.assert_eq(len(list), 2)
+}
+
+fn test_msgid_and_date() {
+    let id = nmail.make_msgid("example.com")
+    ntest.assert_true(nstr.contains(id, "@example.com"))
+    let d = nmail.format_date(0)
+    ntest.assert_true(nstr.contains(d, "1970"))
+}
+
+fn test_get_set_header() {
+    let msg = nmail.build({from: "a@b.com", to: "c@d.com", subject: "S", text: "t"})
+    ntest.assert_eq(nmail.get(msg, "subject"), "S")
+    let msg2 = nmail.set_header(msg, "X-Tag", "v1")
+    ntest.assert_eq(nmail.get(msg2, "x-tag"), "v1")
+}
+
+fn test_parse_empty_error() {
+    let e = nmail.parse("")
+    ntest.assert_error(e)
+}
+
+fn test_valid() {
+    ntest.assert_true(nmail.valid("From: a@b.com\r\nTo: c@d.com\r\nSubject: x\r\n\r\nHi"))
+    ntest.assert_false(nmail.valid(""))
+}
+
+fn test_emit_bytes_roundtrip() {
+    let msg = nmail.build({from: "a@b.com", to: "c@d.com", text: "bytes"})
+    let b = nmail.emit_bytes(msg)
+    ntest.assert_true(len(b) > 0)
+    let back = nmail.parse_bytes(b)
+    ntest.assert_eq(nmail.text(back), "bytes")
+}
+
+fn test_missing_from() {
+    let e = nmail.build({to: "c@d.com", text: "x"})
+    ntest.assert_error(e)
+}
+
+fn test_cc_bcc() {
+    let msg = nmail.build({
+        from: "a@b.com",
+        to: ["c@d.com"],
+        cc: ["e@f.com"],
+        bcc: "g@h.com",
+        text: "x"
+    })
+    ntest.assert_eq(len(nmail.to_addrs(msg)), 1)
+    ntest.assert_eq(len(nmail.cc_addrs(msg)), 1)
+    ntest.assert_eq(len(nmail.bcc_addrs(msg)), 1)
+    let raw = nmail.emit(msg)
+    ntest.assert_true(nstr.contains(raw, "Cc:"))
+}
+
+fn main() {
+    test_build_simple()
+    test_html_alternative_roundtrip()
+    test_attachment_and_inline()
+    test_attach_helper()
+    test_unicode_subject()
+    test_header_encode_decode()
+    test_addresses()
+    test_msgid_and_date()
+    test_get_set_header()
+    test_parse_empty_error()
+    test_valid()
+    test_emit_bytes_roundtrip()
+    test_missing_from()
+    test_cc_bcc()
+    print("all nmail tests passed")
+}

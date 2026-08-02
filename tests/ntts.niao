@@ -1,0 +1,157 @@
+import "ntts"
+import "ntest"
+import "ndoc"
+
+fn test_version() {
+    let v = ntts.version()
+    ntest.assert_true(len(v) > 0)
+}
+
+fn test_engines() {
+    let engines = ntts.engines()
+    ntest.assert_true(len(engines) >= 2)
+    ntest.assert_eq(engines[0].id, "piper")
+}
+
+fn test_load_missing() {
+    let r = ntts.load("/nonexistent/voice.onnx")
+    ntest.assert_error(r)
+}
+
+fn test_invalid_handle() {
+    let r = ntts.synth(999999, "hello")
+    ntest.assert_error(r)
+    let r2 = ntts.close(999999)
+    ntest.assert_error(r2)
+}
+
+fn test_empty_text() {
+    let h = ntts.init_espeak({voice: "en"})
+    if is_error(h) {
+        print("skip espeak tests: espeak-ng-data not available")
+        return
+    }
+    let r = ntts.synth(h, "   ")
+    ntest.assert_error(r)
+    ntts.close(h)
+}
+
+fn test_init_espeak() {
+    let h = ntts.init_espeak({voice: "en"})
+    if is_error(h) {
+        print("skip espeak synth tests: espeak-ng-data not available")
+        return
+    }
+    let out = ntts.synth(h, "Hello from ntts.")
+    ntest.assert_not_error(out)
+    ntest.assert_true(len(out.samples) > 0)
+    ntest.assert_true(out.sample_rate > 0)
+    ntest.assert_true(out.duration > 0.0)
+    ntts.close(h)
+}
+
+fn test_synth_wav() {
+    let h = ntts.init_espeak({voice: "en"})
+    if is_error(h) {
+        return
+    }
+    let wav = ntts.synth_wav(h, "WAV test.")
+    ntest.assert_not_error(wav)
+    ntest.assert_true(len(wav) > 0)
+    ntts.close(h)
+}
+
+fn test_save() {
+    let h = ntts.init_espeak({voice: "en"})
+    if is_error(h) {
+        return
+    }
+    let path = "target/ntts_test_out.wav"
+    let ok = ntts.save(h, "Save test.", path)
+    ntest.assert_not_error(ok)
+    ntts.close(h)
+}
+
+fn test_voices_handle() {
+    let h = ntts.init_espeak({voice: "en"})
+    if is_error(h) {
+        return
+    }
+    let voices = ntts.voices(h)
+    ntest.assert_not_error(voices)
+    ntest.assert_true(len(voices) > 0)
+    ntts.close(h)
+}
+
+fn test_list_voices() {
+    let voices = ntts.list_voices()
+    if is_error(voices) {
+        print("skip list_voices: espeak-ng-data not available")
+        return
+    }
+    ntest.assert_true(len(voices) > 0)
+}
+
+fn test_get_set() {
+    let h = ntts.init_espeak({voice: "en"})
+    if is_error(h) {
+        return
+    }
+    ntts.set(h, "rate", "200")
+    let rate = ntts.get(h, "rate")
+    ntest.assert_not_error(rate)
+    ntts.close(h)
+}
+
+fn test_bad_property() {
+    let h = ntts.init_espeak({voice: "en"})
+    if is_error(h) {
+        return
+    }
+    let r = ntts.get(h, "not_a_property")
+    ntest.assert_error(r)
+    ntts.close(h)
+}
+
+fn test_unicode_text() {
+    let h = ntts.init_espeak({voice: "en"})
+    if is_error(h) {
+        return
+    }
+    let out = ntts.synth(h, "Unicode: café — 日本語")
+    ntest.assert_not_error(out)
+    ntts.close(h)
+}
+
+fn test_piper_missing() {
+    let r = ntts.load("crates/niao_tts/tests/fixtures/missing.onnx")
+    ntest.assert_error(r)
+}
+
+fn test_doctests() {
+    let src = io_read_file("crates/niao_runtime/src/ntts.rs")
+    ntest.assert_not_error(src)
+    let r = ndoc.run(src)
+    ntest.assert_true(r.ok)
+    ntest.assert_true(r.passed >= 13)
+    print("ntts doctests passed=", r.passed, " total=", r.total)
+}
+
+fn main() {
+    test_version()
+    test_engines()
+    test_load_missing()
+    test_invalid_handle()
+    test_empty_text()
+    test_init_espeak()
+    test_synth_wav()
+    test_save()
+    test_voices_handle()
+    test_list_voices()
+    test_get_set()
+    test_bad_property()
+    test_unicode_text()
+    test_piper_missing()
+    test_doctests()
+    print("ntts tests: ok")
+}

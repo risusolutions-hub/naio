@@ -1,0 +1,43 @@
+// nonnx bench — run: niao run examples/nonnx_bench.niao
+import "nonnx"
+import "time"
+
+let FIXTURE = "crates/niao_onnx/tests/fixtures/mobilenetv2-7.onnx"
+
+fn main() {
+    let meta = nonnx.inspect(FIXTURE)
+    print("inputs", len(meta.inputs), "outputs", len(meta.outputs))
+
+    let t0 = time.now_perf_us()
+    let i = 0
+    while i < 20 {
+        nonnx.inspect(FIXTURE)
+        i = i + 1
+    }
+    let e0 = time.elapsed_bench_ms(t0)
+    print("nonnx inspect: 20 runs in", e0, "ms")
+
+    let t1 = time.now_perf_us()
+    i = 0
+    while i < 3 {
+        let h = nonnx.load(FIXTURE)
+        nonnx.close(h)
+        i = i + 1
+    }
+    let e1 = time.elapsed_bench_ms(t1)
+    print("nonnx load+close: 3 runs in", e1, "ms")
+
+    let h = nonnx.load(FIXTURE)
+    let ins = nonnx.inputs(h)
+    let t = nonnx.zeros(ins[0].shape)
+
+    let t2 = time.now_perf_us()
+    i = 0
+    while i < 5 {
+        nonnx.run_input(h, ins[0].name, t)
+        i = i + 1
+    }
+    let e2 = time.elapsed_bench_ms(t2)
+    print("nonnx run mobilenet zeros: 5 runs in", e2, "ms")
+    nonnx.close(h)
+}

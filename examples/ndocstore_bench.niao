@@ -1,0 +1,57 @@
+// ndocstore micro-benchmarks — run: niao run examples/ndocstore_bench.niao
+import "ndocstore"
+import "nbench"
+
+fn seed(n) {
+    let db = ndocstore.memory()
+    for i in 0..n {
+        ndocstore.insert(db, {i: i, k: i % 50, name: "u" + str(i)})
+    }
+    return db
+}
+
+fn bench_insert_1k() {
+    let db = ndocstore.memory()
+    for i in 0..1000 {
+        ndocstore.insert(db, {i: i, k: i % 50})
+    }
+    ndocstore.close(db)
+}
+
+fn bench_search_scan() {
+    let db = seed(5000)
+    for _ in 0..50 {
+        let _ = ndocstore.search(db, {gt: {i: 2500}})
+    }
+    ndocstore.close(db)
+}
+
+fn bench_search_indexed() {
+    let db = seed(5000)
+    ndocstore.create_index(db, "k")
+    for _ in 0..200 {
+        let _ = ndocstore.search(db, {k: 7})
+    }
+    ndocstore.close(db)
+}
+
+fn bench_update_half() {
+    let db = seed(2000)
+    ndocstore.update(db, {v: 1}, {gt: {i: 1000}})
+    ndocstore.close(db)
+}
+
+fn main() {
+    let opts = {warmup: 1, min_samples: 3}
+    let r1 = nbench.run("insert 1k", bench_insert_1k, opts)
+    print("insert 1k:", "n=", r1.n, "mean=", r1.mean, "ns p50=", r1.p50)
+
+    let r2 = nbench.run("search scan 50x@5k", bench_search_scan, opts)
+    print("search scan:", "n=", r2.n, "mean=", r2.mean, "ns p50=", r2.p50)
+
+    let r3 = nbench.run("search indexed 200x@5k", bench_search_indexed, opts)
+    print("search indexed:", "n=", r3.n, "mean=", r3.mean, "ns p50=", r3.p50)
+
+    let r4 = nbench.run("update half of 2k", bench_update_half, opts)
+    print("update half:", "n=", r4.n, "mean=", r4.mean, "ns p50=", r4.p50)
+}

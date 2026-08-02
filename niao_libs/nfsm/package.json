@@ -1,0 +1,11 @@
+{
+    "name": "nfsm",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": " Finite state machines + statecharts: states, guards,\n                    transitions, hooks.  ~transitions, python-statemachine\n ...",
+    "import_paths": [
+        "nfsm",
+        "std/nfsm"
+    ],
+    "builtin_count": 21
+}

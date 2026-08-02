@@ -1,0 +1,101 @@
+// ncbor tests — encode/decode, tags, canonical, errors.
+// Run: niao run examples/ncbor_test.niao
+import "ncbor"
+import "ntest"
+import "nbinary"
+
+fn test_roundtrip_map() {
+    let data = ncbor.encode({name: "sensor", value: 42, ok: true})
+    let doc = ncbor.decode(data)
+    ntest.assert_eq(doc.name, "sensor")
+    ntest.assert_eq(doc.value, 42)
+    ntest.assert_true(doc.ok)
+}
+
+fn test_bytes_roundtrip() {
+    let raw = nbinary.pack("BBB", 1, 2, 255)
+    let data = ncbor.encode({payload: raw})
+    let doc = ncbor.decode(data)
+    ntest.assert_eq(len(doc.payload), 3)
+    ntest.assert_eq(doc.payload[0], 1)
+}
+
+fn test_loads_dumps_alias() {
+    let b = ncbor.dumps({x: 1})
+    let v = ncbor.loads(b)
+    ntest.assert_eq(v.x, 1)
+}
+
+fn test_valid() {
+    ntest.assert_true(ncbor.valid(ncbor.encode(nil)))
+    ntest.assert_false(ncbor.valid(nbinary.pack("BB", 255, 255)))
+}
+
+fn test_tag_datetime() {
+    let tagged = ncbor.tag(ncbor.tags.DATETIME_STRING, "2026-07-13T12:00:00Z")
+    let data = ncbor.encode(tagged)
+    let doc = ncbor.decode(data)
+    ntest.assert_eq(doc, "2026-07-13T12:00:00Z")
+}
+
+fn test_tag_preserved() {
+    let tagged = ncbor.tag(999, {custom: 1})
+    let data = ncbor.encode(tagged)
+    let doc = ncbor.decode(data, {tag_hook: false})
+    ntest.assert_eq(doc.__tag, 999)
+    ntest.assert_eq(doc.value.custom, 1)
+}
+
+fn test_decode_all() {
+    let buf = concat(ncbor.dumps(1), ncbor.dumps(2), ncbor.dumps(3))
+    let items = ncbor.decode_all(buf)
+    ntest.assert_eq(len(items), 3)
+    ntest.assert_eq(items[1], 2)
+}
+
+fn test_canonical() {
+    let a = ncbor.encode_canonical({z: 1, a: 2})
+    let b = ncbor.encode_canonical({a: 2, z: 1})
+    ntest.assert_eq(len(a), len(b))
+}
+
+fn test_undefined() {
+    let u = {__cbor_undefined: true}
+    let data = ncbor.encode(u)
+    let back = ncbor.decode(data)
+    ntest.assert_true(back.__cbor_undefined)
+}
+
+fn test_array_nested() {
+    let data = ncbor.encode({items: [1, 2, 3], meta: {v: 1}})
+    let doc = ncbor.decode(data)
+    ntest.assert_eq(len(doc.items), 3)
+    ntest.assert_eq(doc.meta.v, 1)
+}
+
+fn test_invalid_bytes() {
+    let e = ncbor.decode(nbinary.pack("BB", 27, 255))
+    ntest.assert_error(e)
+}
+
+fn test_reject_trailing() {
+    let buf = concat(ncbor.dumps(1), nbinary.pack("B", 0))
+    let e = ncbor.decode(buf, {reject_trailing: true})
+    ntest.assert_error(e)
+}
+
+fn main() {
+    ntest.case("roundtrip map", test_roundtrip_map)
+    ntest.case("bytes roundtrip", test_bytes_roundtrip)
+    ntest.case("loads/dumps aliases", test_loads_dumps_alias)
+    ntest.case("valid", test_valid)
+    ntest.case("datetime tag hook", test_tag_datetime)
+    ntest.case("custom tag preserved", test_tag_preserved)
+    ntest.case("decode_all sequence", test_decode_all)
+    ntest.case("canonical encoding", test_canonical)
+    ntest.case("undefined sentinel", test_undefined)
+    ntest.case("nested array/map", test_array_nested)
+    ntest.case("invalid bytes error", test_invalid_bytes)
+    ntest.case("reject trailing bytes", test_reject_trailing)
+    ntest.summary()
+}

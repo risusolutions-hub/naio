@@ -1,0 +1,176 @@
+import "nzip"
+import "ntest"
+import "nos"
+
+fn temp_zip_path(name) {
+    let dir = nos.temp_dir()
+    return dir + "/nzip_test_" + name + "_" + str(nos.getpid()) + ".zip"
+}
+
+fn test_create_read_roundtrip() {
+    let path = temp_zip_path("roundtrip")
+    let w = nzip.create(path, {compression: "deflated"})
+    ntest.assert_true(w.handle > 0)
+    nzip.write_bytes(w.handle, "hello.txt", "hello zip")
+    nzip.mkdir(w.handle, "subdir")
+    nzip.close(w.handle)
+
+    ntest.assert_true(nzip.is_zipfile(path))
+    let z = nzip.open(path)
+    let names = nzip.namelist(z.handle)
+    ntest.assert_true(len(names) >= 2)
+    let data = nzip.read(z.handle, "hello.txt")
+    ntest.assert_eq(data, "hello zip")
+    nzip.close(z.handle)
+    nos.remove(path)
+}
+
+fn test_infolist_and_getinfo() {
+    let path = temp_zip_path("info")
+    let w = nzip.create(path)
+    nzip.write_bytes(w.handle, "a.txt", [1, 2, 3])
+    nzip.close(w.handle)
+
+    let z = nzip.open(path)
+    let list = nzip.infolist(z.handle)
+    ntest.assert_eq(len(list), 1)
+    ntest.assert_eq(list[0].name, "a.txt")
+    let info = nzip.getinfo(z.handle, "a.txt")
+    ntest.assert_eq(info.size, 3)
+    nzip.close(z.handle)
+    nos.remove(path)
+}
+
+fn test_streaming_entry_read() {
+    let path = temp_zip_path("stream")
+    let w = nzip.create(path)
+    nzip.write_bytes(w.handle, "chunk.txt", "abcdefghij")
+    nzip.close(w.handle)
+
+    let z = nzip.open(path)
+    nzip.open_entry(z.handle, "chunk.txt")
+    let a = nzip.entry_read(z.handle, 4)
+    let b = nzip.entry_read(z.handle, 4)
+    let c = nzip.entry_read(z.handle, 100)
+    ntest.assert_eq(a, "abcd")
+    ntest.assert_eq(b, "efgh")
+    ntest.assert_eq(c, "ij")
+    nzip.entry_close(z.handle)
+    nzip.close(z.handle)
+    nos.remove(path)
+}
+
+fn test_extract_one() {
+    let path = temp_zip_path("extract")
+    let out = nos.temp_dir() + "/nzip_extract_out_" + str(nos.getpid())
+    let w = nzip.create(path)
+    nzip.write_bytes(w.handle, "nested/x.txt", "payload")
+    nzip.close(w.handle)
+
+    let z = nzip.open(path)
+    let dest = nzip.extract(z.handle, "nested/x.txt", out)
+    ntest.assert_true(len(dest) > 0)
+    nzip.close(z.handle)
+    nos.remove(path)
+}
+
+fn test_extract_all_parallel() {
+    let path = temp_zip_path("extract_all")
+    let out = nos.temp_dir() + "/nzip_extract_all_" + str(nos.getpid())
+    let w = nzip.create(path)
+    for i in 0..5 {
+        nzip.write_bytes(w.handle, "f" + str(i) + ".txt", "v" + str(i))
+    }
+    nzip.close(w.handle)
+
+    let z = nzip.open(path)
+    let paths = nzip.extract_all(z.handle, out, {threads: 4})
+    ntest.assert_eq(len(paths), 5)
+    nzip.close(z.handle)
+    nos.remove(path)
+}
+
+fn test_append_mode() {
+    let path = temp_zip_path("append")
+    let w1 = nzip.create(path)
+    nzip.write_bytes(w1.handle, "first.txt", "1")
+    nzip.close(w1.handle)
+
+    let w2 = nzip.append(path)
+    nzip.write_bytes(w2.handle, "second.txt", "2")
+    nzip.close(w2.handle)
+
+    let z = nzip.open(path)
+    let names = nzip.namelist(z.handle)
+    ntest.assert_eq(len(names), 2)
+    nzip.close(z.handle)
+    nos.remove(path)
+}
+
+fn test_is_zipfile_bytes() {
+    ntest.assert_false(nzip.is_zipfile_bytes([0x00, 0x01]))
+    let path = temp_zip_path("bytes")
+    let w = nzip.create(path)
+    nzip.write_bytes(w.handle, "a.txt", "x")
+    nzip.close(w.handle)
+    ntest.assert_true(nzip.is_zipfile(path))
+    nos.remove(path)
+}
+
+fn test_not_found_error() {
+    let path = temp_zip_path("missing")
+    let w = nzip.create(path)
+    nzip.write_bytes(w.handle, "a.txt", "x")
+    nzip.close(w.handle)
+
+    let z = nzip.open(path)
+    let err = nzip.read(z.handle, "nope.txt")
+    ntest.assert_true(err != nil)
+    nzip.close(z.handle)
+    nos.remove(path)
+}
+
+fn test_invalid_handle() {
+    let err = nzip.read(999999, "a.txt")
+    ntest.assert_true(err != nil)
+}
+
+fn test_stored_compression() {
+    let path = temp_zip_path("stored")
+    let w = nzip.create(path, {compression: nzip.STORED})
+    nzip.write_bytes(w.handle, "raw.bin", [0, 255, 128])
+    nzip.close(w.handle)
+
+    let z = nzip.open(path)
+    let info = nzip.getinfo(z.handle, "raw.bin")
+    ntest.assert_eq(info.compression, "stored")
+    nzip.close(z.handle)
+    nos.remove(path)
+}
+
+fn test_zip_integrity() {
+    let path = temp_zip_path("testzip")
+    let w = nzip.create(path)
+    nzip.write_bytes(w.handle, "ok.txt", "integrity")
+    nzip.close(w.handle)
+
+    let z = nzip.open(path)
+    ntest.assert_true(nzip.test(z.handle))
+    nzip.close(z.handle)
+    nos.remove(path)
+}
+
+fn main() {
+    test_create_read_roundtrip()
+    test_infolist_and_getinfo()
+    test_streaming_entry_read()
+    test_extract_one()
+    test_extract_all_parallel()
+    test_append_mode()
+    test_is_zipfile_bytes()
+    test_not_found_error()
+    test_invalid_handle()
+    test_stored_compression()
+    test_zip_integrity()
+    print("nzip: all tests passed")
+}

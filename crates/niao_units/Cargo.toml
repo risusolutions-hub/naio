@@ -1,0 +1,12 @@
+[package]
+name = "niao_units"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Physical units, dimensional analysis, and quantity conversion for Niao"
+
+[dependencies]
+
+[[example]]
+name = "units_bench"
+path = "examples/units_bench.rs"

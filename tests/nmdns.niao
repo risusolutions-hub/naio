@@ -1,0 +1,86 @@
+// nmdns offline / handle tests (no multicast required)
+// Run: niao run tests/nmdns.niao
+import "nmdns"
+import "ntest"
+
+fn test_service_type() {
+    ntest.assert_eq(nmdns.service_type("_http._tcp"), "_http._tcp.local.")
+    ntest.assert_true(nmdns.is_mdns_type("_http._tcp"))
+    ntest.assert_eq(nmdns.mdns_port(), 5353)
+    ntest.assert_true(len(nmdns.mdns_group()) > 0)
+    ntest.assert_true(len(nmdns.localhost()) > 0)
+}
+
+fn test_pack_unpack_txt() {
+    let packed = nmdns.pack_txt({ path: "/", ver: "1" })
+    let back = nmdns.unpack_txt(packed)
+    ntest.assert_eq(back.path, "/")
+    ntest.assert_eq(back.ver, "1")
+}
+
+fn test_encode_decode_query() {
+    let q = nmdns.encode_query("_http._tcp.local.", "PTR")
+    let msg = nmdns.decode_message(q)
+    ntest.assert_true(len(msg.questions) >= 1)
+    ntest.assert_eq(msg.questions[0].name, "_http._tcp.local.")
+}
+
+fn test_service_info_fullname() {
+    let s = nmdns.service("Demo", "_http._tcp", 8080, {
+        properties: { path: "/" }
+    })
+    ntest.assert_eq(nmdns.name(s), "Demo")
+    ntest.assert_eq(nmdns.port(s), 8080)
+    ntest.assert_true(nmdns.fullname(s).contains("Demo"))
+    ntest.assert_true(nmdns.fullname(s).contains("_http._tcp"))
+    let info = nmdns.info(s)
+    ntest.assert_eq(info.name, "Demo")
+    ntest.assert_eq(info.port, 8080)
+    ntest.assert_eq(info.properties.path, "/")
+    ntest.assert_true(nmdns.close(s))
+}
+
+fn test_close_and_invalid() {
+    let s = nmdns.service("X", "_http._tcp", 9)
+    ntest.assert_true(nmdns.close(s))
+    ntest.assert_false(nmdns.close(s))
+    let bad = nmdns.name(999999)
+    ntest.assert_true(ntest.is_error(bad))
+    ntest.assert_eq(bad.kind, "nmdns_error")
+}
+
+fn test_bad_port() {
+    let err = nmdns.service("Demo", "_http._tcp", 99999)
+    ntest.assert_true(ntest.is_error(err))
+    ntest.assert_eq(err.kind, "nmdns_error")
+}
+
+fn test_empty_name() {
+    let err = nmdns.service("", "_http._tcp", 80)
+    ntest.assert_true(ntest.is_error(err))
+    ntest.assert_eq(err.kind, "nmdns_error")
+}
+
+fn test_encode_response() {
+    let s = nmdns.service("Enc", "_http._tcp", 80, {
+        addresses: ["127.0.0.1"]
+    })
+    let wire = nmdns.encode_response(s)
+    ntest.assert_true(len(wire) > 12)
+    let msg = nmdns.decode_message(wire)
+    ntest.assert_true(msg.is_response)
+    nmdns.close(s)
+}
+
+fn test_set_property_and_address() {
+    let s = nmdns.service("Mut", "_http._tcp", 9)
+    ntest.assert_true(nmdns.set_property(s, "k", "v"))
+    ntest.assert_eq(nmdns.properties(s).k, "v")
+    ntest.assert_true(nmdns.add_address(s, "10.0.0.1"))
+    ntest.assert_true(len(nmdns.addresses(s)) >= 1)
+    nmdns.close(s)
+}
+
+fn main() {
+    ntest.run()
+}

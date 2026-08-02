@@ -1,0 +1,38 @@
+// nmime hot-path bench — run via benchmarks/harness/run_bench.py
+import "nmime"
+
+fn main() {
+    let png = byte_array[137, 80, 78, 71, 13, 10, 26, 10]
+    let pdf = byte_array[37, 80, 68, 70, 45, 49, 46, 52]
+    let zip = byte_array[80, 75, 3, 4]
+    let batches = []
+    let i = 0
+    while i < 5000 {
+        if i % 3 == 0 {
+            batches = batches + [png]
+        } else if i % 3 == 1 {
+            batches = batches + [pdf]
+        } else {
+            batches = batches + [zip]
+        }
+        i = i + 1
+    }
+    let j = 0
+    while j < 40 {
+        let _ = nmime.parallel_from_bytes(batches, {threads: 4})
+        j = j + 1
+    }
+    let k = 0
+    while k < 100000 {
+        let _ = nmime.from_bytes(png)
+        k = k + 1
+    }
+    let names = []
+    let n = 0
+    while n < 2000 {
+        names = names + ["file_" + str(n) + ".png"]
+        n = n + 1
+    }
+    let _ = nmime.parallel_guess_types(names, false, {threads: 4})
+    print(nmime.signature_count())
+}

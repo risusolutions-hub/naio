@@ -1,0 +1,102 @@
+import "njpath"
+import "ntest"
+
+fn store_doc() {
+    return {
+        store: {
+            book: [
+                {title: "Sayings", author: "Nigel", price: 8.95, isbn: nil},
+                {title: "Sword", author: "Evelyn", price: 12.99, isbn: nil},
+                {title: "Moby", author: "Herman", price: 8.99, isbn: "0-553"},
+            ],
+            bicycle: {color: "red", price: 19.95},
+        },
+    }
+}
+
+fn test_pointer() {
+    let doc = store_doc()
+    ntest.assert_eq(njpath.pointer_get(doc, "/store/book/0/author"), "Nigel")
+    ntest.assert_true(njpath.pointer_exists(doc, "/store/bicycle"))
+    ntest.assert_false(njpath.pointer_exists(doc, "/missing"))
+    let updated = njpath.pointer_set(doc, "/store/book/0/price", 9.99)
+    ntest.assert_eq(njpath.pointer_get(updated, "/store/book/0/price"), 9.99)
+    ntest.assert_eq(njpath.pointer_escape("a/b~c"), "a~1b~0c")
+    ntest.assert_eq(njpath.pointer_unescape("a~1b~0c"), "a/b~c")
+    ntest.assert_eq(njpath.pointer_parent("/a/b/c"), "/a/b")
+}
+
+fn test_jsonpath() {
+    let doc = store_doc()
+    let authors = njpath.find(doc, "$.store.book[*].author")
+    ntest.assert_eq(len(authors), 3)
+    ntest.assert_eq(njpath.find_one(doc, "$.store.bicycle.color"), "red")
+    ntest.assert_true(njpath.path_valid("$.store.book[*].author"))
+    ntest.assert_false(njpath.path_valid("$..["))
+    let cheap = njpath.find(doc, "$.store.book[?(@.price < 10)]")
+    ntest.assert_true(len(cheap) >= 2)
+}
+
+fn test_jmespath() {
+    let doc = store_doc()
+    ntest.assert_eq(njpath.jmes(doc, "store.book[0].author"), "Nigel")
+    let max_price = njpath.jmes(doc, "store.book[*].price | max(@)")
+    ntest.assert_true(max_price >= 12.99)
+    ntest.assert_true(njpath.jmes_valid("foo.bar"))
+}
+
+fn test_patch() {
+    let doc = store_doc()
+    let patch = [
+        {op: "replace", path: "/store/book/0/title", value: "Updated"},
+    ]
+    ntest.assert_true(njpath.patch_valid(patch))
+    let out = njpath.patch_apply(doc, patch)
+    ntest.assert_eq(njpath.pointer_get(out, "/store/book/0/title"), "Updated")
+    let merged = njpath.merge(doc, {store: {bicycle: {color: "blue"}}})
+    ntest.assert_eq(njpath.pointer_get(merged, "/store/bicycle/color"), "blue")
+    let diff_ops = njpath.diff(doc, out)
+    ntest.assert_true(len(diff_ops) >= 1)
+}
+
+fn test_compile_handles() {
+    let doc = store_doc()
+    let ph = njpath.compile_path("$.store.book[*].author")
+    let hits = njpath.path_search(ph, doc)
+    ntest.assert_eq(len(hits), 3)
+    ntest.assert_eq(njpath.path_query(ph), "$.store.book[*].author")
+    njpath.close(ph)
+
+    let jh = njpath.compile_jmes("store.book | length(@)")
+    ntest.assert_eq(njpath.jmes_search(jh, doc), 3)
+    ntest.assert_eq(njpath.jmes_expression(jh), "store.book | length(@)")
+    njpath.close(jh)
+}
+
+fn test_parallel() {
+    let docs = [store_doc(), store_doc(), {x: 1}]
+    let rows = njpath.parallel_find(docs, "$.store.book[0].author", {threads: 2})
+    ntest.assert_eq(len(rows), 3)
+    ntest.assert_eq(rows[0][0], "Nigel")
+    let ones = njpath.parallel_find_one(docs, "$.x", {threads: 2})
+    ntest.assert_eq(ones[2], 1)
+}
+
+fn test_errors() {
+    let doc = store_doc()
+    let e = njpath.find(doc, "[bad")
+    ntest.assert_error(e)
+    let e2 = njpath.path_search(999999, doc)
+    ntest.assert_error(e2)
+}
+
+fn main() {
+    ntest.case("pointer", test_pointer)
+    ntest.case("jsonpath", test_jsonpath)
+    ntest.case("jmespath", test_jmespath)
+    ntest.case("patch", test_patch)
+    ntest.case("compile handles", test_compile_handles)
+    ntest.case("parallel", test_parallel)
+    ntest.case("errors", test_errors)
+    print("njpath_test: all passed")
+}

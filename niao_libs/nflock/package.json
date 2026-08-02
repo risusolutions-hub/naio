@@ -1,0 +1,11 @@
+{
+    "name": "nflock",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": "Advisory file locks, lockfiles, PID files, timeouts. ~filelock, fcntl",
+    "import_paths": [
+        "nflock",
+        "std/nflock"
+    ],
+    "builtin_count": 19
+}

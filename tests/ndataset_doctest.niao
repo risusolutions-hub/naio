@@ -1,0 +1,24 @@
+// ndataset doctests — run: cargo run -p niao_cli -- run tests/ndataset_doctest.niao
+import "ndataset"
+import "ntest"
+
+fn test_doctest_from_rows() {
+    let ds = ndataset.from_rows([{x: 1, y: "a"}, {x: 2, y: "b"}])
+    ntest.assert_eq(ndataset.len(ds), 2)
+    ndataset.close(ds)
+}
+
+fn test_doctest_batch() {
+    let ds = ndataset.from_rows([{v: 1}, {v: 2}, {v: 3}, {v: 4}, {v: 5}])
+    let loader = ndataset.batch(ds, 2)
+    let b1 = ndataset.next(loader)
+    ntest.assert_eq(len(b1), 2)
+    ndataset.close_loader(loader)
+    ndataset.close(ds)
+}
+
+fn main() {
+    test_doctest_from_rows()
+    test_doctest_batch()
+    print("ndataset doctests ok")
+}

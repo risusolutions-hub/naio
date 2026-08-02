@@ -1,0 +1,107 @@
+import "nkeyring"
+import "ntest"
+import "nbinary"
+
+fn mem_setup() {
+    nkeyring.use_memory()
+    nkeyring.clear_memory()
+}
+
+fn test_set_get_password() {
+    mem_setup()
+    nkeyring.set_password("test-app", "alice", "s3cr3t")
+    ntest.assert_eq(nkeyring.get_password("test-app", "alice"), "s3cr3t")
+    ntest.assert_true(nkeyring.exists("test-app", "alice"))
+}
+
+fn test_get_missing_returns_nil() {
+    mem_setup()
+    ntest.assert_eq(nkeyring.get_password("missing", "nobody"), nil)
+    ntest.assert_eq(nkeyring.exists("missing", "nobody"), false)
+}
+
+fn test_delete_password() {
+    mem_setup()
+    nkeyring.set_password("app", "bob", "pw")
+    nkeyring.delete_password("app", "bob")
+    ntest.assert_eq(nkeyring.get_password("app", "bob"), nil)
+}
+
+fn test_delete_missing_errors() {
+    mem_setup()
+    let e = nkeyring.delete_password("nope", "nope")
+    ntest.assert_error(e)
+}
+
+fn test_get_credential() {
+    mem_setup()
+    nkeyring.set_password("svc", "carol", "token123")
+    let c = nkeyring.get_credential("svc", "carol")
+    ntest.assert_eq(c.service, "svc")
+    ntest.assert_eq(c.username, "carol")
+    ntest.assert_eq(c.password, "token123")
+}
+
+fn test_get_credential_missing() {
+    mem_setup()
+    ntest.assert_eq(nkeyring.get_credential("x", "y"), nil)
+}
+
+fn test_secret_bytes() {
+    mem_setup()
+    let secret = nbinary.from_bytes([0xDE, 0xAD, 0xBE, 0xEF])
+    nkeyring.set_secret("bin-svc", "dev", secret)
+    let got = nkeyring.get_secret("bin-svc", "dev")
+    ntest.assert_eq(len(got), 4)
+}
+
+fn test_entry_object() {
+    mem_setup()
+    let e = nkeyring.entry("myapp", "dan")
+    ntest.assert_eq(e.service, "myapp")
+    ntest.assert_eq(e.user, "dan")
+    nkeyring.set(e, "via-entry")
+    ntest.assert_eq(nkeyring.get(e), "via-entry")
+    nkeyring.delete(e)
+    ntest.assert_eq(nkeyring.get(e), nil)
+}
+
+fn test_set_empty_password_errors() {
+    mem_setup()
+    let e = nkeyring.set_password("app", "u", "")
+    ntest.assert_error(e)
+}
+
+fn test_backend_memory() {
+    mem_setup()
+    ntest.assert_eq(nkeyring.backend(), "memory")
+}
+
+fn test_platform() {
+    let p = nkeyring.platform()
+    ntest.assert_true(p == "windows" || p == "macos" || p == "linux" || p == "unknown")
+}
+
+fn test_use_system_restores() {
+    mem_setup()
+    nkeyring.use_system()
+    let b = nkeyring.backend()
+    ntest.assert_true(b != "memory")
+    nkeyring.use_memory()
+}
+
+fn main() {
+    test_set_get_password()
+    test_get_missing_returns_nil()
+    test_delete_password()
+    test_delete_missing_errors()
+    test_get_credential()
+    test_get_credential_missing()
+    test_secret_bytes()
+    test_entry_object()
+    test_set_empty_password_errors()
+    test_backend_memory()
+    test_platform()
+    test_use_system_restores()
+    print("nkeyring tests passed")
+}

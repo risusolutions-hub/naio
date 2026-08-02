@@ -1,0 +1,63 @@
+{
+  "timestamp": "2026-07-13T071928Z",
+  "niao": "C:\\Risu\\Neko\\target\\release\\niao.exe",
+  "runs": 5,
+  "results": {
+    "aa_control_arith": {
+      "status": "ok",
+      "runs": 5,
+      "best_ms": 44.64,
+      "avg_ms": 50.46,
+      "worst_ms": 67.43
+    },
+    "json_parse": {
+      "status": "ok",
+      "runs": 5,
+      "best_ms": 787.61,
+      "avg_ms": 821.206,
+      "worst_ms": 868.12
+    },
+    "ncache_churn": {
+      "status": "ok",
+      "runs": 5,
+      "best_ms": 806.19,
+      "avg_ms": 850.986,
+      "worst_ms": 906.89
+    },
+    "nmath_scalar": {
+      "status": "ok",
+      "runs": 5,
+      "best_ms": 908.15,
+      "avg_ms": 927.496,
+      "worst_ms": 952.13
+    },
+    "nrand_normal": {
+      "status": "ok",
+      "runs": 5,
+      "best_ms": 384.0,
+      "avg_ms": 401.744,
+      "worst_ms": 413.96
+    },
+    "nrand_ranged_int": {
+      "status": "ok",
+      "runs": 5,
+      "best_ms": 776.95,
+      "avg_ms": 791.992,
+      "worst_ms": 800.96
+    },
+    "nstr_transform": {
+      "status": "ok",
+      "runs": 5,
+      "best_ms": 262.22,
+      "avg_ms": 269.7,
+      "worst_ms": 279.65
+    },
+    "nvec_search": {
+      "status": "ok",
+      "runs": 5,
+      "best_ms": 286.98,
+      "avg_ms": 298.032,
+      "worst_ms": 313.92
+    }
+  }
+}

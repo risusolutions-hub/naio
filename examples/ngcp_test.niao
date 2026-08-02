@@ -1,0 +1,99 @@
+// ngcp ntest suite — offline API surface (no live GCP credentials required).
+// Run: niao run examples/ngcp_test.niao
+import "ntest"
+import "ngcp"
+
+fn test_config_handle() {
+    let cfg = ngcp.config({project: "demo-proj", access_token: "tok"})
+    ntest.assert_true(cfg >= 1)
+}
+
+fn test_config_missing_project() {
+    let e = ngcp.config({access_token: "tok"})
+    ntest.assert_error(e)
+}
+
+fn test_invalid_handle_is_error() {
+    let e = ngcp.gcs_get(999999, "bucket", "obj")
+    ntest.assert_error(e)
+    let e2 = ngcp.firestore_get(999998, "users", "u1")
+    ntest.assert_error(e2)
+    let e3 = ngcp.pubsub_publish(999997, "t", "hi")
+    ntest.assert_error(e3)
+}
+
+fn test_function_empty_url() {
+    let cfg = ngcp.config({project: "p", access_token: "t"})
+    let e = ngcp.function_invoke(cfg, "", "{}")
+    ntest.assert_error(e)
+}
+
+fn test_pubsub_ack_type() {
+    let cfg = ngcp.config({project: "p", access_token: "t"})
+    let e = ngcp.pubsub_ack(cfg, "sub", "not-an-array")
+    ntest.assert_error(e)
+}
+
+fn test_pubsub_ack_element_type() {
+    let cfg = ngcp.config({project: "p", access_token: "t"})
+    let e = ngcp.pubsub_ack(cfg, "sub", ["ok", 1])
+    ntest.assert_error(e)
+}
+
+fn test_gcs_put_invalid_byte_range() {
+    let cfg = ngcp.config({project: "p", access_token: "t"})
+    let e = ngcp.gcs_put(cfg, "b", "o", [0, 255, 256])
+    ntest.assert_error(e)
+}
+
+fn test_config_unicode_scope() {
+    let cfg = ngcp.config({
+        project: "proj-猫",
+        access_token: "tok",
+        scopes: "https://www.googleapis.com/auth/cloud-platform https://example.com/日本語",
+    })
+    ntest.assert_true(cfg >= 1)
+}
+
+fn test_config_with_service_account_shape() {
+    let cfg = ngcp.config({
+        project: "demo",
+        client_email: "svc@example.iam.gserviceaccount.com",
+        private_key: "-----BEGIN PRIVATE KEY-----\\nABC\\n-----END PRIVATE KEY-----\\n",
+    })
+    ntest.assert_true(cfg >= 1)
+}
+
+fn test_namespace_methods_exist() {
+    ntest.assert_true(ngcp.config != nil)
+    ntest.assert_true(ngcp.gcs_put != nil)
+    ntest.assert_true(ngcp.gcs_get != nil)
+    ntest.assert_true(ngcp.gcs_delete != nil)
+    ntest.assert_true(ngcp.gcs_list != nil)
+    ntest.assert_true(ngcp.pubsub_publish != nil)
+    ntest.assert_true(ngcp.pubsub_pull != nil)
+    ntest.assert_true(ngcp.pubsub_ack != nil)
+    ntest.assert_true(ngcp.firestore_get != nil)
+    ntest.assert_true(ngcp.firestore_set != nil)
+    ntest.assert_true(ngcp.firestore_delete != nil)
+    ntest.assert_true(ngcp.firestore_query != nil)
+    ntest.assert_true(ngcp.function_invoke != nil)
+}
+
+fn main() {
+    ntest.case("config creates handle", test_config_handle)
+    ntest.case("config missing project errors", test_config_missing_project)
+    ntest.case("invalid handle returns error", test_invalid_handle_is_error)
+    ntest.case("function empty url errors", test_function_empty_url)
+    ntest.case("pubsub ack type error", test_pubsub_ack_type)
+    ntest.case("pubsub ack element type error", test_pubsub_ack_element_type)
+    ntest.case("gcs put invalid byte range", test_gcs_put_invalid_byte_range)
+    ntest.case("config unicode scope", test_config_unicode_scope)
+    ntest.case("config service-account shape", test_config_with_service_account_shape)
+    ntest.case("namespace methods exist", test_namespace_methods_exist)
+    let summary = ntest.run()
+    print("ok:", summary.ok, "failed:", summary.failed)
+    if !summary.ok {
+        nos.exit(1)
+    }
+}

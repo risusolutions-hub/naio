@@ -1,0 +1,11 @@
+{
+    "name": "nipaddr",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": " IPv4/IPv6 addresses, CIDR networks, ranges, subnet\n                    math, membership checks.  ~ipaddress...",
+    "import_paths": [
+        "nipaddr",
+        "std/nipaddr"
+    ],
+    "builtin_count": 54
+}

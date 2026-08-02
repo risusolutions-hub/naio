@@ -1,0 +1,11 @@
+{
+    "name": "nsorted",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": "Sorted list / dict / set with bisect insert, range\n                    queries, nearest lookup.  ~sortedcontainers, bisect ...",
+    "import_paths": [
+        "nsorted",
+        "std/nsorted"
+    ],
+    "builtin_count": 32
+}

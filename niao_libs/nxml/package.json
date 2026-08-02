@@ -1,0 +1,11 @@
+{
+    "name": "nxml",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": "XML DOM + streaming (SAX-style) parser, namespaces,\n                    XPath subset, pretty-print.  ~xml.etree, lxml ...",
+    "import_paths": [
+        "nxml",
+        "std/nxml"
+    ],
+    "builtin_count": 31
+}

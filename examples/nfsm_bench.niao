@@ -1,0 +1,59 @@
+// Micro-benchmarks for nfsm hot paths.
+// Run: niao run examples/nfsm_bench.niao
+import "nfsm"
+import "nbench"
+
+fn traffic_spec() {
+    let states = []
+    let transitions = []
+    for i in 0..64 {
+        states = states + ["s" + str(i)]
+        let next = (i + 1) % 64
+        transitions = transitions + [{
+            trigger: "step",
+            source: "s" + str(i),
+            dest: "s" + str(next),
+        }]
+    }
+    return {
+        initial: "s0",
+        states: states,
+        triggers: ["step"],
+        transitions: transitions,
+    }
+}
+
+fn bench_send() {
+    let m = nfsm.new(traffic_spec())
+    for i in 0..50000 {
+        nfsm.send(m, "step")
+    }
+    nfsm.close(m)
+    return 50000
+}
+
+fn bench_triggers() {
+    let m = nfsm.new(traffic_spec())
+    for i in 0..50000 {
+        let _ = nfsm.triggers(m)
+        let _ = nfsm.can(m, "step")
+    }
+    nfsm.close(m)
+    return 50000
+}
+
+fn bench_state_query() {
+    let m = nfsm.new(traffic_spec())
+    for i in 0..50000 {
+        let _ = nfsm.state(m)
+        let _ = nfsm.info(m)
+    }
+    nfsm.close(m)
+    return 50000
+}
+
+fn main() {
+    nbench.run("send x50k", bench_send)
+    nbench.run("triggers/can x50k", bench_triggers)
+    nbench.run("state/info x50k", bench_state_query)
+}

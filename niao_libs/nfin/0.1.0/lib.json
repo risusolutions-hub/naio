@@ -1,0 +1,22 @@
+{
+
+    "name": "nfin",
+
+    "version": "0.1.0",
+
+    "kind": "native",
+
+    "description": "Financial math: TVM, NPV/IRR, amortization, returns,\n                    common technical indicators.  ~numpy-financial, TA-Lib",
+
+    "import_paths": [
+
+        "nfin",
+
+        "std/nfin"
+
+    ],
+
+    "builtin_count": 24
+
+}
+

@@ -1,0 +1,41 @@
+// Micro-benchmarks for nsearch hot paths (in-language).
+// Prefer: cargo run --release -p niao_search --bin nsearch_bench
+import "nsearch"
+import "nbench"
+
+fn bench_es_query() {
+    let s = nsearch.es_query({q: "niao search", fields: ["title", "body"], size: 20})
+    return len(s)
+}
+
+fn bench_bulk_ndjson() {
+    let nd = nsearch.es_bulk_ndjson([
+        {action: "index", index: "docs", id: "1", doc: {title: "a"}},
+        {action: "index", index: "docs", id: "2", doc: {title: "b"}},
+    ])
+    return len(nd)
+}
+
+fn bench_filters() {
+    let a = nsearch.meili_filter(["a = 1", "b > 2", "c = x"])
+    let b = nsearch.ts_filter(["a:=1", "b:>2"])
+    return len(a) + len(b)
+}
+
+fn bench_hits() {
+    let body = "{\"hits\":{\"hits\":[{\"_source\":{\"t\":1}},{\"_source\":{\"t\":2}}]}}"
+    let h = nsearch.hits({engine: "elasticsearch", body: body})
+    return len(h)
+}
+
+fn main() {
+    let opts = {warmup: 2, iterations: 50}
+    let r1 = nbench.run("es_query", bench_es_query, opts)
+    print("es_query: mean=", r1.mean, "ns p50=", r1.p50)
+    let r2 = nbench.run("es_bulk_ndjson", bench_bulk_ndjson, opts)
+    print("es_bulk_ndjson: mean=", r2.mean, "ns p50=", r2.p50)
+    let r3 = nbench.run("filters", bench_filters, opts)
+    print("filters: mean=", r3.mean, "ns p50=", r3.p50)
+    let r4 = nbench.run("hits", bench_hits, opts)
+    print("hits: mean=", r4.mean, "ns p50=", r4.p50)
+}

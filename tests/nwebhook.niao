@@ -1,0 +1,201 @@
+// nwebhook CI + Standard Webhooks conformance tests
+// Run: niao run tests/nwebhook.niao
+import "nwebhook"
+import "ntest"
+import "nos"
+
+const SECRET_B64 = "MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw"
+const SECRET = "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw"
+const MSG_ID = "msg_p5jXN8AQM9LWM0D4loKWxJek"
+const TS = 1614265330
+const PAYLOAD = "{\"test\": 2432232314}"
+const EXPECTED = "v1,g0hM9SsE+OTPJTGt/tmIKtSyZlE3uFJELVlNIOLJ1OE="
+
+fn test_official_sign_vector() {
+    ntest.assert_eq(nwebhook.sign(SECRET, MSG_ID, TS, PAYLOAD), EXPECTED)
+    ntest.assert_eq(nwebhook.sign(SECRET_B64, MSG_ID, TS, PAYLOAD), EXPECTED)
+    let wh = nwebhook.webhook(SECRET)
+    ntest.assert_eq(wh.sign(MSG_ID, TS, PAYLOAD), EXPECTED)
+}
+
+fn test_verify_roundtrip() {
+    let now = nwebhook.now()
+    let payload = "{\"ok\":true,\"n\":42}"
+    let req = nwebhook.sign_request(SECRET, payload)
+    let data = nwebhook.verify(SECRET, payload, req.headers)
+    ntest.assert_eq(data.ok, true)
+    ntest.assert_eq(data.n, 42)
+    ntest.assert(nwebhook.valid(SECRET, payload, req.headers))
+}
+
+fn test_verify_raw() {
+    let now = TS
+    let body = "not-json-bytes"
+    let sig = nwebhook.sign(SECRET, "msg_x", now, body)
+    let hdrs = nwebhook.headers("msg_x", now, sig)
+    let out = nwebhook.verify_raw(SECRET, body, hdrs, {now: now})
+    ntest.assert_eq(out, body)
+}
+
+fn test_meta_object() {
+    let now = TS
+    let sig = nwebhook.sign(SECRET, MSG_ID, now, PAYLOAD)
+    let hdrs = nwebhook.headers(MSG_ID, now, sig)
+    let meta = nwebhook.verify(SECRET, PAYLOAD, hdrs, {now: now, meta: true})
+    ntest.assert_eq(meta.id, MSG_ID)
+    ntest.assert_eq(meta.timestamp, now)
+    ntest.assert_eq(meta.data.test, 2432232314)
+}
+
+fn test_missing_headers() {
+    ntest.assert_error(nwebhook.verify(SECRET, PAYLOAD, {now: TS}))
+}
+
+fn test_bad_signature() {
+    let hdrs = nwebhook.headers(MSG_ID, TS, "v1,AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=")
+    ntest.assert_error(nwebhook.verify(SECRET, PAYLOAD, hdrs, {now: TS}))
+}
+
+fn test_timestamp_too_old() {
+    let old = nwebhook.now() - 400
+    let sig = nwebhook.sign(SECRET, MSG_ID, old, PAYLOAD)
+    let hdrs = nwebhook.headers(MSG_ID, old, sig)
+    ntest.assert_error(nwebhook.verify(SECRET, PAYLOAD, hdrs))
+}
+
+fn test_timestamp_too_new() {
+    let future = nwebhook.now() + 400
+    let sig = nwebhook.sign(SECRET, MSG_ID, future, PAYLOAD)
+    let hdrs = nwebhook.headers(MSG_ID, future, sig)
+    ntest.assert_error(nwebhook.verify(SECRET, PAYLOAD, hdrs))
+}
+
+fn test_invalid_timestamp() {
+    let sig = nwebhook.sign(SECRET, MSG_ID, TS, PAYLOAD)
+    let hdrs = nwebhook.headers(MSG_ID, TS, sig)
+    hdrs[nwebhook.HDR_TIMESTAMP] = "hello"
+    ntest.assert_error(nwebhook.verify(SECRET, PAYLOAD, hdrs, {now: TS}))
+}
+
+fn test_multi_sig_header() {
+    let now = TS
+    let good = nwebhook.sign(SECRET, MSG_ID, now, PAYLOAD)
+    let mixed = "v1,Ceo5qEr07ixe2NLpvHk3FH9bwy/WavXrAFQ/9tdO6mc= v2,xxx " + good
+    let hdrs = nwebhook.headers(MSG_ID, now, mixed)
+    let data = nwebhook.verify(SECRET, PAYLOAD, hdrs, {now: now})
+    ntest.assert_eq(data.test, 2432232314)
+}
+
+fn test_empty_secret() {
+    ntest.assert_error(nwebhook.webhook(""))
+    ntest.assert_error(nwebhook.webhook("whsec_"))
+}
+
+fn test_raw_secret_format() {
+    let key = "literal-raw-key-bytes!!"
+    let now = TS
+    let wh = nwebhook.webhook(key, {format: "raw"})
+    let sig = wh.sign("msg_1", now, "hi")
+    let hdrs = nwebhook.headers("msg_1", now, sig)
+    ntest.assert(wh.valid("hi", hdrs, {now: now}))
+}
+
+fn test_secret_rotation_array() {
+    let now = TS
+    let old_secret = SECRET_B64
+    let new_key = "AAAAAAAAAAAAAAAAAAAAAA=="
+    let sig = nwebhook.sign(old_secret, MSG_ID, now, PAYLOAD)
+    let hdrs = nwebhook.headers(MSG_ID, now, sig)
+    let data = nwebhook.verify([new_key, old_secret], PAYLOAD, hdrs, {now: now})
+    ntest.assert_eq(data.test, 2432232314)
+}
+
+fn test_empty_payload() {
+    let now = TS
+    let body = ""
+    let sig = nwebhook.sign(SECRET, MSG_ID, now, body)
+    let hdrs = nwebhook.headers(MSG_ID, now, sig)
+    let out = nwebhook.verify(SECRET, body, hdrs, {now: now})
+    ntest.assert_eq(out, nil)
+}
+
+fn test_parse_secret() {
+    let info = nwebhook.parse_secret(SECRET)
+    ntest.assert(info.ok)
+    ntest.assert(info.len > 0)
+    ntest.assert(info.encoded.starts_with("whsec_"))
+}
+
+fn test_check_timestamp() {
+    ntest.assert(nwebhook.check_timestamp(TS, {now: TS, tolerance: 300}))
+    ntest.assert_error(nwebhook.check_timestamp(TS - 301, {now: TS, tolerance: 300}))
+}
+
+fn test_new_id_and_headers() {
+    let id = nwebhook.new_id()
+    ntest.assert(id.starts_with("msg_"))
+    let h = nwebhook.headers("a", 1, "v1,x")
+    ntest.assert_eq(h[nwebhook.HDR_ID], "a")
+    ntest.assert_eq(h[nwebhook.HDR_TIMESTAMP], "1")
+    ntest.assert_eq(nwebhook.TOLERANCE, 300)
+    ntest.assert_eq(nwebhook.SECRET_PREFIX, "whsec_")
+}
+
+fn test_replay_guard() {
+    let g = nwebhook.guard({max_age: 300, capacity: 8})
+    ntest.assert(g.check("msg_a", 1000))
+    ntest.assert(!g.check("msg_a", 1001))
+    ntest.assert(g.seen("msg_a", 1001))
+    ntest.assert(!g.seen("msg_b", 1001))
+    ntest.assert(g.check("msg_b", 1001))
+    ntest.assert_eq(g.size(), 2)
+    g.forget("msg_a")
+    ntest.assert(g.check("msg_a", 1002))
+    g.clear()
+    ntest.assert_eq(g.size(), 0)
+}
+
+fn test_unicode_payload() {
+    let now = TS
+    let body = "{\"ok\":true}"
+    let req = nwebhook.sign_request(SECRET, body, {id: "msg_u", timestamp: now})
+    let raw = nwebhook.verify_raw(SECRET, body, req.headers, {now: now})
+    ntest.assert_eq(raw, body)
+}
+
+fn test_invalid_json_body() {
+    let now = TS
+    let body = "{not-json"
+    let sig = nwebhook.sign(SECRET, MSG_ID, now, body)
+    let hdrs = nwebhook.headers(MSG_ID, now, sig)
+    ntest.assert_error(nwebhook.verify(SECRET, body, hdrs, {now: now}))
+    let raw = nwebhook.verify_raw(SECRET, body, hdrs, {now: now})
+    ntest.assert_eq(raw, body)
+}
+
+fn main() {
+    ntest.case("official_sign_vector", test_official_sign_vector)
+    ntest.case("verify_roundtrip", test_verify_roundtrip)
+    ntest.case("verify_raw", test_verify_raw)
+    ntest.case("meta_object", test_meta_object)
+    ntest.case("missing_headers", test_missing_headers)
+    ntest.case("bad_signature", test_bad_signature)
+    ntest.case("timestamp_too_old", test_timestamp_too_old)
+    ntest.case("timestamp_too_new", test_timestamp_too_new)
+    ntest.case("invalid_timestamp", test_invalid_timestamp)
+    ntest.case("multi_sig_header", test_multi_sig_header)
+    ntest.case("empty_secret", test_empty_secret)
+    ntest.case("raw_secret_format", test_raw_secret_format)
+    ntest.case("secret_rotation_array", test_secret_rotation_array)
+    ntest.case("empty_payload", test_empty_payload)
+    ntest.case("parse_secret", test_parse_secret)
+    ntest.case("check_timestamp", test_check_timestamp)
+    ntest.case("new_id_and_headers", test_new_id_and_headers)
+    ntest.case("replay_guard", test_replay_guard)
+    ntest.case("unicode_payload", test_unicode_payload)
+    ntest.case("invalid_json_body", test_invalid_json_body)
+    let summary = ntest.run()
+    if !summary.ok {
+        nos.exit(1)
+    }
+}

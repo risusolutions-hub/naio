@@ -1,0 +1,22 @@
+{
+
+    "name": "njpath",
+
+    "version": "0.1.0",
+
+    "kind": "native",
+
+    "description": " JSONPath / JMESPath-style queries, JSON Pointer and\n                    JSON Patch over values.  ~jmespath, jsonpath-ng, glom ...",
+
+    "import_paths": [
+
+        "njpath",
+
+        "std/njpath"
+
+    ],
+
+    "builtin_count": 34
+
+}
+

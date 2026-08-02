@@ -1,0 +1,33 @@
+// nssh demo — requires a reachable SSH host (or edit host/user/password).
+// Run: niao run examples/nssh_demo.niao
+import "nssh"
+
+fn main() {
+    let host = "127.0.0.1"
+    let port = 22
+    let user = "testuser"
+    let pass = "testpass"
+
+    let s = nssh.connect({
+        host: host,
+        port: port,
+        user: user,
+        password: pass,
+        timeout_ms: 5000
+    })
+    if type(s) == "error" {
+        print("connect failed:", s)
+        return
+    }
+
+    print("connected:", nssh.is_connected(s))
+    let r = nssh.exec(s, "echo hello-from-niao")
+    if type(r) == "error" {
+        print("exec failed:", r)
+    } else {
+        print("stdout:", r.stdout, "exit=", r.exit_status)
+    }
+    nssh.close(s)
+}
+
+main()

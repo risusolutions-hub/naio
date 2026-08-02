@@ -1,0 +1,122 @@
+// ncal integration tests — run: niao run tests/ncal.niao
+import "ntest"
+import "ncal"
+import "nvalid"
+
+fn test_date() {
+    let d = ncal.date(2026, 7, 13)
+    ntest.assert_eq(d.year, 2026)
+    ntest.assert_eq(d.month, 7)
+    ntest.assert_eq(d.day, 13)
+    ntest.assert_eq(d.weekday, 0)
+    ntest.assert_eq(d.iso, "2026-07-13")
+}
+
+fn test_parse_format() {
+    let d = ncal.parse("2026-07-13")
+    ntest.assert_eq(ncal.format(d), "2026-07-13")
+    let d2 = ncal.parse("20260713")
+    ntest.assert_eq(d2.day, 13)
+}
+
+fn test_valid() {
+    ntest.assert_true(ncal.valid(2024, 2, 29))
+    ntest.assert_false(ncal.valid(2025, 2, 29))
+}
+
+fn test_iso_week() {
+    let w = ncal.iso_week(ncal.date(2026, 1, 5))
+    ntest.assert_eq(w.week, 2)
+    ntest.assert_eq(w.year, 2026)
+}
+
+fn test_business_days() {
+    let fri = ncal.date(2026, 7, 10)
+    let mon = ncal.add_business_days(fri, 1)
+    ntest.assert_eq(mon.iso, "2026-07-13")
+    ntest.assert_eq(ncal.business_days_between(fri, mon), 2)
+}
+
+fn test_month_matrix() {
+    let m = ncal.month_matrix(2026, 7)
+    ntest.assert_eq(len(m), 5)
+    ntest.assert_eq(len(m[0]), 7)
+    ntest.assert_eq(m[0][2], 1)
+}
+
+fn test_range() {
+    let days = ncal.range(ncal.date(2026, 7, 1), ncal.date(2026, 7, 3))
+    ntest.assert_eq(len(days), 3)
+    ntest.assert_eq(days[2].day, 3)
+}
+
+fn test_nth_weekday() {
+    let mlk = ncal.nth_weekday(2026, 1, 0, 3)
+    ntest.assert_eq(mlk.iso, "2026-01-19")
+}
+
+fn test_easter() {
+    let e = ncal.easter(2026)
+    ntest.assert_eq(e.iso, "2026-04-05")
+}
+
+fn test_us_federal() {
+    let hols = ncal.us_federal(2026)
+    ntest.assert_true(len(hols) >= 10)
+}
+
+fn test_calendar_holidays() {
+    let cal = ncal.us_federal_calendar(2026)
+    let july4 = ncal.date(2026, 7, 4)
+    let observed = ncal.cal_is_holiday(cal, july4)
+    ntest.assert_true(observed)
+    ntest.assert_false(ncal.cal_is_working(cal, july4))
+    let n = ncal.cal_working_between(cal, ncal.date(2026, 7, 1), ncal.date(2026, 7, 31))
+    ntest.assert_true(n > 20)
+    ncal.cal_close(cal)
+}
+
+fn test_custom_calendar() {
+    let cal = ncal.calendar({holidays: [ncal.date(2026, 12, 25)]})
+    ntest.assert_true(ncal.cal_is_holiday(cal, ncal.date(2026, 12, 25)))
+    ntest.assert_true(ncal.cal_remove_holiday(cal, ncal.date(2026, 12, 25)))
+    ntest.assert_false(ncal.cal_is_holiday(cal, ncal.date(2026, 12, 25)))
+    ncal.cal_close(cal)
+}
+
+fn test_batch() {
+    let span = ncal.range(ncal.date(2026, 7, 1), ncal.date(2026, 7, 7))
+    let flags = ncal.batch_is_weekday(span)
+    ntest.assert_eq(len(flags), 7)
+    ntest.assert_true(flags[0])
+    ntest.assert_false(flags[4])
+}
+
+fn test_invalid_date() {
+    let r = ncal.date(2026, 2, 30)
+    ntest.assert_true(nvalid.is_error(r))
+}
+
+fn test_invalid_handle() {
+    let r = ncal.cal_is_working(999999, ncal.date(2026, 1, 1))
+    ntest.assert_true(nvalid.is_error(r))
+}
+
+fn main() {
+    test_date()
+    test_parse_format()
+    test_valid()
+    test_iso_week()
+    test_business_days()
+    test_month_matrix()
+    test_range()
+    test_nth_weekday()
+    test_easter()
+    test_us_federal()
+    test_calendar_holidays()
+    test_custom_calendar()
+    test_batch()
+    test_invalid_date()
+    test_invalid_handle()
+    print("ncal: all tests passed")
+}

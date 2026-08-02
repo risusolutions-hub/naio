@@ -1,0 +1,22 @@
+{
+
+    "name": "nasync",
+
+    "version": "0.1.0",
+
+    "kind": "native",
+
+    "description": "Structured async ergonomics over io tasks: gather/race, timeouts, cancellation, async channels. ~asyncio, trio subset",
+
+    "import_paths": [
+
+        "nasync",
+
+        "std/nasync"
+
+    ],
+
+    "builtin_count": 32
+
+}
+

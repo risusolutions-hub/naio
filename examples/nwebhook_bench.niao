@@ -1,0 +1,42 @@
+// nwebhook micro-benchmarks — Standard Webhooks sign/verify hot paths.
+// Run: niao run examples/nwebhook_bench.niao
+import "nwebhook"
+import "nbench"
+
+const SECRET = "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw"
+const PAYLOAD = "{\"event\":\"invoice.paid\",\"amount\":1999}"
+
+fn bench_sign() {
+    for i in 0..500 {
+        nwebhook.sign(SECRET, "msg_bench_" + i, 1614265330, PAYLOAD)
+    }
+}
+
+fn bench_verify() {
+    let sig = nwebhook.sign(SECRET, "msg_bench", 1614265330, PAYLOAD)
+    let hdrs = nwebhook.headers("msg_bench", 1614265330, sig)
+    for _ in 0..500 {
+        nwebhook.verify(SECRET, PAYLOAD, hdrs, {now: 1614265330})
+    }
+}
+
+fn bench_valid() {
+    let sig = nwebhook.sign(SECRET, "msg_bench", 1614265330, PAYLOAD)
+    let hdrs = nwebhook.headers("msg_bench", 1614265330, sig)
+    for _ in 0..500 {
+        nwebhook.valid(SECRET, PAYLOAD, hdrs, {now: 1614265330})
+    }
+}
+
+fn bench_sign_request() {
+    for _ in 0..500 {
+        nwebhook.sign_request(SECRET, PAYLOAD)
+    }
+}
+
+fn main() {
+    nbench.run("sign", bench_sign)
+    nbench.run("verify", bench_verify)
+    nbench.run("valid", bench_valid)
+    nbench.run("sign_request", bench_sign_request)
+}

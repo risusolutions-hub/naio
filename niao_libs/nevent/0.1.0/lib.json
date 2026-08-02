@@ -1,0 +1,11 @@
+{
+    "name": "nevent",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": " In-process event emitter / pub-sub with typed topics\n                    and wildcards.  ~blinker, pyee\n ...",
+    "import_paths": [
+        "nevent",
+        "std/nevent"
+    ],
+    "builtin_count": 22
+}

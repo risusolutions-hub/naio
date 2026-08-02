@@ -1,0 +1,18 @@
+[package]
+name = "niao_keyring"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "OS credential stores: macOS Keychain, Secret Service, Windows Credential Manager"
+
+[lib]
+bench = false
+
+[dependencies]
+keyring = { version = "3", features = ["apple-native", "windows-native", "linux-native"] }
+parking_lot = "0.12"
+
+[[bin]]
+name = "keyring_bench"
+path = "src/bin/keyring_bench.rs"

@@ -1,0 +1,21 @@
+[package]
+name = "niao_pdf"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "PDF create (text, images, tables), extract text/pages, merge/split"
+
+[lib]
+bench = false
+
+[dependencies]
+lopdf = "0.31"
+pdf-extract = "0.8"
+printpdf = { version = "0.7", features = ["embedded_images"] }
+image = { version = "0.24", default-features = false, features = ["png", "jpeg", "gif", "tiff"] }
+niao_parallel = { workspace = true }
+
+[[bin]]
+name = "pdf_bench"
+path = "src/bin/pdf_bench.rs"

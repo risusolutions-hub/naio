@@ -1,0 +1,132 @@
+// ngeo tests — run: niao run tests/ngeo.niao
+import "ngeo"
+import "ntest"
+
+fn test_point() {
+    let p = ngeo.point(-73.9857, 40.7484)
+    ntest.assert_eq(ngeo.kind(p), "point")
+    ntest.assert_near(ngeo.lon(p), -73.9857, 0.0001)
+    ntest.assert_near(ngeo.lat(p), 40.7484, 0.0001)
+    let arr = ngeo.to_array(p)
+    ntest.assert_eq(len(arr), 2)
+    ngeo.close(p)
+}
+
+fn test_haversine_nyc_london() {
+    let nyc = ngeo.point(-73.9857, 40.7484)
+    let lon = ngeo.point(-0.1276, 51.5072)
+    let km = ngeo.haversine(nyc, lon, true)
+    ntest.assert_true(km > 5500.0 && km < 5600.0)
+    ngeo.close(nyc)
+    ngeo.close(lon)
+}
+
+fn test_bearing_destination() {
+    let a = ngeo.point(0.0, 0.0)
+    let b = ngeo.point(0.0, 1.0)
+    let brng = ngeo.bearing(a, b)
+    ntest.assert_near(brng, 0.0, 1.0)
+    let d = ngeo.destination(a, 90.0, 111319.0)
+    ntest.assert_near(ngeo.lat(d), 0.0, 0.5)
+    ngeo.close(a)
+    ngeo.close(b)
+    ngeo.close(d)
+}
+
+fn test_bbox() {
+    let b = ngeo.bbox(-1.0, -1.0, 1.0, 1.0)
+    let p = ngeo.point(0.0, 0.0)
+    ntest.assert_true(ngeo.bbox_contains(b, p))
+    ngeo.close(b)
+    ngeo.close(p)
+}
+
+fn test_polygon_contains() {
+    let poly = ngeo.polygon([[
+        [0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0], [0.0, 0.0]
+    ]])
+    let inside = ngeo.point(0.5, 0.5)
+    let outside = ngeo.point(2.0, 2.0)
+    ntest.assert_true(ngeo.contains(poly, inside))
+    ntest.assert_false(ngeo.contains(poly, outside))
+    ntest.assert_true(ngeo.area(poly) > 0.0)
+    ngeo.close(poly)
+    ngeo.close(inside)
+    ngeo.close(outside)
+}
+
+fn test_linestring() {
+    let line = ngeo.linestring([[0.0, 0.0], [1.0, 0.0]])
+    ntest.assert_true(ngeo.length(line) > 100000.0)
+    let mid = ngeo.point_at(line, ngeo.length(line) / 2.0)
+    ntest.assert_near(ngeo.lat(mid), 0.0, 0.5)
+    ngeo.close(line)
+    ngeo.close(mid)
+}
+
+fn test_geojson_roundtrip() {
+    let raw = "{\"type\":\"Point\",\"coordinates\":[-73.9857,40.7484]}"
+    ntest.assert_true(ngeo.valid_geojson(raw))
+    let h = ngeo.parse_geojson(raw)
+    ntest.assert_eq(ngeo.kind(h), "point")
+    let s = ngeo.stringify(h)
+    ntest.assert_true(s.contains("-73.9857"))
+    ngeo.close(h)
+}
+
+fn test_invalid_geojson() {
+    let bad = ngeo.parse_geojson("not json")
+    ntest.assert_error(bad)
+}
+
+fn test_tile_math() {
+    let t = ngeo.lat_lon_to_tile(0.0, 0.0, 0)
+    ntest.assert_eq(t.x, 0)
+    ntest.assert_eq(t.y, 0)
+    ntest.assert_eq(t.z, 0)
+    let b = ngeo.tile_bounds(0, 0, 0)
+    ntest.assert_true(ngeo.max_lat(b) > 80.0)
+    let q = ngeo.tile_to_quadkey(3, 5, 4)
+    let back = ngeo.quadkey_to_tile(q)
+    ntest.assert_eq(back.x, 3)
+    ntest.assert_eq(back.y, 5)
+    ngeo.close(b)
+}
+
+fn test_invalid_coord() {
+    let e = ngeo.point(200.0, 0.0)
+    ntest.assert_error(e)
+}
+
+fn test_bad_handle() {
+    let e = ngeo.lon(999999)
+    ntest.assert_error(e)
+}
+
+fn test_distances_from() {
+    let origin = ngeo.point(0.0, 0.0)
+    let a = ngeo.point(1.0, 0.0)
+    let b = ngeo.point(0.0, 1.0)
+    let ds = ngeo.distances_from(origin, [a, b])
+    ntest.assert_eq(len(ds), 2)
+    ntest.assert_true(ds[0] > 0.0)
+    ngeo.close(origin)
+    ngeo.close(a)
+    ngeo.close(b)
+}
+
+fn main() {
+    ntest.case("point", test_point)
+    ntest.case("haversine NYC-London", test_haversine_nyc_london)
+    ntest.case("bearing/destination", test_bearing_destination)
+    ntest.case("bbox", test_bbox)
+    ntest.case("polygon contains", test_polygon_contains)
+    ntest.case("linestring", test_linestring)
+    ntest.case("geojson roundtrip", test_geojson_roundtrip)
+    ntest.case("invalid geojson", test_invalid_geojson)
+    ntest.case("tile math", test_tile_math)
+    ntest.case("invalid coord", test_invalid_coord)
+    ntest.case("bad handle", test_bad_handle)
+    ntest.case("batch distances", test_distances_from)
+    ntest.run()
+}

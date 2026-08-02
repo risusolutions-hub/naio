@@ -1,0 +1,125 @@
+import "nproc"
+import "ntest"
+
+fn test_cpu_count() {
+    ntest.assert_true(nproc.cpu_count() >= 1)
+}
+
+fn test_channel_send_recv() {
+    let ch = nproc.channel(8)
+    ntest.assert_true(nproc.channel_send(ch, "alpha"))
+    let got = nproc.channel_recv(ch)
+    ntest.assert_eq(got, "alpha")
+    ntest.assert_true(nproc.channel_close(ch))
+}
+
+fn test_channel_try_recv_empty() {
+    let ch = nproc.channel()
+    ntest.assert_eq(nproc.channel_try_recv(ch), nil)
+    ntest.assert_true(nproc.channel_close(ch))
+}
+
+fn test_queue_put_get() {
+    let q = nproc.queue()
+    ntest.assert_true(nproc.queue_put(q, 42))
+    ntest.assert_eq(nproc.queue_get(q), 42)
+    ntest.assert_true(nproc.queue_close(q))
+}
+
+fn test_event_set_wait() {
+    let ev = nproc.event()
+    ntest.assert_eq(nproc.event_is_set(ev), false)
+    nproc.event_set(ev)
+    ntest.assert_eq(nproc.event_is_set(ev), true)
+    ntest.assert_true(nproc.event_wait(ev))
+    nproc.event_clear(ev)
+    ntest.assert_eq(nproc.event_is_set(ev), false)
+}
+
+fn test_lock_acquire_release() {
+    let lk = nproc.lock()
+    ntest.assert_true(nproc.lock_acquire(lk))
+    ntest.assert_eq(nproc.lock_try_acquire(lk), false)
+    ntest.assert_true(nproc.lock_release(lk))
+}
+
+fn test_semaphore() {
+    let sem = nproc.semaphore(1)
+    ntest.assert_true(nproc.semaphore_acquire(sem))
+    ntest.assert_eq(nproc.semaphore_try_acquire(sem), false)
+    nproc.semaphore_release(sem)
+    ntest.assert_true(nproc.semaphore_try_acquire(sem))
+}
+
+fn test_shared_memory_roundtrip() {
+    let name = "ntest_shm_" + str(nos.getpid())
+    let shm = nproc.shared_memory(name, 32)
+    ntest.assert_eq(nproc.shared_size(shm), 32)
+    ntest.assert_eq(nproc.shared_write(shm, 0, "payload"), 7)
+    ntest.assert_eq(nproc.shared_read(shm, 0, 7), "payload")
+    let shm2 = nproc.shared_open(name)
+    ntest.assert_eq(nproc.shared_read(shm2, 0, 7), "payload")
+    ntest.assert_true(nproc.shared_unlink(name))
+}
+
+fn test_pipe_write_read() {
+    let p = nproc.pipe()
+    let h = p.handle
+    ntest.assert_eq(nproc.pipe_write(h, "pipe-bytes"), 10)
+    nproc.pipe_close_write(h)
+    let out = nproc.pipe_read(h, 64)
+    ntest.assert_true(len(out) >= 10)
+}
+
+fn test_spawn_version() {
+    let proc = nproc.spawn(["niao", "--version"])
+    ntest.assert_true(proc.pid > 0)
+    let out = nproc.stdout_read_all(proc.handle)
+    ntest.assert_true(len(out) > 0)
+    let code = nproc.wait(proc.handle)
+    ntest.assert_eq(code, 0)
+    ntest.assert_true(nproc.close(proc.handle))
+}
+
+fn test_pool_map() {
+    let pool = nproc.pool(2)
+    let cmds = [["niao", "--version"], ["niao", "--version"]]
+    let results = nproc.pool_map(pool, cmds)
+    ntest.assert_eq(len(results), 2)
+    ntest.assert_true(results[0].ok)
+    ntest.assert_true(len(results[0].stdout) > 0)
+    ntest.assert_true(nproc.pool_close(pool))
+}
+
+fn test_spawn_bad_cmd_type() {
+    let caught = false
+    try {
+        nproc.spawn(123)
+    } catch e {
+        caught = true
+    }
+    ntest.assert_true(caught)
+}
+
+fn test_invalid_handle() {
+    let r = nproc.poll(999999)
+    ntest.assert_true(type(r) == "error" || r == nil)
+}
+
+fn main() {
+    import "nos"
+    test_cpu_count()
+    test_channel_send_recv()
+    test_channel_try_recv_empty()
+    test_queue_put_get()
+    test_event_set_wait()
+    test_lock_acquire_release()
+    test_semaphore()
+    test_shared_memory_roundtrip()
+    test_pipe_write_read()
+    test_spawn_version()
+    test_pool_map()
+    test_spawn_bad_cmd_type()
+    test_invalid_handle()
+    print("nproc tests ok")
+}

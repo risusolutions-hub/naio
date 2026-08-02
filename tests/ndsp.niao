@@ -1,0 +1,279 @@
+// ndsp tests — run: niao run tests/ndsp.niao
+import "ndsp"
+import "ntest"
+import "ndoc"
+
+fn test_convolve_impulse() {
+    let y = ndsp.convolve([1.0, 2.0, 3.0], [1.0], "full")
+    ntest.assert_eq(len(y), 3)
+    ntest.assert_near(y[0], 1.0, 0.000000000001)
+    ntest.assert_near(y[2], 3.0, 0.000000000001)
+}
+
+fn test_convolve_empty() {
+    let y = ndsp.convolve([], [1.0, 2.0], "full")
+    ntest.assert_eq(len(y), 0)
+}
+
+fn test_correlate_full() {
+    let y = ndsp.correlate([1.0, 2.0, 3.0], [0.0, 1.0], "full")
+    ntest.assert_eq(len(y), 4)
+}
+
+fn test_fftconvolve_match() {
+    let a = [1.0, 0.0, 0.0, 0.0]
+    let b = [1.0, 2.0]
+    let d = ndsp.convolve(a, b, "full")
+    let f = ndsp.fftconvolve(a, b, "full")
+    ntest.assert_eq(len(d), len(f))
+    ntest.assert_near(d[0], f[0], 0.000000001)
+    ntest.assert_near(d[1], f[1], 0.000000001)
+}
+
+fn test_convolve_bad_mode() {
+    let r = ndsp.convolve([1.0], [1.0], "nope")
+    ntest.assert_error(r)
+}
+
+fn test_hann() {
+    let w = ndsp.hann(5)
+    ntest.assert_eq(len(w), 5)
+    ntest.assert_near(w[2], 1.0, 0.000000000001)
+}
+
+fn test_windows() {
+    ntest.assert_eq(len(ndsp.hamming(8)), 8)
+    ntest.assert_eq(len(ndsp.blackman(8)), 8)
+    ntest.assert_eq(len(ndsp.bartlett(5)), 5)
+    ntest.assert_eq(len(ndsp.boxcar(4)), 4)
+}
+
+fn test_kaiser_tukey() {
+    ntest.assert_eq(len(ndsp.kaiser(8, 8.6)), 8)
+    ntest.assert_eq(len(ndsp.tukey(8, 0.5)), 8)
+    let bad = ndsp.kaiser(8, 0.0 - 1.0)
+    ntest.assert_error(bad)
+}
+
+fn test_get_window() {
+    ntest.assert_eq(len(ndsp.get_window("hann", 16)), 16)
+    let bad = ndsp.get_window("notawindow", 8)
+    ntest.assert_error(bad)
+}
+
+fn test_zero_window() {
+    ntest.assert_eq(len(ndsp.hann(0)), 0)
+}
+
+fn test_firwin_dc() {
+    let h = ndsp.firwin(21, 0.2)
+    ntest.assert_eq(len(h), 21)
+    let s = 0.0
+    let i = 0
+    while i < len(h) {
+        s = s + h[i]
+        i = i + 1
+    }
+    ntest.assert_near(s, 1.0, 0.000000001)
+}
+
+fn test_firwin_bad() {
+    let r = ndsp.firwin(0, 0.2)
+    ntest.assert_error(r)
+}
+
+fn test_butter_dc() {
+    let f = ndsp.butter(2, 0.2)
+    let sb = 0.0
+    let sa = 0.0
+    let i = 0
+    while i < len(f.b) {
+        sb = sb + f.b[i]
+        i = i + 1
+    }
+    i = 0
+    while i < len(f.a) {
+        sa = sa + f.a[i]
+        i = i + 1
+    }
+    ntest.assert_near(sb / sa, 1.0, 0.00001)
+}
+
+fn test_cheby_iir() {
+    let c = ndsp.cheby1(2, 1.0, 0.2)
+    ntest.assert_true(len(c.b) > 0)
+    let i = ndsp.iirfilter(2, 0.2, {ftype: "butter"})
+    ntest.assert_true(len(i.a) > 0)
+}
+
+fn test_lfilter() {
+    let y = ndsp.lfilter([1.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0], [1.0], [1.0, 1.0, 1.0, 1.0])
+    ntest.assert_near(y[2], 1.0, 0.000000000001)
+}
+
+fn test_filtfilt() {
+    let x = [1.0, 2.0, 3.0, 2.0, 1.0, 0.0, 0.0]
+    let y = ndsp.filtfilt([0.25, 0.5, 0.25], [1.0], x)
+    ntest.assert_eq(len(y), len(x))
+}
+
+fn test_sos() {
+    let f = ndsp.butter(2, 0.2, {output: "sos"})
+    let y = ndsp.sosfilt(f, [1.0, 0.0, 0.0, 0.0])
+    ntest.assert_eq(len(y), 4)
+    let tf = ndsp.sos2tf(f)
+    ntest.assert_true(len(tf.b) > 0)
+    let sos = ndsp.tf2sos(tf.b, tf.a)
+    ntest.assert_true(len(sos) > 0)
+}
+
+fn test_sosfiltfilt() {
+    let f = ndsp.butter(2, 0.2, {output: "sos"})
+    let y = ndsp.sosfiltfilt(f, [1.0, 2.0, 3.0, 2.0, 1.0])
+    ntest.assert_eq(len(y), 5)
+}
+
+fn test_resample() {
+    let x = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]
+    let y = ndsp.resample(x, 4)
+    ntest.assert_eq(len(y), 4)
+}
+
+fn test_resample_empty() {
+    let r = ndsp.resample([], 4)
+    ntest.assert_error(r)
+}
+
+fn test_resample_poly_decimate() {
+    let x = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]
+    let u = ndsp.resample_poly(x, 2, 1)
+    ntest.assert_true(len(u) > 0)
+    let d = ndsp.decimate(x, 2)
+    ntest.assert_eq(len(d), 4)
+}
+
+fn test_upfirdn() {
+    let y = ndsp.upfirdn([0.5, 0.5], [1.0, 2.0, 3.0], 1, 1)
+    ntest.assert_true(len(y) > 0)
+}
+
+fn test_spectral() {
+    let x = [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    let opts = {nperseg: 4, fs: 8.0}
+    let s = ndsp.stft(x, opts)
+    ntest.assert_true(len(s.f) > 0)
+    ntest.assert_true(len(s.Zxx.re) > 0)
+    let sp = ndsp.spectrogram(x, opts)
+    ntest.assert_true(len(sp.Sxx) > 0)
+    let w = ndsp.welch(x, opts)
+    ntest.assert_true(len(w.Pxx) > 0)
+    let p = ndsp.periodogram(x, {fs: 8.0})
+    ntest.assert_true(len(p.f) > 0)
+}
+
+fn test_istft() {
+    let x = [1.0, 0.5, 0.0, 0.0 - 0.5, 0.0 - 1.0, 0.0 - 0.5, 0.0, 0.5]
+    let opts = {nperseg: 4}
+    let s = ndsp.stft(x, opts)
+    let y = ndsp.istft(s.Zxx, opts)
+    ntest.assert_true(len(y) > 0)
+}
+
+fn test_detrend() {
+    let y = ndsp.detrend([3.0, 3.0, 3.0], "constant")
+    ntest.assert_near(y[0], 0.0, 0.000000000001)
+}
+
+fn test_hilbert() {
+    let h = ndsp.hilbert([1.0, 0.0, 0.0 - 1.0, 0.0])
+    ntest.assert_eq(len(h.re), 4)
+    ntest.assert_eq(len(h.im), 4)
+}
+
+fn test_medfilt() {
+    let y = ndsp.medfilt([1.0, 100.0, 1.0], 3)
+    ntest.assert_near(y[1], 1.0, 0.000000000001)
+}
+
+fn test_medfilt_even() {
+    let r = ndsp.medfilt([1.0, 2.0, 3.0], 2)
+    ntest.assert_error(r)
+}
+
+fn test_find_peaks() {
+    let p = ndsp.find_peaks([0.0, 1.0, 0.0, 2.0, 0.0])
+    ntest.assert_eq(len(p.peaks), 2)
+    ntest.assert_eq(p.peaks[0], 1)
+}
+
+fn test_freqz() {
+    let r = ndsp.freqz([1.0, 1.0], [1.0], {worN: 8})
+    ntest.assert_eq(len(r.w), 8)
+    let f = ndsp.butter(2, 0.2, {output: "sos"})
+    let s = ndsp.sosfreqz(f, {worN: 8})
+    ntest.assert_eq(len(s.w), 8)
+}
+
+fn test_waves() {
+    ntest.assert_eq(len(ndsp.chirp([0.0, 0.1, 0.2], 1.0, 1.0, 10.0)), 3)
+    ntest.assert_eq(len(ndsp.sawtooth([0.0, 3.1415926535], 0.5)), 2)
+    ntest.assert_eq(len(ndsp.square([0.0, 3.1415926535], 0.5)), 2)
+    ntest.assert_eq(len(ndsp.gausspulse([0.0, 0.01, 0.0 - 0.01], 1000.0, 0.5)), 3)
+}
+
+fn test_chirp_bad() {
+    let r = ndsp.chirp([0.0], 1.0, 1.0, 2.0, "nope")
+    ntest.assert_error(r)
+}
+
+fn test_valid_mode_err() {
+    let r = ndsp.convolve([1.0], [1.0, 2.0, 3.0], "valid")
+    ntest.assert_error(r)
+}
+
+fn test_doctests() {
+    let src = io_read_file("crates/niao_runtime/src/ndsp.rs")
+    ntest.assert_not_error(src)
+    let r = ndoc.run(src)
+    ntest.assert_true(r.ok)
+    ntest.assert_true(r.passed > 20)
+    print("ndsp doctests passed=", r.passed, " total=", r.total)
+}
+
+fn main() {
+    test_convolve_impulse()
+    test_convolve_empty()
+    test_correlate_full()
+    test_fftconvolve_match()
+    test_convolve_bad_mode()
+    test_hann()
+    test_windows()
+    test_kaiser_tukey()
+    test_get_window()
+    test_zero_window()
+    test_firwin_dc()
+    test_firwin_bad()
+    test_butter_dc()
+    test_cheby_iir()
+    test_lfilter()
+    test_filtfilt()
+    test_sos()
+    test_sosfiltfilt()
+    test_resample()
+    test_resample_empty()
+    test_resample_poly_decimate()
+    test_upfirdn()
+    test_spectral()
+    test_istft()
+    test_detrend()
+    test_hilbert()
+    test_medfilt()
+    test_medfilt_even()
+    test_find_peaks()
+    test_freqz()
+    test_waves()
+    test_chirp_bad()
+    test_valid_mode_err()
+    test_doctests()
+    print("ndsp tests: ok (34 cases)")
+}

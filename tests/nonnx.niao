@@ -1,0 +1,129 @@
+import "nonnx"
+import "ntest"
+import "ndoc"
+
+let FIXTURE = "crates/niao_onnx/tests/fixtures/mobilenetv2-7.onnx"
+
+fn test_version() {
+    let v = nonnx.version()
+    ntest.assert_true(len(v) > 0)
+}
+
+fn test_tensor() {
+    let t = nonnx.tensor([2, 2], [1.0, 2.0, 3.0, 4.0])
+    ntest.assert_eq(t.shape[0], 2)
+    ntest.assert_eq(len(t.data), 4)
+}
+
+fn test_zeros() {
+    let z = nonnx.zeros([3, 4])
+    ntest.assert_eq(z.shape[0], 3)
+    ntest.assert_eq(len(z.data), 12)
+    ntest.assert_near(z.data[0], 0.0, 0.0000001)
+}
+
+fn test_zeros_empty() {
+    let r = nonnx.zeros([])
+    ntest.assert_error(r)
+}
+
+fn test_tensor_bad_size() {
+    let r = nonnx.tensor([2, 2], [1.0, 2.0])
+    ntest.assert_error(r)
+}
+
+fn test_batch() {
+    let b = nonnx.batch([[1.0, 2.0], [3.0, 4.0]])
+    ntest.assert_eq(b.shape[0], 2)
+    ntest.assert_eq(b.shape[1], 2)
+}
+
+fn test_batch_empty() {
+    let r = nonnx.batch([])
+    ntest.assert_error(r)
+}
+
+fn test_inspect_missing() {
+    let r = nonnx.inspect("/nonexistent/nonnx_model.onnx")
+    ntest.assert_error(r)
+}
+
+fn test_load_missing() {
+    let r = nonnx.load("/nonexistent/nonnx_model.onnx")
+    ntest.assert_error(r)
+}
+
+fn test_invalid_handle() {
+    let r = nonnx.inputs(999999)
+    ntest.assert_error(r)
+    let r2 = nonnx.outputs(999999)
+    ntest.assert_error(r2)
+}
+
+fn test_inspect_mobilenet() {
+    let meta = nonnx.inspect(FIXTURE)
+    ntest.assert_true(len(meta.inputs) > 0)
+    ntest.assert_true(len(meta.outputs) > 0)
+    ntest.assert_eq(meta.inputs[0].dtype, "float32")
+}
+
+fn test_load_run_mobilenet() {
+    let h = nonnx.load(FIXTURE)
+    let ins = nonnx.inputs(h)
+    ntest.assert_true(len(ins) > 0)
+    let name = ins[0].name
+    let t = nonnx.zeros(ins[0].shape)
+    let out = nonnx.run_input(h, name, t)
+    let tensor = nonnx.output_at(out, 0)
+    ntest.assert_true(len(tensor.data) > 100)
+    nonnx.close(h)
+    let closed = nonnx.inputs(h)
+    ntest.assert_error(closed)
+}
+
+fn test_close_twice() {
+    let h = nonnx.load(FIXTURE)
+    ntest.assert_true(nonnx.close(h))
+    let r = nonnx.close(h)
+    ntest.assert_error(r)
+}
+
+fn test_run_empty_feed() {
+    let h = nonnx.load(FIXTURE)
+    let r = nonnx.run(h, {})
+    ntest.assert_error(r)
+    nonnx.close(h)
+}
+
+fn test_load_with_threads() {
+    let h = nonnx.load(FIXTURE, {threads: 2})
+    nonnx.close(h)
+}
+
+fn test_doctests() {
+    let src = io_read_file("crates/niao_runtime/src/nonnx.rs")
+    ntest.assert_not_error(src)
+    let r = ndoc.run(src)
+    ntest.assert_true(r.passed >= 14)
+    print("nonnx doctests passed=", r.passed, " total=", r.total)
+}
+
+fn main() {
+    test_version()
+    test_tensor()
+    test_zeros()
+    test_zeros_empty()
+    test_tensor_bad_size()
+    test_batch()
+    test_batch_empty()
+    test_inspect_missing()
+    test_load_missing()
+    test_invalid_handle()
+    test_inspect_mobilenet()
+    test_load_run_mobilenet()
+    test_close_twice()
+    test_run_empty_feed()
+    test_load_with_threads()
+    test_doctests()
+    print("nonnx tests: ok (15 ntest + doctests)")
+}

@@ -1,0 +1,82 @@
+// nmqtt integration tests — offline codec + topic matching (no broker required).
+// Run: niao run --mode interp tests/nmqtt.niao
+import "ntest"
+import "nmqtt"
+
+fn test_topic_matches_exact() {
+    ntest.assert_true(nmqtt.topic_matches("a/b", "a/b"))
+    ntest.assert_false(nmqtt.topic_matches("a/b", "a/c"))
+}
+
+fn test_topic_matches_wildcards() {
+    ntest.assert_true(nmqtt.topic_matches("a/+/c", "a/b/c"))
+    ntest.assert_true(nmqtt.topic_matches("a/#", "a/b/c"))
+    ntest.assert_true(nmqtt.topic_matches("#", "x/y"))
+    ntest.assert_false(nmqtt.topic_matches("+", "a/b"))
+    ntest.assert_false(nmqtt.topic_matches("sport/#", "$SYS/broker"))
+    ntest.assert_true(nmqtt.topic_matches("$SYS/#", "$SYS/broker"))
+}
+
+fn test_encode_publish_and_packet_type() {
+    let p = nmqtt.encode_publish("t/a", "hi", {qos: 0})
+    ntest.assert_eq(nmqtt.packet_type(p), "PUBLISH")
+    let d = nmqtt.decode_packet(p)
+    ntest.assert_eq(d.type, "PUBLISH")
+    ntest.assert_eq(d.topic, "t/a")
+    ntest.assert_eq(d.payload, "hi")
+}
+
+fn test_encode_publish_qos1() {
+    let p = nmqtt.encode_publish("q", "x", {qos: 1, packet_id: 7})
+    let d = nmqtt.decode_packet(p)
+    ntest.assert_eq(d.qos, 1)
+    ntest.assert_eq(d.packet_id, 7)
+}
+
+fn test_encode_connect_with_will() {
+    let p = nmqtt.encode_connect({
+        host: "localhost",
+        client_id: "demo",
+        will: { topic: "status", payload: "offline", qos: 0, retain: true }
+    })
+    ntest.assert_eq(nmqtt.packet_type(p), "CONNECT")
+    let d = nmqtt.decode_packet(p)
+    ntest.assert_eq(d.client_id, "demo")
+    ntest.assert_eq(d.will.topic, "status")
+}
+
+fn test_mqtt5_encode() {
+    let p = nmqtt.encode_connect({ host: "h", client_id: "v5", protocol: "5" })
+    let d = nmqtt.decode_packet(p)
+    ntest.assert_eq(d.protocol_level, 5)
+}
+
+fn test_empty_topic_error() {
+    let v = nmqtt.encode_publish("", "x")
+    ntest.assert_error(v)
+}
+
+fn test_invalid_handle() {
+    let caught = false
+    try {
+        nmqtt.is_connected(999999)
+    } catch (e) {
+        caught = true
+    }
+    ntest.assert_true(caught)
+}
+
+fn main() {
+    ntest.case("topic_matches exact", test_topic_matches_exact)
+    ntest.case("topic_matches wildcards", test_topic_matches_wildcards)
+    ntest.case("encode_publish packet_type", test_encode_publish_and_packet_type)
+    ntest.case("encode_publish qos1", test_encode_publish_qos1)
+    ntest.case("encode_connect will", test_encode_connect_with_will)
+    ntest.case("mqtt5 encode", test_mqtt5_encode)
+    ntest.case("empty topic error", test_empty_topic_error)
+    ntest.case("invalid handle", test_invalid_handle)
+    let summary = ntest.run()
+    if !summary.ok {
+        nos.exit(1)
+    }
+}

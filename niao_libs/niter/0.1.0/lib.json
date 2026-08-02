@@ -1,0 +1,11 @@
+{
+    "name": "niter",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": "Iterator & combinatorics toolkit: product, permutations, combinations, groupby, windows, chunked, flatten, zip_longest.  ~itertools, more-itertools (general values; complements nlazy packed pipelines) ...",
+    "import_paths": [
+        "niter",
+        "std/niter"
+    ],
+    "builtin_count": 21
+}

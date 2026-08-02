@@ -1,0 +1,11 @@
+{
+    "name": "nimap",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": "IMAP4 + POP3 mailbox retrieval: search, flags, folders,\n                    IDLE push.  ~imaplib, imapclient\n ...",
+    "import_paths": [
+        "nimap",
+        "std/nimap"
+    ],
+    "builtin_count": 41
+}

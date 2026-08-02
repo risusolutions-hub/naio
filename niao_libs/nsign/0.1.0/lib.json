@@ -1,0 +1,11 @@
+{
+    "name": "nsign",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": "Signed + expiring tokens, cookies, URLs (tamper-proof values).  ~itsdangerous ...",
+    "import_paths": [
+        "nsign",
+        "std/nsign"
+    ],
+    "builtin_count": 15
+}

@@ -1,0 +1,11 @@
+{
+    "name": "nscrape",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": "Polite scraping: robots.txt, rate limits, retries, sitemap crawl, article/readability extraction. ~scrapy, trafilatura, newspaper",
+    "import_paths": [
+        "nscrape",
+        "std/nscrape"
+    ],
+    "builtin_count": 31
+}

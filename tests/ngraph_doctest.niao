@@ -1,0 +1,40 @@
+import "ndoc"
+import "ntest"
+
+fn test_ngraph_doctests() {
+    let src = """
+// >>> import "ngraph"
+// >>> let g = ngraph.new()
+// >>> ngraph.node_count(g)
+// => 0
+// >>> let g2 = ngraph.from_edges([["a","b"],["b","c"]])
+// >>> ngraph.edge_count(g2)
+// => 2
+// >>> let c = ngraph.clone(g2)
+// >>> ngraph.node_count(c)
+// => 3
+// >>> let g3 = ngraph.new()
+// >>> ngraph.clear(g3)
+// => true
+// >>> let g4 = ngraph.new()
+// >>> ngraph.add_node(g4, "x")
+// => true
+// >>> let g5 = ngraph.new()
+// >>> ngraph.add_edge(g5, "a", "b", 2.0)
+// => true
+// >>> let g6 = ngraph.from_edges([["a","b"],["b","c"],["a","c"]])
+// >>> ngraph.shortest_path(g6, "a", "c")
+// => ["a","c"]
+"""
+    let r = ndoc.run(src)
+    ntest.assert_true(r.ok)
+    ntest.assert_true(r.passed >= 7)
+}
+
+fn main() {
+    ntest.case("ngraph doctest examples", test_ngraph_doctests)
+    let summary = ntest.run()
+    if summary.failed > 0 {
+        print("ngraph doctest suite failed:", summary.failed)
+    }
+}

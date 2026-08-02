@@ -1,0 +1,94 @@
+// Micro-benchmarks for nencoding hot paths.
+// Run: niao run examples/nencoding_bench.niao
+import "nencoding"
+import "nbench"
+import "ncl"
+
+fn make_utf8_payload(n) {
+    let s = ""
+    for i in 0..n {
+        s = s + "The quick brown fox jumps over the lazy dog. 日本語 "
+    }
+    return nencoding.encode(s, "utf-8")
+}
+
+fn make_shift_jis_payload(n) {
+    let s = ""
+    for i in 0..n {
+        s = s + "日本語テストデータ "
+    }
+    return nencoding.encode(s, "shift_jis")
+}
+
+fn bench_decode_utf8_64k() {
+    let raw = make_utf8_payload(2000)
+    return len(nencoding.decode(raw, "utf-8"))
+}
+
+fn bench_decode_shift_jis_32k() {
+    let raw = make_shift_jis_payload(2000)
+    return len(nencoding.decode(raw, "shift_jis"))
+}
+
+fn bench_detect_utf8() {
+    let raw = make_utf8_payload(2000)
+    return nencoding.detect(raw).confidence
+}
+
+fn bench_detect_shift_jis() {
+    let raw = make_shift_jis_payload(2000)
+    return nencoding.detect(raw).confidence
+}
+
+fn bench_transcode_sjis_to_utf8() {
+    let raw = make_shift_jis_payload(2000)
+    let out = nencoding.transcode(raw, "utf-8", "shift_jis")
+    return len(out)
+}
+
+fn bench_encode_utf16_le() {
+    let text = ""
+    for i in 0..5000 {
+        text = text + "encode benchmark line "
+    }
+    let raw = nencoding.encode(text, "utf-16-le", true)
+    return len(raw)
+}
+
+fn make_gbk_payload(n) {
+    let s = ""
+    for i in 0..n {
+        s = s + "中文测试数据 "
+    }
+    return nencoding.encode(s, "gbk")
+}
+
+fn bench_guess_decode() {
+    let raw = make_gbk_payload(2000)
+    return len(nencoding.guess_decode(raw))
+}
+
+fn main() {
+    let opts = {warmup: 2, iterations: 15}
+
+    let r1 = nbench.run("decode utf-8 ~64kB", bench_decode_utf8_64k, opts)
+    print("decode utf-8 ~64kB:", "mean=", r1.mean, "ns p50=", r1.p50)
+
+    let r2 = nbench.run("decode shift_jis ~32kB", bench_decode_shift_jis_32k, opts)
+    print("decode shift_jis ~32kB:", "mean=", r2.mean, "ns p50=", r2.p50)
+
+    let r3 = nbench.run("detect utf-8 ~64kB", bench_detect_utf8, opts)
+    print("detect utf-8 ~64kB:", "mean=", r3.mean, "ns p50=", r3.p50)
+
+    let r4 = nbench.run("detect shift_jis ~32kB", bench_detect_shift_jis, opts)
+    print("detect shift_jis ~32kB:", "mean=", r4.mean, "ns p50=", r4.p50)
+
+    let r5 = nbench.run("transcode sjis->utf8", bench_transcode_sjis_to_utf8, opts)
+    print("transcode sjis->utf8:", "mean=", r5.mean, "ns p50=", r5.p50)
+
+    let r6 = nbench.run("encode utf-16-le 5k lines", bench_encode_utf16_le, opts)
+    print("encode utf-16-le 5k lines:", "mean=", r6.mean, "ns p50=", r6.p50)
+
+    let r7 = nbench.run("guess_decode gbk ~32kB", bench_guess_decode, opts)
+    print("guess_decode gbk ~32kB:", "mean=", r7.mean, "ns p50=", r7.p50)
+}

@@ -1,0 +1,67 @@
+{
+  "timestamp": "2026-07-13T065749Z",
+  "niao": "C:\\Risu\\Neko\\target\\release\\niao.exe",
+  "runs": 5,
+  "results": {
+    "_test_nrand": {
+      "status": "error",
+      "detail": "Error: \"E0001: unexpected character '\\u{feff}' at line 1, col 1\""
+    },
+    "aa_control_arith": {
+      "status": "ok",
+      "runs": 5,
+      "best_ms": 43.36,
+      "avg_ms": 44.608,
+      "worst_ms": 45.67
+    },
+    "json_parse": {
+      "status": "ok",
+      "runs": 5,
+      "best_ms": 1067.58,
+      "avg_ms": 1130.806,
+      "worst_ms": 1201.73
+    },
+    "ncache_churn": {
+      "status": "ok",
+      "runs": 5,
+      "best_ms": 920.6,
+      "avg_ms": 978.202,
+      "worst_ms": 1137.62
+    },
+    "nmath_scalar": {
+      "status": "ok",
+      "runs": 5,
+      "best_ms": 974.49,
+      "avg_ms": 1016.91,
+      "worst_ms": 1065.0
+    },
+    "nrand_normal": {
+      "status": "ok",
+      "runs": 5,
+      "best_ms": 405.62,
+      "avg_ms": 433.75,
+      "worst_ms": 475.88
+    },
+    "nrand_ranged_int": {
+      "status": "ok",
+      "runs": 5,
+      "best_ms": 804.43,
+      "avg_ms": 827.36,
+      "worst_ms": 842.46
+    },
+    "nstr_transform": {
+      "status": "ok",
+      "runs": 5,
+      "best_ms": 281.39,
+      "avg_ms": 289.242,
+      "worst_ms": 297.38
+    },
+    "nvec_search": {
+      "status": "ok",
+      "runs": 5,
+      "best_ms": 305.87,
+      "avg_ms": 317.226,
+      "worst_ms": 326.68
+    }
+  }
+}

@@ -1,0 +1,164 @@
+import "nauth"
+import "ntest"
+
+const SECRET = "test-secret-key-32-bytes-long!!!!"
+const FAST = {scheme: "bcrypt", bcrypt_cost: 4, roles: {admin: ["editor", "viewer"], editor: ["viewer"]}}
+
+fn test_auth_handle() {
+    let a = nauth.auth(SECRET, FAST)
+    ntest.assert_eq(a.kind, "auth")
+}
+
+fn test_hash_verify() {
+    let h = nauth.hash_password("s3cret!", FAST)
+    ntest.assert_true(nauth.verify_password("s3cret!", h))
+    ntest.assert_false(nauth.verify_password("wrong", h))
+}
+
+fn test_login_logout_session() {
+    let a = nauth.auth(SECRET, FAST)
+    let hash = a.hash_password("pw")
+    let r = a.login("alice", "pw", hash, {roles: ["admin"], permissions: ["read"]})
+    ntest.assert_true(r.ok)
+    ntest.assert_eq(r.session.user_id, "alice")
+    ntest.assert_true(r.session.is_authenticated)
+    let cookie = r.session.cookie()
+    ntest.assert_true(cookie.starts_with("session="))
+    let loaded = a.session_from_cookie(cookie)
+    ntest.assert_eq(loaded.user_id, "alice")
+    ntest.assert_true(a.allows(loaded.roles, "viewer"))
+    let clear = a.logout()
+    ntest.assert_true(clear.contains("Max-Age=0"))
+}
+
+fn test_bad_credentials() {
+    let a = nauth.auth(SECRET, FAST)
+    let hash = a.hash_password("pw")
+    let r = a.login("alice", "nope", hash)
+    ntest.assert_error(r)
+}
+
+fn test_login_user_and_token() {
+    let a = nauth.auth(SECRET, FAST)
+    let s = a.login_user("bob", {roles: ["editor"]})
+    let tok = s.token()
+    ntest.assert_true(len(tok) > 10)
+    let s2 = a.load_session(tok)
+    ntest.assert_eq(s2.user_id, "bob")
+}
+
+fn test_session_get_set() {
+    let a = nauth.auth(SECRET, FAST)
+    let s = a.create_session("u1")
+    s.set("flash", "hello")
+    ntest.assert_eq(s.get("flash"), "hello")
+    ntest.assert_eq(s.get("missing"), nil)
+    let obj = s.to_object()
+    ntest.assert_eq(obj.user_id, "u1")
+}
+
+fn test_password_reset() {
+    let a = nauth.auth(SECRET, FAST)
+    let tok = a.reset_token("carol")
+    let uid = a.verify_reset(tok)
+    ntest.assert_eq(uid, "carol")
+    let done = a.complete_reset(tok, "newpw")
+    ntest.assert_eq(done.user_id, "carol")
+    ntest.assert_true(a.verify_password("newpw", done.hash))
+}
+
+fn test_csrf() {
+    let a = nauth.auth(SECRET, FAST)
+    let s = a.login_user("dave")
+    let tok = a.csrf_token(s)
+    ntest.assert_true(a.validate_csrf(tok, s))
+    ntest.assert_false(a.validate_csrf("bad.token", s))
+    ntest.assert_false(a.validate_csrf(tok, "other-sid"))
+}
+
+fn test_rbac_flat() {
+    ntest.assert_true(nauth.has_role(["admin", "user"], "admin"))
+    ntest.assert_false(nauth.has_role(["user"], "admin"))
+    ntest.assert_true(nauth.has_permission(["*"], "write"))
+    ntest.assert_false(nauth.has_permission(["read"], "write"))
+    let expanded = nauth.roles_expand({admin: ["editor"], editor: ["viewer"]}, ["admin"])
+    ntest.assert_true(nauth.has_role(expanded, "viewer"))
+    ntest.assert_true(nauth.roles_allows({admin: ["viewer"]}, ["admin"], "viewer"))
+}
+
+fn test_user_objects() {
+    let u = nauth.user("u1", {roles: ["admin"], permissions: ["read"]})
+    ntest.assert_true(u.is_authenticated)
+    ntest.assert_false(u.is_anonymous)
+    let anon = nauth.anonymous()
+    ntest.assert_true(anon.is_anonymous)
+    ntest.assert_false(anon.is_authenticated)
+}
+
+fn test_compare_and_token() {
+    ntest.assert_true(nauth.compare("abc", "abc"))
+    ntest.assert_false(nauth.compare("abc", "abd"))
+    let t = nauth.token(16)
+    ntest.assert_true(len(t) > 0)
+}
+
+fn test_extract_cookie() {
+    let v = nauth.extract_cookie("a=1; session=tok.val; b=2", "session")
+    ntest.assert_eq(v, "tok.val")
+    ntest.assert_eq(nauth.extract_cookie("a=1", "session"), nil)
+}
+
+fn test_tampered_session() {
+    let a = nauth.auth(SECRET, FAST)
+    let s = a.login_user("eve")
+    let tok = s.token()
+    let bad = tok + "x"
+    let r = a.load_session(bad)
+    ntest.assert_error(r)
+}
+
+fn test_empty_secret() {
+    let r = nauth.auth("")
+    ntest.assert_error(r)
+}
+
+fn test_verify_and_update() {
+    let h = nauth.hash_password("x", FAST)
+    let r = nauth.verify_and_update("x", h, FAST)
+    ntest.assert_true(r.ok)
+}
+
+fn test_constants() {
+    ntest.assert_eq(nauth.DEFAULT_COOKIE_NAME, "session")
+    ntest.assert_eq(nauth.DEFAULT_SESSION_LIFETIME, 86400)
+    ntest.assert_eq(nauth.DEFAULT_RESET_MAX_AGE, 3600)
+    ntest.assert_eq(nauth.DEFAULT_TOKEN_BYTES, 32)
+}
+
+fn test_session_refresh() {
+    let a = nauth.auth(SECRET, FAST)
+    let s = a.login_user("frank")
+    let s2 = s.refresh()
+    ntest.assert_eq(s2.user_id, "frank")
+}
+
+ntest.case("auth_handle", test_auth_handle)
+ntest.case("hash_verify", test_hash_verify)
+ntest.case("login_logout_session", test_login_logout_session)
+ntest.case("bad_credentials", test_bad_credentials)
+ntest.case("login_user_and_token", test_login_user_and_token)
+ntest.case("session_get_set", test_session_get_set)
+ntest.case("password_reset", test_password_reset)
+ntest.case("csrf", test_csrf)
+ntest.case("rbac_flat", test_rbac_flat)
+ntest.case("user_objects", test_user_objects)
+ntest.case("compare_and_token", test_compare_and_token)
+ntest.case("extract_cookie", test_extract_cookie)
+ntest.case("tampered_session", test_tampered_session)
+ntest.case("empty_secret", test_empty_secret)
+ntest.case("verify_and_update", test_verify_and_update)
+ntest.case("constants", test_constants)
+ntest.case("session_refresh", test_session_refresh)
+
+let summary = ntest.run()
+print(summary)

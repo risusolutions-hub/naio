@@ -1,0 +1,104 @@
+import "nhtml"
+import "ntest"
+
+fn test_parse_select() {
+    let doc = nhtml.parse("<html><body><p class='x'>hi</p><a href='/'>home</a></body></html>")
+    let ps = nhtml.select(doc, "p")
+    ntest.assert_eq(len(ps), 1)
+    let p = nhtml.select_one(doc, "p")
+    ntest.assert_eq(nhtml.tag(p), "p")
+    ntest.assert_eq(nhtml.attr(p, "class"), "x")
+    ntest.assert_true(nhtml.has_class(p, "x"))
+    let t = nhtml.text(p, {strip: true})
+    ntest.assert_eq(t, "hi")
+    let links = nhtml.select(doc, "a")
+    ntest.assert_eq(len(links), 1)
+    ntest.assert_eq(nhtml.attr(links[0], "href"), "/")
+    nhtml.close(doc)
+}
+
+fn test_fragment() {
+    let doc = nhtml.parse_fragment("<span>a</span><b>b</b>")
+    let spans = nhtml.select(doc, "span")
+    ntest.assert_eq(len(spans), 1)
+    nhtml.close(doc)
+}
+
+fn test_find_walk() {
+    let doc = nhtml.parse("<div><ul><li id='1'>a</li><li>b</li></ul></div>")
+    let root = nhtml.root(doc)
+    let li = nhtml.find(root, "li", {attrs: {id: "1"}})
+    ntest.assert_true(li != nil)
+    let all = nhtml.find_all(root, "li")
+    ntest.assert_eq(len(all), 2)
+    let desc = nhtml.descendants(root)
+    ntest.assert_true(len(desc) >= 3)
+    nhtml.close(doc)
+}
+
+fn test_serialize_escape() {
+    let doc = nhtml.parse("<div><b>x</b></div>")
+    let div = nhtml.select_one(doc, "div")
+    ntest.assert_true(nhtml.inner_html(div) != "")
+    ntest.assert_true(nhtml.html(div).starts_with("<div"))
+    nhtml.close(doc)
+
+    let esc = nhtml.escape("a < b")
+    ntest.assert_true(esc != "a < b")
+    ntest.assert_eq(nhtml.unescape(esc), "a < b")
+    ntest.assert_eq(nhtml.strip_tags("<p>z</p>"), "z")
+}
+
+fn test_extract_text() {
+    let t = nhtml.extract_text("<div>  one <span>two</span></div>", nil, {strip: true, separator: " "})
+    ntest.assert_true(t.contains("one"))
+    ntest.assert_true(t.contains("two"))
+}
+
+fn test_compiled_selector() {
+    let doc = nhtml.parse("<div><p class='a'>1</p><p class='b'>2</p></div>")
+    let root = nhtml.root(doc)
+    let sel = nhtml.compile_selector("p.a")
+    let hits = nhtml.select_with(root, sel)
+    ntest.assert_eq(len(hits), 1)
+    nhtml.close_selector(sel)
+    nhtml.close(doc)
+}
+
+fn test_valid_selector() {
+    ntest.assert_true(nhtml.valid_selector("div.foo"))
+    ntest.assert_false(nhtml.valid_selector("[bad"))
+}
+
+fn test_invalid_selector() {
+    let doc = nhtml.parse("<p>x</p>")
+    let e = nhtml.select(doc, "[[[")
+    ntest.assert_error(e)
+    nhtml.close(doc)
+}
+
+fn test_bad_handle() {
+    let e = nhtml.tag(999999999)
+    ntest.assert_error(e)
+}
+
+fn test_parallel_extract() {
+    let htmls = ["<p>one</p>", "<p>two</p>"]
+    let texts = nhtml.parallel_extract(htmls, "p", {strip: true})
+    ntest.assert_eq(len(texts), 2)
+}
+
+fn main() {
+    ntest.case("parse and select", test_parse_select)
+    ntest.case("fragment", test_fragment)
+    ntest.case("find and walk", test_find_walk)
+    ntest.case("serialize and escape", test_serialize_escape)
+    ntest.case("extract text", test_extract_text)
+    ntest.case("compiled selector", test_compiled_selector)
+    ntest.case("valid selector", test_valid_selector)
+    ntest.case("invalid selector", test_invalid_selector)
+    ntest.case("bad handle", test_bad_handle)
+    ntest.case("parallel extract", test_parallel_extract)
+    let summary = ntest.run()
+    print(summary)
+}

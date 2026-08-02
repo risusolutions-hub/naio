@@ -1,0 +1,11 @@
+{
+    "name": "ndataset",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": "Dataset loading: splits, shuffling, streaming batches,\n                    common formats.  ~datasets, torch dataloader\n",
+    "import_paths": [
+        "ndataset",
+        "std/ndataset"
+    ],
+    "builtin_count": 20
+}

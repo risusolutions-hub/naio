@@ -1,0 +1,166 @@
+import "nflock"
+import "ntest"
+import "nos"
+
+fn temp_path(name) {
+    let base = nos.getenv("TEMP")
+    if base == nil { base = "/tmp" }
+    return base + "/nflock_test_" + name
+}
+
+fn cleanup(path) {
+    nflock.break_stale(path, true)
+    nflock.pid_remove(path)
+}
+
+fn test_lock_acquire_release() {
+    let path = temp_path("lock1.lock")
+    cleanup(path)
+    let lk = nflock.lock(path)
+    ntest.assert_true(lk.locked)
+    ntest.assert_eq(nflock.locked(lk), true)
+    nflock.release(lk)
+    ntest.assert_eq(nflock.locked(lk), false)
+    nflock.close(lk)
+    cleanup(path)
+}
+
+fn test_try_acquire() {
+    let path = temp_path("try.lock")
+    cleanup(path)
+    let a = nflock.open(path)
+    let b = nflock.open(path)
+    ntest.assert_true(nflock.try_acquire(a, {mode: "exclusive"}))
+    ntest.assert_eq(nflock.try_acquire(b, {mode: "exclusive"}), false)
+    nflock.release(a)
+    ntest.assert_true(nflock.try_acquire(b))
+    nflock.close(a)
+    nflock.close(b)
+    cleanup(path)
+}
+
+fn test_shared_exclusive() {
+    let path = temp_path("shared.lock")
+    cleanup(path)
+    let a = nflock.open(path)
+    let b = nflock.open(path)
+    ntest.assert_true(nflock.try_acquire(a, {mode: "shared"}))
+    ntest.assert_true(nflock.try_acquire(b, {mode: "shared"}))
+    let c = nflock.open(path)
+    ntest.assert_eq(nflock.try_acquire(c, {mode: "exclusive"}), false)
+    nflock.release(a)
+    nflock.release(b)
+    nflock.close(a)
+    nflock.close(b)
+    nflock.close(c)
+    cleanup(path)
+}
+
+fn test_flock_constants() {
+    ntest.assert_eq(nflock.LOCK_SH, 1)
+    ntest.assert_eq(nflock.LOCK_EX, 2)
+    ntest.assert_eq(nflock.LOCK_NB, 4)
+    ntest.assert_eq(nflock.LOCK_UN, 8)
+}
+
+fn test_flock_ops() {
+    let path = temp_path("flock.lock")
+    cleanup(path)
+    let h = nflock.open(path)
+    let e = nflock.flock(h, nflock.LOCK_EX | nflock.LOCK_NB)
+    ntest.assert_eq(type(e), "nil")
+    let e2 = nflock.flock(h, nflock.LOCK_UN)
+    ntest.assert_eq(type(e2), "nil")
+    nflock.close(h)
+    cleanup(path)
+}
+
+fn test_info_fields() {
+    let path = temp_path("info.lock")
+    cleanup(path)
+    let h = nflock.open(path)
+    let info = nflock.info(h)
+    ntest.assert_eq(info.path, path)
+    ntest.assert_eq(info.locked, false)
+    nflock.close(h)
+    cleanup(path)
+}
+
+fn test_pid_write_read() {
+    let path = temp_path("pid1.pid")
+    cleanup(path)
+    nflock.pid_write(path)
+    let pid = nflock.pid_read(path)
+    ntest.assert_true(pid > 0)
+    ntest.assert_true(nflock.pid_alive(pid))
+    cleanup(path)
+}
+
+fn test_pid_acquire_release() {
+    let path = temp_path("pid2.pid")
+    cleanup(path)
+    let pf = nflock.pid_acquire(path)
+    ntest.assert_eq(pf.kind, "pid")
+    ntest.assert_true(pf.pid > 0)
+    let on_disk = nflock.pid_read(path)
+    ntest.assert_eq(on_disk, pf.pid)
+    nflock.pid_release(pf)
+    cleanup(path)
+}
+
+fn test_break_stale_missing() {
+    let path = temp_path("stale.lock")
+    cleanup(path)
+    let broke = nflock.break_stale(path)
+    ntest.assert_eq(broke, false)
+}
+
+fn test_timeout_zero() {
+    let path = temp_path("timeout.lock")
+    cleanup(path)
+    let a = nflock.lock(path)
+    let b = nflock.open(path)
+    let e = nflock.acquire(b, {timeout_ms: 0})
+    ntest.assert_error(e)
+    nflock.close(a)
+    nflock.close(b)
+    cleanup(path)
+}
+
+fn test_invalid_handle() {
+    let e = nflock.release(999999)
+    ntest.assert_error(e)
+}
+
+fn test_pid_read_missing() {
+    let path = temp_path("missing.pid")
+    cleanup(path)
+    let e = nflock.pid_read(path)
+    ntest.assert_error(e)
+}
+
+fn test_path_helper() {
+    let path = temp_path("path.lock")
+    cleanup(path)
+    let h = nflock.open(path)
+    ntest.assert_eq(nflock.path(h), path)
+    nflock.close(h)
+    cleanup(path)
+}
+
+fn main() {
+    test_lock_acquire_release()
+    test_try_acquire()
+    test_shared_exclusive()
+    test_flock_constants()
+    test_flock_ops()
+    test_info_fields()
+    test_pid_write_read()
+    test_pid_acquire_release()
+    test_break_stale_missing()
+    test_timeout_zero()
+    test_invalid_handle()
+    test_pid_read_missing()
+    test_path_helper()
+    print("nflock tests passed")
+}

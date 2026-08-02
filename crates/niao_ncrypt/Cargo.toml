@@ -1,0 +1,33 @@
+[package]
+name = "niao_ncrypt"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "Modern crypto for Niao: AES-GCM, ChaCha20-Poly1305, RSA, Ed25519/X25519, HKDF/PBKDF2, X.509, CSPRNG"
+
+[lib]
+bench = false
+
+[dependencies]
+aes-gcm = "0.10"
+chacha20poly1305 = "0.10"
+ed25519-dalek = { version = "2", features = ["rand_core"] }
+x25519-dalek = { version = "2", features = ["static_secrets"] }
+rsa = { version = "0.9", features = ["sha2", "pem"] }
+hkdf = "0.12"
+pbkdf2 = "0.12"
+sha2 = "0.10"
+x509-parser = "0.16"
+pem = "3"
+subtle = "2"
+zeroize = { version = "1", features = ["derive"] }
+niao_codec = { workspace = true }
+niao_crypto = { workspace = true }
+niao_parallel = { workspace = true }
+niao_rand = { workspace = true }
+rand = "0.8"
+
+[[bin]]
+name = "ncrypt_bench"
+path = "src/bin/ncrypt_bench.rs"

@@ -1,0 +1,76 @@
+// ncrypt tests — AEAD, KDF, RSA, Ed25519, X25519, errors.
+// Run: niao run examples/ncrypt_test.niao
+import "ncrypt"
+import "ntest"
+import "crypto"
+
+fn test_token_bytes_len() {
+    let b = ncrypt.token_bytes(32)
+    ntest.assert_eq(len(b), 32)
+}
+
+fn test_compare_digest() {
+    let a = ncrypt.token_bytes(8)
+    ntest.assert_true(ncrypt.compare_digest(a, a))
+}
+
+fn test_aes_gcm_seal_open() {
+    let key = ncrypt.token_bytes(32)
+    let plain = byte_array[72, 101, 108, 108, 111]
+    let sealed = ncrypt.aes_gcm_seal(key, plain)
+    ntest.assert_not_error(sealed)
+    let back = ncrypt.aes_gcm_open(key, sealed)
+    ntest.assert_eq(back, plain)
+}
+
+fn test_chacha_seal_open() {
+    let key = ncrypt.token_bytes(32)
+    let plain = byte_array[1, 2, 3, 4]
+    let sealed = ncrypt.chacha_seal(key, plain)
+    let back = ncrypt.chacha_open(key, sealed)
+    ntest.assert_eq(back, plain)
+}
+
+fn test_hkdf() {
+    let dk = ncrypt.hkdf(byte_array[1, 2, 3], 32, {salt: byte_array[9], info: byte_array[7]})
+    ntest.assert_eq(len(dk), 32)
+}
+
+fn test_pbkdf2() {
+    let dk = ncrypt.pbkdf2("password", byte_array[1, 2, 3, 4], 1000, 32)
+    ntest.assert_eq(len(dk), 32)
+}
+
+fn test_ed25519_sign_verify() {
+    let kp = ncrypt.ed25519_generate()
+    let sig = kp.sign(byte_array[99])
+    ntest.assert_true(kp.verify(byte_array[99], sig))
+}
+
+fn test_x25519_shared() {
+    let a = ncrypt.x25519_generate()
+    let b = ncrypt.x25519_generate()
+    let s1 = ncrypt.x25519_shared(a.private_key, b.public_key)
+    let s2 = ncrypt.x25519_shared(b.private_key, a.public_key)
+    ntest.assert_eq(s1, s2)
+}
+
+fn test_rsa_roundtrip() {
+    let kp = ncrypt.rsa_generate(2048)
+    ntest.assert_not_error(kp)
+    let msg = byte_array[42]
+    let ct = kp.public.encrypt(msg, {padding: "oaep"})
+    ntest.assert_not_error(ct)
+    let pt = kp.private.decrypt(ct, {padding: "oaep"})
+    ntest.assert_eq(pt, msg)
+}
+
+fn test_pbkdf2_bad_salt() {
+    let e = ncrypt.pbkdf2("pw", byte_array[], 1000, 32)
+    ntest.assert_error(e)
+}
+
+fn test_crypto_sha256_compat() {
+    let h = crypto.sha256("abc")
+    ntest.assert_eq(h, "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad")
+}

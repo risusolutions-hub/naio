@@ -1,0 +1,77 @@
+// Micro-benchmarks for nunicode hot paths.
+// Run: niao run examples/nunicode_bench.niao
+import "nunicode"
+import "nbench"
+import "nstr"
+
+fn make_mixed() {
+    return "Café — 日本語 naïve résumé 你好世界 🎉🇺🇸"
+}
+
+fn make_decomposed() {
+    let s = ""
+    for i in 0..5000 {
+        s = s + "e\u{0301}"
+    }
+    return s
+}
+
+fn bench_nfc() {
+    let data = make_decomposed()
+    return nstr.byte_len(nunicode.nfc(data))
+}
+
+fn bench_graphemes() {
+    let data = make_mixed()
+    return len(nunicode.graphemes(data))
+}
+
+fn bench_display_width() {
+    return nunicode.display_width(make_mixed())
+}
+
+fn bench_casefold() {
+    return nstr.byte_len(nunicode.casefold(make_mixed()))
+}
+
+fn bench_parallel_normalize() {
+    let rows = []
+    let base = make_mixed()
+    for i in 0..2000 {
+        rows = rows + [base + str(i)]
+    }
+    let out = nunicode.parallel_normalize(rows, "NFC")
+    return len(out)
+}
+
+fn bench_parallel_display_width() {
+    let rows = []
+    let base = make_mixed()
+    for i in 0..2000 {
+        rows = rows + [base]
+    }
+    let out = nunicode.parallel_display_width(rows)
+    return len(out)
+}
+
+fn main() {
+    let opts = {warmup: 2, iterations: 15}
+
+    let r1 = nbench.run("nfc 5k decomposed", bench_nfc, opts)
+    print("nfc 5k decomposed:", "n=", r1.n, "mean=", r1.mean, "ns p50=", r1.p50)
+
+    let r2 = nbench.run("graphemes mixed", bench_graphemes, opts)
+    print("graphemes mixed:", "n=", r2.n, "mean=", r2.mean, "ns p50=", r2.p50)
+
+    let r3 = nbench.run("display_width mixed", bench_display_width, opts)
+    print("display_width mixed:", "n=", r3.n, "mean=", r3.mean, "ns p50=", r3.p50)
+
+    let r4 = nbench.run("casefold mixed", bench_casefold, opts)
+    print("casefold mixed:", "n=", r4.n, "mean=", r4.mean, "ns p50=", r4.p50)
+
+    let r5 = nbench.run("parallel_normalize 2k", bench_parallel_normalize, opts)
+    print("parallel_normalize 2k:", "n=", r5.n, "mean=", r5.mean, "ns p50=", r5.p50)
+
+    let r6 = nbench.run("parallel_display_width 2k", bench_parallel_display_width, opts)
+    print("parallel_display_width 2k:", "n=", r6.n, "mean=", r6.mean, "ns p50=", r6.p50)
+}

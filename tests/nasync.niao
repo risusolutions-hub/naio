@@ -1,0 +1,139 @@
+// nasync integration tests — run: niao run tests/nasync.niao
+import "ntest"
+import "nasync"
+
+fn test_spawn_wait() {
+    let t = nasync.spawn(fn() { return 42 })
+    ntest.assert_eq(nasync.wait(t), 42)
+}
+
+fn test_done_poll() {
+    let t = nasync.spawn(fn() { return 7 })
+    ntest.assert_eq(nasync.done(t), false)
+    ntest.assert_eq(nasync.wait(t), 7)
+    ntest.assert_eq(nasync.done(t), true)
+}
+
+fn test_sleep_async() {
+    let t = nasync.sleep_async(1)
+    ntest.assert_eq(nasync.wait(t), nil)
+}
+
+fn test_gather() {
+    let t1 = nasync.spawn(fn() { return 10 })
+    let t2 = nasync.spawn(fn() { return 20 })
+    let out = nasync.gather([t1, t2])
+    ntest.assert_eq(out[0], 10)
+    ntest.assert_eq(out[1], 20)
+}
+
+fn test_gather_exceptions() {
+    let t1 = nasync.spawn(fn() { return 1 })
+    let t2 = nasync.spawn(fn() { return 2 })
+    let out = nasync.gather_exceptions([t1, t2])
+    ntest.assert_eq(len(out), 2)
+}
+
+fn test_race() {
+    let t1 = nasync.sleep_async(50)
+    let t2 = nasync.spawn(fn() { return 99 })
+    let r = nasync.race([t1, t2])
+    ntest.assert_eq(r.index, 1)
+    ntest.assert_eq(r.value, 99)
+}
+
+fn test_cancel() {
+    let t = nasync.sleep_async(60_000)
+    ntest.assert_eq(nasync.cancel(t), true)
+    let s = nasync.status(t)
+    ntest.assert_eq(s, "cancelled")
+}
+
+fn test_shield_blocks_cancel() {
+    let t = nasync.sleep_async(60_000)
+    ntest.assert_eq(nasync.shield(t), true)
+    ntest.assert_eq(nasync.cancel(t), false)
+    ntest.assert_eq(nasync.cancel(t), false)
+}
+
+fn test_wait_timeout() {
+    let t = nasync.sleep_async(60_000)
+    let r = nasync.wait_timeout(t, 10)
+    ntest.assert_eq(r.timed_out, true)
+    ntest.assert_eq(r.done, false)
+}
+
+fn test_timeout_fn() {
+    let r = nasync.timeout(fn() { return "ok" }, 5000)
+    ntest.assert_eq(r.timed_out, false)
+    ntest.assert_eq(r.value, "ok")
+}
+
+fn test_channel() {
+    let ch = nasync.channel(4)
+    ntest.assert_eq(nasync.channel_send(ch, 1), nil)
+    ntest.assert_eq(nasync.channel_send(ch, 2), nil)
+    ntest.assert_eq(nasync.channel_recv(ch), 1)
+    ntest.assert_eq(nasync.channel_try_recv(ch), 2)
+    ntest.assert_eq(nasync.channel_len(ch), 0)
+    ntest.assert_eq(nasync.channel_is_closed(ch), false)
+    ntest.assert_eq(nasync.channel_close(ch), nil)
+}
+
+fn test_spawn_all() {
+    let tasks = nasync.spawn_all([
+        fn() { return 1 },
+        fn() { return 2 },
+        fn() { return 3 },
+    ])
+    ntest.assert_eq(len(tasks), 3)
+    let out = nasync.gather(tasks)
+    ntest.assert_eq(out[0], 1)
+    ntest.assert_eq(out[1], 2)
+    ntest.assert_eq(out[2], 3)
+}
+
+fn test_group() {
+    let g = nasync.group()
+    let t1 = nasync.group_spawn(g, fn() { return 5 })
+    let t2 = nasync.group_spawn(g, fn() { return 6 })
+    ntest.assert_true(t1 > 0)
+    ntest.assert_true(t2 > 0)
+    let out = nasync.group_wait(g)
+    ntest.assert_eq(out[0], 5)
+    ntest.assert_eq(out[1], 6)
+}
+
+fn test_as_completed() {
+    let t1 = nasync.sleep_async(30)
+    let t2 = nasync.spawn(fn() { return 1 })
+    let out = nasync.as_completed([t1, t2])
+    ntest.assert_eq(len(out), 2)
+}
+
+fn test_status() {
+    let t = nasync.spawn(fn() { return 0 })
+    ntest.assert_eq(nasync.status(t), "pending")
+    nasync.wait(t)
+    ntest.assert_eq(nasync.status(t), "done")
+}
+
+fn main() {
+    ntest.run([
+        test_spawn_wait,
+        test_done_poll,
+        test_sleep_async,
+        test_gather,
+        test_gather_exceptions,
+        test_race,
+        test_cancel,
+        test_shield_blocks_cancel,
+        test_wait_timeout,
+        test_timeout_fn,
+        test_channel,
+        test_spawn_all,
+        test_group,
+        test_as_completed,
+        test_status,
+    ])
+}

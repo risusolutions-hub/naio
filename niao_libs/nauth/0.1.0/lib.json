@@ -1,0 +1,11 @@
+{
+    "name": "nauth",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": "Web auth kit: sessions, login/logout, password reset,\n                    RBAC roles, CSRF tokens.  ~flask-login, django auth\n                    (built on npass + nsign)\n",
+    "import_paths": [
+        "nauth",
+        "std/nauth"
+    ],
+    "builtin_count": 13
+}

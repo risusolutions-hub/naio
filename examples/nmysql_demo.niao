@@ -1,0 +1,22 @@
+import "nmysql"
+import "nenv"
+
+fn main() {
+    let url = nenv.get("NIAO_MYSQL_URL")
+    if url == nil || url == "" {
+        url = "mysql://root@127.0.0.1:3306/test"
+        print("NIAO_MYSQL_URL unset; trying ", url)
+    }
+    let db = nmysql.connect(url)
+    if type(db) != "int" {
+        print("connect failed: ", db)
+        return
+    }
+    print("server: ", nmysql.server_version(db))
+    nmysql.exec(db, "CREATE TABLE IF NOT EXISTS nmysql_demo (id INT AUTO_INCREMENT PRIMARY KEY, msg VARCHAR(64))")
+    let ins = nmysql.insert(db, "nmysql_demo", {msg: "hello from nmysql"})
+    print("inserted id=", ins.last_insert_id)
+    let rows = nmysql.query(db, "SELECT id, msg FROM nmysql_demo WHERE id = ?", [ins.last_insert_id])
+    print(rows)
+    nmysql.close(db)
+}

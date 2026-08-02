@@ -1,0 +1,11 @@
+{
+    "name": "ntts",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": " Text-to-speech via piper/espeak: synth to WAV, voice\n                    selection.  ~pyttsx3\n",
+    "import_paths": [
+        "ntts",
+        "std/ntts"
+    ],
+    "builtin_count": 13
+}

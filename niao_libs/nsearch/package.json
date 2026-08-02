@@ -1,0 +1,11 @@
+{
+    "name": "nsearch",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": "Hosted search-engine clients: Elasticsearch/OpenSearch, Meilisearch, Typesense.  ~elasticsearch, meilisearch",
+    "import_paths": [
+        "nsearch",
+        "std/nsearch"
+    ],
+    "builtin_count": 28
+}

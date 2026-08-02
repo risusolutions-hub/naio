@@ -1,0 +1,11 @@
+{
+    "name": "noauth",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": " OAuth2 + OIDC client flows: auth code, PKCE, client\n                    credentials, token refresh.  ~authlib, oauthlib ...",
+    "import_paths": [
+        "noauth",
+        "std/noauth"
+    ],
+    "builtin_count": 26
+}

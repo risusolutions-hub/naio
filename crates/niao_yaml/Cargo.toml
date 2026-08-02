@@ -1,0 +1,15 @@
+[package]
+name = "niao_yaml"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "YAML 1.2 parse and emit for Niao (libyaml-backed)"
+
+[dependencies]
+yaml_serde = "0.10"
+niao_bignum = { workspace = true }
+serde = { version = "1", features = ["derive"] }
+
+[[bin]]
+name = "nyaml_bench"
+path = "src/bin/nyaml_bench.rs"

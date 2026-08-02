@@ -1,0 +1,23 @@
+[package]
+name = "niao_browser"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "Headless browser automation for Niao via CDP (navigate, click, fill, screenshot, PDF)"
+
+[lib]
+bench = false
+
+[dependencies]
+futures-util = { version = "0.3", default-features = false, features = ["sink"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "time", "sync", "process", "io-util", "net", "fs"] }
+tokio-tungstenite = { version = "0.26", default-features = false, features = ["connect"] }
+url = "2"
+
+[[bin]]
+name = "browser_bench"
+path = "src/bin/browser_bench.rs"

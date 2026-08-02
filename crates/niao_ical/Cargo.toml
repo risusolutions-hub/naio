@@ -1,0 +1,14 @@
+[package]
+name = "niao_ical"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "iCalendar / vCard parse + emit and RRULE recurrence for Niao"
+
+[dependencies]
+rrule = "0.14"
+chrono = { version = "=0.4.39", default-features = false, features = ["clock", "std"] }
+
+[[bin]]
+name = "nical_bench"
+path = "src/bin/nical_bench.rs"

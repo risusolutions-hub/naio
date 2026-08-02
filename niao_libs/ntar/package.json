@@ -1,0 +1,11 @@
+{
+    "name": "ntar",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": "tar archives read/write incl. .tar.gz / .tar.zst.\n                    ~tarfile ...",
+    "import_paths": [
+        "ntar",
+        "std/ntar"
+    ],
+    "builtin_count": 20
+}

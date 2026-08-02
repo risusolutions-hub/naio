@@ -1,0 +1,72 @@
+// ndecimal tests — run: niao run tests/ndecimal.niao
+import "ndecimal"
+import "ntest"
+
+ntest.case("decimal parse and add", fn() {
+    let a = ndecimal.decimal("1.10")
+    let b = ndecimal.decimal("2.30")
+    let c = ndecimal.add(a, b)
+    ntest.assert_eq(ndecimal.to_string(c), "3.40")
+})
+
+ntest.case("money rounding half_even", fn() {
+    ndecimal.context(28, "half_even")
+    let d = ndecimal.decimal("2.675")
+    let r = ndecimal.round_money(d)
+    ntest.assert_eq(ndecimal.to_string(r), "2.68")
+})
+
+ntest.case("quantize to cents", fn() {
+    let d = ndecimal.decimal("10.005")
+    let q = ndecimal.quantize(d, -2, "half_up")
+    ntest.assert_eq(ndecimal.to_string(q), "10.01")
+})
+
+ntest.case("valid_decimal rejects garbage", fn() {
+    ntest.assert_false(ndecimal.valid_decimal("1.2.3"))
+    ntest.assert_true(ndecimal.valid_decimal("-0.001"))
+})
+
+ntest.case("fraction exact arithmetic", fn() {
+    let a = ndecimal.fraction(1, 3)
+    let b = ndecimal.fraction(1, 6)
+    let c = ndecimal.frac_add(a, b)
+    ntest.assert_eq(ndecimal.numer(c), "1")
+    ntest.assert_eq(ndecimal.denom(c), "2")
+})
+
+ntest.case("fraction to decimal", fn() {
+    ndecimal.context(6, "half_even")
+    let f = ndecimal.fraction(22, 7)
+    let d = ndecimal.to_decimal(f)
+    let s = ndecimal.to_string(d)
+    ntest.assert_true(s.len() > 0)
+})
+
+ntest.case("compare ordering", fn() {
+    let a = ndecimal.decimal("1.0")
+    let b = ndecimal.decimal("2.0")
+    ntest.assert_eq(ndecimal.compare(a, b), -1)
+    ntest.assert_eq(ndecimal.compare(b, a), 1)
+})
+
+ntest.case("division by zero is catchable", fn() {
+    let a = ndecimal.decimal("1")
+    let b = ndecimal.decimal("0")
+    let r = ndecimal.div(a, b)
+    ntest.assert_true(ntest.is_error(r))
+})
+
+ntest.case("normalize strips trailing zeros", fn() {
+    let d = ndecimal.decimal("1.2300")
+    let n = ndecimal.normalize(d)
+    ntest.assert_eq(ndecimal.to_string(n), "1.23")
+})
+
+fn main() {
+    let summary = ntest.run()
+    print(summary)
+    if summary.failed > 0 {
+        error("ndecimal tests failed")
+    }
+}

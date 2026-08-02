@@ -1,0 +1,11 @@
+{
+    "name": "nmqtt",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": "MQTT 3.1.1/5 client: QoS 0-2, TLS, reconnect, wills. ~paho-mqtt (key for IoT / edge fleets)",
+    "import_paths": [
+        "nmqtt",
+        "std/nmqtt"
+    ],
+    "builtin_count": 16
+}

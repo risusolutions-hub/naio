@@ -1,0 +1,11 @@
+{
+  "timestamp": "2026-07-13T181829Z",
+  "niao": "C:\\Risu\\Neko\\target\\release\\niao.exe",
+  "runs": 5,
+  "results": {
+    "nmime_detect": {
+      "status": "error",
+      "detail": "Error: \"E0100: unexpected token \\\"Comma\\\", expected RBracket at line 5, col 30\""
+    }
+  }
+}

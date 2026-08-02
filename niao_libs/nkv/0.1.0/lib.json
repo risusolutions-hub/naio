@@ -1,0 +1,11 @@
+{
+    "name": "nkv",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": "Embedded ordered key-value store: ACID, prefix scans, snapshots (LMDB/redb-class).  ~lmdb, shelve, diskcache",
+    "import_paths": [
+        "nkv",
+        "std/nkv"
+    ],
+    "builtin_count": 27
+}

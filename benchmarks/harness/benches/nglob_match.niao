@@ -1,0 +1,26 @@
+// nglob hot-path bench — run via benchmarks/harness/run_bench.py
+import "nglob"
+
+fn main() {
+    let paths = []
+    let i = 0
+    while i < 10000 {
+        paths = paths + ["file_" + str(i % 1000) + ".py"]
+        i = i + 1
+    }
+    let j = 0
+    let hits = 0
+    while j < 200 {
+        let batch = nglob.parallel_filter(paths, "*.py", {threads: 4})
+        hits = hits + len(batch)
+        j = j + 1
+    }
+    let m = nglob.compile(["*.py", "*.rs"])
+    let k = 0
+    while k < 50000 {
+        let _ = nglob.matches(m, "src/lib.rs")
+        k = k + 1
+    }
+    nglob.close(m)
+    print(hits)
+}

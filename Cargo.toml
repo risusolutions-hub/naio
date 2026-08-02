@@ -1,56 +1,134 @@
 [workspace]
 resolver = "2"
 members = [
-    "crates/niao_ast",
-    "crates/niao_errors",
-    "crates/niao_codec",
-    "crates/niao_json_core",
-    "crates/niao_crypto",
-    "crates/niao_regex",
-    "crates/niao_time",
-    "crates/niao_http",
-    "crates/niao_ws",
-    "crates/niao_io",
-    "crates/niao_db",
-    "crates/niao_archive",
-    "crates/niao_bignum",
-    "crates/niao_net_clients",
-    "crates/niao_rand",
-    "crates/niao_args",
-    "crates/niao_collections",
-    "crates/niao_log",
-    "crates/niao_lexer",
-    "crates/niao_parser",
-    "crates/niao_runtime",
-    "crates/niao_interpreter",
-    "crates/niao_ir",
-    "crates/niao_bytecode",
-    "crates/niao_vm",
-    "crates/niao_format",
-    "crates/niao_lint",
-    "crates/niao_docs",
-    "crates/niao_web",
-    "crates/niao_cli",
-    "crates/niao_pkg",
-    "crates/niao_nm",
     "crates/ahiru_core",
-    "crates/niao_tensor",
-    "crates/niao_ml",
-    "crates/niao_classic",
-    "crates/niao_data",
-    "crates/niao_graph",
-    "crates/niao_rag",
-    "crates/niao_llm",
-    "crates/niao_num",
-    "crates/niao_stats",
-    "crates/niao_frame",
-    "crates/niao_optim",
-    "crates/niao_plot",
-    "crates/niao_learn",
+    "crates/niao_archive",
+    "crates/niao_args",
+    "crates/niao_ast",
+    "crates/niao_auth",
+    "crates/niao_bignum",
+    "crates/niao_binary",
     "crates/niao_boost",
-    "crates/niao_ts",
+    "crates/niao_browser",
+    "crates/niao_bytecode",
+    "crates/niao_cal",
+    "crates/niao_cbor",
+    "crates/niao_classic",
+    "crates/niao_cli",
+    "crates/niao_codec",
+    "crates/niao_collections",
+    "crates/niao_compress",
+    "crates/niao_crypto",
+    "crates/niao_data",
+    "crates/niao_dataset",
+    "crates/niao_db",
+    "crates/niao_decimal",
+    "crates/niao_docstore",
+    "crates/niao_docs",
+    "crates/niao_dsp",
+    "crates/niao_encoding",
+    "crates/niao_errors",
+    "crates/niao_event",
+    "crates/niao_expr",
+    "crates/niao_feed",
+    "crates/niao_fin",
+    "crates/niao_flock",
+    "crates/niao_format",
+    "crates/niao_frame",
+    "crates/niao_fsm",
+    "crates/niao_fts",
+    "crates/niao_geo",
+    "crates/niao_glob",
+    "crates/niao_graph",
+    "crates/niao_graphql",
+    "crates/niao_grpc",
+    "crates/niao_hdf5",
+    "crates/niao_html",
+    "crates/niao_hub",
+    "crates/niao_http",
+    "crates/niao_ical",
+    "crates/niao_id",
+    "crates/niao_imap",
+    "crates/niao_interpreter",
+    "crates/niao_io",
+    "crates/niao_ipaddr",
+    "crates/niao_ir",
+    "crates/niao_jpath",
+    "crates/niao_json_core",
+    "crates/niao_jwt",
+    "crates/niao_keyring",
+    "crates/niao_kv",
+    "crates/niao_learn",
+    "crates/niao_lexer",
+    "crates/niao_lint",
+    "crates/niao_llm",
+    "crates/niao_log",
+    "crates/niao_mail",
+    "crates/niao_mdns",
+    "crates/niao_mime",
+    "crates/niao_ml",
+    "crates/niao_mmap",
+    "crates/niao_mqtt",
+    "crates/niao_msgpack",
+    "crates/niao_nblob",
+    "crates/niao_ncrypt",
+    "crates/niao_net_clients",
+    "crates/niao_nfs",
     "crates/niao_nlp",
+    "crates/niao_nm",
+    "crates/niao_num",
+    "crates/niao_oauth",
+    "crates/niao_onnx",
+    "crates/niao_openapi",
+    "crates/niao_optim",
+    "crates/niao_otp",
+    "crates/niao_parallel",
+    "crates/niao_parquet",
+    "crates/niao_parser",
+    "crates/niao_pass",
+    "crates/niao_pdf",
+    "crates/niao_persistent",
+    "crates/niao_pkg",
+    "crates/niao_plot",
+    "crates/niao_proc",
+    "crates/niao_proto",
+    "crates/niao_rag",
+    "crates/niao_rand",
+    "crates/niao_reflect",
+    "crates/niao_regex",
+    "crates/niao_req",
+    "crates/niao_search",
+    "crates/niao_retry",
+    "crates/niao_rpc",
+    "crates/niao_runtime",
+    "crates/niao_sanitize",
+    "crates/niao_scrape",
+    "crates/niao_sign",
+    "crates/niao_signal",
+    "crates/niao_sorted",
+    "crates/niao_speech",
+    "crates/niao_ssh",
+    "crates/niao_stats",
+    "crates/niao_tar",
+    "crates/niao_tensor",
+    "crates/niao_textdiff",
+    "crates/niao_time",
+    "crates/niao_tune",
+    "crates/niao_tts",
+    "crates/niao_ts",
+    "crates/niao_unicode",
+    "crates/niao_units",
+    "crates/niao_view",
     "crates/niao_vision",
+    "crates/niao_vm",
+    "crates/niao_web",
+    "crates/niao_webhook",
+    "crates/niao_when",
+    "crates/niao_ws",
+    "crates/niao_xlsx",
+    "crates/niao_xml",
+    "crates/niao_yaml",
+    "crates/niao_zip",
 ]
 
 [workspace.package]
@@ -69,6 +147,8 @@ niao_regex = { path = "crates/niao_regex" }
 niao_time = { path = "crates/niao_time" }
 niao_http = { path = "crates/niao_http" }
 niao_ws = { path = "crates/niao_ws" }
+niao_mqtt = { path = "crates/niao_mqtt" }
+niao_grpc = { path = "crates/niao_grpc" }
 niao_io = { path = "crates/niao_io" }
 niao_db = { path = "crates/niao_db" }
 niao_archive = { path = "crates/niao_archive" }
@@ -76,6 +156,7 @@ niao_bignum = { path = "crates/niao_bignum" }
 niao_net_clients = { path = "crates/niao_net_clients" }
 niao_rand = { path = "crates/niao_rand" }
 niao_args = { path = "crates/niao_args" }
+niao_auth = { path = "crates/niao_auth" }
 niao_collections = { path = "crates/niao_collections" }
 niao_log = { path = "crates/niao_log" }
 niao_lexer = { path = "crates/niao_lexer" }
@@ -96,6 +177,7 @@ niao_tensor = { path = "crates/niao_tensor" }
 niao_ml = { path = "crates/niao_ml" }
 niao_classic = { path = "crates/niao_classic" }
 niao_data = { path = "crates/niao_data" }
+niao_dataset = { path = "crates/niao_dataset" }
 niao_graph = { path = "crates/niao_graph" }
 niao_rag = { path = "crates/niao_rag" }
 niao_llm = { path = "crates/niao_llm" }
@@ -106,14 +188,89 @@ niao_optim = { path = "crates/niao_optim" }
 niao_plot = { path = "crates/niao_plot" }
 niao_learn = { path = "crates/niao_learn" }
 niao_boost = { path = "crates/niao_boost" }
+niao_browser = { path = "crates/niao_browser" }
 niao_ts = { path = "crates/niao_ts" }
 niao_nlp = { path = "crates/niao_nlp" }
+niao_mail = { path = "crates/niao_mail" }
+niao_mdns = { path = "crates/niao_mdns" }
+niao_imap = { path = "crates/niao_imap" }
+niao_graphql = { path = "crates/niao_graphql" }
 niao_vision = { path = "crates/niao_vision" }
+niao_ssh = { path = "crates/niao_ssh" }
+niao_parallel = { path = "crates/niao_parallel" }
+niao_openapi = { path = "crates/niao_openapi" }
 clap = { version = "4", features = ["derive"] }
 tokio = { version = "1", features = ["full"] }
 axum = "0.8"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+niao_binary = { path = "crates/niao_binary" }
+niao_cal = { path = "crates/niao_cal" }
+niao_cbor = { path = "crates/niao_cbor" }
+niao_cli = { path = "crates/niao_cli" }
+niao_compress = { path = "crates/niao_compress" }
+niao_decimal = { path = "crates/niao_decimal" }
+niao_docstore = { path = "crates/niao_docstore" }
+niao_dsp = { path = "crates/niao_dsp" }
+niao_encoding = { path = "crates/niao_encoding" }
+niao_event = { path = "crates/niao_event" }
+niao_expr = { path = "crates/niao_expr" }
+niao_feed = { path = "crates/niao_feed" }
+niao_fin = { path = "crates/niao_fin" }
+niao_flock = { path = "crates/niao_flock" }
+niao_fsm = { path = "crates/niao_fsm" }
+niao_fts = { path = "crates/niao_fts" }
+niao_geo = { path = "crates/niao_geo" }
+niao_glob = { path = "crates/niao_glob" }
+niao_hdf5 = { path = "crates/niao_hdf5" }
+niao_html = { path = "crates/niao_html" }
+niao_hub = { path = "crates/niao_hub" }
+niao_ical = { path = "crates/niao_ical" }
+niao_id = { path = "crates/niao_id" }
+niao_ipaddr = { path = "crates/niao_ipaddr" }
+niao_jpath = { path = "crates/niao_jpath" }
+niao_jwt = { path = "crates/niao_jwt" }
+niao_keyring = { path = "crates/niao_keyring" }
+niao_kv = { path = "crates/niao_kv" }
+niao_mime = { path = "crates/niao_mime" }
+niao_mmap = { path = "crates/niao_mmap" }
+niao_msgpack = { path = "crates/niao_msgpack" }
+niao_nblob = { path = "crates/niao_nblob" }
+niao_ncrypt = { path = "crates/niao_ncrypt" }
+niao_nfs = { path = "crates/niao_nfs" }
+niao_oauth = { path = "crates/niao_oauth" }
+niao_onnx = { path = "crates/niao_onnx" }
+niao_otp = { path = "crates/niao_otp" }
+niao_parquet = { path = "crates/niao_parquet" }
+niao_pass = { path = "crates/niao_pass" }
+niao_pdf = { path = "crates/niao_pdf" }
+niao_persistent = { path = "crates/niao_persistent" }
+niao_proc = { path = "crates/niao_proc" }
+niao_proto = { path = "crates/niao_proto" }
+niao_reflect = { path = "crates/niao_reflect" }
+niao_req = { path = "crates/niao_req" }
+niao_search = { path = "crates/niao_search" }
+niao_retry = { path = "crates/niao_retry" }
+niao_tune = { path = "crates/niao_tune" }
+niao_rpc = { path = "crates/niao_rpc" }
+niao_sanitize = { path = "crates/niao_sanitize" }
+niao_scrape = { path = "crates/niao_scrape" }
+niao_sign = { path = "crates/niao_sign" }
+niao_speech = { path = "crates/niao_speech" }
+niao_tts = { path = "crates/niao_tts" }
+niao_signal = { path = "crates/niao_signal" }
+niao_sorted = { path = "crates/niao_sorted" }
+niao_tar = { path = "crates/niao_tar" }
+niao_textdiff = { path = "crates/niao_textdiff" }
+niao_unicode = { path = "crates/niao_unicode" }
+niao_units = { path = "crates/niao_units" }
+niao_view = { path = "crates/niao_view" }
+niao_webhook = { path = "crates/niao_webhook" }
+niao_when = { path = "crates/niao_when" }
+niao_xlsx = { path = "crates/niao_xlsx" }
+niao_xml = { path = "crates/niao_xml" }
+niao_yaml = { path = "crates/niao_yaml" }
+niao_zip = { path = "crates/niao_zip" }
 
 [patch.crates-io]
 hf-hub = { path = "vendor/hf-hub" }

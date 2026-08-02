@@ -1,0 +1,11 @@
+{
+    "name": "nmysql",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": "MySQL / MariaDB client: pools, prepared statements, transactions, async.  ~pymysql, mysqlclient (completes the big-4 next to npg/nsqlite/nmongo)",
+    "import_paths": [
+        "nmysql",
+        "std/nmysql"
+    ],
+    "builtin_count": 47
+}

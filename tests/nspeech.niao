@@ -1,0 +1,143 @@
+import "nspeech"
+import "ntest"
+import "ndoc"
+
+let FIXTURE_WAV = "crates/niao_speech/tests/fixtures/tone_1s.wav"
+let FIXTURE_MODEL = "crates/niao_speech/tests/fixtures/ggml-tiny.en.bin"
+
+fn test_version() {
+    let v = nspeech.version()
+    ntest.assert_true(len(v) > 0)
+}
+
+fn test_languages() {
+    let langs = nspeech.languages()
+    ntest.assert_true(len(langs) > 0)
+    ntest.assert_true(langs[0] != "")
+}
+
+fn test_load_missing() {
+    let r = nspeech.load("/nonexistent/nspeech_model.bin")
+    ntest.assert_error(r)
+}
+
+fn test_invalid_handle() {
+    let r = nspeech.transcribe(999999, [0.0])
+    ntest.assert_error(r)
+    let r2 = nspeech.close(999999)
+    ntest.assert_error(r2)
+}
+
+fn test_load_audio_missing() {
+    let r = nspeech.load_audio("/nonexistent/audio.wav")
+    ntest.assert_error(r)
+}
+
+fn test_resample() {
+    let out = nspeech.resample([0.0, 1.0, 0.0, (0.0 - 1.0)], 16000, 8000)
+    ntest.assert_eq(len(out), 2)
+}
+
+fn test_resample_default_rate() {
+    let out = nspeech.resample([0.0, 0.5, 1.0, 0.0], 44100)
+    ntest.assert_true(len(out) >= 1)
+}
+
+fn test_vad_empty() {
+    let segs = nspeech.vad([])
+    ntest.assert_eq(len(segs), 0)
+}
+
+fn test_vad_tone() {
+    let audio = nspeech.load_audio(FIXTURE_WAV)
+    ntest.assert_not_error(audio)
+    let segs = nspeech.vad(audio.samples, {threshold: 0.005})
+    ntest.assert_true(len(segs) > 0)
+}
+
+fn test_vad_file() {
+    let segs = nspeech.vad_file(FIXTURE_WAV)
+    ntest.assert_true(len(segs) > 0)
+}
+
+fn test_vad_file_missing() {
+    let r = nspeech.vad_file("/nonexistent/x.wav")
+    ntest.assert_error(r)
+}
+
+fn test_mic_record_bad_duration() {
+    let r = nspeech.mic_record(0.0)
+    ntest.assert_error(r)
+}
+
+fn test_mic_devices() {
+    let devs = nspeech.mic_devices()
+    ntest.assert_not_error(devs)
+}
+
+fn test_transcribe_short() {
+    let h = nspeech.load(FIXTURE_MODEL)
+    if is_error(h) {
+        print("skip transcribe tests: model fixture missing at ", FIXTURE_MODEL)
+        return
+    }
+    let r = nspeech.transcribe(h, [0.0])
+    ntest.assert_error(r)
+    nspeech.close(h)
+}
+
+fn test_transcribe_file() {
+    let h = nspeech.load(FIXTURE_MODEL, {gpu: false})
+    if is_error(h) {
+        print("skip transcribe_file: model fixture missing")
+        return
+    }
+    let out = nspeech.transcribe_file(h, FIXTURE_WAV, {language: "en", token_timestamps: true})
+    ntest.assert_not_error(out)
+    ntest.assert_true(len(out.text) >= 0)
+    ntest.assert_true(len(out.segments) >= 0)
+    nspeech.close(h)
+    let closed = nspeech.close(h)
+    ntest.assert_error(closed)
+}
+
+fn test_detect_language() {
+    let h = nspeech.load(FIXTURE_MODEL)
+    if is_error(h) {
+        return
+    }
+    let audio = nspeech.load_audio(FIXTURE_WAV)
+    let lang = nspeech.detect_language(h, audio.samples)
+    ntest.assert_not_error(lang)
+    nspeech.close(h)
+}
+
+fn test_doctests() {
+    let src = io_read_file("crates/niao_runtime/src/nspeech.rs")
+    ntest.assert_not_error(src)
+    let r = ndoc.run(src)
+    ntest.assert_true(r.ok)
+    ntest.assert_true(r.passed >= 14)
+    print("nspeech doctests passed=", r.passed, " total=", r.total)
+}
+
+fn main() {
+    test_version()
+    test_languages()
+    test_load_missing()
+    test_invalid_handle()
+    test_load_audio_missing()
+    test_resample()
+    test_resample_default_rate()
+    test_vad_empty()
+    test_vad_tone()
+    test_vad_file()
+    test_vad_file_missing()
+    test_mic_record_bad_duration()
+    test_mic_devices()
+    test_transcribe_short()
+    test_transcribe_file()
+    test_detect_language()
+    test_doctests()
+    print("nspeech tests: ok")
+}

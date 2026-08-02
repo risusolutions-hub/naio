@@ -1,0 +1,11 @@
+{
+    "name": "ndecimal",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": "Arbitrary-precision decimals + rationals, money-safe\n                    rounding modes.  ~decimal, fractions  (pairs bignum) ...",
+    "import_paths": [
+        "ndecimal",
+        "std/ndecimal"
+    ],
+    "builtin_count": 36
+}

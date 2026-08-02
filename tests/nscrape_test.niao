@@ -1,0 +1,187 @@
+import "nscrape"
+import "ntest"
+import "nstr"
+
+const ROBOTS = "User-agent: *\nDisallow: /private\nAllow: /private/ok\nCrawl-delay: 1.5\nSitemap: https://ex.com/sitemap.xml\n\nUser-agent: BadBot\nDisallow: /\n"
+
+const ARTICLE = r##"<!doctype html>
+<html lang="en">
+<head>
+  <title>Hello World Article</title>
+  <meta name="description" content="An excerpt about cats.">
+  <meta property="og:title" content="Hello World Article">
+  <meta property="og:site_name" content="Cat News">
+  <meta name="author" content="Ada">
+  <link rel="canonical" href="https://ex.com/hello">
+</head>
+<body>
+  <nav class="nav"><a href="/">Home</a></nav>
+  <article class="post-content">
+    <h1>Hello World Article</h1>
+    <p>Cats are wonderful companions. They purr, nap, and chase lasers with great enthusiasm every day.</p>
+    <p>More detail about feline behavior appears in this second paragraph for density scoring.</p>
+  </article>
+  <footer class="footer">Copyright</footer>
+</body>
+</html>"##
+
+const SITEMAP = "<?xml version=\"1.0\"?><urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\"><url><loc>https://ex.com/a</loc><priority>0.8</priority></url><url><loc>https://ex.com/b</loc><lastmod>2024-01-01</lastmod></url></urlset>"
+
+const SITEMAP_INDEX = "<?xml version=\"1.0\"?><sitemapindex xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\"><sitemap><loc>https://ex.com/sitemap-1.xml</loc></sitemap></sitemapindex>"
+
+fn test_parse_robots_allowed() {
+    let r = nscrape.parse_robots(ROBOTS)
+    ntest.assert_true(nscrape.allowed(r, "https://ex.com/"))
+    ntest.assert_false(nscrape.allowed(r, "https://ex.com/private"))
+    ntest.assert_true(nscrape.allowed(r, "https://ex.com/private/ok"))
+    ntest.assert_false(nscrape.allowed(r, "https://ex.com/", "BadBot/1.0"))
+    ntest.assert_eq(nscrape.crawl_delay(r), 1500)
+    ntest.assert_eq(len(nscrape.sitemaps(r)), 1)
+    nscrape.close(r)
+}
+
+fn test_allowed_from_text() {
+    ntest.assert_true(nscrape.allowed("User-agent: *\nDisallow:\n", "/x"))
+    ntest.assert_false(nscrape.allowed("User-agent: *\nDisallow: /\n", "https://ex.com/any"))
+}
+
+fn test_empty_robots() {
+    let r = nscrape.parse_robots("")
+    ntest.assert_true(nscrape.allowed(r, "https://ex.com/anything"))
+    nscrape.close(r)
+}
+
+fn test_bot_info_close() {
+    let b = nscrape.bot({delay_ms: 10, retries: 1, respect_robots: false})
+    let info = nscrape.bot_info(b)
+    ntest.assert_eq(info.delay_ms, 10)
+    ntest.assert_eq(info.retries, 1)
+    ntest.assert_false(info.respect_robots)
+    nscrape.close(b)
+    let e = nscrape.bot_info(b)
+    ntest.assert_error(e)
+}
+
+fn test_limiter() {
+    let lim = nscrape.limiter({delay_ms: 0})
+    ntest.assert_eq(nscrape.wait(lim, "ex.com"), 0)
+    let info = nscrape.limiter_info(lim)
+    ntest.assert_eq(info.delay_ms, 0)
+    nscrape.close(lim)
+}
+
+fn test_parse_sitemap() {
+    let doc = nscrape.parse_sitemap(SITEMAP)
+    ntest.assert_eq(len(doc.urls), 2)
+    ntest.assert_eq(doc.urls[0].loc, "https://ex.com/a")
+    ntest.assert_eq(doc.urls[0].priority, "0.8")
+    ntest.assert_eq(len(nscrape.sitemap_urls(SITEMAP)), 2)
+    let idx = nscrape.parse_sitemap(SITEMAP_INDEX)
+    ntest.assert_eq(len(idx.sitemaps), 1)
+    ntest.assert_eq(len(idx.urls), 0)
+}
+
+fn test_extract_article() {
+    let art = nscrape.extract(ARTICLE, {url: "https://ex.com/hello"})
+    ntest.assert_true(art.title.contains("Hello"))
+    ntest.assert_true(art.text.contains("Cats are wonderful"))
+    ntest.assert_eq(art.byline, "Ada")
+    ntest.assert_eq(art.site_name, "Cat News")
+    ntest.assert_eq(art.lang, "en")
+    ntest.assert_true(art.excerpt.contains("cats"))
+    let readable = nscrape.readable(ARTICLE)
+    ntest.assert_true(readable.text.contains("Cats"))
+}
+
+fn test_extract_title_text_meta_links() {
+    ntest.assert_eq(nscrape.extract_title("<title>Hi</title>"), "Hi")
+    let text = nscrape.extract_text("<p>Hello world from nscrape text extraction path here.</p>")
+    ntest.assert_true(text.contains("Hello"))
+    let meta = nscrape.extract_meta("<meta name=\"author\" content=\"Ada\">")
+    ntest.assert_eq(meta.author, "Ada")
+    let links = nscrape.extract_links("<a href=\"/a\">A</a><a href=\"#x\">X</a>", "https://ex.com/")
+    ntest.assert_eq(len(links), 1)
+    ntest.assert_true(links[0].href.contains("ex.com"))
+}
+
+fn test_parallel_extract() {
+    let docs = [
+        "<p>One paragraph of extractable text content here for scoring.</p>",
+        "<p>Two paragraph of extractable text content here for scoring.</p>",
+    ]
+    let out = nscrape.parallel_extract(docs)
+    ntest.assert_eq(len(out), 2)
+    ntest.assert_true(out[0].text.contains("One") || out[0].text.contains("paragraph"))
+}
+
+fn test_url_helpers() {
+    let c = nscrape.canonicalize("https://Ex.Com/path#frag")
+    ntest.assert_false(c.contains("#"))
+    ntest.assert_true(nscrape.same_host("https://a.com/1", "http://A.com/2"))
+    ntest.assert_false(nscrape.same_host("https://a.com/", "https://b.com/"))
+    ntest.assert_eq(nscrape.origin("https://ex.com/path"), "https://ex.com")
+    let j = nscrape.join("https://ex.com/a/", "b")
+    ntest.assert_true(j.contains("/a/b"))
+    ntest.assert_true(nscrape.is_html_ct("text/html; charset=utf-8"))
+    ntest.assert_false(nscrape.is_html_ct("application/json"))
+}
+
+fn test_invalid_handle() {
+    let e = nscrape.close(999999)
+    ntest.assert_error(e)
+}
+
+fn test_oversize() {
+    let big = nstr.repeat("x", 17 * 1024 * 1024)
+    let e = nscrape.extract(big)
+    ntest.assert_error(e)
+}
+
+fn test_malformed_url_soft() {
+    let e = nscrape.canonicalize("not a url")
+    ntest.assert_error(e)
+}
+
+fn test_empty_html() {
+    let art = nscrape.extract("")
+    ntest.assert_eq(art.title, "")
+}
+
+fn test_unicode() {
+    let art = nscrape.extract("<article><p>日本語の文章です。これは抽出テスト用の十分な長さの本文です。</p></article>")
+    ntest.assert_true(len(art.text) > 0)
+}
+
+fn main() {
+    test_parse_robots_allowed()
+    print("test_parse_robots_allowed ok")
+    test_allowed_from_text()
+    print("test_allowed_from_text ok")
+    test_empty_robots()
+    print("test_empty_robots ok")
+    test_bot_info_close()
+    print("test_bot_info_close ok")
+    test_limiter()
+    print("test_limiter ok")
+    test_parse_sitemap()
+    print("test_parse_sitemap ok")
+    test_extract_article()
+    print("test_extract_article ok")
+    test_extract_title_text_meta_links()
+    print("test_extract_title_text_meta_links ok")
+    test_parallel_extract()
+    print("test_parallel_extract ok")
+    test_url_helpers()
+    print("test_url_helpers ok")
+    test_invalid_handle()
+    print("test_invalid_handle ok")
+    test_oversize()
+    print("test_oversize ok")
+    test_malformed_url_soft()
+    print("test_malformed_url_soft ok")
+    test_empty_html()
+    print("test_empty_html ok")
+    test_unicode()
+    print("test_unicode ok")
+    print("all nscrape tests passed")
+}

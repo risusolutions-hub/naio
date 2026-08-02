@@ -1,0 +1,72 @@
+// Micro-benchmarks for nflock hot paths.
+// Run: niao run examples/nflock_bench.niao
+import "nflock"
+import "nbench"
+import "nos"
+
+fn temp_path(name) {
+    let base = nos.getenv("TEMP")
+    if base == nil { base = "/tmp" }
+    return base + "/nflock_bench_" + name
+}
+
+fn bench_try_acquire() {
+    let path = temp_path("try.lock")
+    nflock.break_stale(path, true)
+    let h = nflock.open(path)
+    for i in 0..5000 {
+        nflock.try_acquire(h)
+        nflock.release(h)
+    }
+    nflock.close(h)
+  nflock.break_stale(path, true)
+    return 5000
+}
+
+fn bench_lock_convenience() {
+    for i in 0..2000 {
+        let path = temp_path("conv_" + str(i) + ".lock")
+        let lk = nflock.lock(path, {timeout_ms: 0})
+        nflock.release(lk)
+        nflock.close(lk)
+        nflock.break_stale(path, true)
+    }
+    return 2000
+}
+
+fn bench_pid_alive() {
+    let path = temp_path("pid_bench.pid")
+    nflock.pid_write(path)
+    let pid = nflock.pid_read(path)
+    for i in 0..10000 {
+        let _ = nflock.pid_alive(pid)
+    }
+    nflock.pid_remove(path)
+    return 10000
+}
+
+fn bench_pid_read() {
+    let path = temp_path("pid_read.pid")
+    nflock.pid_write(path)
+    for i in 0..5000 {
+        let _ = nflock.pid_read(path)
+    }
+    nflock.pid_remove(path)
+    return 5000
+}
+
+fn main() {
+    let opts = {warmup: 2, iterations: 20}
+
+    let r1 = nbench.run("try_acquire/release x5k", bench_try_acquire, opts)
+    print("try_acquire x5k:", "n=", r1.n, "mean=", r1.mean, "ns p50=", r1.p50)
+
+    let r2 = nbench.run("lock convenience x2k", bench_lock_convenience, opts)
+    print("lock x2k:", "n=", r2.n, "mean=", r2.mean, "ns p50=", r2.p50)
+
+    let r3 = nbench.run("pid_alive x10k", bench_pid_alive, opts)
+    print("pid_alive x10k:", "n=", r3.n, "mean=", r3.mean, "ns p50=", r3.p50)
+
+    let r4 = nbench.run("pid_read x5k", bench_pid_read, opts)
+    print("pid_read x5k:", "n=", r4.n, "mean=", r4.mean, "ns p50=", r4.p50)
+}

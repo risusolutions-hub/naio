@@ -1,0 +1,181 @@
+import "nencoding"
+import "ntest"
+
+fn bytes_from_str(s) {
+    return nencoding.encode(s, "utf-8")
+}
+
+fn test_detect_utf8() {
+    let raw = bytes_from_str("hello world")
+    let r = nencoding.detect(raw)
+    ntest.assert_eq(r.encoding, "utf-8")
+    ntest.assert_true(r.confidence >= 1.0)
+}
+
+fn test_detect_bom() {
+    let raw = nencoding.bom("utf-8") + bytes_from_str("hi")
+    let r = nencoding.detect(raw)
+    ntest.assert_eq(r.encoding, "utf-8")
+    ntest.assert_eq(r.bom_encoding, "utf-8")
+}
+
+fn test_detect_all() {
+    let raw = bytes_from_str("ascii text")
+    let all = nencoding.detect_all(raw, 3)
+    ntest.assert_true(len(all) >= 1)
+    ntest.assert_eq(all[0].encoding, "utf-8")
+}
+
+fn test_decode_utf8() {
+    let raw = bytes_from_str("café")
+    let text = nencoding.decode(raw, "utf-8")
+    ntest.assert_eq(text, "café")
+}
+
+fn test_decode_auto() {
+    let raw = nencoding.encode("test", "utf-8")
+    let text = nencoding.decode(raw)
+    ntest.assert_eq(text, "test")
+}
+
+fn test_encode_utf8() {
+    let raw = nencoding.encode("hello", "utf-8")
+    ntest.assert_eq(len(raw), 5)
+}
+
+fn test_encode_with_bom() {
+    let raw = nencoding.encode("x", "utf-8", true)
+    ntest.assert_eq(len(raw), 4)
+    ntest.assert_eq(raw[0], 0xEF)
+}
+
+fn test_shift_jis_roundtrip() {
+    let text = "日本語テスト"
+    let raw = nencoding.encode(text, "shift_jis")
+    let out = nencoding.decode(raw, "shift_jis")
+    ntest.assert_eq(out, text)
+}
+
+fn test_gbk_roundtrip() {
+    let text = "中文测试"
+    let raw = nencoding.encode(text, "gbk")
+    let out = nencoding.decode(raw, "gbk")
+    ntest.assert_eq(out, text)
+}
+
+fn test_utf16_le_roundtrip() {
+    let text = "Unicode 你好"
+    let raw = nencoding.encode(text, "utf-16-le", true)
+    let out = nencoding.decode(raw, "utf-16-le")
+    ntest.assert_eq(out, text)
+}
+
+fn test_latin1_roundtrip() {
+    let raw = [0xE9, 0xE0, 0xFC]   // é à ü
+    let text = nencoding.decode(raw, "latin-1")
+    ntest.assert_eq(text, "éàü")
+}
+
+fn test_transcode() {
+    let sjis = nencoding.encode("日本", "shift_jis")
+    let utf8 = nencoding.transcode(sjis, "utf-8", "shift_jis")
+    let text = nencoding.decode(utf8, "utf-8")
+    ntest.assert_eq(text, "日本")
+}
+
+fn test_guess_decode() {
+    let raw = nencoding.encode("auto", "gbk")
+    let text = nencoding.guess_decode(raw)
+    ntest.assert_eq(text, "auto")
+}
+
+fn test_strip_bom() {
+    let raw = nencoding.bom("utf-8") + [0x41]
+    let r = nencoding.strip_bom(raw)
+    ntest.assert_eq(r.encoding, "utf-8")
+    ntest.assert_eq(len(r.bytes), 1)
+    ntest.assert_eq(r.bytes[0], 0x41)
+}
+
+fn test_bom_utf16() {
+    let bom = nencoding.bom("utf-16-le")
+    ntest.assert_eq(len(bom), 2)
+    ntest.assert_eq(bom[0], 0xFF)
+    ntest.assert_eq(bom[1], 0xFE)
+}
+
+fn test_list() {
+    let encs = nencoding.list()
+    ntest.assert_true(len(encs) >= 10)
+}
+
+fn test_lookup_alias() {
+    let info = nencoding.lookup("sjis")
+    ntest.assert_eq(info.name, "shift_jis")
+    ntest.assert_true(info.has_bom == false || info.has_bom == true)
+}
+
+fn test_lookup_unknown() {
+    let err = nencoding.lookup("not-a-real-encoding")
+    ntest.assert_true(err != nil)
+}
+
+fn test_is_valid() {
+    ntest.assert_true(nencoding.is_valid(bytes_from_str("ok"), "utf-8"))
+    ntest.assert_false(nencoding.is_valid([0xFF, 0xFE, 0x01], "utf-8"))
+}
+
+fn test_normalize_nfc() {
+    let composed = nencoding.normalize("e\u0301", "NFC")
+    ntest.assert_eq(composed, "é")
+}
+
+fn test_same_encoding() {
+    ntest.assert_true(nencoding.same_encoding("utf8", "utf-8"))
+    ntest.assert_false(nencoding.same_encoding("utf-8", "shift_jis"))
+}
+
+fn test_decode_replace() {
+    let bad = [0xFF, 0xFE, 0x41]
+    let text = nencoding.decode(bad, "utf-8", "replace")
+    ntest.assert_true(len(text) >= 1)
+}
+
+fn test_decode_strict_error() {
+    let bad = [0xFF, 0xFE, 0x01]
+    let err = nencoding.decode(bad, "utf-8", "strict")
+    ntest.assert_true(err != nil)
+}
+
+fn test_decode_unknown_encoding() {
+    let err = nencoding.decode([0x41], "bogus-charset")
+    ntest.assert_true(err != nil)
+}
+
+fn main() {
+    test_detect_utf8()
+    test_detect_bom()
+    test_detect_all()
+    test_decode_utf8()
+    test_decode_auto()
+    test_encode_utf8()
+    test_encode_with_bom()
+    test_shift_jis_roundtrip()
+    test_gbk_roundtrip()
+    test_utf16_le_roundtrip()
+    test_latin1_roundtrip()
+    test_transcode()
+    test_guess_decode()
+    test_strip_bom()
+    test_bom_utf16()
+    test_list()
+    test_lookup_alias()
+    test_lookup_unknown()
+    test_is_valid()
+    test_normalize_nfc()
+    test_same_encoding()
+    test_decode_replace()
+    test_decode_strict_error()
+    test_decode_unknown_encoding()
+    print("nencoding: all tests passed")
+}

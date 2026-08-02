@@ -1,0 +1,18 @@
+[package]
+name = "niao_xlsx"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Excel .xlsx read/write for Niao (~openpyxl / xlsxwriter subset)"
+
+[dependencies]
+calamine = "0.26"
+rust_xlsxwriter = { version = "0.79", features = ["constant_memory"] }
+memmap2 = "0.9"
+niao_frame = { workspace = true }
+niao_parallel = { workspace = true }
+zip = { version = "2", default-features = false, features = ["deflate"] }
+
+[[bin]]
+name = "nxlsx_bench"
+path = "src/bin/nxlsx_bench.rs"

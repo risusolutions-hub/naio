@@ -1,0 +1,11 @@
+{
+    "name": "nssh",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": "SSH client: exec, interactive shell, SFTP, port\n                    forwarding, agent + key auth.  ~paramiko, fabric\n ...",
+    "import_paths": [
+        "nssh",
+        "std/nssh"
+    ],
+    "builtin_count": 24
+}

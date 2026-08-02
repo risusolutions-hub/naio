@@ -1,0 +1,112 @@
+import "nsignal"
+import "ntest"
+
+fn test_valid_nonempty() {
+    let sigs = nsignal.valid()
+    ntest.assert_true(len(sigs) > 0)
+}
+
+fn test_number_name_roundtrip() {
+    let n = nsignal.number("SIGINT")
+    let name = nsignal.name(n)
+    ntest.assert_eq(name, "sigint")
+}
+
+fn test_strsignal() {
+    let n = nsignal.number("SIGTERM")
+    let desc = nsignal.strsignal(n)
+    ntest.assert_true(len(desc) > 0)
+}
+
+fn test_get_default() {
+    let n = nsignal.SIGTERM
+    let h = nsignal.get(n)
+    ntest.assert_eq(h, nsignal.SIG_DFL)
+}
+
+fn test_ignore_get() {
+    let n = nsignal.SIGABRT
+    nsignal.ignore(n)
+    ntest.assert_eq(nsignal.get(n), nsignal.SIG_IGN)
+    nsignal.default(n)
+    ntest.assert_eq(nsignal.get(n), nsignal.SIG_DFL)
+}
+
+fn test_on_off() {
+    let n = nsignal.SIGINT
+    nsignal.on(n, fn(info) {
+        ntest.assert_eq(info.signum, n)
+        ntest.assert_eq(info.name, "sigint")
+    })
+    nsignal.off(n)
+    ntest.assert_eq(nsignal.get(n), nsignal.SIG_DFL)
+}
+
+fn test_info_fields() {
+    let n = nsignal.SIGTERM
+    let info = nsignal.info(n)
+    ntest.assert_eq(info.signum, n)
+    ntest.assert_eq(info.name, "sigterm")
+    ntest.assert_eq(info.handler, nsignal.SIG_DFL)
+}
+
+fn test_shutdown_guard() {
+    let guard = nsignal.shutdown(fn() {})
+    ntest.assert_true(guard.id > 0)
+    ntest.assert_eq(guard.kind, "shutdown")
+    ntest.assert_true(nsignal.shutdown_cancel(guard.id))
+    nsignal.reset()
+}
+
+fn test_pending_poll_empty() {
+    let peek = nsignal.pending()
+    let handled = nsignal.poll()
+    ntest.assert_eq(len(peek), len(handled))
+}
+
+fn test_number_invalid_name() {
+    let e = nsignal.number("NOT_A_SIGNAL")
+    ntest.assert_error(e)
+}
+
+fn test_alarm_platform() {
+    let prev = nsignal.alarm(0)
+    let ok = type(prev) == "int"
+    let err = ntest.is_error(prev)
+    ntest.assert_true(ok || err)
+    nsignal.reset()
+}
+
+fn test_wait_timeout() {
+    let n = nsignal.SIGTERM
+    let got = nsignal.wait(n, 1)
+    ntest.assert_true(got == nil || type(got) == "int")
+}
+
+fn test_reset() {
+    let n = nsignal.SIGINT
+    nsignal.ignore(n)
+    ntest.assert_true(nsignal.reset())
+    ntest.assert_eq(nsignal.get(n), nsignal.SIG_DFL)
+}
+
+fn main() {
+    ntest.case("valid", test_valid_nonempty)
+    ntest.case("number/name", test_number_name_roundtrip)
+    ntest.case("strsignal", test_strsignal)
+    ntest.case("get default", test_get_default)
+    ntest.case("ignore/get", test_ignore_get)
+    ntest.case("on/off", test_on_off)
+    ntest.case("info", test_info_fields)
+    ntest.case("shutdown guard", test_shutdown_guard)
+    ntest.case("pending/poll empty", test_pending_poll_empty)
+    ntest.case("invalid name", test_number_invalid_name)
+    ntest.case("alarm", test_alarm_platform)
+    ntest.case("wait timeout", test_wait_timeout)
+    ntest.case("reset", test_reset)
+
+    let summary = ntest.run()
+    if summary.failed > 0 {
+        print("nsignal tests failed:", summary.failed)
+    }
+}

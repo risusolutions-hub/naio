@@ -1,0 +1,149 @@
+// nfts integration tests — run: niao run examples/nfts_test.niao
+import "nfts"
+import "ntest"
+
+fn test_analyze() {
+    let t = nfts.analyze("Hello, World!")
+    ntest.assert_eq(len(t), 2)
+    ntest.assert_eq(t[0], "hello")
+    ntest.assert_eq(t[1], "world")
+    let empty = nfts.analyze("")
+    ntest.assert_eq(len(empty), 0)
+}
+
+fn test_add_search() {
+    let idx = nfts.open()
+    nfts.add(idx, "1", {body: "the quick brown fox"})
+    nfts.add(idx, "2", {body: "lazy brown dog"})
+    ntest.assert_eq(nfts.count(idx), 2)
+    let hits = nfts.search(idx, "brown fox", 10, "body")
+    ntest.assert_true(len(hits) >= 1)
+    ntest.assert_eq(hits[0].id, "1")
+    nfts.close(idx)
+}
+
+fn test_duplicate_add() {
+    let idx = nfts.open()
+    nfts.add(idx, "x", {body: "one"})
+    let e = nfts.add(idx, "x", {body: "two"})
+    ntest.assert_error(e)
+    nfts.close(idx)
+}
+
+fn test_update_delete_get() {
+    let idx = nfts.open()
+    nfts.update(idx, "d", {body: "alpha"})
+    ntest.assert_eq(nfts.get(idx, "d").fields.body, "alpha")
+    nfts.update(idx, "d", {body: "beta"})
+    ntest.assert_eq(nfts.get(idx, "d").fields.body, "beta")
+    ntest.assert_true(nfts.delete(idx, "d"))
+    ntest.assert_eq(nfts.get(idx, "d"), nil)
+    ntest.assert_false(nfts.delete(idx, "missing"))
+    nfts.close(idx)
+}
+
+fn test_phrase() {
+    let idx = nfts.open()
+    nfts.add(idx, "a", {body: "new york city"})
+    nfts.add(idx, "b", {body: "york new city"})
+    let hits = nfts.search(idx, "\"new york\"", 10, "body")
+    ntest.assert_eq(len(hits), 1)
+    ntest.assert_eq(hits[0].id, "a")
+    nfts.close(idx)
+}
+
+fn test_prefix_suggest() {
+    let idx = nfts.open()
+    nfts.add(idx, "1", {body: "catalog category cat"})
+    let hits = nfts.search(idx, "cat*", 10, "body")
+    ntest.assert_eq(len(hits), 1)
+    let sug = nfts.suggest(idx, "cat", "body", 10)
+    ntest.assert_true(len(sug) >= 1)
+    nfts.close(idx)
+}
+
+fn test_boolean() {
+    let idx = nfts.open()
+    nfts.add(idx, "1", {body: "cats meow"})
+    nfts.add(idx, "2", {body: "dogs bark"})
+    nfts.add(idx, "3", {body: "cats and dogs"})
+    ntest.assert_eq(len(nfts.search(idx, "cats OR dogs", 10, "body")), 3)
+    let not_hits = nfts.search(idx, "cats NOT dogs", 10, "body")
+    ntest.assert_eq(len(not_hits), 1)
+    ntest.assert_eq(not_hits[0].id, "1")
+    nfts.close(idx)
+}
+
+fn test_facets() {
+    let idx = nfts.open()
+    nfts.add(idx, "1", {body: "red apple"}, {color: "red"})
+    nfts.add(idx, "2", {body: "green apple"}, {color: "green"})
+    nfts.add(idx, "3", {body: "red car"}, {color: "red"})
+    let all = nfts.facets(idx, "color")
+    ntest.assert_eq(len(all), 2)
+    let filtered = nfts.facets(idx, "color", "apple")
+    ntest.assert_eq(len(filtered), 2)
+    nfts.close(idx)
+}
+
+fn test_schema_clear() {
+    let idx = nfts.open()
+    nfts.add(idx, "1", {body: "x", title: "y"}, {lang: "en"})
+    let sch = nfts.schema(idx)
+    ntest.assert_true(len(sch.fields) >= 2)
+    ntest.assert_eq(sch.facet_fields[0], "lang")
+    nfts.clear(idx)
+    ntest.assert_eq(nfts.count(idx), 0)
+    nfts.close(idx)
+}
+
+fn test_invalid_handle() {
+    let e = nfts.count(999999)
+    ntest.assert_error(e)
+}
+
+fn test_empty_query() {
+    let idx = nfts.open()
+    nfts.add(idx, "1", {body: "hello"})
+    ntest.assert_eq(len(nfts.search(idx, "", 10)), 0)
+    nfts.close(idx)
+}
+
+fn test_unicode() {
+    let idx = nfts.open()
+    nfts.add(idx, "1", {body: "café naïve résumé"})
+    let hits = nfts.search(idx, "café", 5)
+    ntest.assert_eq(len(hits), 1)
+    nfts.close(idx)
+}
+
+fn test_save_load() {
+    let idx = nfts.open()
+    nfts.add(idx, "d1", {body: "persisted document"}, {lang: "en"})
+    let path = "nfts_test_snapshot.nfts"
+    ntest.assert_true(nfts.save(idx, path))
+    nfts.close(idx)
+    let idx2 = nfts.load(path)
+    ntest.assert_eq(nfts.count(idx2), 1)
+    ntest.assert_eq(nfts.search(idx2, "persisted", 5)[0].id, "d1")
+    nfts.close(idx2)
+}
+
+fn main() {
+    ntest.case("analyze", test_analyze)
+    ntest.case("add search", test_add_search)
+    ntest.case("duplicate add", test_duplicate_add)
+    ntest.case("update delete get", test_update_delete_get)
+    ntest.case("phrase", test_phrase)
+    ntest.case("prefix suggest", test_prefix_suggest)
+    ntest.case("boolean", test_boolean)
+    ntest.case("facets", test_facets)
+    ntest.case("schema clear", test_schema_clear)
+    ntest.case("invalid handle", test_invalid_handle)
+    ntest.case("empty query", test_empty_query)
+    ntest.case("unicode", test_unicode)
+    ntest.case("save load", test_save_load)
+    let summary = ntest.run()
+    print(summary)
+    if !summary.ok { nos.exit(1) }
+}

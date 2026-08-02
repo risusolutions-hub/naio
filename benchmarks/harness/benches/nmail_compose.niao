@@ -1,0 +1,29 @@
+// nmail hot-path bench — run via benchmarks/harness/run_bench.py
+import "nmail"
+
+fn main() {
+    let msg = nmail.build({
+        from: "bench@example.com",
+        to: "to@example.com",
+        subject: "Benchmark subject café",
+        text: "plain text body plain text body plain text body plain text body",
+        html: "<html><body><p>html body html body html body</p></body></html>",
+        attachments: [{
+            filename: "blob.bin",
+            content_type: "application/octet-stream",
+            data: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        }]
+    })
+    let raw = nmail.emit(msg)
+    let i = 0
+    while i < 500 {
+        let _ = nmail.emit(msg)
+        i = i + 1
+    }
+    let j = 0
+    while j < 500 {
+        let _ = nmail.parse(raw)
+        j = j + 1
+    }
+    print(raw.len)
+}

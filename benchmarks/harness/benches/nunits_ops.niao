@@ -1,0 +1,19 @@
+// Hot-path micro-benchmark: parse + convert + arithmetic loop.
+import "nunits"
+fn main() {
+    let total = nunits.parse("0 km/h")
+    let i = 0
+    while i < 50000 {
+        let d = nunits.parse("100 km")
+        let t = nunits.parse("2 h")
+        let v = nunits.div(d, t)
+        let kmh = nunits.to(v, "km/h")
+        total = nunits.add(total, kmh)
+        nunits.close(d)
+        nunits.close(t)
+        nunits.close(v)
+        nunits.close(kmh)
+        i = i + 1
+    }
+    print(nunits.to_string(total))
+}

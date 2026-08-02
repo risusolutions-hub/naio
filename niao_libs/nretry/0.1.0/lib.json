@@ -1,0 +1,11 @@
+{
+    "name": "nretry",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": " Retry with exponential backoff, jitter, deadlines, retry-on predicates.  ~tenacity, backoff (complements nfallback circuit breakers)...",
+    "import_paths": [
+        "nretry",
+        "std/nretry"
+    ],
+    "builtin_count": 19
+}

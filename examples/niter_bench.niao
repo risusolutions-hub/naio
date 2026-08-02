@@ -1,0 +1,62 @@
+// Micro-benchmarks for niter hot paths.
+// Run: niao run examples/niter_bench.niao
+import "niter"
+import "nbench"
+import "ncl"
+
+fn bench_combinations() {
+    let data = ncl.array(range(0, 20))
+    return len(niter.combinations(data, 3))
+}
+
+fn bench_permutations() {
+    let data = ncl.array(range(0, 9))
+    return len(niter.permutations(data, 4))
+}
+
+fn bench_product() {
+    let a = ncl.array(range(0, 50))
+    let b = ncl.array(range(0, 50))
+    return len(niter.product(a, b))
+}
+
+fn bench_windows() {
+    let data = ncl.array(range(0, 10000))
+    return len(niter.windows(data, 5))
+}
+
+fn bench_zip_longest() {
+    let a = ncl.array(range(0, 5000))
+    let b = ncl.array(range(0, 3000))
+    return len(niter.zip_longest(a, b, 0))
+}
+
+fn bench_flatten() {
+    let outer = []
+    for i in 0..500 {
+        outer = outer + [range(i * 10, i * 10 + 10)]
+    }
+    return len(niter.flatten(outer))
+}
+
+fn main() {
+    let opts = {warmup: 2, iterations: 15}
+
+    let r1 = nbench.run("combinations C(20,3)", bench_combinations, opts)
+    print("combinations C(20,3):", "n=", r1.n, "mean=", r1.mean, "ns p50=", r1.p50)
+
+    let r2 = nbench.run("permutations P(9,4)", bench_permutations, opts)
+    print("permutations P(9,4):", "n=", r2.n, "mean=", r2.mean, "ns p50=", r2.p50)
+
+    let r3 = nbench.run("product 50x50", bench_product, opts)
+    print("product 50x50:", "n=", r3.n, "mean=", r3.mean, "ns p50=", r3.p50)
+
+    let r4 = nbench.run("windows 10k w=5", bench_windows, opts)
+    print("windows 10k w=5:", "n=", r4.n, "mean=", r4.mean, "ns p50=", r4.p50)
+
+    let r5 = nbench.run("zip_longest 5k/3k", bench_zip_longest, opts)
+    print("zip_longest 5k/3k:", "n=", r5.n, "mean=", r5.mean, "ns p50=", r5.p50)
+
+    let r6 = nbench.run("flatten 500x10", bench_flatten, opts)
+    print("flatten 500x10:", "n=", r6.n, "mean=", r6.mean, "ns p50=", r6.p50)
+}

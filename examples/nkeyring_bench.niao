@@ -1,0 +1,66 @@
+// Micro-benchmarks for nkeyring hot paths.
+// Run: niao run examples/nkeyring_bench.niao
+import "nkeyring"
+import "nbench"
+
+fn mem_setup() {
+    nkeyring.use_memory()
+    nkeyring.clear_memory()
+}
+
+fn bench_set_password() {
+    mem_setup()
+    for i in 0..5000 {
+        nkeyring.set_password("bench-svc", "user-" + str(i), "secret-value")
+    }
+    return 5000
+}
+
+fn bench_get_password() {
+    mem_setup()
+    for i in 0..5000 {
+        nkeyring.set_password("get-svc", "user-" + str(i), "v")
+    }
+    for i in 0..5000 {
+        let _ = nkeyring.get_password("get-svc", "user-" + str(i))
+    }
+    return 5000
+}
+
+fn bench_delete_password() {
+    mem_setup()
+    for i in 0..2500 {
+        nkeyring.set_password("del-svc", "user-" + str(i), "v")
+    }
+    for i in 0..2500 {
+        nkeyring.delete_password("del-svc", "user-" + str(i))
+    }
+    return 2500
+}
+
+fn bench_exists() {
+    mem_setup()
+    for i in 0..5000 {
+        nkeyring.set_password("ex-svc", "user-" + str(i), "v")
+    }
+    for i in 0..5000 {
+        let _ = nkeyring.exists("ex-svc", "user-" + str(i))
+    }
+    return 5000
+}
+
+fn main() {
+    let opts = {warmup: 2, iterations: 20}
+
+    let r1 = nbench.run("set_password x5k", bench_set_password, opts)
+    print("set_password x5k:", "n=", r1.n, "mean=", r1.mean, "ns p50=", r1.p50)
+
+    let r2 = nbench.run("get_password x5k", bench_get_password, opts)
+    print("get_password x5k:", "n=", r2.n, "mean=", r2.mean, "ns p50=", r2.p50)
+
+    let r3 = nbench.run("delete_password x2.5k", bench_delete_password, opts)
+    print("delete x2.5k:", "n=", r3.n, "mean=", r3.mean, "ns p50=", r3.p50)
+
+    let r4 = nbench.run("exists x5k", bench_exists, opts)
+    print("exists x5k:", "n=", r4.n, "mean=", r4.mean, "ns p50=", r4.p50)
+}

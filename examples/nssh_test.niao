@@ -1,0 +1,48 @@
+// nssh tests — arity/type plus live paths when available.
+// Run: niao run examples/nssh_test.niao
+import "nssh"
+import "ntest"
+
+fn test_connect_missing_host() {
+    let e = nssh.connect({user: "u", password: "p"})
+    ntest.assert_error(e)
+}
+
+fn test_connect_missing_user() {
+    let e = nssh.connect({host: "127.0.0.1", password: "p"})
+    ntest.assert_error(e)
+}
+
+fn test_invalid_session_exec() {
+    let e = nssh.exec(999999, "true")
+    ntest.assert_error(e)
+}
+
+fn test_is_connected_false() {
+    ntest.assert_eq(nssh.is_connected(999999), false)
+}
+
+fn test_agent_identities_safe() {
+    // Either a list or a catchable error — must not throw hard.
+    let r = nssh.agent_identities()
+    let ok = type(r) == "array" || type(r) == "error"
+    ntest.assert_true(ok)
+}
+
+fn test_key_fingerprint_garbage() {
+    let e = nssh.key_fingerprint("not-a-real-key-path-xyz")
+    ntest.assert_error(e)
+}
+
+ntest.case("connect missing host", test_connect_missing_host)
+ntest.case("connect missing user", test_connect_missing_user)
+ntest.case("invalid session exec", test_invalid_session_exec)
+ntest.case("is_connected false", test_is_connected_false)
+ntest.case("agent identities safe", test_agent_identities_safe)
+ntest.case("key fingerprint garbage", test_key_fingerprint_garbage)
+
+let summary = ntest.run()
+print("nssh tests: passed=", summary.passed, "failed=", summary.failed)
+if summary.failed > 0 {
+    error("nssh tests failed")
+}

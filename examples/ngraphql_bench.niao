@@ -1,0 +1,87 @@
+// ngraphql micro-benchmarks.
+// Run: niao run examples/ngraphql_bench.niao
+import "ngraphql"
+import "nbench"
+
+fn sdl_text() {
+    return "type Query {\n  hello: String!\n  heroes: [Character!]!\n}\ntype Character {\n  id: ID!\n  name: String!\n}\n"
+}
+
+fn query_text() {
+    return "query {\n  hello\n  heroes { id name }\n}\n"
+}
+
+fn make_root() {
+    let heroes = []
+    let i = 0
+    while i < 50 {
+        heroes.push({id: i, name: "C" + i})
+        i = i + 1
+    }
+    return {hello: "world", heroes: heroes}
+}
+
+fn bench_parse() {
+    let n = 0
+    while n < 200 {
+        let d = ngraphql.parse(query_text())
+        ngraphql.close_doc(d)
+        n = n + 1
+    }
+}
+
+fn bench_print() {
+    let doc = ngraphql.parse(query_text())
+    let n = 0
+    while n < 200 {
+        let _ = ngraphql.print(doc)
+        n = n + 1
+    }
+    ngraphql.close_doc(doc)
+}
+
+fn bench_validate() {
+    let schema = ngraphql.parse_schema(sdl_text())
+    let doc = ngraphql.parse(query_text())
+    let n = 0
+    while n < 200 {
+        let _ = ngraphql.validate(doc, schema)
+        n = n + 1
+    }
+    ngraphql.close_doc(doc)
+    ngraphql.close_schema(schema)
+}
+
+fn bench_execute() {
+    let schema = ngraphql.parse_schema(sdl_text())
+    let root = make_root()
+    let n = 0
+    while n < 100 {
+        let _ = ngraphql.execute(schema, query_text(), root)
+        n = n + 1
+    }
+    ngraphql.close_schema(schema)
+}
+
+fn bench_request_json() {
+    let n = 0
+    while n < 200 {
+        let _ = ngraphql.request_json(query_text(), {id: "1"})
+        n = n + 1
+    }
+}
+
+fn main() {
+    print("=== ngraphql micro-benchmarks ===")
+    let a = nbench.run("parse document x200", bench_parse, {warmup: 1, iterations: 5})
+    let b = nbench.run("print document x200", bench_print, {warmup: 1, iterations: 5})
+    let c = nbench.run("validate x200", bench_validate, {warmup: 1, iterations: 5})
+    let d = nbench.run("execute (50 heroes) x100", bench_execute, {warmup: 1, iterations: 5})
+    let e = nbench.run("request_json x200", bench_request_json, {warmup: 1, iterations: 5})
+    print(a)
+    print(b)
+    print(c)
+    print(d)
+    print(e)
+    print("ngraphql_bench done")
+}

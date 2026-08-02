@@ -1,0 +1,119 @@
+// nparquet tests — encode/decode, IPC, schema, nframe interop, errors.
+// Run: niao run examples/nparquet_test.niao
+import "nparquet"
+import "ntest"
+
+fn sample_table() {
+    return {
+        id: [10, 20, 30],
+        score: [1.1, 2.2, 3.3],
+        name: ["a", "b", "c"],
+        active: [1, 0, 1]
+    }
+}
+
+fn test_parquet_roundtrip() {
+    let table = sample_table()
+    let bytes = nparquet.encode(table)
+    ntest.assert_true(nparquet.validate(bytes))
+    let back = nparquet.decode(bytes)
+    ntest.assert_eq(nparquet.rows(back), 3)
+    ntest.assert_eq(back.id[0], 10)
+    ntest.assert_eq(back.name[2], "c")
+}
+
+fn test_ipc_roundtrip() {
+    let table = sample_table()
+    let bytes = nparquet.encode_ipc(table)
+    ntest.assert_true(nparquet.validate_ipc(bytes))
+    let back = nparquet.decode_ipc(bytes)
+    ntest.assert_eq(nparquet.rows(back), 3)
+}
+
+fn test_schema_and_info() {
+    let table = sample_table()
+    let bytes = nparquet.encode(table)
+    let schema = nparquet.schema(bytes)
+    ntest.assert_eq(schema.cols, 4)
+    let info = nparquet.info(bytes)
+    ntest.assert_eq(info.rows, 3)
+    ntest.assert_eq(info.format, "parquet")
+}
+
+fn test_column_projection() {
+    let table = sample_table()
+    let bytes = nparquet.encode(table)
+    let partial = nparquet.decode(bytes, {columns: ["id", "name"]})
+    ntest.assert_eq(len(nparquet.columns(partial)), 2)
+}
+
+fn test_nullable_column() {
+    let table = {
+        id: [1, 2, 3],
+        id__valid: [1, 0, 1]
+    }
+    let bytes = nparquet.encode(table)
+    let back = nparquet.decode(bytes)
+    ntest.assert_true(back.id__valid != nil)
+    ntest.assert_eq(back.id__valid[1], 0)
+}
+
+fn test_file_roundtrip() {
+    let path = "examples/_nparquet_tmp.parquet"
+    let table = sample_table()
+    ntest.assert_true(nparquet.write_file(path, table))
+    let loaded = nparquet.read_file(path)
+    ntest.assert_eq(nparquet.rows(loaded), 3)
+    let info = nparquet.info(path)
+    ntest.assert_eq(info.rows, 3)
+}
+
+fn test_load_save_aliases() {
+    let path = "examples/_nparquet_tmp2.parquet"
+    let table = sample_table()
+    ntest.assert_true(nparquet.save(path, table))
+    let loaded = nparquet.load(path)
+    ntest.assert_eq(loaded.score[1], 2.2)
+}
+
+fn test_invalid_bytes() {
+    let bad = [0x50, 0x41, 0x52, 0x31]  // PAR1 magic only
+    ntest.assert_false(nparquet.validate(bad))
+    let e = nparquet.decode(bad)
+    ntest.assert_error(e)
+}
+
+fn test_rows_columns() {
+    let table = sample_table()
+    ntest.assert_eq(nparquet.rows(table), 3)
+    ntest.assert_eq(len(nparquet.columns(table)), 4)
+}
+
+fn test_nframe_interop() {
+    import "nframe"
+    let path = "examples/data/nframe_sales.csv"
+    let fid = nframe.read_csv(path)
+    let table = nparquet.from_nframe(fid)
+    ntest.assert_true(nparquet.rows(table) > 0)
+    let fid2 = nparquet.to_nframe(table)
+    ntest.assert_true(fid2 > 0)
+}
+
+fn main() {
+    ntest.case("parquet roundtrip", test_parquet_roundtrip)
+    ntest.case("ipc roundtrip", test_ipc_roundtrip)
+    ntest.case("schema and info", test_schema_and_info)
+    ntest.case("column projection", test_column_projection)
+    ntest.case("nullable column", test_nullable_column)
+    ntest.case("file roundtrip", test_file_roundtrip)
+    ntest.case("load/save aliases", test_load_save_aliases)
+    ntest.case("invalid bytes", test_invalid_bytes)
+    ntest.case("rows and columns", test_rows_columns)
+    ntest.case("nframe interop", test_nframe_interop)
+
+    let summary = ntest.run()
+    print(summary)
+    if summary.failed > 0 {
+        error("nparquet tests failed")
+    }
+}

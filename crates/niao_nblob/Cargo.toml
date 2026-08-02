@@ -1,0 +1,15 @@
+[package]
+name = "niao_nblob"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Unified object-store VFS for Niao (local, memory, S3, Azure Blob, GCS)"
+
+[dependencies]
+niao_http = { workspace = true }
+niao_crypto = { workspace = true }
+niao_codec = { workspace = true }
+
+[[bin]]
+name = "nblob_bench"
+path = "src/bin/nblob_bench.rs"

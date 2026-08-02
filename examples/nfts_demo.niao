@@ -1,0 +1,65 @@
+// nfts demo — embedded FTS with BM25, phrase, prefix, facets.
+// Run: niao run examples/nfts_demo.niao
+import "nfts"
+
+let idx = nfts.open()
+
+nfts.add(idx, "rust", {
+    title: "The Rust Programming Language",
+    body: "systems programming memory safety without garbage collection"
+}, {lang: "en", topic: "systems"})
+
+nfts.add(idx, "search", {
+    title: "Full Text Search",
+    body: "inverted index bm25 ranking phrase and prefix queries"
+}, {lang: "en", topic: "search"})
+
+nfts.add(idx, "rag", {
+    title: "Hybrid RAG",
+    body: "combine keyword search with vector embeddings for retrieval"
+}, {lang: "en", topic: "ai"})
+
+nfts.add(idx, "chat", {
+    title: "Chatons",
+    body: "les chats fluffy meow beaucoup"
+}, {lang: "fr", topic: "pets"})
+
+print("docs:", nfts.count(idx))
+print("tokens:", nfts.analyze("Hello, World! Café"))
+
+print("")
+print("BM25 search 'memory safety':")
+let hits = nfts.search(idx, "memory safety", 5)
+for h in hits {
+    print(" ", h.id, "score=", h.score, "title=", h.fields.title)
+}
+
+print("")
+print("Phrase \"inverted index\":")
+let phrase = nfts.search(idx, "\"inverted index\"", 5)
+for h in phrase {
+    print(" ", h.id, h.fields.title)
+}
+
+print("")
+print("Prefix suggest 'prog':")
+print(" ", nfts.suggest(idx, "prog", 10))
+
+print("")
+print("Facets for lang among 'search OR programming':")
+let fac = nfts.facets(idx, "lang", "search OR programming")
+for b in fac {
+    print(" ", b.value, b.count)
+}
+
+let path = "nfts_demo_snapshot.nfts"
+nfts.save(idx, path)
+nfts.close(idx)
+
+let idx2 = nfts.load(path)
+print("")
+print("Reloaded count:", nfts.count(idx2))
+nfts.close(idx2)
+
+print("")
+print("nfts demo complete.")

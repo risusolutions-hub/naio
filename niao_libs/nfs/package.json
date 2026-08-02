@@ -1,0 +1,11 @@
+{
+    "name": "nfs",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": "High-level file ops: copy/move trees, atomic write,\n                    temp files/dirs, disk usage, trash.  ~shutil, tempfile,\n                    send2trash  (above io handles / nos basics)",
+    "import_paths": [
+        "nfs",
+        "std/nfs"
+    ],
+    "builtin_count": 29
+}

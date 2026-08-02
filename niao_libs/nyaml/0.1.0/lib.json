@@ -1,0 +1,22 @@
+{
+
+    "name": "nyaml",
+
+    "version": "0.1.0",
+
+    "kind": "native",
+
+    "description": "YAML 1.2 parse + emit, safe-by-default, anchors, multi-doc.  ~PyYAML, ruamel.yaml...",
+
+    "import_paths": [
+
+        "nyaml",
+
+        "std/nyaml"
+
+    ],
+
+    "builtin_count": 12
+
+}
+

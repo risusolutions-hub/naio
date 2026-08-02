@@ -1,0 +1,63 @@
+import "nimap"
+import "ntest"
+import "nos"
+
+fn test_quote() {
+    ntest.assert_eq(nimap.quote("a"), "\"a\"")
+    ntest.assert_eq(nimap.quote("a\"b"), "\"a\\\"b\"")
+    ntest.assert_eq(nimap.quote(""), "\"\"")
+}
+
+fn test_message_set() {
+    ntest.assert_eq(nimap.message_set([1, 2, 3, 9]), "1:3,9")
+    ntest.assert_eq(nimap.message_set([5]), "5")
+    ntest.assert_eq(nimap.message_set([1, 3, 5]), "1,3,5")
+    ntest.assert_eq(nimap.message_set([]), "")
+}
+
+fn test_parse_headers() {
+    let raw = "From: a@b.com\nSubject: Hello\n\nBody"
+    let h = nimap.parse_headers(raw)
+    ntest.assert_eq(h.from, "a@b.com")
+    ntest.assert_eq(h.subject, "Hello")
+}
+
+fn test_parse_headers_empty() {
+    let h = nimap.parse_headers("")
+    ntest.assert_not_error(h)
+}
+
+fn test_parse_headers_unicode() {
+    let h = nimap.parse_headers("Subject: cafe\n\n")
+    ntest.assert_eq(h.subject, "cafe")
+}
+
+fn test_connect_bad_host() {
+    let r = nimap.connect({host: "127.0.0.1", port: 1, user: "u", pass: "p", tls: false, timeout_ms: 500})
+    ntest.assert_error(r)
+}
+
+fn test_invalid_handle() {
+    let r = nimap.capabilities(999999)
+    ntest.assert_error(r)
+    let r3 = nimap.close(888888)
+    ntest.assert_error(r3)
+}
+
+fn test_pop_connect_bad_host() {
+    let r = nimap.pop_connect({host: "127.0.0.1", port: 1, user: "u", pass: "p", tls: false, timeout_ms: 500})
+    ntest.assert_error(r)
+}
+
+fn main() {
+    ntest.case("quote", test_quote)
+    ntest.case("message_set", test_message_set)
+    ntest.case("parse_headers", test_parse_headers)
+    ntest.case("parse_headers_empty", test_parse_headers_empty)
+    ntest.case("parse_headers_unicode", test_parse_headers_unicode)
+    ntest.case("connect_bad_host", test_connect_bad_host)
+    ntest.case("invalid_handle", test_invalid_handle)
+    ntest.case("pop_connect_bad_host", test_pop_connect_bad_host)
+    let summary = ntest.run()
+    if !summary.ok { nos.exit(1) }
+}

@@ -1,0 +1,93 @@
+// nwhen tests — run: niao run tests/nwhen.niao
+import "nwhen"
+import "ntest"
+
+ntest.case("parse tomorrow at noon", fn() {
+    let dt = nwhen.parse("tomorrow at noon")
+    ntest.assert_true(dt.has_date)
+    ntest.assert_true(dt.has_time)
+    ntest.assert_eq(dt.hour, 12)
+})
+
+ntest.case("parse in 2 weeks", fn() {
+    let dt = nwhen.parse("in 2 weeks")
+    ntest.assert_true(dt.has_date)
+    ntest.assert_true(dt.unix_ms > 0)
+})
+
+ntest.case("parse next friday 5pm", fn() {
+    let dt = nwhen.parse("next friday 5pm")
+    ntest.assert_true(dt.has_date)
+    ntest.assert_true(dt.has_time)
+    ntest.assert_eq(dt.hour, 17)
+})
+
+ntest.case("valid rejects garbage", fn() {
+    ntest.assert_false(nwhen.valid("not a date at all xyz"))
+    ntest.assert_true(nwhen.valid("today"))
+})
+
+ntest.case("parse iso date", fn() {
+    let dt = nwhen.parse("2024-03-15")
+    ntest.assert_eq(dt.year, 2024)
+    ntest.assert_eq(dt.month, 3)
+    ntest.assert_eq(dt.day, 15)
+})
+
+ntest.case("parse month name", fn() {
+    let dt = nwhen.parse("March 15, 2024")
+    ntest.assert_eq(dt.month, 3)
+    ntest.assert_eq(dt.day, 15)
+})
+
+ntest.case("parse 3 days ago", fn() {
+    let dt = nwhen.parse("3 days ago")
+    ntest.assert_true(dt.has_date)
+})
+
+ntest.case("search finds embedded phrase", fn() {
+    let hits = nwhen.search("please meet tomorrow at 3pm thanks")
+    ntest.assert_true(len(hits) > 0)
+    ntest.assert_true(hits[0].start >= 0)
+})
+
+ntest.case("parse_many returns candidates", fn() {
+    let hits = nwhen.parse_many("03/04/2024")
+    ntest.assert_true(len(hits) > 0)
+})
+
+ntest.case("batch parallel", fn() {
+    let texts = ["today", "tomorrow", "yesterday"]
+    let out = nwhen.batch(texts)
+    ntest.assert_eq(len(out), 3)
+    ntest.assert_true(out[0].has_date)
+})
+
+ntest.case("languages lists en", fn() {
+    let langs = nwhen.languages()
+    ntest.assert_true(len(langs) >= 1)
+})
+
+ntest.case("unparseable returns error value", fn() {
+    let r = nwhen.parse("xyzzy florp")
+    ntest.assert_true(ntest.is_error(r))
+})
+
+ntest.case("require time fails on date only", fn() {
+    let r = nwhen.parse("2024-03-15", { "require": "time" })
+    ntest.assert_true(ntest.is_error(r))
+})
+
+ntest.case("to_unix_ms round trip", fn() {
+    let dt = nwhen.parse("today at noon", { "timezone": "UTC" })
+    let ms = nwhen.to_unix_ms(dt)
+    ntest.assert_eq(ms, dt.unix_ms)
+})
+
+fn main() {
+    let summary = ntest.run()
+    print(summary)
+    if summary.failed > 0 {
+        error("nwhen tests failed")
+    }
+}

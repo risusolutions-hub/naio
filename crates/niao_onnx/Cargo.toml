@@ -1,0 +1,15 @@
+[package]
+name = "niao_onnx"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "ONNX model loading and CPU inference for Niao (~onnxruntime subset)"
+
+[dependencies]
+thiserror = "2"
+tract-onnx = "0.21"
+rayon = "1.10"
+
+[[bin]]
+name = "nonnx_bench"
+path = "src/bin/nonnx_bench.rs"

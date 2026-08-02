@@ -1,0 +1,114 @@
+// njwt tests — sign/verify, decode, validation, errors.
+// Run: niao run examples/njwt_test.niao
+import "njwt"
+import "ntest"
+
+const JWT_IO = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.reGQzG3OKdoIMWLDKOZ4TICJit3EW69cQE72E2CfzRE"
+const SECRET = "your-256-bit-secret"
+
+fn test_sign_verify_roundtrip() {
+    let claims = {sub: "user1", exp: 9999999999}
+    let token = njwt.sign(claims, "test-secret")
+    let out = njwt.verify(token, "test-secret", {validate_exp: false})
+    ntest.assert_eq(out.sub, "user1")
+}
+
+fn test_jwt_io_vector() {
+    let out = njwt.verify(JWT_IO, SECRET, {validate_exp: false})
+    ntest.assert_eq(out.sub, "1234567890")
+    ntest.assert_true(out.admin)
+}
+
+fn test_decode_unverified() {
+    let doc = njwt.decode(JWT_IO)
+    ntest.assert_eq(doc.header.alg, "HS256")
+    ntest.assert_eq(doc.claims.sub, "1234567890")
+}
+
+fn test_header_and_claims() {
+    ntest.assert_eq(njwt.header(JWT_IO).alg, "HS256")
+    ntest.assert_eq(njwt.claims(JWT_IO).name, "John Doe")
+}
+
+fn test_valid() {
+    ntest.assert_true(njwt.valid(JWT_IO))
+    ntest.assert_false(njwt.valid("not.a.jwt"))
+    ntest.assert_false(njwt.valid("a.b"))
+}
+
+fn test_now() {
+    ntest.assert_true(njwt.now() > 1_500_000_000)
+}
+
+fn test_expired() {
+    let token = njwt.sign({sub: "u", exp: 1}, "secret")
+    let e = njwt.verify(token, "secret")
+    ntest.assert_error(e)
+}
+
+fn test_wrong_secret() {
+    let token = njwt.sign({sub: "u"}, "secret-a")
+    let e = njwt.verify(token, "secret-b", {validate_exp: false})
+    ntest.assert_error(e)
+}
+
+fn test_alg_none_rejected() {
+    let token = "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiIxMjM0NTY3ODkwIn0."
+    let e = njwt.verify(token, "x")
+    ntest.assert_error(e)
+}
+
+fn test_key_from_secret() {
+    let key = njwt.key_from_secret("secret", "HS256")
+    let token = njwt.sign({sub: "k"}, key)
+    let out = njwt.verify(token, key, {validate_exp: false})
+    ntest.assert_eq(out.sub, "k")
+}
+
+fn test_hs512() {
+    let token = njwt.sign({sub: "u"}, "secret", {alg: "HS512"})
+    let out = njwt.verify(token, "secret", {alg: "HS512", validate_exp: false})
+    ntest.assert_eq(out.sub, "u")
+}
+
+fn test_jwks_parse_empty() {
+    let jwks = njwt.jwks_parse('{"keys":[]}')
+    ntest.assert_eq(len(jwks.keys), 0)
+}
+
+fn test_verify_all() {
+    let t1 = njwt.sign({sub: "a"}, "batch-secret", {validate_exp: false})
+    let t2 = njwt.sign({sub: "b"}, "batch-secret")
+    let results = njwt.verify_all([t1, t2], "batch-secret", {validate_exp: false})
+    ntest.assert_eq(len(results), 2)
+    ntest.assert_eq(results[0].sub, "a")
+    ntest.assert_eq(results[1].sub, "b")
+}
+
+fn test_algorithms_namespace() {
+    ntest.assert_eq(njwt.algorithms.HS256, "HS256")
+    ntest.assert_eq(njwt.algorithms.EdDSA, "EdDSA")
+}
+
+fn main() {
+    ntest.case("sign/verify roundtrip", test_sign_verify_roundtrip)
+    ntest.case("jwt.io HS256 vector", test_jwt_io_vector)
+    ntest.case("decode unverified", test_decode_unverified)
+    ntest.case("header and claims", test_header_and_claims)
+    ntest.case("valid format check", test_valid)
+    ntest.case("now timestamp", test_now)
+    ntest.case("expired token", test_expired)
+    ntest.case("wrong secret", test_wrong_secret)
+    ntest.case("reject alg=none", test_alg_none_rejected)
+    ntest.case("key_from_secret", test_key_from_secret)
+    ntest.case("HS512 sign/verify", test_hs512)
+    ntest.case("jwks_parse empty", test_jwks_parse_empty)
+    ntest.case("verify_all batch", test_verify_all)
+    ntest.case("algorithms namespace", test_algorithms_namespace)
+    let summary = ntest.run()
+    if !summary.ok {
+        print("FAILED:", summary.failed, "of", summary.total)
+        nos.exit(1)
+    }
+    print("All", summary.total, "njwt tests passed")
+}

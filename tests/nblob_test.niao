@@ -1,0 +1,194 @@
+// nblob integration tests — run: niao run tests/nblob_test.niao
+import "nblob"
+import "ntest"
+import "nfs"
+import "nos"
+import "ndoc"
+
+fn mk_base() {
+    let base = nfs.temp_dir() + "/ntest_nblob_" + str(nos.getpid())
+    if nos.exists(base) {
+        nfs.rmtree(base)
+    }
+    nos.makedirs(base)
+    return base
+}
+
+fn test_parse_s3() {
+    let u = nblob.parse("s3://my-bucket/a/b.txt")
+    ntest.assert_eq(u.scheme, "s3")
+    ntest.assert_eq(u.bucket, "my-bucket")
+    ntest.assert_eq(u.key, "a/b.txt")
+}
+
+fn test_parse_gs_az_abfs() {
+    let g = nblob.parse("gs://bkt/obj")
+    ntest.assert_eq(g.scheme, "gs")
+    ntest.assert_eq(g.bucket, "bkt")
+    let a = nblob.parse("az://acct/cont/folder/x.bin")
+    ntest.assert_eq(a.scheme, "az")
+    ntest.assert_eq(a.netloc, "acct/cont")
+    ntest.assert_eq(a.path, "folder/x.bin")
+    let ab = nblob.parse("abfs://cont@acct.dfs.core.windows.net/p/q")
+    ntest.assert_eq(ab.scheme, "az")
+    ntest.assert_eq(ab.netloc, "acct/cont")
+}
+
+fn test_parse_local_and_empty() {
+    let u = nblob.parse("/tmp/foo")
+    ntest.assert_eq(u.scheme, "")
+    ntest.assert_eq(u.path, "/tmp/foo")
+    let e = nblob.parse("")
+    ntest.assert_true(ntest.is_error(e))
+    ntest.assert_eq(nblob.scheme("memory://r/x"), "memory")
+}
+
+fn test_join() {
+    ntest.assert_eq(nblob.join("s3://b/pre", "x.txt"), "s3://b/pre/x.txt")
+    ntest.assert_eq(nblob.join("memory://r", "a/b"), "memory://r/a/b")
+}
+
+fn test_memory_crud() {
+    let fs = nblob.memory("ntest_mem")
+    ntest.assert_eq(nblob.fs_write(fs, "docs/a.txt", "one"), 3)
+    ntest.assert_eq(nblob.fs_read(fs, "docs/a.txt"), "one")
+    ntest.assert_true(nblob.fs_exists(fs, "docs/a.txt"))
+    let info = nblob.fs_info(fs, "docs/a.txt")
+    ntest.assert_eq(info.size, 3)
+    ntest.assert_eq(info.type, "file")
+    nblob.fs_write(fs, "docs/b.txt", "two")
+    let ents = nblob.fs_ls(fs, "docs")
+    ntest.assert_eq(len(ents), 2)
+    nblob.fs_rm(fs, "docs/a.txt")
+    ntest.assert_eq(nblob.fs_exists(fs, "docs/a.txt"), false)
+    ntest.assert_true(nblob.close_fs(fs))
+}
+
+fn test_memory_uri_roundtrip() {
+    let fs = nblob.memory("uri_rt")
+    nblob.fs_write(fs, "x", "abc")
+    ntest.assert_eq(nblob.read("memory://uri_rt/x"), "abc")
+    ntest.assert_eq(nblob.write("memory://uri_rt/y", "zzz"), 3)
+    ntest.assert_true(nblob.exists("memory://uri_rt/y"))
+    let info = nblob.info("memory://uri_rt/y")
+    ntest.assert_eq(info.size, 3)
+    nblob.rm("memory://uri_rt/y")
+    ntest.assert_eq(nblob.exists("memory://uri_rt/y"), false)
+}
+
+fn test_open_read_write_seek() {
+    nblob.write("memory://op/f.txt", "hello")
+    let f = nblob.open("memory://op/f.txt", "r")
+    ntest.assert_eq(nblob.read_bytes(f, 2), "he")
+    ntest.assert_eq(nblob.tell(f), 2)
+    nblob.seek(f, 0, 0)
+    ntest.assert_eq(nblob.read_bytes(f), "hello")
+    ntest.assert_eq(nblob.size(f), 5)
+    nblob.close(f)
+
+    let w = nblob.open("memory://op/w.txt", "w")
+    nblob.write_bytes(w, "xyz")
+    nblob.flush(w)
+    nblob.close(w)
+    ntest.assert_eq(nblob.read("memory://op/w.txt"), "xyz")
+}
+
+fn test_cp_mv_cross_memory() {
+    nblob.write("memory://cp/a", "payload")
+    nblob.cp("memory://cp/a", "memory://cp/b")
+    ntest.assert_eq(nblob.read("memory://cp/b"), "payload")
+    nblob.mv("memory://cp/b", "memory://cp/c")
+    ntest.assert_eq(nblob.exists("memory://cp/b"), false)
+    ntest.assert_eq(nblob.read("memory://cp/c"), "payload")
+}
+
+fn test_local_roundtrip() {
+    let base = mk_base()
+    let path = base + "/note.txt"
+    ntest.assert_eq(nblob.write(path, "local-hi"), 8)
+    ntest.assert_eq(nblob.read(path), "local-hi")
+    ntest.assert_true(nblob.exists(path))
+    let ents = nblob.ls(base)
+    ntest.assert_true(len(ents) >= 1)
+    let fs = nblob.local(base)
+    nblob.fs_write(fs, "rel.txt", "rel")
+    ntest.assert_eq(nblob.fs_read(fs, "rel.txt"), "rel")
+    nblob.mkdir(base + "/sub")
+    ntest.assert_true(nos.exists(base + "/sub"))
+    nblob.rm(path)
+    nfs.rmtree(base)
+}
+
+fn test_put_get_local() {
+    let base = mk_base()
+    let src = base + "/src.bin"
+    let dst = base + "/dst.bin"
+    nblob.write(src, "bytes")
+    nblob.put(src, "memory://pg/obj")
+    ntest.assert_eq(nblob.read("memory://pg/obj"), "bytes")
+    nblob.get("memory://pg/obj", dst)
+    ntest.assert_eq(nblob.read(dst), "bytes")
+    nfs.rmtree(base)
+}
+
+fn test_fs_open() {
+    let fs = nblob.memory("fsopen")
+    nblob.fs_write(fs, "t.txt", "12345")
+    let f = nblob.fs_open(fs, "t.txt", "r")
+    ntest.assert_eq(nblob.read_bytes(f, 3), "123")
+    nblob.close(f)
+}
+
+fn test_errors() {
+    let miss = nblob.read("memory://err/missing")
+    ntest.assert_true(ntest.is_error(miss))
+    let bad = nblob.open("memory://err/x", "q")
+    ntest.assert_true(ntest.is_error(bad))
+    let gone = nblob.close_fs(999999)
+    ntest.assert_eq(gone, false)
+    let bad_h = nblob.read_bytes(999999)
+    ntest.assert_true(ntest.is_error(bad_h))
+}
+
+fn test_s3_factory_requires_bucket() {
+    // Creating handle without live network — missing bucket returns catchable error
+    let e = nblob.s3({region: "us-east-1", access_key: "AK", secret_key: "SK"})
+    ntest.assert_true(ntest.is_error(e))
+}
+
+fn test_unicode_and_empty() {
+    let fs = nblob.memory("uni")
+    nblob.fs_write(fs, "café/文件.txt", "日本語")
+    ntest.assert_eq(nblob.fs_read(fs, "café/文件.txt"), "日本語")
+    nblob.fs_write(fs, "empty", "")
+    ntest.assert_eq(nblob.fs_read(fs, "empty"), "")
+}
+
+fn test_doctests() {
+    // Smoke: parse/join doctests are embedded on native fns; run a tiny inline sample
+    let src = "// >>> import \"nblob\"\n// >>> nblob.scheme(\"s3://b/k\")\n// => \"s3\"\n"
+    let r = ndoc.run(src)
+    ntest.assert_true(r.ok)
+}
+
+ntest.case("parse_s3", test_parse_s3)
+ntest.case("parse_gs_az_abfs", test_parse_gs_az_abfs)
+ntest.case("parse_local_and_empty", test_parse_local_and_empty)
+ntest.case("join", test_join)
+ntest.case("memory_crud", test_memory_crud)
+ntest.case("memory_uri_roundtrip", test_memory_uri_roundtrip)
+ntest.case("open_read_write_seek", test_open_read_write_seek)
+ntest.case("cp_mv_cross_memory", test_cp_mv_cross_memory)
+ntest.case("local_roundtrip", test_local_roundtrip)
+ntest.case("put_get_local", test_put_get_local)
+ntest.case("fs_open", test_fs_open)
+ntest.case("errors", test_errors)
+ntest.case("s3_factory_requires_bucket", test_s3_factory_requires_bucket)
+ntest.case("unicode_and_empty", test_unicode_and_empty)
+ntest.case("doctests", test_doctests)
+
+let summary = ntest.run()
+print(summary)
+if summary.failed > 0 {
+    throw "nblob tests failed: " + str(summary.failed)
+}

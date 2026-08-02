@@ -1,0 +1,124 @@
+import "nmime"
+import "ntest"
+
+fn test_from_bytes_png() {
+    let png = byte_array[137, 80, 78, 71, 13, 10, 26, 10]
+    let hit = nmime.from_bytes(png)
+    ntest.assert_eq(hit.mime, "image/png")
+    ntest.assert_eq(hit.extension, "png")
+    ntest.assert_eq(hit.kind, "image")
+    ntest.assert_eq(hit.source, "magic")
+}
+
+fn test_guess_mime_pdf() {
+    let pdf = byte_array[37, 80, 68, 70, 45]
+    ntest.assert_eq(nmime.guess_mime(pdf), "application/pdf")
+    ntest.assert_eq(nmime.guess_extension(pdf), "pdf")
+    ntest.assert_true(nmime.match_mime(pdf, "application/pdf"))
+}
+
+fn test_is_image() {
+    let png = byte_array[137, 80, 78, 71, 13, 10, 26, 10]
+    ntest.assert_true(nmime.is_image(png))
+    ntest.assert_false(nmime.is_audio(png))
+}
+
+fn test_guess_type() {
+    let g = nmime.guess_type("photo.JPG")
+    ntest.assert_eq(g.mime, "image/jpeg")
+    ntest.assert_eq(nmime.extension_to_mime("png"), "image/png")
+    let exts = nmime.mime_to_extensions("image/png")
+    ntest.assert_true(len(exts) >= 1)
+}
+
+fn test_extension_for() {
+    ntest.assert_eq(nmime.extension_for("image/png"), "png")
+    let all = nmime.guess_all_extensions("image/jpeg")
+    ntest.assert_true(len(all) >= 2)
+}
+
+fn test_parse_and_matches() {
+    let p = nmime.parse("application/ld+json; charset=utf-8")
+    ntest.assert_eq(p.subtype, "ld")
+    ntest.assert_eq(p.suffix, "json")
+    ntest.assert_true(nmime.is_valid("text/plain"))
+    ntest.assert_true(nmime.matches("image/png", "image/*"))
+    ntest.assert_true(nmime.matches("application/ld+json", "*/json"))
+    ntest.assert_eq(nmime.kind("video/mp4"), "video")
+    ntest.assert_true(nmime.is_mime_image("image/webp"))
+}
+
+fn test_sniff_path() {
+    let hit = nmime.sniff("Cargo.toml")
+    ntest.assert_true(hit != nil)
+    ntest.assert_true(hit.mime != "")
+}
+
+fn test_from_path() {
+    let hit = nmime.from_path("README.md")
+    ntest.assert_true(hit != nil)
+}
+
+fn test_compile_custom_magic() {
+    let det = nmime.compile()
+    let magic = byte_array[202, 254, 186, 190]
+    let ok = nmime.add_magic(det, magic, "application/x-test", "tst")
+    ntest.assert_true(ok)
+    let hit = nmime.detect(det, magic)
+    ntest.assert_eq(hit.mime, "application/x-test")
+    ntest.assert_true(nmime.close(det))
+}
+
+fn test_parallel_from_bytes() {
+    let png = byte_array[137, 80, 78, 71, 13, 10, 26, 10]
+    let pdf = byte_array[37, 80, 68, 70]
+    let hits = nmime.parallel_from_bytes([png, pdf], {threads: 2})
+    ntest.assert_eq(len(hits), 2)
+    ntest.assert_eq(hits[0].mime, "image/png")
+    ntest.assert_eq(hits[1].mime, "application/pdf")
+}
+
+fn test_parallel_guess_types() {
+    let names = ["a.png", "b.pdf", "c.html"]
+    let hits = nmime.parallel_guess_types(names, false, {threads: 2})
+    ntest.assert_eq(len(hits), 3)
+    ntest.assert_eq(hits[0].mime, "image/png")
+}
+
+fn test_invalid_mime() {
+    let e = nmime.parse("not-a-mime")
+    ntest.assert_error(e)
+}
+
+fn test_bad_handle() {
+    let e = nmime.detect(999999, byte_array[0])
+    ntest.assert_error(e)
+}
+
+fn test_constants() {
+    ntest.assert_true(nmime.signature_count() > 50)
+    ntest.assert_eq(nmime.default_sniff_bytes(), 4096)
+    ntest.assert_true(nmime.max_sniff_bytes() >= 4096)
+}
+
+fn test_extension_helper() {
+    ntest.assert_eq(nmime.extension("archive.tar.gz"), "gz")
+}
+
+fn main() {
+    ntest.case("from_bytes png", test_from_bytes_png)
+    ntest.case("guess_mime pdf", test_guess_mime_pdf)
+    ntest.case("is_image", test_is_image)
+    ntest.case("guess_type", test_guess_type)
+    ntest.case("extension_for", test_extension_for)
+    ntest.case("parse and matches", test_parse_and_matches)
+    ntest.case("sniff path", test_sniff_path)
+    ntest.case("from_path", test_from_path)
+    ntest.case("compile custom magic", test_compile_custom_magic)
+    ntest.case("parallel from_bytes", test_parallel_from_bytes)
+    ntest.case("parallel guess_types", test_parallel_guess_types)
+    ntest.case("invalid mime", test_invalid_mime)
+    ntest.case("bad handle", test_bad_handle)
+    ntest.case("constants", test_constants)
+    ntest.case("extension helper", test_extension_helper)
+}

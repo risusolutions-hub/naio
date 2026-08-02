@@ -1,0 +1,47 @@
+// ncal micro-benchmarks — run: niao run examples/ncal_bench.niao
+import "nbench"
+import "ncal"
+
+fn bench_parse() {
+    for _ in 0..1000 {
+        let _ = ncal.parse("2026-07-13")
+    }
+}
+
+fn bench_month_matrix() {
+    for _ in 0..500 {
+        let _ = ncal.month_matrix(2026, 7)
+    }
+}
+
+fn bench_business_days() {
+    let start = ncal.date(2026, 1, 1)
+    for i in 0..500 {
+        let _ = ncal.add_business_days(start, (i % 40) - 20)
+    }
+}
+
+fn bench_working_between() {
+    let cal = ncal.us_federal_calendar(2026)
+    let a = ncal.date(2026, 1, 1)
+    let b = ncal.date(2026, 12, 31)
+    for _ in 0..500 {
+        let _ = ncal.cal_working_between(cal, a, b)
+    }
+    ncal.cal_close(cal)
+}
+
+fn main() {
+    let opts = {warmup: 2, min_samples: 5}
+    let r1 = nbench.run("parse x1k", bench_parse, opts)
+    print("parse x1k:", "n=", r1.n, "mean=", r1.mean, "ns p50=", r1.p50)
+
+    let r2 = nbench.run("month_matrix x500", bench_month_matrix, opts)
+    print("month_matrix x500:", "n=", r2.n, "mean=", r2.mean, "ns p50=", r2.p50)
+
+    let r3 = nbench.run("add_business_days x500", bench_business_days, opts)
+    print("add_business_days x500:", "n=", r3.n, "mean=", r3.mean, "ns p50=", r3.p50)
+
+    let r4 = nbench.run("cal_working_between x500", bench_working_between, opts)
+    print("cal_working_between x500:", "n=", r4.n, "mean=", r4.mean, "ns p50=", r4.p50)
+}

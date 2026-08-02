@@ -1,0 +1,9 @@
+[package]
+name = "niao_event"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "nevent_bench"
+path = "src/bin/nevent_bench.rs"

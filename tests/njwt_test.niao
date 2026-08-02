@@ -1,0 +1,33 @@
+// njwt CI tests
+// Run: niao run tests/njwt_test.niao
+import "njwt"
+import "ntest"
+import "nos"
+
+const JWT_IO = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.reGQzG3OKdoIMWLDKOZ4TICJit3EW69cQE72E2CfzRE"
+
+fn test_roundtrip() {
+    let token = njwt.sign({sub: "ci"}, "ci-secret")
+    let out = njwt.verify(token, "ci-secret", {validate_exp: false})
+    ntest.assert_eq(out.sub, "ci")
+}
+
+fn test_jwt_io() {
+    let out = njwt.verify(JWT_IO, "your-256-bit-secret", {validate_exp: false})
+    ntest.assert_eq(out.sub, "1234567890")
+}
+
+fn test_exp_error() {
+    let token = njwt.sign({sub: "u", exp: 1}, "s")
+    ntest.assert_error(njwt.verify(token, "s"))
+}
+
+fn main() {
+    ntest.case("roundtrip", test_roundtrip)
+    ntest.case("jwt.io", test_jwt_io)
+    ntest.case("expired", test_exp_error)
+    let summary = ntest.run()
+    if !summary.ok {
+        nos.exit(1)
+    }
+}

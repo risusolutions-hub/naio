@@ -1,0 +1,11 @@
+{
+    "name": "nunicode",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": "Unicode correctness: NFC/NFD normalization, grapheme clusters, categories, display width, casefold. ~unicodedata, grapheme (below nstr string ops)",
+    "import_paths": [
+        "nunicode",
+        "std/nunicode"
+    ],
+    "builtin_count": 36
+}

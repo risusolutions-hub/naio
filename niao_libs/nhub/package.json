@@ -1,0 +1,11 @@
+{
+    "name": "nhub",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": "Model/dataset downloads: resume, cache dir, checksums,\n                    HF Hub + direct URLs.  ~huggingface-hub\n                    (feeds nllm / nonnx)\n",
+    "import_paths": [
+        "nhub",
+        "std/nhub"
+    ],
+    "builtin_count": 18
+}

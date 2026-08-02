@@ -1,0 +1,166 @@
+// nfs integration tests — run: niao run tests/nfs.niao
+import "nfs"
+import "ntest"
+import "nos"
+
+fn mk_base() {
+    let base = nfs.temp_dir() + "/ntest_nfs_" + str(nos.getpid())
+    if nos.exists(base) {
+        nfs.rmtree(base)
+    }
+    nos.makedirs(base)
+    return base
+}
+
+fn test_copyfile() {
+    let base = mk_base()
+    let src = base + "/a.txt"
+    let dst = base + "/b.txt"
+    io.write_file(src, "payload")
+    let n = nfs.copyfile(src, dst)
+    ntest.assert_eq(n, 7)
+    ntest.assert_eq(io.read_file(dst), "payload")
+    nfs.rmtree(base)
+}
+
+fn test_copy2_and_samefile() {
+    let base = mk_base()
+    let src = base + "/a.txt"
+    let dst = base + "/b.txt"
+    io.write_file(src, "x")
+    nfs.copy2(src, dst)
+    ntest.assert_true(nfs.samefile(src, src))
+    ntest.assert_eq(nfs.samefile(src, dst), false)
+    nfs.rmtree(base)
+}
+
+fn test_copytree_parallel() {
+    let base = mk_base()
+    let src = base + "/src"
+    let dst = base + "/dst"
+    nos.makedirs(src + "/sub")
+    io.write_file(src + "/sub/f.txt", "data")
+    nfs.copytree(src, dst, {threads: 4})
+    ntest.assert_eq(io.read_file(dst + "/sub/f.txt"), "data")
+    nfs.rmtree(base)
+}
+
+fn test_move() {
+    let base = mk_base()
+    let a = base + "/a.txt"
+    let b = base + "/b.txt"
+    io.write_file(a, "mv")
+    nfs.move(a, b)
+    ntest.assert_eq(nos.exists(a), false)
+    ntest.assert_eq(io.read_file(b), "mv")
+    nfs.rmtree(base)
+}
+
+fn test_write_atomic() {
+    let base = mk_base()
+    let path = base + "/cfg.txt"
+    nfs.write_atomic(path, "v1")
+    ntest.assert_eq(io.read_file(path), "v1")
+    nfs.write_atomic(path, "v2")
+    ntest.assert_eq(io.read_file(path), "v2")
+    nfs.rmtree(base)
+}
+
+fn test_tempfile_lifecycle() {
+    let h = nfs.tempfile({prefix: "ntest_", suffix: ".tmp"})
+    ntest.assert_true(h > 0)
+    nfs.tempfile_write(h, "temp-bytes")
+    let p = nfs.tempfile_path(h)
+    ntest.assert_true(len(p) > 0)
+    let data = nfs.tempfile_read(h)
+    ntest.assert_true(len(data) >= 10)
+    nfs.tempfile_close(h, {keep: true})
+    ntest.assert_true(nos.exists(p))
+    nos.remove(p)
+}
+
+fn test_tempdir_lifecycle() {
+    let h = nfs.tempdir({prefix: "ntest_dir_"})
+    let p = nfs.tempdir_path(h)
+    io.write_file(p + "/x.txt", "1")
+    nfs.tempdir_close(h)
+    ntest.assert_eq(nos.exists(p), false)
+}
+
+fn test_mkstemp() {
+    let got = nfs.mkstemp({suffix: ".dat"})
+    ntest.assert_true(got.handle > 0)
+    ntest.assert_true(len(got.path) > 0)
+    nfs.tempfile_close(got.handle, {keep: true})
+    nos.remove(got.path)
+}
+
+fn test_walk() {
+    let base = mk_base()
+    io.write_file(base + "/top.txt", "")
+    nos.makedirs(base + "/sub")
+    let entries = nfs.walk(base)
+    ntest.assert_true(len(entries) >= 1)
+    nfs.rmtree(base)
+}
+
+fn test_disk_usage() {
+    let u = nfs.disk_usage(".")
+    ntest.assert_true(u.total > 0)
+    ntest.assert_true(u.free >= 0)
+}
+
+fn test_tree_size() {
+    let base = mk_base()
+    io.write_file(base + "/a.bin", "12345")
+    let n = nfs.tree_size(base)
+    ntest.assert_eq(n, 5)
+    nfs.rmtree(base)
+}
+
+fn test_which() {
+    let cmd = nfs.which("niao")
+    // may be nil if niao not on PATH in test env
+    if cmd != nil {
+        ntest.assert_true(len(cmd) > 0)
+    }
+}
+
+fn test_commonprefix() {
+    let p = nfs.commonprefix(["/var/log/a", "/var/log/b"])
+    ntest.assert_eq(p, "/var/log")
+}
+
+fn test_rmtree_ignore() {
+    let base = mk_base()
+    io.write_file(base + "/keep.me", "x")
+    io.write_file(base + "/drop.tmp", "y")
+    nfs.rmtree(base, {ignore: ["keep.me"]})
+    ntest.assert_true(nos.exists(base + "/keep.me"))
+    nos.remove(base + "/keep.me")
+    nfs.rmtree(base)
+}
+
+fn test_error_missing_path() {
+    let err = nfs.copyfile("/nonexistent_ntest_nfs/file", "/tmp/x")
+    ntest.assert_true(ntest.is_error(err))
+}
+
+fn main() {
+    test_copyfile()
+    test_copy2_and_samefile()
+    test_copytree_parallel()
+    test_move()
+    test_write_atomic()
+    test_tempfile_lifecycle()
+    test_tempdir_lifecycle()
+    test_mkstemp()
+    test_walk()
+    test_disk_usage()
+    test_tree_size()
+    test_which()
+    test_commonprefix()
+    test_rmtree_ignore()
+    test_error_missing_path()
+    print("nfs tests ok")
+}

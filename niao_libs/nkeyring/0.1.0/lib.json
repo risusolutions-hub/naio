@@ -1,0 +1,11 @@
+{
+    "name": "nkeyring",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": "OS credential stores: macOS Keychain, Secret Service, Windows DPAPI. ~keyring (subset)",
+    "import_paths": [
+        "nkeyring",
+        "std/nkeyring"
+    ],
+    "builtin_count": 18
+}

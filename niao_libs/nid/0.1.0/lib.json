@@ -1,0 +1,11 @@
+{
+    "name": "nid",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": "ID generation: ULID, UUIDv7, nanoid, snowflake, hashids.  ~uuid6, ulid-py  (extends codec's UUID) ...",
+    "import_paths": [
+        "nid",
+        "std/nid"
+    ],
+    "builtin_count": 20
+}

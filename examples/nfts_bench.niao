@@ -1,0 +1,47 @@
+// nfts micro-benchmarks via nbench — run with a release-built niao:
+//   cargo build -p niao_cli --release
+//   target/release/niao.exe run examples/nfts_bench.niao
+import "nfts"
+import "nbench"
+
+fn build_corpus(n) {
+    let idx = nfts.open()
+    let i = 0
+    while i < n {
+        let body = "full text search inverted index bm25 ranking document " + str(i)
+        let cat = "a"
+        if i % 2 != 0 {
+            cat = "b"
+        }
+        nfts.update(idx, "doc" + str(i), {body: body}, {cat: cat})
+        i = i + 1
+    }
+    return idx
+}
+
+fn main() {
+    let idx = build_corpus(2000)
+
+    fn search_work() {
+        let _ = nfts.search(idx, "bm25 ranking", 10, "body")
+        return 1
+    }
+
+    fn phrase_work() {
+        let _ = nfts.search(idx, "\"inverted index\"", 10, "body")
+        return 1
+    }
+
+    fn prefix_work() {
+        let _ = nfts.search(idx, "rank*", 10, "body")
+        return 1
+    }
+
+    let r1 = nbench.run("nfts_search", search_work, {warmup: 3, iterations: 40})
+    let r2 = nbench.run("nfts_phrase", phrase_work, {warmup: 3, iterations: 40})
+    let r3 = nbench.run("nfts_prefix", prefix_work, {warmup: 3, iterations: 40})
+    print("search mean_ns:", r1.mean, "p50:", r1.p50)
+    print("phrase mean_ns:", r2.mean, "p50:", r2.p50)
+    print("prefix mean_ns:", r3.mean, "p50:", r3.p50)
+    nfts.close(idx)
+}

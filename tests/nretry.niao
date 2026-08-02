@@ -1,0 +1,175 @@
+// nretry integration tests — run: niao run tests/nretry.niao
+import "ntest"
+import "nretry"
+
+fn test_default_opts() {
+    let o = nretry.default_opts()
+    ntest.assert_eq(o.attempts, 3)
+    ntest.assert_eq(o.min_wait_ms, 500)
+    ntest.assert_eq(o.strategy, "exponential")
+}
+
+fn test_is_error() {
+    ntest.assert_eq(nretry.is_error(err(1, "x", "boom")), true)
+    ntest.assert_eq(nretry.is_error(42), false)
+}
+
+fn test_is_nil() {
+    ntest.assert_eq(nretry.is_nil(nil), true)
+    ntest.assert_eq(nretry.is_nil(0), false)
+}
+
+fn test_call_success_first_try() {
+    let n = 0
+    let v = nretry.call(fn() {
+        return 99
+    })
+    ntest.assert_eq(v, 99)
+}
+
+fn test_call_retries_on_error() {
+    let n = 0
+    let v = nretry.call(fn() {
+        n = n + 1
+        if n < 3 {
+            return err(1, "e", "transient")
+        }
+        return "ok"
+    }, {attempts: 5, min_wait_ms: 0, jitter: "none", sleep: false})
+    ntest.assert_eq(v, "ok")
+    ntest.assert_eq(n, 3)
+}
+
+fn test_call_exhausted() {
+    let n = 0
+    let stats = nretry.call_ex(fn() {
+        n = n + 1
+        return err(1, "e", "always")
+    }, {attempts: 2, min_wait_ms: 0, jitter: "none", sleep: false})
+    ntest.assert_eq(stats.ok, false)
+    ntest.assert_eq(stats.attempts, 2)
+    ntest.assert_eq(nretry.is_error(stats.result), true)
+}
+
+fn test_wrap() {
+    let n = 0
+    let f = nretry.wrap(fn() {
+        n = n + 1
+        if n < 2 {
+            return err(1, "e", "retry")
+        }
+        return 7
+    }, {attempts: 4, min_wait_ms: 0, jitter: "none", sleep: false})
+    ntest.assert_eq(f(), 7)
+    ntest.assert_eq(n, 2)
+}
+
+fn test_retry_on_predicate() {
+    let n = 0
+    let v = nretry.call(fn() {
+        n = n + 1
+        return n
+    }, {
+        attempts: 5,
+        min_wait_ms: 0,
+        jitter: "none",
+        sleep: false,
+        retry_on: fn(result, attempt) {
+            return result < 3
+        }
+    })
+    ntest.assert_eq(v, 3)
+}
+
+fn test_stop_on_predicate() {
+    let n = 0
+    let stats = nretry.call_ex(fn() {
+        n = n + 1
+        return err(1, "e", "x")
+    }, {
+        attempts: 10,
+        min_wait_ms: 0,
+        jitter: "none",
+        sleep: false,
+        stop_on: fn(result, attempt) {
+            return attempt >= 2
+        }
+    })
+    ntest.assert_eq(stats.attempts, 2)
+}
+
+fn test_backoff_exponential() {
+    let w = nretry.exponential(3, {min_wait_ms: 100, multiplier: 2, jitter: "none"})
+    ntest.assert_eq(w, 400)
+}
+
+fn test_jitter_bounded() {
+    let w = nretry.jitter(1000, "full")
+    ntest.assert_true(w >= 0)
+    ntest.assert_true(w <= 1000)
+}
+
+fn test_merge_opts() {
+    let o = nretry.merge_opts(
+        nretry.stop_after_attempt(6),
+        {jitter: "none", min_wait_ms: 10}
+    )
+    ntest.assert_eq(o.attempts, 6)
+    ntest.assert_eq(o.jitter, "none")
+    ntest.assert_eq(o.min_wait_ms, 10)
+}
+
+fn test_validate_ok() {
+    ntest.assert_eq(nretry.validate({attempts: 2}), true)
+}
+
+fn test_validate_bad() {
+    ntest.assert_true(nretry.is_error(nretry.validate({attempts: 0})))
+}
+
+fn test_policy_object() {
+    let p = nretry.policy({attempts: 4, jitter: "equal"})
+    ntest.assert_eq(p.attempts, 4)
+    ntest.assert_eq(p.jitter, "equal")
+    let v = nretry.policy_call(p, fn() { return "done" })
+    ntest.assert_eq(v, "done")
+}
+
+fn test_attempts_left() {
+    ntest.assert_eq(nretry.attempts_left(2, {attempts: 5}), 3)
+}
+
+fn test_deadline_stops() {
+    let stats = nretry.call_ex(fn() {
+        return err(1, "e", "slow")
+    }, {
+        attempts: 100,
+        min_wait_ms: 50,
+        jitter: "none",
+        deadline_ms: 1,
+        sleep: true
+    })
+    ntest.assert_true(stats.stopped_by_deadline || stats.attempts < 100)
+}
+
+fn main() {
+    ntest.run([
+        test_default_opts,
+        test_is_error,
+        test_is_nil,
+        test_call_success_first_try,
+        test_call_retries_on_error,
+        test_call_exhausted,
+        test_wrap,
+        test_retry_on_predicate,
+        test_stop_on_predicate,
+        test_backoff_exponential,
+        test_jitter_bounded,
+        test_merge_opts,
+        test_validate_ok,
+        test_validate_bad,
+        test_policy_object,
+        test_attempts_left,
+        test_deadline_stops,
+    ])
+}

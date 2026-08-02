@@ -1,0 +1,99 @@
+import "nxlsx"
+import "ntest"
+
+fn test_write_read_roundtrip() {
+    let path = "tests/_nxlsx_tmp.xlsx"
+    let table = {
+        id: [1, 2, 3],
+        name: ["a", "b", "c"],
+        score: [0.1, 0.2, 0.3]
+    }
+    let ok = nxlsx.write(path, {Data: table})
+    ntest.assert_true(ok)
+
+    let book = nxlsx.read(path)
+    let loaded = book["Data"]
+    ntest.assert_eq(nxlsx.table_rows(loaded), 3)
+    ntest.assert_eq(len(nxlsx.table_columns(loaded)), 3)
+
+    let info = nxlsx.info(path)
+    ntest.assert_true(info["file_size"] > 0)
+    ntest.assert_true(nxlsx.validate(path))
+}
+
+fn test_workbook_api() {
+    let path = "tests/_nxlsx_wb.xlsx"
+    let wb = nxlsx.create()
+    ntest.assert_true(wb > 0)
+
+    nxlsx.write_sheet(wb, "S1", {x: [10, 20], y: [1.0, 2.0]})
+    nxlsx.set_cell(wb, "S1", 4, 1, "sum")
+    nxlsx.formula(wb, "S1", 4, 2, "SUM(B2:B3)")
+    nxlsx.style(wb, "S1", "A4:B4", {bold: true, bg_color: "#FFFF00"})
+    nxlsx.freeze(wb, "S1", 1, 1)
+    nxlsx.save(wb, path)
+    nxlsx.close(wb)
+
+    let wb2 = nxlsx.open(path)
+    ntest.assert_eq(nxlsx.rows(wb2, "S1"), 4)
+    let cell = nxlsx.cell(wb2, "S1", 1, 1)
+    ntest.assert_eq(cell, "x")
+    nxlsx.close(wb2)
+}
+
+fn test_read_chunk() {
+    let path = "tests/_nxlsx_chunk.xlsx"
+    nxlsx.write(path, {R: {id: [1, 2, 3], name: ["a", "b", "c"]}})
+    let chunk = nxlsx.read_chunk(path, "R", {start_row: 2, count: 2})
+    ntest.assert_eq(len(chunk), 2)
+}
+
+fn test_stream_write() {
+    let path = "tests/_nxlsx_stream.xlsx"
+    let s = nxlsx.stream_open(path, "Stream", ["id", "label"])
+    ntest.assert_true(s > 0)
+    nxlsx.stream_row(s, [1, "one"])
+    nxlsx.stream_row(s, [2, "two"])
+    nxlsx.stream_close(s)
+    ntest.assert_true(nxlsx.validate(path))
+    let data = nxlsx.read(path)
+    ntest.assert_true(data["Stream"] != nil)
+}
+
+fn test_column_letters() {
+    ntest.assert_eq(nxlsx.column_letter(1), "A")
+    ntest.assert_eq(nxlsx.column_letter(27), "AA")
+    ntest.assert_eq(nxlsx.column_index("AB"), 28)
+}
+
+fn test_invalid_handle() {
+    let e = nxlsx.read_sheet(99999, "Sheet1")
+    ntest.assert_error(e)
+}
+
+fn test_bad_path() {
+    let e = nxlsx.open("tests/_does_not_exist_xyz.xlsx")
+    ntest.assert_error(e)
+}
+
+fn test_merge_range() {
+    let wb = nxlsx.create()
+    nxlsx.set_cell(wb, "Sheet1", 1, 1, "title")
+    let ok = nxlsx.merge(wb, "Sheet1", "A1:B1")
+    ntest.assert_true(ok)
+    nxlsx.close(wb)
+}
+
+fn test_to_bytes() {
+    let wb = nxlsx.create()
+    nxlsx.write_sheet(wb, "Sheet1", {n: [42]})
+    let bytes = nxlsx.to_bytes(wb)
+    ntest.assert_true(len(bytes) > 0)
+    ntest.assert_true(nxlsx.validate(bytes))
+    nxlsx.close(wb)
+}
+
+fn test_empty_table_error() {
+    let e = nxlsx.table_rows({})
+    ntest.assert_error(e)
+}

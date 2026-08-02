@@ -1,0 +1,13 @@
+[package]
+name = "niao_expr"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Safe sandboxed expression evaluator for Niao (~simpleeval / asteval subset)"
+
+[dependencies]
+niao_parallel = { workspace = true }
+
+[[example]]
+name = "expr_bench"
+path = "examples/expr_bench.rs"

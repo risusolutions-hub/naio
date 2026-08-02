@@ -1,0 +1,20 @@
+[package]
+name = "niao_sanitize"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "Allowlist HTML sanitizer for user content (XSS-safe), URL scheme policy"
+
+[lib]
+bench = false
+
+[dependencies]
+ammonia = "4"
+linkify = "0.10"
+v_htmlescape = "0.15"
+niao_parallel = { workspace = true }
+
+[[bin]]
+name = "sanitize_bench"
+path = "src/bin/sanitize_bench.rs"

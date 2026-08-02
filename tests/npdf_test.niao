@@ -1,0 +1,112 @@
+import "npdf"
+import "ntest"
+
+fn test_create_extract() {
+    let b = npdf.create({title: "test"})
+    npdf.text(b, "alpha beta gamma", {x: 72, y: 700, size: 14})
+    let bytes = npdf.finish(b)
+    ntest.assert_true(npdf.valid(bytes))
+    let doc = npdf.open(bytes)
+    ntest.assert_eq(npdf.page_count(doc), 1)
+    let text = npdf.extract_text(doc)
+    ntest.assert_true(text.contains("alpha") || text.contains("beta"))
+    npdf.close(doc)
+}
+
+fn test_table() {
+    let b = npdf.create()
+    let rows = [["Name", "Qty"], ["Widget", "3"], ["Gadget", "7"]]
+    npdf.table(b, rows, {x: 72, y: 650, row_height: 22})
+    let bytes = npdf.finish(b)
+    ntest.assert_true(len(bytes) > 100)
+    let doc = npdf.open(bytes)
+    ntest.assert_eq(npdf.page_count(doc), 1)
+    npdf.close(doc)
+}
+
+fn test_multi_page_split_merge() {
+    let b = npdf.create()
+    npdf.text(b, "one", {x: 72, y: 700})
+    npdf.add_page(b)
+    npdf.text(b, "two", {x: 72, y: 700})
+    let bytes = npdf.finish(b)
+    let doc = npdf.open(bytes)
+    ntest.assert_eq(npdf.page_count(doc), 2)
+    let parts = npdf.split_all(doc)
+    ntest.assert_eq(len(parts), 2)
+    let merged = npdf.merge(parts)
+    let doc2 = npdf.open(merged)
+    ntest.assert_eq(npdf.page_count(doc2), 2)
+    npdf.close(doc)
+    npdf.close(doc2)
+}
+
+fn test_extract_pages() {
+    let b = npdf.create()
+    npdf.text(b, "a", {x: 72, y: 700})
+    npdf.add_page(b)
+    npdf.text(b, "b", {x: 72, y: 700})
+    let bytes = npdf.finish(b)
+    let doc = npdf.open(bytes)
+    let sub = npdf.extract_pages(doc, [1])
+    let d2 = npdf.open(sub)
+    ntest.assert_eq(npdf.page_count(d2), 1)
+    npdf.close(doc)
+    npdf.close(d2)
+}
+
+fn test_pages_text() {
+    let b = npdf.create()
+    npdf.text(b, "first", {x: 72, y: 700})
+    npdf.add_page(b)
+    npdf.text(b, "second", {x: 72, y: 700})
+    let bytes = npdf.finish(b)
+    let doc = npdf.open(bytes)
+    let texts = npdf.pages_text(doc)
+    ntest.assert_eq(len(texts), 2)
+    npdf.close(doc)
+}
+
+fn test_metadata_save_roundtrip() {
+    let b = npdf.create({title: "MetaDoc"})
+    npdf.text(b, "x", {x: 72, y: 700})
+    let bytes = npdf.finish(b)
+    let doc = npdf.open(bytes)
+    let saved = npdf.save(doc)
+    ntest.assert_true(len(saved) > 0)
+    npdf.close(doc)
+}
+
+fn test_invalid_handle() {
+    let e = npdf.page_count(999999)
+    ntest.assert_error(e)
+}
+
+fn test_invalid_merge() {
+    let e = npdf.merge([])
+    ntest.assert_error(e)
+}
+
+fn test_parallel_extract() {
+    let b1 = npdf.create()
+    npdf.text(b1, "one", {x: 72, y: 700})
+    let b2 = npdf.create()
+    npdf.text(b2, "two", {x: 72, y: 700})
+    let pdfs = [npdf.finish(b1), npdf.finish(b2)]
+    let texts = npdf.parallel_extract(pdfs, {strip: false})
+    ntest.assert_eq(len(texts), 2)
+}
+
+fn main() {
+    ntest.case("create and extract", test_create_extract)
+    ntest.case("table", test_table)
+    ntest.case("split merge", test_multi_page_split_merge)
+    ntest.case("extract pages", test_extract_pages)
+    ntest.case("pages text", test_pages_text)
+    ntest.case("save roundtrip", test_metadata_save_roundtrip)
+    ntest.case("invalid handle", test_invalid_handle)
+    ntest.case("invalid merge", test_invalid_merge)
+    ntest.case("parallel extract", test_parallel_extract)
+    let summary = ntest.run()
+    print(summary)
+}

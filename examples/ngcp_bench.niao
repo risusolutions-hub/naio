@@ -1,0 +1,43 @@
+// ngcp release micro-benchmarks (offline hot paths).
+// Run: target/release/niao.exe run examples/ngcp_bench.niao
+import "nbench"
+import "ngcp"
+
+fn work_config() {
+    let _ = ngcp.config({project: "bench-proj", access_token: "tok"})
+    return 1
+}
+
+fn work_json_round() {
+    // Fire a type-error path that still exercises arg parsing + error construction.
+    let cfg = ngcp.config({project: "bench-proj", access_token: "tok"})
+    let _ = ngcp.pubsub_ack(cfg, "sub", "bad")
+    return 1
+}
+
+fn work_namespace() {
+    let _ = ngcp.gcs_put
+    let _ = ngcp.firestore_set
+    let _ = ngcp.function_invoke
+    return 1
+}
+
+fn work_naive_object() {
+    let _ = {project: "bench-proj", access_token: "tok"}
+    return 1
+}
+
+fn main() {
+    let r1 = nbench.run("ngcp.config", work_config, {warmup: 5, iterations: 200})
+    let r2 = nbench.run("ngcp.pubsub_ack_type_err", work_json_round, {warmup: 5, iterations: 200})
+    let r3 = nbench.run("ngcp.namespace_lookup", work_namespace, {warmup: 5, iterations: 500})
+    let r4 = nbench.run("naive.object_alloc", work_naive_object, {warmup: 5, iterations: 500})
+    print("config mean_ns:", r1.mean)
+    print("ack_type_err mean_ns:", r2.mean)
+    print("namespace mean_ns:", r3.mean)
+    print("naive object mean_ns:", r4.mean)
+    let cmp = nbench.compare("ngcp.config", "ngcp.namespace_lookup")
+    print("faster:", cmp.faster, "ratio:", cmp.ratio)
+    let cmp2 = nbench.compare("ngcp.config", "naive.object_alloc")
+    print("config_vs_naive faster:", cmp2.faster, "ratio:", cmp2.ratio)
+}

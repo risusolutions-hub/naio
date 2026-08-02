@@ -1,0 +1,55 @@
+// Micro-benchmarks for nmsgpack hot paths.
+// Run: niao run examples/nmsgpack_bench.niao
+import "nmsgpack"
+import "nbench"
+
+fn make_array_payload(n) {
+    let items = []
+    for i in 0..n {
+        items = items + [{id: i, name: "item-" + str(i), active: i % 2 == 0}]
+    }
+    return items
+}
+
+fn bench_pack_small() {
+    let data = {a: 1, b: "hello", c: [true, 3.14]}
+    return len(nmsgpack.pack(data))
+}
+
+fn bench_unpack_small() {
+    let raw = nmsgpack.pack({a: 1, b: "hello", c: [true, 3.14]})
+    let v = nmsgpack.unpack(raw)
+    return v.a
+}
+
+fn bench_pack_array_500() {
+    return len(nmsgpack.pack(make_array_payload(500)))
+}
+
+fn bench_unpack_array_500() {
+    let raw = nmsgpack.pack(make_array_payload(500))
+    let v = nmsgpack.unpack(raw)
+    return len(v)
+}
+
+fn bench_roundtrip_array_500() {
+    let raw = nmsgpack.pack(make_array_payload(500))
+    return len(nmsgpack.unpack(raw))
+}
+
+fn bench_stream_pack_100() {
+    let p = nmsgpack.packer()
+    for i in 0..100 {
+        nmsgpack.packer_pack(p.handle, i)
+    }
+    return len(nmsgpack.packer_finish(p.handle))
+}
+
+fn main() {
+    nbench.run("pack small map", bench_pack_small)
+    nbench.run("unpack small map", bench_unpack_small)
+    nbench.run("pack array 500", bench_pack_array_500)
+    nbench.run("unpack array 500", bench_unpack_array_500)
+    nbench.run("roundtrip array 500", bench_roundtrip_array_500)
+    nbench.run("stream pack 100 ints", bench_stream_pack_100)
+}

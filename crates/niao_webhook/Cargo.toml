@@ -1,0 +1,16 @@
+[package]
+name = "niao_webhook"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Standard Webhooks HMAC sign/verify for Niao (svix subset)"
+
+[dependencies]
+niao_codec = { workspace = true }
+niao_crypto = { workspace = true }
+niao_json_core = { workspace = true }
+niao_rand = { workspace = true }
+
+[[bin]]
+name = "nwebhook_bench"
+path = "src/bin/nwebhook_bench.rs"

@@ -1,0 +1,16 @@
+[package]
+name = "niao_binary"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+crc32fast = "1.5"
+crc = "3.2"
+
+[dev-dependencies]
+criterion = "0.5"
+
+[[bench]]
+name = "nbinary_hot"
+harness = false

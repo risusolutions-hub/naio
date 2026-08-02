@@ -1,0 +1,8 @@
+[package]
+name = "niao_proc"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "proc_bench"
+path = "src/bin/proc_bench.rs"

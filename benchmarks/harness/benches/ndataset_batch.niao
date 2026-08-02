@@ -1,0 +1,22 @@
+// Release-mode micro-benchmark for ndataset batch + shuffle paths.
+import "ndataset"
+
+fn main() {
+    let ds = ndataset.from_csv("tests/fixtures/ndataset_sample.csv")
+    let i = 0
+    while i < 20000 {
+        let sh = ndataset.shuffle(ds, i)
+        let loader = ndataset.batch(sh, 4, {shuffle: true, seed: i})
+        while true {
+            let b = ndataset.next(loader)
+            if b == nil {
+                break
+            }
+        }
+        ndataset.close_loader(loader)
+        ndataset.close(sh)
+        i = i + 1
+    }
+    ndataset.close(ds)
+    print(i)
+}

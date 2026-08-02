@@ -1,0 +1,36 @@
+// nmdns demo — announce + browse briefly
+// Run: niao run examples/nmdns_demo.niao
+import "nmdns"
+
+fn main() {
+    print("=== helpers ===")
+    print(nmdns.service_type("_http._tcp"))
+    print(nmdns.mdns_group(), nmdns.mdns_port())
+
+    print("=== announce + browse ===")
+    let zc = nmdns.open()
+    let svc = nmdns.service("NiaoDemo", "_http._tcp", 8765, {
+        properties: { path: "/", product: "niao" }
+    })
+    print(nmdns.fullname(svc))
+
+    let reg = nmdns.register(zc, svc)
+    if is_error(reg) {
+        print("register skipped:", reg)
+    } else {
+        let found = nmdns.browse(zc, "_http._tcp", 400)
+        if is_error(found) {
+            print("browse skipped:", found)
+        } else {
+            print("discovered", len(found), "service(s)")
+            for s in found {
+                print(" -", s.name, s.port, s.fullname)
+            }
+        }
+        nmdns.unregister(zc, svc)
+    }
+
+    nmdns.close(svc)
+    nmdns.close(zc)
+    print("done")
+}

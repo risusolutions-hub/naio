@@ -1,0 +1,137 @@
+// nical integration tests — run: niao run tests/nical.niao
+import "ntest"
+import "nical"
+
+const SAMPLE_CAL = "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//Test//EN\nBEGIN:VEVENT\nUID:e1\nDTSTART:20260105T090000Z\nDTEND:20260105T093000Z\nSUMMARY:Standup\nRRULE:FREQ=WEEKLY;BYDAY=MO;COUNT=3\nEND:VEVENT\nEND:VCALENDAR\n"
+
+const SAMPLE_VCARD = "BEGIN:VCARD\nVERSION:4.0\nFN:Ada Lovelace\nEMAIL:ada@example.com\nEND:VCARD\nBEGIN:VCARD\nVERSION:4.0\nFN:Grace Hopper\nEND:VCARD\n"
+
+fn test_parse_calendar() {
+    let cal = nical.parse_calendar(SAMPLE_CAL)
+    ntest.assert_eq(cal.kind, "calendar")
+    ntest.assert_eq(cal.name, "VCALENDAR")
+    ntest.assert_eq(len(nical.events(cal)), 1)
+    let ev = nical.events(cal)[0]
+    ntest.assert_eq(nical.get(ev, "summary"), "Standup")
+    ntest.assert_eq(nical.get(ev, "uid"), "e1")
+}
+
+fn test_parse_contacts() {
+    let cards = nical.parse_contacts(SAMPLE_VCARD)
+    ntest.assert_eq(len(cards), 2)
+    ntest.assert_eq(cards[0].kind, "contact")
+    ntest.assert_eq(nical.get(cards[0], "fn"), "Ada Lovelace")
+}
+
+fn test_valid() {
+    ntest.assert_true(nical.valid(SAMPLE_CAL))
+    ntest.assert_true(nical.valid(SAMPLE_VCARD))
+    ntest.assert_false(nical.valid("not a calendar"))
+}
+
+fn test_emit_roundtrip() {
+    let cal = nical.parse_calendar(SAMPLE_CAL)
+    let text = nical.emit(cal)
+    let cal2 = nical.parse_calendar(text)
+    ntest.assert_eq(len(nical.events(cal2)), 1)
+    ntest.assert_eq(nical.get(nical.events(cal2)[0], "summary"), "Standup")
+}
+
+fn test_build_calendar() {
+    let cal = nical.build_calendar({
+        events: [{
+            summary: "Demo",
+            uid: "u-99",
+            dtstart: "20260106T100000Z",
+            dtend: "20260106T110000Z"
+        }]
+    })
+    ntest.assert_eq(cal.kind, "calendar")
+    let text = nical.emit(cal)
+    ntest.assert_true(text.find("SUMMARY:Demo") >= 0)
+}
+
+fn test_build_contact() {
+    let c = nical.build_contact({full_name: "Test User", email: "t@example.com", uid: "c1"})
+    ntest.assert_eq(nical.get(c, "fn"), "Test User")
+    let text = nical.emit(c)
+    ntest.assert_true(text.find("FN:Test User") >= 0)
+}
+
+fn test_parse_rrule() {
+    let r = nical.parse_rrule("FREQ=WEEKLY;BYDAY=MO,WE;INTERVAL=2;COUNT=5")
+    ntest.assert_eq(r.freq, "weekly")
+    ntest.assert_eq(r.interval, "2")
+    ntest.assert_eq(r.count, "5")
+    let s = nical.emit_rrule(r)
+    ntest.assert_true(s.find("FREQ=WEEKLY") >= 0)
+}
+
+fn test_rrule_between() {
+    let dates = nical.rrule_between(
+        "FREQ=DAILY;COUNT=3",
+        "20260101T120000Z",
+        nil,
+        nil,
+        3
+    )
+    ntest.assert_eq(len(dates), 3)
+    ntest.assert_true(dates[0] < dates[1])
+}
+
+fn test_parse_datetime() {
+    let dt = nical.parse_datetime("20260105T090000Z")
+    ntest.assert_eq(dt.year, 2026)
+    ntest.assert_eq(dt.month, 1)
+    ntest.assert_eq(dt.day, 5)
+    ntest.assert_true(dt.utc)
+    ntest.assert_false(dt.date_only)
+    let back = nical.format_datetime(dt.unix_ms)
+    ntest.assert_eq(back, "20260105T090000Z")
+}
+
+fn test_date_only() {
+    let dt = nical.parse_datetime("20260105", {date_only: true})
+    ntest.assert_true(dt.date_only)
+    ntest.assert_eq(dt.year, 2026)
+}
+
+fn test_line_folding() {
+    let folded = "BEGIN:VCARD\nVERSION:4.0\nNOTE:This is a very long note that should be folded when emitted with default options\nFN:Fold Test\nEND:VCARD\n"
+    let c = nical.parse(folded)
+    let out = nical.emit(c)
+    ntest.assert_true(out.find("FN:Fold Test") >= 0)
+}
+
+fn test_invalid_calendar() {
+    let r = nical.parse_calendar("BEGIN:VEVENT\nSUMMARY:X\nEND:VEVENT\n")
+    ntest.assert_true(is_error(r))
+}
+
+fn test_invalid_rrule() {
+    let r = nical.parse_rrule("NOT_A_RULE")
+    ntest.assert_true(is_error(r))
+}
+
+fn test_get_missing() {
+    let ev = {kind: "event", name: "VEVENT", props: {SUMMARY: "Hi"}}
+    ntest.assert_eq(nical.get(ev, "location"), nil)
+}
+
+fn main() {
+    test_parse_calendar()
+    test_parse_contacts()
+    test_valid()
+    test_emit_roundtrip()
+    test_build_calendar()
+    test_build_contact()
+    test_parse_rrule()
+    test_rrule_between()
+    test_parse_datetime()
+    test_date_only()
+    test_line_folding()
+    test_invalid_calendar()
+    test_invalid_rrule()
+    test_get_missing()
+    print("nical: all tests passed")
+}

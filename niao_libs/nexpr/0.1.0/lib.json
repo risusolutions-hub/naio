@@ -1,0 +1,11 @@
+{
+    "name": "nexpr",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": "Safe sandboxed expression evaluator for user formulas\n                    and config logic.  ~simpleeval, asteval...",
+    "import_paths": [
+        "nexpr",
+        "std/nexpr"
+    ],
+    "builtin_count": 21
+}

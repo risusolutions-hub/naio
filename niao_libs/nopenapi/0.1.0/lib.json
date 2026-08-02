@@ -1,0 +1,11 @@
+{
+    "name": "nopenapi",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": "OpenAPI 3 spec generation (from ahiru routes) + typed client stub generation.  ~fastapi openapi, openapi-gen ...",
+    "import_paths": [
+        "nopenapi",
+        "std/nopenapi"
+    ],
+    "builtin_count": 46
+}

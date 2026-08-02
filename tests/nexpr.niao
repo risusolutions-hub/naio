@@ -1,0 +1,114 @@
+// nexpr tests — run: niao run tests/nexpr.niao
+import "nexpr"
+import "ntest"
+
+ntest.case("eval arithmetic", fn() {
+    ntest.assert_eq(nexpr.eval("2 + 3 * 4"), 14)
+})
+
+ntest.case("eval with variables", fn() {
+    let r = nexpr.eval("x * y + 1", { "x": 10, "y": 3 })
+    ntest.assert_eq(r, 31)
+})
+
+ntest.case("valid rejects bad syntax", fn() {
+    ntest.assert_false(nexpr.valid("1 +"))
+    ntest.assert_true(nexpr.valid("1 + 2"))
+})
+
+ntest.case("ternary python style", fn() {
+    let r = nexpr.eval("100 if x > 5 else 0", { "x": 10 })
+    ntest.assert_eq(r, 100)
+    let r2 = nexpr.eval("100 if x > 5 else 0", { "x": 1 })
+    ntest.assert_eq(r2, 0)
+})
+
+ntest.case("comparison and boolean", fn() {
+    ntest.assert_true(nexpr.eval("3 < 4 and not false"))
+    ntest.assert_false(nexpr.eval("1 == 2 or false"))
+})
+
+ntest.case("in operator", fn() {
+    ntest.assert_true(nexpr.eval("'ell' in 'hello'"))
+    ntest.assert_true(nexpr.eval("2 in [1, 2, 3]"))
+})
+
+ntest.case("object attribute and index", fn() {
+    let vars = { "row": { "price": 10, "qty": 2, "tags": ["a", "b"] } }
+    ntest.assert_eq(nexpr.eval("row.price * row.qty", vars), 20)
+    ntest.assert_eq(nexpr.eval("row.tags[1]", vars), "b")
+})
+
+ntest.case("builtin min max len", fn() {
+    ntest.assert_eq(nexpr.eval("min(3, 1, 9)"), 1)
+    ntest.assert_eq(nexpr.eval("max(3, 1, 9)"), 9)
+    ntest.assert_eq(nexpr.eval("len('hello')"), 5)
+})
+
+ntest.case("compile and execute_compiled", fn() {
+    let c = nexpr.compile("a + b")
+    let ev = nexpr.evaluator({ "a": 40, "b": 2 })
+    ntest.assert_eq(nexpr.execute_compiled(ev, c), 42)
+    nexpr.free(ev)
+    nexpr.free_compiled(c)
+})
+
+ntest.case("referenced names", fn() {
+    let c = nexpr.compile("price * qty + tax")
+    let names = nexpr.referenced(c)
+    ntest.assert_true(len(names) >= 3)
+    nexpr.free_compiled(c)
+})
+
+ntest.case("custom function", fn() {
+    let double = fn(x) { return x * 2 }
+    let ev = nexpr.evaluator({}, { "double": double })
+    ntest.assert_eq(nexpr.execute(ev, "double(21)"), 42)
+    nexpr.free(ev)
+})
+
+ntest.case("division by zero is catchable", fn() {
+    let r = nexpr.eval("1 / 0")
+    ntest.assert_true(ntest.is_error(r))
+})
+
+ntest.case("undefined variable is catchable", fn() {
+    let r = nexpr.eval("missing + 1")
+    ntest.assert_true(ntest.is_error(r))
+})
+
+ntest.case("allow_op can disable power", fn() {
+    let ev = nexpr.evaluator()
+    nexpr.allow_op(ev, "**", false)
+    let r = nexpr.execute(ev, "2 ** 8")
+    ntest.assert_true(ntest.is_error(r))
+    nexpr.free(ev)
+})
+
+ntest.case("batch parallel rows", fn() {
+    let c = nexpr.compile("a + b")
+    let ev = nexpr.evaluator()
+    let rows = [{ "a": 1, "b": 2 }, { "a": 10, "b": 5 }]
+    let out = nexpr.batch(ev, c, rows)
+    ntest.assert_eq(out[0], 3)
+    ntest.assert_eq(out[1], 15)
+    nexpr.free(ev)
+    nexpr.free_compiled(c)
+})
+
+ntest.case("string concatenation", fn() {
+    ntest.assert_eq(nexpr.eval("'hello ' + 'world'"), "hello world")
+})
+
+ntest.case("floor div and mod", fn() {
+    ntest.assert_eq(nexpr.eval("7 // 3"), 2)
+    ntest.assert_eq(nexpr.eval("7 % 3"), 1)
+})
+
+fn main() {
+    let summary = ntest.run()
+    print(summary)
+    if summary.failed > 0 {
+        error("nexpr tests failed")
+    }
+}

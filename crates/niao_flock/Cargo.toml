@@ -1,0 +1,15 @@
+[package]
+name = "niao_flock"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+fs2 = "0.4"
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
+[[bin]]
+name = "flock_bench"
+path = "src/bin/flock_bench.rs"

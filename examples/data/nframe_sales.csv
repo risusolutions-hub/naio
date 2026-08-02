@@ -1,0 +1,6 @@
+region,sku,qty
+east,1,10.0
+east,2,20.0
+west,1,15.0
+west,2,5.0
+east,1,8.0

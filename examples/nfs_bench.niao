@@ -1,0 +1,83 @@
+// Micro-benchmarks for nfs hot paths.
+// Run: niao run examples/nfs_bench.niao
+import "nfs"
+import "nbench"
+import "nos"
+
+fn mk_tree(root, n_files, size) {
+    nos.makedirs(root + "/sub")
+    for i in 0..n_files {
+        let data = "x"
+        for j in 0..size {
+            data = data + "y"
+        }
+        io.write_file(root + "/sub/f" + str(i) + ".bin", data)
+    }
+    return n_files
+}
+
+fn bench_copyfile() {
+    let base = nfs.temp_dir() + "/nfs_bench_" + str(nos.getpid())
+    nos.makedirs(base)
+    let src = base + "/one.bin"
+    let payload = "a"
+    for i in 0..65536 {
+        payload = payload + "b"
+    }
+    io.write_file(src, payload)
+    let dst = base + "/two.bin"
+    for i in 0..20 {
+        nfs.copyfile(src, dst)
+    }
+    nfs.rmtree(base)
+    return 20
+}
+
+fn bench_copytree() {
+    let base = nfs.temp_dir() + "/nfs_bench_tree_" + str(nos.getpid())
+    let src = base + "/src"
+    let dst = base + "/dst"
+    mk_tree(src, 32, 512)
+    nfs.copytree(src, dst, {threads: 8})
+    nfs.rmtree(base)
+    return 32
+}
+
+fn bench_write_atomic() {
+    let base = nfs.temp_dir() + "/nfs_bench_atomic_" + str(nos.getpid())
+    nos.makedirs(base)
+    let path = base + "/out.bin"
+    let chunk = "z"
+    for i in 0..1024 {
+        chunk = chunk + "w"
+    }
+    for i in 0..50 {
+        nfs.write_atomic(path, chunk)
+    }
+    nfs.rmtree(base)
+    return 50
+}
+
+fn bench_tree_size() {
+    let base = nfs.temp_dir() + "/nfs_bench_size_" + str(nos.getpid())
+    mk_tree(base, 64, 128)
+    let _ = nfs.tree_size(base, {threads: 8})
+    nfs.rmtree(base)
+    return 64
+}
+
+fn main() {
+    let opts = {warmup: 2, iterations: 8}
+
+    let r1 = nbench.run("copyfile 64KiB x20", bench_copyfile, opts)
+    print("copyfile 64KiB x20:", "n=", r1.n, "mean=", r1.mean, "ns p50=", r1.p50)
+
+    let r2 = nbench.run("copytree 32 files", bench_copytree, opts)
+    print("copytree 32 files:", "n=", r2.n, "mean=", r2.mean, "ns p50=", r2.p50)
+
+    let r3 = nbench.run("write_atomic 1KiB x50", bench_write_atomic, opts)
+    print("write_atomic 1KiB x50:", "n=", r3.n, "mean=", r3.mean, "ns p50=", r3.p50)
+
+    let r4 = nbench.run("tree_size 64 files", bench_tree_size, opts)
+    print("tree_size 64 files:", "n=", r4.n, "mean=", r4.mean, "ns p50=", r4.p50)
+}

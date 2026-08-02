@@ -1,0 +1,190 @@
+import "niter"
+import "ntest"
+
+fn test_product() {
+    let got = niter.product([1, 2], [10, 20])
+    ntest.assert_eq(len(got), 4)
+    ntest.assert_eq(got[0][0], 1)
+    ntest.assert_eq(got[0][1], 10)
+    ntest.assert_eq(got[3][0], 2)
+    ntest.assert_eq(got[3][1], 20)
+}
+
+fn test_product_repeat() {
+    let got = niter.product_repeat([0, 1], 2)
+    ntest.assert_eq(len(got), 4)
+    ntest.assert_eq(got[3], [1, 1])
+}
+
+fn test_combinations() {
+    let got = niter.combinations([1, 2, 3], 2)
+    ntest.assert_eq(len(got), 3)
+    ntest.assert_eq(got[0], [1, 2])
+    ntest.assert_eq(got[2], [2, 3])
+}
+
+fn test_combinations_with_replacement() {
+    let got = niter.combinations_with_replacement(["A", "B"], 2)
+    ntest.assert_eq(len(got), 3)
+    ntest.assert_eq(got[2], ["B", "B"])
+}
+
+fn test_permutations() {
+    let got = niter.permutations([1, 2, 3], 2)
+    ntest.assert_eq(len(got), 6)
+}
+
+fn test_permutations_full() {
+    let got = niter.permutations([1, 2])
+    ntest.assert_eq(len(got), 2)
+}
+
+fn test_groupby() {
+    let got = niter.groupby([1, 1, 2, 2, 1])
+    ntest.assert_eq(len(got), 3)
+    ntest.assert_eq(got[0].key, 1)
+    ntest.assert_eq(len(got[0].items), 2)
+    ntest.assert_eq(got[2].key, 1)
+    ntest.assert_eq(len(got[2].items), 1)
+}
+
+fn test_groupby_key() {
+    let rows = [{kind: "a", v: 1}, {kind: "a", v: 2}, {kind: "b", v: 3}]
+    let got = niter.groupby_key(rows, "kind")
+    ntest.assert_eq(len(got), 2)
+    ntest.assert_eq(got[0].key, "a")
+    ntest.assert_eq(len(got[0].items), 2)
+}
+
+fn test_windows() {
+    let got = niter.windows([1, 2, 3, 4], 2)
+    ntest.assert_eq(len(got), 3)
+    ntest.assert_eq(got[0], [1, 2])
+    ntest.assert_eq(got[2], [3, 4])
+}
+
+fn test_windows_step() {
+    let got = niter.windows([1, 2, 3, 4, 5], 2, 2)
+    ntest.assert_eq(len(got), 2)
+    ntest.assert_eq(got[1], [3, 4])
+}
+
+fn test_chunked() {
+    let got = niter.chunked([1, 2, 3, 4, 5], 2)
+    ntest.assert_eq(len(got), 3)
+    ntest.assert_eq(got[2], [5])
+}
+
+fn test_flatten() {
+    let got = niter.flatten([[1, 2], [3]])
+    ntest.assert_eq(got, [1, 2, 3])
+}
+
+fn test_chain() {
+    let got = niter.chain([1], [2, 3], [4])
+    ntest.assert_eq(got, [1, 2, 3, 4])
+}
+
+fn test_zip_longest() {
+    let got = niter.zip_longest([1, 2, 3], ["a"], 0)
+    ntest.assert_eq(len(got), 3)
+    ntest.assert_eq(got[1][0], 2)
+    ntest.assert_eq(got[1][1], 0)
+    ntest.assert_eq(got[2][1], 0)
+}
+
+fn test_pairwise() {
+    let got = niter.pairwise([1, 2, 3])
+    ntest.assert_eq(got, [[1, 2], [2, 3]])
+}
+
+fn test_enumerate() {
+    let got = niter.enumerate(["a", "b"], 1)
+    ntest.assert_eq(got[0][0], 1)
+    ntest.assert_eq(got[1][1], "b")
+}
+
+fn test_take_drop() {
+    ntest.assert_eq(niter.take([1, 2, 3, 4], 2), [1, 2])
+    ntest.assert_eq(niter.drop([1, 2, 3, 4], 2), [3, 4])
+}
+
+fn test_islice() {
+    let got = niter.islice([0, 1, 2, 3, 4], 1, 4, 2)
+    ntest.assert_eq(got, [1, 3])
+}
+
+fn test_repeat_count() {
+    ntest.assert_eq(niter.repeat("x", 3), ["x", "x", "x"])
+    ntest.assert_eq(niter.count(3), [0, 1, 2])
+    ntest.assert_eq(niter.count(2, 5), [2, 3, 4])
+    ntest.assert_eq(niter.count(0, 6, 2), [0, 2, 4])
+}
+
+fn test_unique_justseen() {
+    let got = niter.unique_justseen([1, 1, 2, 1, 2, 2])
+    ntest.assert_eq(got, [1, 2, 1, 2])
+}
+
+fn test_compress() {
+    let got = niter.compress([1, 2, 3, 4], [true, false, true, false])
+    ntest.assert_eq(got, [1, 3])
+}
+
+fn test_packed_int_array() {
+    import "ncl"
+    let arr = ncl.array([1, 2, 3])
+    let got = niter.combinations(arr, 2)
+    ntest.assert_eq(len(got), 3)
+}
+
+fn test_edge_empty() {
+    ntest.assert_eq(len(niter.combinations([], 2)), 0)
+    ntest.assert_eq(len(niter.product([], [1])), 0)
+    ntest.assert_eq(niter.combinations([1, 2, 3], 0), [[]])
+}
+
+fn test_error_bad_size() {
+    let e = niter.windows([1], 0)
+    ntest.assert_error(e)
+    let e2 = niter.chunked([1], 0)
+    ntest.assert_error(e2)
+}
+
+fn test_error_count_step() {
+    let e = niter.count(0, 5, 0)
+    ntest.assert_error(e)
+}
+
+fn main() {
+    ntest.case("product", test_product)
+    ntest.case("product_repeat", test_product_repeat)
+    ntest.case("combinations", test_combinations)
+    ntest.case("combinations_with_replacement", test_combinations_with_replacement)
+    ntest.case("permutations r", test_permutations)
+    ntest.case("permutations full", test_permutations_full)
+    ntest.case("groupby", test_groupby)
+    ntest.case("groupby_key", test_groupby_key)
+    ntest.case("windows", test_windows)
+    ntest.case("windows step", test_windows_step)
+    ntest.case("chunked", test_chunked)
+    ntest.case("flatten", test_flatten)
+    ntest.case("chain", test_chain)
+    ntest.case("zip_longest", test_zip_longest)
+    ntest.case("pairwise", test_pairwise)
+    ntest.case("enumerate", test_enumerate)
+    ntest.case("take/drop", test_take_drop)
+    ntest.case("islice", test_islice)
+    ntest.case("repeat/count", test_repeat_count)
+    ntest.case("unique_justseen", test_unique_justseen)
+    ntest.case("compress", test_compress)
+    ntest.case("packed int array", test_packed_int_array)
+    ntest.case("edge empty", test_edge_empty)
+    ntest.case("error bad size", test_error_bad_size)
+    ntest.case("error count step", test_error_count_step)
+
+    let summary = ntest.run()
+    if summary.failed > 0 {
+        print("niter tests failed:", summary.failed)
+    }
+}

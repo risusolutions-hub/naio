@@ -1,0 +1,11 @@
+{
+    "name": "nreflect",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": " Runtime introspection: function arity/params, doc strings, module listing, source location.  ~inspect ...",
+    "import_paths": [
+        "nreflect",
+        "std/nreflect"
+    ],
+    "builtin_count": 30
+}

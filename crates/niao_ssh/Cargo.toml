@@ -1,0 +1,22 @@
+[package]
+name = "niao_ssh"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "SSH client for Niao: exec, shell, SFTP, port forwarding, agent + key auth"
+
+[lib]
+bench = false
+
+[dependencies]
+russh = { version = "0.54", default-features = false, features = ["flate2", "ring", "rsa"] }
+russh-sftp = "2.0"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "io-util", "time", "sync", "fs"] }
+futures = "0.3"
+thiserror = "2"
+rand_core = "0.6"
+
+[[bin]]
+name = "ssh_bench"
+path = "src/bin/ssh_bench.rs"

@@ -1,0 +1,54 @@
+// nview micro-benchmarks — run: niao run examples/nview_bench.niao
+import "nbench"
+import "nview"
+
+fn bench_render() {
+    let src = "<h1>{{ title }}</h1>{% for u in users %}<li>{{ u.name|e }}</li>{% endfor %}"
+    let ctx = {title: "T", users: [{name: "Ada"}, {name: "Grace"}]}
+    for _ in 0..1000 {
+        let _ = nview.render(src, ctx, {autoescape: true})
+    }
+}
+
+fn bench_compiled() {
+    let t = nview.compile("<h1>{{ title }}</h1>{% for u in users %}<li>{{ u.name|e }}</li>{% endfor %}", {autoescape: true})
+    let ctx = {title: "T", users: [{name: "Ada"}, {name: "Grace"}]}
+    for _ in 0..1000 {
+        let _ = nview.run(t, ctx)
+    }
+    nview.close(t)
+}
+
+fn bench_inheritance() {
+    let e = nview.env({autoescape: true})
+    nview.add(e, "base.html", "<html>{% block body %}{% endblock %}</html>")
+    nview.add(e, "page.html", "{% extends \"base.html\" %}{% block body %}<p>{{ msg|e }}</p>{% endblock %}")
+    let ctx = {msg: "hi"}
+    for _ in 0..1000 {
+        let _ = nview.render_named(e, "page.html", ctx)
+    }
+    nview.env_close(e)
+}
+
+fn bench_batch() {
+    let ctxs = []
+    for i in 0..200 {
+        ctxs.push({title: "T", users: [{name: "x"}]})
+    }
+    let _ = nview.batch("<h1>{{ title }}</h1>", ctxs, {autoescape: true})
+}
+
+fn main() {
+    let opts = {warmup: 2, min_samples: 5}
+    let r1 = nbench.run("render x1k", bench_render, opts)
+    print("render x1k:", "n=", r1.n, "mean=", r1.mean, "ns p50=", r1.p50)
+
+    let r2 = nbench.run("compiled x1k", bench_compiled, opts)
+    print("compiled x1k:", "n=", r2.n, "mean=", r2.mean, "ns p50=", r2.p50)
+
+    let r3 = nbench.run("inheritance x1k", bench_inheritance, opts)
+    print("inheritance x1k:", "n=", r3.n, "mean=", r3.mean, "ns p50=", r3.p50)
+
+    let r4 = nbench.run("batch 200", bench_batch, opts)
+    print("batch 200:", "n=", r4.n, "mean=", r4.mean, "ns p50=", r4.p50)
+}

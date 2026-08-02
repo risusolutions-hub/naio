@@ -1,0 +1,20 @@
+[package]
+name = "niao_jwt"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "JWT / JWS sign + verify (HS/RS/ES/EdDSA), JWKS for Niao"
+
+[dependencies]
+niao_codec = { workspace = true }
+niao_crypto = { workspace = true }
+niao_json_core = { workspace = true, features = ["serde"] }
+niao_http = { workspace = true }
+niao_parallel = { workspace = true }
+jsonwebtoken = { version = "9", features = ["use_pem"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1" }
+
+[[bin]]
+name = "njwt_bench"
+path = "src/bin/njwt_bench.rs"

@@ -1,0 +1,11 @@
+{
+    "name": "nproc",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": "Child processes beyond nshell: process pools, pipes, IPC channels, shared memory. ~multiprocessing",
+    "import_paths": [
+        "nproc",
+        "std/nproc"
+    ],
+    "builtin_count": 54
+}

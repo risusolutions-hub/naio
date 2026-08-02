@@ -1,0 +1,13 @@
+// Hot path: spawn + gather over many lightweight tasks.
+import "nasync"
+
+fn main() {
+    let tasks = []
+    let i = 0
+    while i < 200 {
+        tasks = tasks + [nasync.spawn(fn(n) { return n * n }, i)]
+        i = i + 1
+    }
+    let out = nasync.gather(tasks)
+    print(len(out))
+}

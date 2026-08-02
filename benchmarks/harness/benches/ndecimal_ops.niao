@@ -1,0 +1,14 @@
+// Hot-path micro-benchmark: decimal parse + add + quantize loop.
+import "ndecimal"
+fn main() {
+    ndecimal.context(28, "half_even")
+    let s = ndecimal.decimal("0")
+    let i = 0
+    while i < 200000 {
+        let d = ndecimal.decimal("19.995")
+        let tax = ndecimal.mul(ndecimal.decimal("0.0825"), d)
+        s = ndecimal.add(s, ndecimal.round_money(ndecimal.add(d, tax)))
+        i = i + 1
+    }
+    print(ndecimal.to_string(s))
+}

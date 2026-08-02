@@ -1,0 +1,22 @@
+{
+
+    "name": "nhdf5",
+
+    "version": "0.1.0",
+
+    "kind": "native",
+
+    "description": " HDF5 scientific dataset read/write, groups, attrs.\n                    ~h5py\n ...",
+
+    "import_paths": [
+
+        "nhdf5",
+
+        "std/nhdf5"
+
+    ],
+
+    "builtin_count": 25
+
+}
+

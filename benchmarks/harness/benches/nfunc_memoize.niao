@@ -1,0 +1,14 @@
+// Hot path: memoize hit/miss on int keys.
+import "nfunc"
+
+fn main() {
+    let f = nfunc.memoize_lru(fn(x) { return x * x }, 4096)
+    let i = 0
+    while i < 500000 {
+        let k = i % 8192
+        f(k)
+        i = i + 1
+    }
+    let info = nfunc.cache_info(f)
+    print(info.hit_rate)
+}

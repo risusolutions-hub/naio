@@ -1,0 +1,108 @@
+import "nsign"
+import "ntest"
+
+fn test_sign_unsign_roundtrip() {
+    let signed = nsign.sign("hello-world", "test-secret")
+    let back = nsign.unsign(signed, "test-secret")
+    ntest.assert_eq(back, "hello-world")
+}
+
+fn test_sign_bad_secret() {
+    let signed = nsign.sign("data", "secret-a")
+    let ok = catch nsign.unsign(signed, "secret-b")
+    ntest.assert_true(ok.kind == "nsign_error")
+}
+
+fn test_dumps_loads_roundtrip() {
+    let tok = nsign.dumps({user: 42, name: "alice"}, "app-secret", {salt: "session"})
+    let data = nsign.loads(tok, "app-secret", {salt: "session", max_age: 3600})
+    ntest.assert_eq(data.user, 42)
+    ntest.assert_eq(data.name, "alice")
+}
+
+fn test_validate_true() {
+    let tok = nsign.dumps({x: 1}, "key")
+    ntest.assert_true(nsign.validate(tok, "key"))
+}
+
+fn test_loads_unsafe_tampered() {
+    let tok = nsign.dumps({n: 5}, "key")
+    let bad = tok + "x"
+    let r = nsign.loads_unsafe(bad, "key")
+    ntest.assert_false(r.valid)
+}
+
+fn test_signer_handle() {
+    let s = nsign.signer("secret", {salt: "cookie"})
+    let signed = s.sign("payload-123")
+    ntest.assert_true(s.validate(signed))
+    ntest.assert_eq(s.unsign(signed), "payload-123")
+}
+
+fn test_timed_handle() {
+    let t = nsign.timed("secret", {max_age: 3600})
+    let signed = t.sign("timed-value")
+    let out = t.unsign(signed, 3600)
+    ntest.assert_eq(out.value, "timed-value")
+    ntest.assert_true(out.timestamp > 0)
+}
+
+fn test_url_safe_serializer() {
+    let ser = nsign.url_safe("secret", {salt: "links", max_age: 7200})
+    let tok = ser.dumps({id: 99})
+    ntest.assert_false(tok.contains("+"))
+    let obj = ser.loads(tok, 7200)
+    ntest.assert_eq(obj.id, 99)
+}
+
+fn test_serializer_json_mode() {
+    let ser = nsign.serializer("secret")
+    let tok = ser.dumps({flag: true})
+    let obj = ser.loads(tok)
+    ntest.assert_true(obj.flag)
+}
+
+fn test_cookie_sign_unsign() {
+    let signed = nsign.cookie_sign("sid", {uid: 7}, "cookie-secret", {max_age: 3600})
+    let data = nsign.cookie_unsign("sid=" + signed, "cookie-secret", {max_age: 3600})
+    ntest.assert_eq(data.uid, 7)
+}
+
+fn test_set_cookie_header() {
+    let hdr = nsign.set_cookie("sid", "signed-val", {max_age: 60, http_only: true, path: "/"})
+    ntest.assert_true(hdr.contains("HttpOnly"))
+    ntest.assert_true(hdr.contains("Max-Age=60"))
+    ntest.assert_true(hdr.contains("Path=/"))
+}
+
+fn test_sign_url_roundtrip() {
+    let url = nsign.sign_url("https://example.com/action", {user: "bob"}, "url-secret", {max_age: 3600})
+    ntest.assert_true(url.contains("token="))
+    let params = nsign.unsign_url(url, "url-secret", {max_age: 3600})
+    ntest.assert_eq(params.user, "bob")
+}
+
+fn test_sign_url_custom_param() {
+    let url = nsign.sign_url("https://x.com", {n: 1}, "k", {param: "sig"})
+    ntest.assert_true(url.contains("sig="))
+    let p = nsign.unsign_url(url, "k", {param: "sig", max_age: 3600})
+    ntest.assert_eq(p.n, 1)
+}
+
+fn test_key_rotation() {
+    let old = "old-key"
+    let new = "new-key"
+    let tok = nsign.dumps({v: 1}, new, {secret_keys: [old, new]})
+    let data = nsign.loads(tok, new, {secret_keys: [old, new], max_age: 3600})
+    ntest.assert_eq(data.v, 1)
+}
+
+fn test_sha256_digest() {
+    let tok = nsign.dumps({a: 1}, "secret", {digest: "sha256", url_safe: false})
+    let data = nsign.loads(tok, "secret", {digest: "sha256", url_safe: false, max_age: 3600})
+    ntest.assert_eq(data.a, 1)
+}
+
+fn test_default_param_constant() {
+    ntest.assert_eq(nsign.DEFAULT_PARAM, "token")
+}

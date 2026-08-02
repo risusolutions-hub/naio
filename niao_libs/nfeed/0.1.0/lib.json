@@ -1,0 +1,11 @@
+{
+    "name": "nfeed",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": "RSS / Atom feed parse + generate.  ~feedparser\n ...",
+    "import_paths": [
+        "nfeed",
+        "std/nfeed"
+    ],
+    "builtin_count": 17
+}

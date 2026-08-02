@@ -1,0 +1,11 @@
+{
+    "name": "ncompress",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": " Modern compression: zstd, lz4, brotli, xz -- block and\n                    stream APIs.  ~zstandard, lz4, brotli\n                    (extends archive's gzip/deflate)\n ...",
+    "import_paths": [
+        "ncompress",
+        "std/ncompress"
+    ],
+    "builtin_count": 23
+}

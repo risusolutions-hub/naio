@@ -1,0 +1,11 @@
+{
+    "name": "nglob",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": " Glob patterns, ** recursion, gitignore-style matching,\n                    walk with filters.  ~glob, fnmatch, pathspec...",
+    "import_paths": [
+        "nglob",
+        "std/nglob"
+    ],
+    "builtin_count": 21
+}

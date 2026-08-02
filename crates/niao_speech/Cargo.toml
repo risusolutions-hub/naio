@@ -1,0 +1,20 @@
+[package]
+name = "niao_speech"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "Speech-to-text via whisper.cpp for Niao (nspeech)"
+
+[lib]
+bench = false
+
+[dependencies]
+thiserror = "2"
+hound = "3.5"
+cpal = "0.15"
+whispercpp = "0.2.1"
+
+[[bin]]
+name = "nspeech_bench"
+path = "src/bin/nspeech_bench.rs"

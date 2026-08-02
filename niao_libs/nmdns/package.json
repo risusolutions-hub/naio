@@ -1,0 +1,11 @@
+{
+    "name": "nmdns",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": " mDNS / DNS-SD service discovery and announcement\n                    (zeroconf).  ~zeroconf\n ...",
+    "import_paths": [
+        "nmdns",
+        "std/nmdns"
+    ],
+    "builtin_count": 29
+}

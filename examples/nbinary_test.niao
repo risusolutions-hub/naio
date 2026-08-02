@@ -1,0 +1,83 @@
+// nbinary tests — struct, varints, CRC, bit buffers.
+// Run: niao run examples/nbinary_test.niao
+import "nbinary"
+import "ntest"
+
+fn test_pack_unpack_be() {
+    let buf = nbinary.pack(">I", 16909060)
+    ntest.assert_eq(len(buf), 4)
+    let vals = nbinary.unpack(">I", buf)
+    ntest.assert_eq(vals[0], 16909060)
+}
+
+fn test_calcsize_aligned() {
+    ntest.assert_eq(nbinary.calcsize(">bh"), 4)
+}
+
+fn test_unpack_from() {
+    let data = byte_array[0, 0, 0, 1, 0, 2]
+    let r = nbinary.unpack_from(">H", data, 4)
+    ntest.assert_eq(r.values[0], 2)
+    ntest.assert_eq(r.offset, 6)
+}
+
+fn test_struct_object() {
+    let st = nbinary.struct_format("<HH")
+    ntest.assert_eq(st.size, 4)
+    let buf = st.pack(3, 4)
+    ntest.assert_eq(len(buf), 4)
+}
+
+fn test_varint() {
+    let enc = nbinary.varint_encode(-1)
+    let dec = nbinary.varint_decode(enc)
+    ntest.assert_eq(dec.value, -1)
+    ntest.assert_eq(nbinary.zigzag_decode(nbinary.zigzag_encode(-42)), -42)
+}
+
+fn test_crc32() {
+    ntest.assert_eq(nbinary.crc32("123456789"), 3421780262)
+}
+
+fn test_bits() {
+    let h = nbinary.bits(12)
+    nbinary.write_bits(h, 4, 10)
+    nbinary.seek_bits(h, 0)
+    ntest.assert_eq(nbinary.read_bits(h, 4), 10)
+    nbinary.set_bit(h, 7, true)
+    ntest.assert_true(nbinary.get_bit(h, 7))
+    nbinary.release_bits(h)
+}
+
+fn test_iter_unpack() {
+    let data = nbinary.pack(">H", 1) + nbinary.pack(">H", 2)
+    let rows = nbinary.iter_unpack(">H", data)
+    ntest.assert_eq(len(rows), 2)
+    ntest.assert_eq(rows[0].values[0], 1)
+    ntest.assert_eq(rows[1].values[0], 2)
+}
+
+fn test_errors() {
+    let e = nbinary.pack(">I")  // missing value
+    ntest.assert_error(e)
+    let e2 = nbinary.unpack(">I", byte_array[0])
+    ntest.assert_error(e2)
+}
+
+fn main() {
+    ntest.case("pack/unpack BE uint32", test_pack_unpack_be)
+    ntest.case("calcsize aligned struct", test_calcsize_aligned)
+    ntest.case("unpack_from offset", test_unpack_from)
+    ntest.case("struct_format object", test_struct_object)
+    ntest.case("varint zigzag", test_varint)
+    ntest.case("crc32 known vector", test_crc32)
+    ntest.case("bit buffer read/write", test_bits)
+    ntest.case("iter_unpack records", test_iter_unpack)
+    ntest.case("error paths", test_errors)
+
+    let summary = ntest.run()
+    print(summary)
+    if summary.failed > 0 {
+        error("nbinary tests failed")
+    }
+}

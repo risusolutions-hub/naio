@@ -1,0 +1,41 @@
+// nopenapi hot-path bench — run via benchmarks/harness/run_bench.py
+import "nopenapi"
+
+fn main() {
+    let routes = []
+    let i = 0
+    while i < 200 {
+        if i % 2 == 0 {
+            routes = routes + [{method: "GET", path: "/items/" + str(i), summary: "Item"}]
+        } else {
+            routes = routes + [{
+                method: "POST",
+                path: "/items/" + str(i),
+                body: {name: "x", n: i},
+            }]
+        }
+        i = i + 1
+    }
+    let j = 0
+    while j < 100 {
+        let doc = nopenapi.from_routes(routes, {title: "Bench", version: "1.0.0"})
+        let _ = nopenapi.to_json(doc, false)
+        let _ = nopenapi.validate(doc)
+        let _ = nopenapi.client_stub(doc, {base_url: "http://127.0.0.1:8080"})
+        nopenapi.close(doc)
+        j = j + 1
+    }
+    let docs = []
+    let k = 0
+    while k < 16 {
+        docs = docs + [nopenapi.from_routes(routes, {title: "P", version: "1"})]
+        k = k + 1
+    }
+    let _ = nopenapi.parallel_validate(docs, {threads: 4})
+    let k2 = 0
+    while k2 < len(docs) {
+        nopenapi.close(docs[k2])
+        k2 = k2 + 1
+    }
+    print(len(routes))
+}

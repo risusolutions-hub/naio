@@ -1,0 +1,34 @@
+{
+    "name": "nfts",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": "Embedded full-text search: inverted index, BM25,\n                    phrase/prefix, facets (tantivy-class).  ~whoosh\n                    (pairs with nvec for hybrid keyword+vector RAG)\n",
+    "import_paths": [
+        "nfts",
+        "std/nfts"
+    ],
+    "builtin_count": 15,
+    "api": {
+        "nfts.open": "(path?: string) -> handle_id",
+        "nfts.close": "(id) -> bool",
+        "nfts.add": "(id, doc_id: string, fields: {}, facets?: {}) -> true | error",
+        "nfts.update": "(id, doc_id: string, fields: {}, facets?: {}) -> true | error",
+        "nfts.delete": "(id, doc_id: string) -> bool",
+        "nfts.get": "(id, doc_id: string) -> {id, fields{}, facets{}} | nil",
+        "nfts.count": "(id) -> int",
+        "nfts.search": "(id, query: string, top_k?: int, field_or_opts?) -> {id,score,fields{},facets{}}[]",
+        "nfts.suggest": "(id, prefix: string, field?: string, limit?: int) -> string[]",
+        "nfts.facets": "(id, facet_field: string, query?: string, limit?: int) -> {value,count}[]",
+        "nfts.schema": "(id) -> {fields: string[], facet_fields: string[]}",
+        "nfts.save": "(id, path: string) -> true | error",
+        "nfts.load": "(path: string) -> handle_id | error",
+        "nfts.clear": "(id) -> true",
+        "nfts.analyze": "(text: string) -> string[]"
+    },
+    "error_codes": {
+        "E4140": "arity error",
+        "E4141": "index or search error",
+        "E4142": "type mismatch",
+        "E4143": "invalid or closed handle"
+    }
+}

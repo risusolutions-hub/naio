@@ -1,0 +1,89 @@
+// nreflect integration tests — run: niao run tests/nreflect.niao
+import "ntest"
+import "nreflect"
+
+fn test_predicates() {
+    let f = fn(x) { return x }
+    ntest.assert_true(nreflect.is_function(f))
+    ntest.assert_true(nreflect.is_callable(f))
+    ntest.assert_false(nreflect.is_native(f))
+    ntest.assert_eq(nreflect.kind(f), "function")
+    ntest.assert_eq(nreflect.kind(42), "int")
+}
+
+fn test_arity_and_signature() {
+    let add = fn(a, b) { return a + b }
+    ntest.assert_eq(nreflect.arity(add), 2)
+    ntest.assert_eq(nreflect.name(add), "add")
+    let sig = nreflect.signature(add)
+    ntest.assert_eq(sig.arity, 2)
+    ntest.assert_eq(len(nreflect.params(add)), 2)
+    let formatted = nreflect.format_signature(add)
+    ntest.assert_true(len(formatted) > 0)
+}
+
+fn test_doc_from_source() {
+    let src = "// Greets the user.\nfn greet(name) { return name }\n"
+    ntest.assert_eq(nreflect.doc_from_source(src, "greet"), "Greets the user.")
+    ntest.assert_eq(nreflect.doc_from_source(src, "missing"), nil)
+}
+
+fn test_parse_module() {
+    let src = "fn one() { }\nfn two(x) { }\nimport \"ntest\"\n"
+    let info = nreflect.parse_module(src)
+    ntest.assert_eq(len(info.functions), 2)
+    ntest.assert_eq(info.functions[0].name, "one")
+    ntest.assert_eq(len(info.imports), 1)
+}
+
+fn test_find_function() {
+    let src = "fn mul(a: int, b: int) -> int { return a * b }\n"
+    let found = nreflect.find_function(src, "mul")
+    ntest.assert_eq(found.name, "mul")
+    ntest.assert_eq(found.arity, 2)
+}
+
+fn test_members() {
+    let obj = {alpha: 1, beta: 2}
+    let m = nreflect.members(obj)
+    ntest.assert_eq(len(m), 2)
+    ntest.assert_eq(m[0].name, "alpha")
+}
+
+fn test_native_modules() {
+    let mods = nreflect.native_modules()
+    ntest.assert_true(len(mods) > 10)
+    let has = false
+    for p in mods {
+        if p == "nreflect" { has = true }
+    }
+    ntest.assert_true(has)
+}
+
+fn test_register_module() {
+    nreflect.clear()
+    let src = "fn registered() { return 1 }\n"
+    nreflect.register_module("test_mod.niao", src)
+    let exports = nreflect.module_exports("test_mod.niao")
+    ntest.assert_eq(exports[0], "registered")
+    nreflect.clear()
+}
+
+fn test_scan() {
+    let items = [
+        {path: "a.niao", source: "fn fa() { }\n"},
+        {path: "b.niao", source: "fn fb() { }\n"},
+    ]
+    let out = nreflect.scan(items)
+    ntest.assert_eq(len(out), 2)
+}
+
+fn test_stack_empty_at_top_level() {
+  // Outside nested calls the stack may be empty.
+    let frame = nreflect.current_frame()
+    ntest.assert_true(frame == nil || frame.name != nil)
+}
+
+fn test_native_arity_nil() {
+    ntest.assert_eq(nreflect.arity(nreflect.kind), nil)
+}

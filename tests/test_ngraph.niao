@@ -1,0 +1,32 @@
+import "ngraph"
+import "ntest"
+
+fn test_build_and_counts() {
+    let g = ngraph.new()
+    ngraph.add_nodes(g, ["a", "b", "c"])
+    ngraph.add_edge(g, "a", "b")
+    ngraph.add_edge(g, "b", "c")
+    ntest.assert_eq(ngraph.node_count(g), 3)
+    ntest.assert_eq(ngraph.edge_count(g), 2)
+    ntest.assert_true(ngraph.has_edge(g, "a", "b"))
+}
+
+fn test_shortest_path_weighted() {
+    let g = ngraph.from_edges([
+        ["a", "b", 1.0],
+        ["b", "c", 2.0],
+        ["a", "c", 5.0]
+    ])
+    let p = ngraph.shortest_path(g, "a", "c", true)
+    ntest.assert_eq(p, ["a", "b", "c"])
+    ntest.assert_near(ngraph.shortest_distance(g, "a", "c", true), 3.0, 0.000001)
+}
+
+fn main() {
+    ntest.case("build/counts", test_build_and_counts)
+    ntest.case("shortest weighted", test_shortest_path_weighted)
+    let summary = ntest.run()
+    if summary.failed > 0 {
+        print("ngraph tests failed:", summary.failed)
+    }
+}

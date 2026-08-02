@@ -1,0 +1,12 @@
+[package]
+name = "niao_retry"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+niao_rand = { workspace = true }
+
+[[bin]]
+name = "nretry_bench"
+path = "src/bin/nretry_bench.rs"

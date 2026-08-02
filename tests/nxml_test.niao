@@ -1,0 +1,37 @@
+import "ntest"
+import "nxml"
+
+fn test_parse_and_xpath() {
+    let xml = r#"<catalog><book id="b1"><title>A</title></book><book id="b2"><title>B</title></book></catalog>"#
+    let doc = nxml.parse(xml)
+    let root = nxml.root(doc)
+    ntest.assert_eq(nxml.tag(root), "catalog")
+    let books = nxml.findall(root, "book")
+    ntest.assert_eq(len(books), 2)
+    let t = nxml.find(root, "book[@id='b2']")
+    ntest.assert_eq(nxml.findtext(t, "title"), "B")
+    nxml.close(doc)
+}
+
+fn test_sub_element_and_emit() {
+    let root = nxml.element("root", {}, nil)
+    let child = nxml.sub_element(root, "item", {k: "v"}, "hi")
+    ntest.assert_eq(nxml.get(child, "k"), "v")
+    ntest.assert_eq(nxml.text(child), "hi")
+    let out = nxml.tostring(root)
+    ntest.assert_true(out.find("item") >= 0)
+    ntest.assert_true(out.find("hi") >= 0)
+}
+
+fn test_stream() {
+    let s = nxml.stream("<a><b/></a>")
+    let e1 = nxml.stream_next(s)
+    ntest.assert_eq(e1.kind, "start")
+    ntest.assert_eq(e1.tag, "a")
+    nxml.stream_close(s)
+}
+
+fn test_errors() {
+    let bad = nxml.parse("<unclosed>")
+    ntest.assert_true(ntest.is_error(bad))
+}

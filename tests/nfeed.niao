@@ -1,0 +1,122 @@
+// nfeed integration tests — run: niao run tests/nfeed.niao
+import "ntest"
+import "nfeed"
+
+const RSS_SAMPLE = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<rss version=\"2.0\">\n  <channel>\n    <title>Example Feed</title>\n    <link>https://example.com/</link>\n    <description>Demo</description>\n    <item>\n      <title>Post One</title>\n      <link>https://example.com/1</link>\n      <guid>post-1</guid>\n      <pubDate>Mon, 06 Sep 2010 00:01:00 +0000</pubDate>\n      <description><![CDATA[<p>Hello <b>world</b></p>]]></description>\n      <category>news</category>\n      <enclosure url=\"https://example.com/a.mp3\" length=\"1000\" type=\"audio/mpeg\"/>\n    </item>\n  </channel>\n</rss>"
+
+const ATOM_SAMPLE = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<feed xmlns=\"http://www.w3.org/2005/Atom\">\n  <title>Atom Feed</title>\n  <link href=\"https://example.com/\"/>\n  <id>urn:uuid:feed-1</id>\n  <updated>2010-09-06T00:01:00Z</updated>\n  <entry>\n    <title>Atom Entry</title>\n    <link href=\"https://example.com/e1\"/>\n    <id>urn:uuid:e1</id>\n    <updated>2010-09-06T00:01:00Z</updated>\n    <summary type=\"html\">&lt;p&gt;Hi&lt;/p&gt;</summary>\n  </entry>\n</feed>"
+
+fn test_parse_rss() {
+    let doc = nfeed.parse(RSS_SAMPLE)
+    ntest.assert_eq(doc.version, "rss20")
+    ntest.assert_false(doc.bozo)
+    ntest.assert_eq(doc.feed.title, "Example Feed")
+    ntest.assert_eq(doc.feed.link, "https://example.com/")
+    ntest.assert_eq(len(nfeed.entries(doc)), 1)
+    let e = nfeed.entries(doc)[0]
+    ntest.assert_eq(nfeed.get(e, "title"), "Post One")
+    ntest.assert_true(nfeed.get(e, "published_ms") != nil)
+}
+
+fn test_parse_atom() {
+    let doc = nfeed.parse(ATOM_SAMPLE)
+    ntest.assert_eq(doc.version, "atom10")
+    ntest.assert_eq(len(nfeed.entries(doc)), 1)
+    ntest.assert_eq(nfeed.get(nfeed.entries(doc)[0], "title"), "Atom Entry")
+}
+
+fn test_valid_detect() {
+    ntest.assert_true(nfeed.valid(RSS_SAMPLE))
+    ntest.assert_true(nfeed.valid(ATOM_SAMPLE))
+    ntest.assert_false(nfeed.valid("not a feed"))
+    ntest.assert_eq(nfeed.detect(RSS_SAMPLE), "rss")
+    ntest.assert_eq(nfeed.detect(ATOM_SAMPLE), "atom")
+    ntest.assert_eq(nfeed.detect_version(RSS_SAMPLE), "rss20")
+    ntest.assert_eq(nfeed.detect_version(ATOM_SAMPLE), "atom10")
+}
+
+fn test_emit_roundtrip() {
+    let doc = nfeed.parse(RSS_SAMPLE)
+    let xml = nfeed.emit(doc, {format: "rss2"})
+    ntest.assert_true(xml.find("<rss") >= 0)
+    let doc2 = nfeed.parse(xml)
+    ntest.assert_eq(doc2.feed.title, "Example Feed")
+    ntest.assert_eq(len(nfeed.entries(doc2)), 1)
+
+    let atom = nfeed.emit(doc, {format: "atom"})
+    ntest.assert_true(atom.find("<feed") >= 0)
+
+    let json = nfeed.emit(doc, {format: "json"})
+    ntest.assert_true(json.find("\"title\"") >= 0)
+}
+
+fn test_build() {
+    let doc = nfeed.build({
+        title: "Built Feed",
+        link: "https://built.example/",
+        entries: [{
+            title: "Item",
+            link: "https://built.example/1",
+            guid: "g1",
+            summary: "text",
+            published_ms: 1283730060000
+        }]
+    })
+    ntest.assert_eq(doc.feed.title, "Built Feed")
+    ntest.assert_eq(len(nfeed.entries(doc)), 1)
+    let out = nfeed.emit(doc)
+    ntest.assert_true(out.find("Built Feed") >= 0)
+}
+
+fn test_build_entry() {
+    let e = nfeed.build_entry({title: "Only", link: "https://x.test/1"})
+    ntest.assert_eq(nfeed.get(e, "title"), "Only")
+}
+
+fn test_html_helpers() {
+    let plain = nfeed.strip_html("<p>a <b>b</b></p>")
+    ntest.assert_true(plain.find("a") >= 0)
+    ntest.assert_true(plain.find("b") >= 0)
+    let safe = nfeed.sanitize_html("<script>alert(1)</script><p>ok</p>")
+    ntest.assert_true(safe.find("ok") >= 0)
+    ntest.assert_false(safe.find("<script>") >= 0)
+}
+
+fn test_parse_date() {
+    let d = nfeed.parse_date("Mon, 06 Sep 2010 00:01:00 +0000")
+    ntest.assert_true(d.unix_ms > 0)
+    let back = nfeed.format_date(d.unix_ms)
+    ntest.assert_true(len(back) > 0)
+}
+
+fn test_parse_many() {
+    let out = nfeed.parse_many([RSS_SAMPLE, ATOM_SAMPLE])
+    ntest.assert_eq(len(out), 2)
+    ntest.assert_eq(out[0].version, "rss20")
+    ntest.assert_eq(out[1].version, "atom10")
+}
+
+fn test_invalid_feed() {
+    let r = nfeed.parse("<rss><channel></channel>")
+    ntest.assert_true(is_error(r))
+}
+
+fn test_get_missing() {
+    let e = nfeed.build_entry({title: "T"})
+    ntest.assert_eq(nfeed.get(e, "location"), nil)
+}
+
+fn main() {
+    test_parse_rss()
+    test_parse_atom()
+    test_valid_detect()
+    test_emit_roundtrip()
+    test_build()
+    test_build_entry()
+    test_html_helpers()
+    test_parse_date()
+    test_parse_many()
+    test_invalid_feed()
+    test_get_missing()
+    print("nfeed: all tests passed")
+}

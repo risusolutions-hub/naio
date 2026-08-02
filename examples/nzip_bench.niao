@@ -1,0 +1,74 @@
+// Micro-benchmarks for nzip hot paths.
+// Run: niao run examples/nzip_bench.niao
+import "nzip"
+import "nbench"
+import "nos"
+
+fn temp_path(name) {
+    return nos.temp_dir() + "/nzip_bench_" + name + "_" + str(nos.getpid()) + ".zip"
+}
+
+fn make_payload(n) {
+    let s = ""
+    for i in 0..n {
+        s = s + str(i % 10)
+    }
+    return s
+}
+
+fn setup_archive(path) {
+    let w = nzip.create(path, {compression: "deflated"})
+    for i in 0..100 {
+        nzip.write_bytes(w.handle, "files/item_" + str(i) + ".txt", make_payload(200))
+    }
+    nzip.close(w.handle)
+}
+
+fn bench_namelist() {
+    let path = temp_path("namelist")
+    setup_archive(path)
+    let z = nzip.open(path)
+    let n = len(nzip.namelist(z.handle))
+    nzip.close(z.handle)
+    nos.remove(path)
+    return n
+}
+
+fn bench_read_one() {
+    let path = temp_path("readone")
+    setup_archive(path)
+    let z = nzip.open(path)
+    let n = len(nzip.read(z.handle, "files/item_50.txt"))
+    nzip.close(z.handle)
+    nos.remove(path)
+    return n
+}
+
+fn bench_write_50() {
+    let path = temp_path("write50")
+    let w = nzip.create(path)
+    for i in 0..50 {
+        nzip.write_bytes(w.handle, "w" + str(i) + ".txt", make_payload(500))
+    }
+    nzip.close(w.handle)
+    nos.remove(path)
+    return 50
+}
+
+fn bench_extract_all() {
+    let path = temp_path("extract")
+    let out = nos.temp_dir() + "/nzip_bench_out_" + str(nos.getpid())
+    setup_archive(path)
+    let z = nzip.open(path)
+    let n = len(nzip.extract_all(z.handle, out, {threads: 8}))
+    nzip.close(z.handle)
+    nos.remove(path)
+    return n
+}
+
+fn main() {
+    nbench.run("namelist 100 entries", bench_namelist)
+    nbench.run("read one entry", bench_read_one)
+    nbench.run("write 50 entries", bench_write_50)
+    nbench.run("extract_all 100 parallel", bench_extract_all)
+}

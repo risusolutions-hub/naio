@@ -1,0 +1,132 @@
+import "nunicode"
+import "ntest"
+
+fn test_nfc() {
+    ntest.assert_eq(nunicode.nfc("e\u{0301}"), "é")
+    ntest.assert_eq(nunicode.nfd("é"), "e\u{0301}")
+    ntest.assert_true(nunicode.is_normalized("é"))
+    ntest.assert_false(nunicode.is_normalized("e\u{0301}"))
+}
+
+fn test_nfkc() {
+    ntest.assert_eq(nunicode.nfkc("ﬁ"), "fi")
+}
+
+fn test_graphemes() {
+    ntest.assert_eq(nunicode.grapheme_len("🇺🇸"), 1)
+    ntest.assert_eq(len(nunicode.graphemes("🇺🇸")), 1)
+    ntest.assert_eq(nunicode.grapheme_at("abc", 1), "b")
+    ntest.assert_eq(nunicode.grapheme_slice("abc", 0, 2), "ab")
+}
+
+fn test_chars() {
+    ntest.assert_eq(nunicode.char_len("é"), 1)
+    ntest.assert_eq(len(nunicode.chars("ab")), 2)
+}
+
+fn test_display_width() {
+    ntest.assert_eq(nunicode.display_width("ab"), 2)
+    ntest.assert_eq(nunicode.display_width("你"), 2)
+    ntest.assert_eq(nunicode.display_width("你好"), 4)
+    let t = nunicode.truncate_width("你好世界", 6, "..")
+    ntest.assert_eq(nunicode.display_width(t), 6)
+}
+
+fn test_casefold() {
+    let cf = nunicode.casefold("Straße")
+    ntest.assert_true(cf == "strasse" || cf == "straße")
+}
+
+fn test_category() {
+    ntest.assert_eq(nunicode.category("A"), "Lu")
+    ntest.assert_eq(nunicode.category("9"), "Nd")
+    let cats = nunicode.categories("A9")
+    ntest.assert_eq(len(cats), 2)
+    ntest.assert_eq(cats[0], "Lu")
+}
+
+fn test_name_lookup() {
+    ntest.assert_eq(nunicode.name("A"), "LATIN CAPITAL LETTER A")
+    ntest.assert_eq(nunicode.lookup("LATIN CAPITAL LETTER A"), "A")
+}
+
+fn test_script_bidi() {
+    ntest.assert_eq(nunicode.script("A"), "Latn")
+    ntest.assert_eq(nunicode.bidi("A"), "L")
+}
+
+fn test_combining_decomp() {
+    ntest.assert_eq(nunicode.combining("\u{0301}"), 230)
+    let d = nunicode.decomposition("Å")
+    ntest.assert_true(len(d) > 0)
+}
+
+fn test_numeric() {
+    ntest.assert_eq(nunicode.decimal("9"), 9)
+    ntest.assert_eq(nunicode.decimal("x"), -1)
+    ntest.assert_eq(nunicode.digit("9", 10), 9)
+    ntest.assert_near(nunicode.numeric("½"), 0.5, 0.001)
+}
+
+fn test_mirrored() {
+    ntest.assert_true(nunicode.mirrored("("))
+    ntest.assert_false(nunicode.mirrored("A"))
+}
+
+fn test_predicates() {
+    ntest.assert_true(nunicode.is_alphabetic("A"))
+    ntest.assert_true(nunicode.is_numeric("9"))
+    ntest.assert_true(nunicode.is_whitespace(" "))
+    ntest.assert_true(nunicode.is_control("\n"))
+}
+
+fn test_parallel() {
+    let out = nunicode.parallel_normalize(["e\u{0301}", "e\u{0301}"], "NFC")
+    ntest.assert_eq(out[0], "é")
+    ntest.assert_eq(out[1], "é")
+    let widths = nunicode.parallel_display_width(["ab", "你"])
+    ntest.assert_eq(widths[0], 2)
+    ntest.assert_eq(widths[1], 2)
+}
+
+fn test_error_form() {
+    let e = nunicode.normalize("x", "BAD")
+    ntest.assert_error(e)
+}
+
+fn test_error_scalar() {
+    let e = nunicode.category("")
+    ntest.assert_error(e)
+    let e2 = nunicode.category("ab")
+    ntest.assert_error(e2)
+}
+
+fn test_error_grapheme_slice() {
+    let e = nunicode.grapheme_slice("a", 2, 3)
+    ntest.assert_error(e)
+}
+
+fn main() {
+    ntest.case("nfc/nfd", test_nfc)
+    ntest.case("nfkc", test_nfkc)
+    ntest.case("graphemes", test_graphemes)
+    ntest.case("chars", test_chars)
+    ntest.case("display_width", test_display_width)
+    ntest.case("casefold", test_casefold)
+    ntest.case("category", test_category)
+    ntest.case("name/lookup", test_name_lookup)
+    ntest.case("script/bidi", test_script_bidi)
+    ntest.case("combining/decomp", test_combining_decomp)
+    ntest.case("numeric", test_numeric)
+    ntest.case("mirrored", test_mirrored)
+    ntest.case("predicates", test_predicates)
+    ntest.case("parallel", test_parallel)
+    ntest.case("error form", test_error_form)
+    ntest.case("error scalar", test_error_scalar)
+    ntest.case("error grapheme slice", test_error_grapheme_slice)
+
+    let summary = ntest.run()
+    if summary.failed > 0 {
+        print("nunicode tests failed:", summary.failed)
+    }
+}

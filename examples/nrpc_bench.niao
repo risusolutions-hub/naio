@@ -1,0 +1,63 @@
+// Micro-benchmarks for nrpc hot paths (manual timer).
+// Run: niao run examples/nrpc_bench.niao
+import "nrpc"
+import "time"
+
+fn add_handler(p) {
+    return p[0] + p[1]
+}
+
+fn main() {
+    let req = nrpc.request("add", [1, 2], 1)
+    let n = 10000
+    let t0 = time.now_unix_ms()
+    let i = 0
+    while i < n {
+        let _ = nrpc.encode(req)
+        i = i + 1
+    }
+    let t1 = time.now_unix_ms()
+    print("encode x10k ms=", t1 - t0)
+
+    let text = "{\"jsonrpc\":\"2.0\",\"method\":\"add\",\"params\":[1,2],\"id\":1}"
+    t0 = time.now_unix_ms()
+    i = 0
+    while i < n {
+        let _ = nrpc.decode(text)
+        i = i + 1
+    }
+    t1 = time.now_unix_ms()
+    print("decode x10k ms=", t1 - t0)
+
+    let s = nrpc.new_server()
+    nrpc.method(s, "add", "add_handler")
+    let n5 = 5000
+    t0 = time.now_unix_ms()
+    i = 0
+    while i < n5 {
+        let _ = nrpc.dispatch(s, text)
+        i = i + 1
+    }
+    t1 = time.now_unix_ms()
+    print("dispatch x5k ms=", t1 - t0)
+    nrpc.close(s)
+
+    let framed = nrpc.frame(req)
+    t0 = time.now_unix_ms()
+    i = 0
+    while i < n {
+        let _ = nrpc.unframe(framed)
+        i = i + 1
+    }
+    t1 = time.now_unix_ms()
+    print("unframe x10k ms=", t1 - t0)
+
+    t0 = time.now_unix_ms()
+    i = 0
+    while i < n {
+        let _ = nrpc.valid(text)
+        i = i + 1
+    }
+    t1 = time.now_unix_ms()
+    print("valid x10k ms=", t1 - t0)
+}

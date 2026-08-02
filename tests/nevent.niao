@@ -1,0 +1,110 @@
+// nevent integration tests — run: niao run tests/nevent.niao
+import "ntest"
+import "nevent"
+
+fn test_on_emit() {
+    let bus = nevent.new()
+    let n = 0
+    nevent.on(bus, "ping", fn() { n = n + 1 })
+    let r = nevent.emit(bus, "ping")
+    ntest.assert_eq(r.called, 1)
+    ntest.assert_eq(n, 1)
+    nevent.close(bus)
+}
+
+fn test_wildcard() {
+    let bus = nevent.new()
+    let topics = []
+    nevent.on(bus, "app.*", fn(t) { topics = topics + [t] })
+    nevent.emit(bus, "app.start")
+    nevent.emit(bus, "app.stop")
+    ntest.assert_eq(len(topics), 2)
+    ntest.assert_eq(topics[0], "app.start")
+    nevent.close(bus)
+}
+
+fn test_once() {
+    let bus = nevent.new()
+    let n = 0
+    nevent.once(bus, "x", fn() { n = n + 1 })
+    nevent.emit(bus, "x")
+    nevent.emit(bus, "x")
+    ntest.assert_eq(n, 1)
+    nevent.close(bus)
+}
+
+fn test_off() {
+    let bus = nevent.new()
+    let handler = fn() { return 0 }
+    nevent.on(bus, "a", handler)
+    ntest.assert_eq(nevent.listener_count(bus), 1)
+    nevent.off(bus, "a", handler)
+    ntest.assert_eq(nevent.listener_count(bus), 0)
+    nevent.close(bus)
+}
+
+fn test_pause_flush() {
+    let bus = nevent.new()
+    let n = 0
+    nevent.on(bus, "q", fn() { n = n + 1 })
+    nevent.pause(bus)
+    let r = nevent.emit(bus, "q")
+    ntest.assert_eq(r.queued, true)
+    ntest.assert_eq(n, 0)
+    nevent.flush(bus)
+    ntest.assert_eq(n, 1)
+    nevent.close(bus)
+}
+
+fn test_match_topic() {
+    ntest.assert_eq(nevent.match_topic("user.*", "user.created"), true)
+    ntest.assert_eq(nevent.match_topic("user.*", "user.admin.login"), false)
+    ntest.assert_eq(nevent.match_topic("user.**", "user.admin.login"), true)
+}
+
+fn test_parse_join() {
+    ntest.assert_eq(nevent.parse_topic("a.b.c"), ["a", "b", "c"])
+    ntest.assert_eq(nevent.join_topic(["x", "y"]), "x.y")
+}
+
+fn test_normalize() {
+    ntest.assert_eq(nevent.normalize_topic(" foo..bar "), "foo.bar")
+}
+
+fn test_invalid_emit_topic() {
+    let bus = nevent.new()
+    let r = nevent.emit(bus, "bad..topic")
+    ntest.assert_true(is_error(r))
+    nevent.close(bus)
+}
+
+fn test_stats() {
+    let bus = nevent.new()
+    nevent.on(bus, "t", fn() { return 0 })
+    nevent.emit(bus, "t")
+    let s = nevent.stats(bus)
+    ntest.assert_eq(s.emits, 1)
+    ntest.assert_eq(s.deliveries, 1)
+    nevent.close(bus)
+}
+
+fn test_global() {
+    let g = nevent.global()
+    let g2 = nevent.global()
+    ntest.assert_eq(g, g2)
+}
+
+fn main() {
+    test_on_emit()
+    test_wildcard()
+    test_once()
+    test_off()
+    test_pause_flush()
+    test_match_topic()
+    test_parse_join()
+    test_normalize()
+    test_invalid_emit_topic()
+    test_stats()
+    test_global()
+    print("nevent: all tests passed")
+}

@@ -1,0 +1,32 @@
+// nmqtt codec hot-path bench — run via benchmarks/harness/run_bench.py
+import "nmqtt"
+
+fn main() {
+    let cfg = {
+        host: "broker.local",
+        client_id: "bench",
+        will: { topic: "status", payload: "offline", qos: 1 }
+    }
+    let payload = make_payload(1024)
+    let i = 0
+    while i < 50000 {
+        let c = nmqtt.encode_connect(cfg)
+        let _ = nmqtt.packet_type(c)
+        let p = nmqtt.encode_publish("fleet/edge/telemetry", payload, {qos: 1, packet_id: 1})
+        let d = nmqtt.decode_packet(p)
+        let _ = d.qos
+        let _ = nmqtt.topic_matches("fleet/+/telemetry", "fleet/edge/telemetry")
+        i = i + 1
+    }
+    print(i)
+}
+
+fn make_payload(n) {
+    let s = ""
+    let j = 0
+    while j < n {
+        s = s + "a"
+        j = j + 1
+    }
+    return s
+}

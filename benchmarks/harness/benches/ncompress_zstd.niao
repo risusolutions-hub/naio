@@ -1,0 +1,22 @@
+// ncompress harness bench — 64 KiB zstd roundtrip.
+import "ncompress"
+import "nbench"
+
+fn make_payload(n) {
+    let v = byte_array[]
+    for i in 0..n {
+        v = v + byte_array[(i * 17 + 31) % 256]
+    }
+    return v
+}
+
+fn bench_zstd_roundtrip() {
+    let raw = make_payload(65536)
+    let c = ncompress.compress(raw, "zstd", {level: 3})
+    return len(ncompress.decompress(c, "zstd"))
+}
+
+fn main() {
+    let r = nbench.run("ncompress zstd 64KiB roundtrip", bench_zstd_roundtrip, {warmup: 2, iterations: 15})
+    print("ncompress zstd 64KiB roundtrip:", "mean=", r.mean, "ns p50=", r.p50)
+}

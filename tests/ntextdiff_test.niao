@@ -1,0 +1,115 @@
+import "ntextdiff"
+import "ntest"
+import "nstr"
+
+fn test_compare() {
+    let a = "hello\nworld\n"
+    let b = "hello\nthere\n"
+    let lines = ntextdiff.compare(a, b)
+    ntest.assert_true(len(lines) >= 2)
+    let restored = ntextdiff.restore(2, lines)
+    ntest.assert_eq(restored, b)
+}
+
+fn test_unified() {
+    let u = ntextdiff.unified("a\nb\n", "a\nc\n", {join: true})
+    ntest.assert_true(len(u) > 0)
+}
+
+fn test_ratio() {
+    let r = ntextdiff.ratio("abc", "abc")
+    ntest.assert_true(r >= 0.99)
+    let q = ntextdiff.quick_ratio("abc", "abd")
+    ntest.assert_true(q > 0.0)
+}
+
+fn test_opcodes() {
+    let ops = ntextdiff.opcodes("a\nb\n", "a\nc\n")
+    ntest.assert_true(len(ops) >= 1)
+    ntest.assert_true(ops[0].tag != "")
+}
+
+fn test_word_diff() {
+    let w = ntextdiff.word_diff("hello world", "hello there")
+    ntest.assert_true(len(w) >= 1)
+}
+
+fn test_char_diff() {
+    let c = ntextdiff.char_diff("abc", "axc")
+    ntest.assert_true(len(c) >= 1)
+}
+
+fn test_patch_roundtrip() {
+    let a = "one\ntwo\nthree\n"
+    let b = "one\nTWO\nthree\n"
+    let patch = ntextdiff.patch_make(a, b)
+    let res = ntextdiff.patch_apply(a, patch)
+    ntest.assert_true(res.applied[0])
+    ntest.assert_true(res.text != "")
+}
+
+fn test_merge_clean() {
+    let base = "a\nb\nc\nd\n"
+    let ours = "a\nB\nc\nd\n"
+    let theirs = "a\nb\nc\nD\n"
+    let res = ntextdiff.merge(base, ours, theirs)
+    ntest.assert_eq(len(res.conflicts), 0)
+    ntest.assert_true(res.merged != "")
+}
+
+fn test_merge_conflict() {
+    let base = "line\n"
+    let ours = "OURS\n"
+    let theirs = "THEIRS\n"
+    let res = ntextdiff.merge(base, ours, theirs)
+    ntest.assert_true(len(res.conflicts) >= 1)
+}
+
+fn test_matcher() {
+    let m = ntextdiff.matcher("a\nb\n", "a\nc\n")
+    ntest.assert_true(ntextdiff.matcher_ratio(m) > 0.0)
+    let ops = ntextdiff.matcher_opcodes(m)
+    ntest.assert_true(len(ops) >= 1)
+    ntextdiff.close(m)
+}
+
+fn test_parallel() {
+    let pairs = [{from: "a\n", to: "b\n"}, {from: "x\n", to: "x\n"}]
+    let out = ntextdiff.parallel_diff(pairs)
+    ntest.assert_eq(len(out), 2)
+}
+
+fn test_splitlines() {
+    let lines = ntextdiff.splitlines("a\nb\n", {keepends: true})
+    ntest.assert_true(len(lines) >= 2)
+}
+
+fn test_too_large() {
+    let big = nstr.repeat("x", ntextdiff.max_input_bytes() + 1)
+    let e = ntextdiff.compare("a", big)
+    ntest.assert_error(e)
+}
+
+fn test_bad_handle() {
+    let e = ntextdiff.matcher_ratio(999999)
+    ntest.assert_error(e)
+}
+
+fn main() {
+    ntest.case("compare + restore", test_compare)
+    ntest.case("unified diff", test_unified)
+    ntest.case("ratio", test_ratio)
+    ntest.case("opcodes", test_opcodes)
+    ntest.case("word diff", test_word_diff)
+    ntest.case("char diff", test_char_diff)
+    ntest.case("patch roundtrip", test_patch_roundtrip)
+    ntest.case("merge clean", test_merge_clean)
+    ntest.case("merge conflict", test_merge_conflict)
+    ntest.case("matcher handle", test_matcher)
+    ntest.case("parallel batch", test_parallel)
+    ntest.case("splitlines", test_splitlines)
+    ntest.case("input size limit", test_too_large)
+    ntest.case("bad handle", test_bad_handle)
+    let summary = ntest.run()
+    print(summary)
+}

@@ -1,0 +1,11 @@
+{
+    "name": "ndocstore",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": "Embedded JSON document store with queries + secondary\n                    indexes.  ~tinydb\n",
+    "import_paths": [
+        "ndocstore",
+        "std/ndocstore"
+    ],
+    "builtin_count": 28
+}

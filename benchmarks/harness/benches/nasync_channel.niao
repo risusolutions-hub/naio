@@ -1,0 +1,13 @@
+// Hot path: async channel send/recv throughput.
+import "nasync"
+
+fn main() {
+    let ch = nasync.channel(256)
+    let i = 0
+    while i < 100_000 {
+        nasync.channel_send(ch, i)
+        nasync.channel_recv(ch)
+        i = i + 1
+    }
+    print(i)
+}

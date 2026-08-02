@@ -1,0 +1,19 @@
+[package]
+name = "niao_search"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "Hosted search-engine clients: Elasticsearch/OpenSearch, Meilisearch, Typesense"
+
+[lib]
+bench = false
+
+[dependencies]
+niao_http = { workspace = true }
+niao_json_core = { workspace = true }
+niao_codec = { workspace = true }
+
+[[bin]]
+name = "nsearch_bench"
+path = "src/bin/nsearch_bench.rs"

@@ -1,0 +1,15 @@
+[package]
+name = "niao_sign"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Signed + expiring tokens for Niao (itsdangerous subset)"
+
+[dependencies]
+niao_codec = { workspace = true }
+niao_crypto = { workspace = true }
+niao_json_core = { workspace = true }
+
+[[bin]]
+name = "nsign_bench"
+path = "src/bin/nsign_bench.rs"

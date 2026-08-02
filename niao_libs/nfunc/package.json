@@ -1,0 +1,11 @@
+{
+    "name": "nfunc",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": " Function toolkit: memoize/LRU, partial, compose, curry, once, debounce, throttle.  ~functools, toolz ...",
+    "import_paths": [
+        "nfunc",
+        "std/nfunc"
+    ],
+    "builtin_count": 18
+}

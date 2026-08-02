@@ -1,0 +1,119 @@
+import "nsanitize"
+import "ntest"
+import "nstr"
+
+const XSS = "<script>alert(1)</script><b>ok</b>"
+const IMG = r#"<img src="javascript:alert(1)" onerror="x">"#
+
+fn test_clean() {
+    let out = nsanitize.clean(XSS)
+    ntest.assert_true(out.contains("<b>ok</b>"))
+    ntest.assert_false(out.contains("<script"))
+}
+
+fn test_clean_blocks_onerror() {
+    let out = nsanitize.clean(IMG)
+    ntest.assert_false(out.contains("onerror"))
+    ntest.assert_false(out.contains("javascript:"))
+}
+
+fn test_strip() {
+    let out = nsanitize.strip("<p>hi <b>there</b></p>")
+    ntest.assert_true(out.contains("hi"))
+    ntest.assert_true(out.contains("there"))
+    ntest.assert_false(out.contains("<p>"))
+}
+
+fn test_linkify() {
+    let out = nsanitize.linkify("visit https://example.com now")
+    ntest.assert_true(out.contains("<a href="))
+    ntest.assert_true(out.contains("example.com</a>"))
+}
+
+fn test_linkify_email() {
+    let out = nsanitize.linkify("mail me@example.com", {parse_email: true})
+    ntest.assert_true(out.contains("mailto:me@example.com"))
+}
+
+fn test_escape() {
+    ntest.assert_eq(nsanitize.escape("<b>"), "&lt;b&gt;")
+    let attr = nsanitize.escape("\"x\"", {attribute: true})
+    ntest.assert_true(len(attr) > 0)
+}
+
+fn test_allowed_url() {
+    ntest.assert_true(nsanitize.allowed_url("https://example.com"))
+    ntest.assert_false(nsanitize.allowed_url("javascript:alert(1)"))
+    ntest.assert_true(nsanitize.allowed_url("/relative/path"))
+}
+
+fn test_is_html() {
+    ntest.assert_true(nsanitize.is_html("<b>x</b>"))
+    ntest.assert_false(nsanitize.is_html("plain text"))
+}
+
+fn test_clean_text() {
+    let out = nsanitize.clean_text("a & b")
+    ntest.assert_true(out.contains("&amp;"))
+}
+
+fn test_compile_apply() {
+    let h = nsanitize.compile({tags: ["b", "i"]})
+    let out = nsanitize.apply(h, "<b>x</b><script>y</script><i>z</i>")
+    ntest.assert_true(out.contains("<b>x</b>"))
+    ntest.assert_true(out.contains("<i>z</i>"))
+    ntest.assert_false(out.contains("<script"))
+    nsanitize.close(h)
+}
+
+fn test_custom_protocols() {
+    ntest.assert_false(nsanitize.allowed_url("ftp://x.com", {protocols: ["http", "https"]}))
+    ntest.assert_true(nsanitize.allowed_url("ftp://x.com", {protocols: ["ftp"]}))
+}
+
+fn test_parallel_clean() {
+    let docs = [XSS, "<i>a</i><script>b</script>"]
+    let out = nsanitize.parallel_clean(docs)
+    ntest.assert_eq(len(out), 2)
+    ntest.assert_false(out[1].contains("<script"))
+}
+
+fn test_defaults() {
+    let tags = nsanitize.default_tags()
+    ntest.assert_true(len(tags) > 10)
+    let protos = nsanitize.default_protocols()
+    ntest.assert_true(len(protos) >= 4)
+    let attrs = nsanitize.default_attributes()
+    ntest.assert_true(len(keys(attrs)) > 0)
+}
+
+fn test_invalid_handle() {
+    let e = nsanitize.apply(999999, "<b>x</b>")
+    ntest.assert_error(e)
+}
+
+fn test_oversize() {
+    let big = nstr.repeat("x", 17 * 1024 * 1024)
+    let e = nsanitize.clean(big)
+    ntest.assert_error(e)
+}
+
+fn main() {
+    ntest.case("clean", test_clean)
+    ntest.case("clean blocks onerror", test_clean_blocks_onerror)
+    ntest.case("strip", test_strip)
+    ntest.case("linkify", test_linkify)
+    ntest.case("linkify email", test_linkify_email)
+    ntest.case("escape", test_escape)
+    ntest.case("allowed_url", test_allowed_url)
+    ntest.case("is_html", test_is_html)
+    ntest.case("clean_text", test_clean_text)
+    ntest.case("compile apply", test_compile_apply)
+    ntest.case("custom protocols", test_custom_protocols)
+    ntest.case("parallel_clean", test_parallel_clean)
+    ntest.case("defaults", test_defaults)
+    ntest.case("invalid handle", test_invalid_handle)
+    ntest.case("oversize input", test_oversize)
+    let summary = ntest.run()
+    print(summary)
+}

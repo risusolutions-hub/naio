@@ -1,0 +1,15 @@
+import "nmqtt"
+
+fn main() {
+    // Offline encode a CONNECT+will, then a QoS1 PUBLISH — IoT edge heartbeat pattern.
+    let connect = nmqtt.encode_connect({
+        host: "mqtt.example",
+        client_id: "edge-42",
+        protocol: "5",
+        will: { topic: "fleet/edge-42/status", payload: "offline", qos: 1, retain: true }
+    })
+    let pub = nmqtt.encode_publish("fleet/edge-42/telemetry", "{\"t\":21.5}", {qos: 1, packet_id: 1})
+    print(nmqtt.packet_type(connect), len(connect))
+    print(nmqtt.packet_type(pub), len(pub))
+    print(nmqtt.topic_matches("fleet/+/telemetry", "fleet/edge-42/telemetry"))
+}

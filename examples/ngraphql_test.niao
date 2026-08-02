@@ -1,0 +1,196 @@
+// ngraphql tests — parse, fragments, schema, validate, execute, errors.
+// Run: niao run examples/ngraphql_test.niao
+import "ngraphql"
+import "ntest"
+import "nstr"
+import "json"
+
+fn sdl_text() {
+    return "type Query {\n  hello: String!\n  hero(id: ID): Character\n  heroes: [Character!]!\n}\ntype Character {\n  id: ID!\n  name: String!\n  friends: [Character!]\n}\n"
+}
+
+fn make_schema() {
+    return ngraphql.parse_schema(sdl_text())
+}
+
+fn make_root() {
+    return {
+        hello: "world",
+        hero: [
+            {id: "1", name: "Luke", friends: [{id: "2", name: "Leia", friends: []}]},
+            {id: "2", name: "Leia", friends: []}
+        ],
+        heroes: [
+            {id: "1", name: "Luke", friends: []},
+            {id: "2", name: "Leia", friends: []}
+        ]
+    }
+}
+
+fn test_is_document_and_schema() {
+    ntest.assert_true(ngraphql.is_document("{ hello }"))
+    ntest.assert_true(ngraphql.is_schema("type Query { hello: String }"))
+    ntest.assert_false(ngraphql.is_document("{"))
+    ntest.assert_false(ngraphql.is_schema("query { x }"))
+}
+
+fn test_parse_print_minify_gql() {
+    let doc = ngraphql.parse("query Q { hero { name } }")
+    let printed = ngraphql.print(doc)
+    ntest.assert_true(nstr.contains(printed, "hero"))
+    ntest.assert_true(nstr.contains(printed, "name"))
+    ntest.assert_true(nstr.contains(ngraphql.minify("{  hero  { name } }"), "hero"))
+    ntest.assert_true(nstr.contains(ngraphql.gql("{ hero { name } }"), "hero"))
+    ngraphql.close_doc(doc)
+}
+
+fn test_operations_and_fragments() {
+    let src = "query Hero($id: ID!) {\n  hero(id: $id) { ...HeroFields }\n}\nfragment HeroFields on Character {\n  name\n}\n"
+    let doc = ngraphql.parse(src)
+    let ops = ngraphql.operations(doc)
+    ntest.assert_eq(len(ops), 1)
+    ntest.assert_eq(ops[0].name, "Hero")
+    ntest.assert_eq(ops[0].kind, "query")
+    let frags = ngraphql.fragments(doc)
+    ntest.assert_eq(len(frags), 1)
+    ntest.assert_eq(frags[0].name, "HeroFields")
+    ntest.assert_true(ngraphql.has_operation(doc, "Hero"))
+    ntest.assert_false(ngraphql.has_operation(doc, "Missing"))
+    let names = ngraphql.operation_names(doc)
+    ntest.assert_eq(names[0], "Hero")
+    let vars = ngraphql.variable_names(doc, "Hero")
+    ntest.assert_eq(vars[0], "id")
+    let op = ngraphql.get_operation(doc, "Hero")
+    ntest.assert_eq(op.kind, "query")
+    ngraphql.close_doc(doc)
+}
+
+fn test_spread_fragments() {
+    let doc = ngraphql.parse("fragment F on Character { name }\nquery { heroes { ...F } }\n")
+    let spread = ngraphql.spread_fragments(doc)
+    ntest.assert_eq(len(ngraphql.fragments(spread)), 0)
+    ntest.assert_eq(len(ngraphql.operations(spread)), 1)
+    let printed = ngraphql.print(spread)
+    ntest.assert_true(nstr.contains(printed, "name"))
+    ngraphql.close_doc(doc)
+    ngraphql.close_doc(spread)
+}
+
+fn test_request_helpers() {
+    let req = ngraphql.request("{ hello }", {id: "1"}, "Get")
+    ntest.assert_true(nstr.contains(req.query, "hello"))
+    ntest.assert_eq(req.operationName, "Get")
+    let body = ngraphql.request_json("{ hello }")
+    ntest.assert_true(nstr.contains(body, "query"))
+}
+
+fn test_schema_introspection() {
+    let schema = make_schema()
+    ntest.assert_eq(ngraphql.query_type(schema), "Query")
+    ntest.assert_eq(ngraphql.mutation_type(schema), nil)
+    ntest.assert_eq(ngraphql.subscription_type(schema), nil)
+    ntest.assert_true(ngraphql.has_type(schema, "Character"))
+    ntest.assert_true(ngraphql.has_type(schema, "String"))
+    let names = ngraphql.type_names(schema)
+    ntest.assert_true(len(names) >= 5)
+    let desc = ngraphql.describe_type(schema, "Query")
+    ntest.assert_eq(desc.kind, "OBJECT")
+    ntest.assert_eq(desc.name, "Query")
+    ntest.assert_true(len(desc.fields) >= 2)
+    let printed = ngraphql.print_schema(schema)
+    ntest.assert_true(nstr.contains(printed, "Query"))
+    ngraphql.close_schema(schema)
+}
+
+fn test_validate_ok_and_fail() {
+    let schema = make_schema()
+    let ok = ngraphql.validate("{ hello }", schema)
+    ntest.assert_true(ok.ok)
+    let bad = ngraphql.validate("{ nope }", schema)
+    ntest.assert_false(bad.ok)
+    ntest.assert_true(len(bad.errors) > 0)
+    let doc = ngraphql.parse("{ heroes { name } }")
+    let v = ngraphql.validate(doc, schema)
+    ntest.assert_true(v.ok)
+    ngraphql.close_doc(doc)
+    ngraphql.close_schema(schema)
+}
+
+fn test_execute_hello_and_hero() {
+    let schema = make_schema()
+    let root = make_root()
+    let r = ngraphql.execute(schema, "{ hello }", root)
+    ntest.assert_eq(r.data.hello, "world")
+    let r2 = ngraphql.execute(schema, "query ($id: ID) { hero(id: $id) { name friends { name } } }", root, {id: "1"})
+    ntest.assert_eq(r2.data.hero.name, "Luke")
+    ntest.assert_eq(r2.data.hero.friends[0].name, "Leia")
+    ngraphql.close_schema(schema)
+}
+
+fn test_execute_doc_and_fragments() {
+    let schema = make_schema()
+    let root = make_root()
+    let doc = ngraphql.parse("query {\n  heroes { ...Chars }\n}\nfragment Chars on Character {\n  name\n}\n")
+    let r = ngraphql.execute_doc(schema, doc, root)
+    ntest.assert_eq(r.data.heroes[0].name, "Luke")
+    ntest.assert_eq(r.data.heroes[1].name, "Leia")
+    ngraphql.close_doc(doc)
+    ngraphql.close_schema(schema)
+}
+
+fn test_skip_include() {
+    let schema = make_schema()
+    let root = make_root()
+    let r = ngraphql.execute(schema, "query ($show: Boolean!) { hello @include(if: $show) }", root, {show: true})
+    ntest.assert_eq(r.data.hello, "world")
+    let r2 = ngraphql.execute(schema, "query ($hide: Boolean!) { hello @skip(if: $hide) }", root, {hide: false})
+    ntest.assert_eq(r2.data.hello, "world")
+    let r3 = ngraphql.execute(schema, "query ($hide: Boolean!) { hello @skip(if: $hide) }", root, {hide: true})
+    ntest.assert_eq(json.stringify(r3.data), "{}")
+    ngraphql.close_schema(schema)
+}
+
+fn test_parse_errors() {
+    ntest.assert_error(ngraphql.parse("{"))
+    ntest.assert_error(ngraphql.parse_schema("type"))
+}
+
+fn test_invalid_handles() {
+    ntest.assert_error(ngraphql.print(999999))
+    ntest.assert_error(ngraphql.type_names(999999))
+}
+
+fn test_empty_and_unicode() {
+    ntest.assert_error(ngraphql.parse(""))
+    let doc = ngraphql.parse("{ field(name: \"日本語\") }")
+    ntest.assert_true(nstr.contains(ngraphql.print(doc), "field"))
+    ngraphql.close_doc(doc)
+}
+
+fn test_anonymous_and_multi_ops() {
+    let doc = ngraphql.parse("query A { hello }\nquery B { heroes { name } }\n")
+    ntest.assert_eq(len(ngraphql.operation_names(doc)), 2)
+    let schema = make_schema()
+    let v = ngraphql.validate(doc, schema, "B")
+    ntest.assert_true(v.ok)
+    ngraphql.close_doc(doc)
+    ngraphql.close_schema(schema)
+}
+
+fn main() {
+    test_is_document_and_schema()
+    test_parse_print_minify_gql()
+    test_operations_and_fragments()
+    test_spread_fragments()
+    test_request_helpers()
+    test_schema_introspection()
+    test_validate_ok_and_fail()
+    test_execute_hello_and_hero()
+    test_execute_doc_and_fragments()
+    test_skip_include()
+    test_parse_errors()
+    test_invalid_handles()
+    test_empty_and_unicode()
+    test_anonymous_and_multi_ops()
+    print("ngraphql: all tests passed (14)")
+}

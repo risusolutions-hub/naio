@@ -1,0 +1,60 @@
+// nbinary micro-benchmarks — hot paths for struct, CRC, varints, bits.
+// Run: niao run examples/nbinary_bench.niao
+import "nbinary"
+import "nbench"
+
+fn bench_pack_i32() {
+    for _ in 0..10000 {
+        nbinary.pack("<I", 42)
+    }
+}
+
+fn bench_unpack_i32() {
+    let buf = nbinary.pack("<I", 42)
+    for _ in 0..10000 {
+        nbinary.unpack("<I", buf)
+    }
+}
+
+fn bench_crc32_1k() {
+    let data = nbinary.pack("1000s", byte_array[0; 1000])
+    for _ in 0..1000 {
+        nbinary.crc32(data)
+    }
+}
+
+fn bench_uvarint() {
+    for i in 0..10000 {
+        let enc = nbinary.uvarint_encode(i)
+        nbinary.uvarint_decode(enc)
+    }
+}
+
+fn bench_bits_rw() {
+    let h = nbinary.bits(64)
+    for _ in 0..5000 {
+        nbinary.seek_bits(h, 0)
+        nbinary.write_bits(h, 16, 0xABCD)
+        nbinary.seek_bits(h, 0)
+        nbinary.read_bits(h, 16)
+    }
+    nbinary.release_bits(h)
+}
+
+fn main() {
+    print("=== nbinary micro-benchmarks ===")
+
+    let a = nbench.run("pack <I x10k", bench_pack_i32, {warmup: 1, iterations: 5})
+    let b = nbench.run("unpack <I x10k", bench_unpack_i32, {warmup: 1, iterations: 5})
+    let c = nbench.run("crc32 1KiB x1k", bench_crc32_1k, {warmup: 1, iterations: 5})
+    let d = nbench.run("uvarint roundtrip x10k", bench_uvarint, {warmup: 1, iterations: 5})
+    let e = nbench.run("bits write/read x5k", bench_bits_rw, {warmup: 1, iterations: 5})
+
+    print(a)
+    print(b)
+    print(c)
+    print(d)
+    print(e)
+
+    nbench.clear()
+}

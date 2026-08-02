@@ -1,0 +1,17 @@
+[package]
+name = "niao_tune"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "Hyperparameter search: grid, random, successive halving"
+
+[lib]
+bench = false
+
+[dependencies]
+niao_rand = { workspace = true }
+
+[[bin]]
+name = "ntune_bench"
+path = "src/bin/ntune_bench.rs"

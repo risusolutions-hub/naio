@@ -1,0 +1,11 @@
+{
+    "name": "nzip",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": "ZIP archives: read/write, streaming, per-entry\n                    compression, encryption.  ~zipfile ...",
+    "import_paths": [
+        "nzip",
+        "std/nzip"
+    ],
+    "builtin_count": 23
+}

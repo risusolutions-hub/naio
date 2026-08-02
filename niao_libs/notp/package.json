@@ -1,0 +1,11 @@
+{
+    "name": "notp",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": " TOTP / HOTP two-factor codes, provisioning URIs.\n                    ~pyotp\n...",
+    "import_paths": [
+        "notp",
+        "std/notp"
+    ],
+    "builtin_count": 12
+}

@@ -1,0 +1,86 @@
+// Micro-benchmarks for nical hot paths.
+// Run: niao run examples/nical_bench.niao
+import "nical"
+import "nbench"
+
+const SAMPLE_CAL = "BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//Bench//EN\nBEGIN:VEVENT\nUID:b1\nDTSTART:20260105T090000Z\nDTEND:20260105T093000Z\nSUMMARY:Daily standup with a longer title\nRRULE:FREQ=WEEKLY;BYDAY=MO,WE,FR;COUNT=52\nEND:VEVENT\nEND:VCALENDAR\n"
+
+const SAMPLE_VCARD = "BEGIN:VCARD\nVERSION:4.0\nFN:Ada Lovelace\nEMAIL:ada@example.com\nEND:VCARD\n"
+
+fn bench_parse_calendar() {
+    for i in 0..1000 {
+        let _ = nical.parse_calendar(SAMPLE_CAL)
+    }
+    return 1000
+}
+
+fn bench_parse_contacts() {
+    for i in 0..1000 {
+        let _ = nical.parse_contacts(SAMPLE_VCARD)
+    }
+    return 1000
+}
+
+fn bench_emit() {
+    let cal = nical.parse_calendar(SAMPLE_CAL)
+    for i in 0..1000 {
+        let _ = nical.emit(cal)
+    }
+    return 1000
+}
+
+fn bench_parse_rrule() {
+    for i in 0..10000 {
+        let _ = nical.parse_rrule("FREQ=WEEKLY;BYDAY=MO,WE;INTERVAL=2;COUNT=100")
+    }
+    return 10000
+}
+
+fn bench_rrule_between() {
+    for i in 0..500 {
+        let _ = nical.rrule_between(
+            "FREQ=WEEKLY;BYDAY=MO;COUNT=26",
+            "20260105T090000Z",
+            nil,
+            nil,
+            26
+        )
+    }
+    return 500
+}
+
+fn bench_build_calendar() {
+    for i in 0..1000 {
+        let _ = nical.build_calendar({
+            events: [{
+                summary: "Event " + str(i),
+                uid: "id-" + str(i),
+                dtstart: "20260105T090000Z",
+                dtend: "20260105T100000Z"
+            }]
+        })
+    }
+    return 1000
+}
+
+fn main() {
+    let opts = {warmup: 2, iterations: 20}
+
+    let r1 = nbench.run("parse_calendar x1k", bench_parse_calendar, opts)
+    print("parse_calendar x1k:", "n=", r1.n, "mean=", r1.mean, "ns p50=", r1.p50)
+
+    let r2 = nbench.run("parse_contacts x1k", bench_parse_contacts, opts)
+    print("parse_contacts x1k:", "n=", r2.n, "mean=", r2.mean, "ns p50=", r2.p50)
+
+    let r3 = nbench.run("emit x1k", bench_emit, opts)
+    print("emit x1k:", "n=", r3.n, "mean=", r3.mean, "ns p50=", r3.p50)
+
+    let r4 = nbench.run("parse_rrule x10k", bench_parse_rrule, opts)
+    print("parse_rrule x10k:", "n=", r4.n, "mean=", r4.mean, "ns p50=", r4.p50)
+
+    let r5 = nbench.run("rrule_between x500", bench_rrule_between, opts)
+    print("rrule_between x500:", "n=", r5.n, "mean=", r5.mean, "ns p50=", r5.p50)
+
+    let r6 = nbench.run("build_calendar x1k", bench_build_calendar, opts)
+    print("build_calendar x1k:", "n=", r6.n, "mean=", r6.mean, "ns p50=", r6.p50)
+}

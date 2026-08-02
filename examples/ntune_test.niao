@@ -1,0 +1,103 @@
+// ntune integration tests — run: niao run examples/ntune_test.niao
+import "ntune"
+import "ntest"
+
+fn quad(params) {
+    let lr = params.lr
+    let depth = params.depth
+    return (lr - 0.1) * (lr - 0.1) + (depth - 4) * (depth - 4)
+}
+
+fn budget_obj(params, budget) {
+    return quad(params) + 1.0 / budget
+}
+
+fn test_grid_size() {
+    ntest.assert_eq(ntune.grid_size({lr: [0.01, 0.1], depth: [3, 5]}), 4)
+}
+
+fn test_grid_points() {
+    let pts = ntune.grid_points({x: [1, 2]})
+    ntest.assert_eq(len(pts), 2)
+    ntest.assert_eq(pts[0].x, 1)
+}
+
+fn test_grid_search() {
+    let r = ntune.grid_search("quad", {
+        lr: [0.01, 0.1, 0.5],
+        depth: [2, 4, 6]
+    })
+    ntest.assert_eq(r.n_trials, 9)
+    ntest.assert_near(r.best.value, 0.0, 0.0001)
+    ntest.assert_near(r.best.params.lr, 0.1, 0.0001)
+    ntest.assert_eq(r.best.params.depth, 4)
+}
+
+fn test_random_search() {
+    let r = ntune.random_search("quad", {
+        lr: {type: "float", low: 0.01, high: 0.2},
+        depth: {type: "int", low: 2, high: 6}
+    }, {n_trials: 20, seed: 42})
+    ntest.assert_eq(r.n_trials, 20)
+    ntest.assert_true(r.best.value < 0.5)
+}
+
+fn test_halving() {
+    let r = ntune.halving("budget_obj", {
+        lr: {type: "float", low: 0.05, high: 0.15},
+        depth: {type: "int", low: 3, high: 5}
+    }, {n_trials: 9, min_resource: 1, max_resource: 9, reduction_factor: 3, seed: 1})
+    ntest.assert_true(r.n_trials >= 9)
+    ntest.assert_true(r.best.value < 1.0)
+}
+
+fn test_train_test_split() {
+    let s = ntune.train_test_split(100, {test_size: 0.2, seed: 7})
+    ntest.assert_eq(len(s.train), 80)
+    ntest.assert_eq(len(s.test), 20)
+}
+
+fn test_kfold() {
+    let folds = ntune.kfold(12, {n_splits: 3, shuffle: true, seed: 2})
+    ntest.assert_eq(len(folds), 3)
+    ntest.assert_eq(len(folds[0].train) + len(folds[0].test), 12)
+}
+
+fn test_best_and_is_better() {
+    let trials = [{value: 0.3}, {value: 0.1}, {value: 0.2}]
+    let b = ntune.best(trials)
+    ntest.assert_near(b.value, 0.1, 0.0001)
+    ntest.assert_true(ntune.is_better(0.1, 0.2))
+    ntest.assert_false(ntune.is_better(0.2, 0.1))
+}
+
+fn test_validate_space() {
+    ntest.assert_true(ntune.validate_space({x: [1, 2]}))
+    let bad = ntune.validate_space({})
+    ntest.assert_error(bad)
+}
+
+fn test_empty_grid_error() {
+    let e = ntune.grid_size({x: []})
+    ntest.assert_error(e)
+}
+
+fn test_sample_reproducible() {
+    let a = ntune.sample({x: {type: "int", low: 0, high: 100}}, 5, 99)
+    let b = ntune.sample({x: {type: "int", low: 0, high: 100}}, 5, 99)
+    ntest.assert_eq(len(a), 5)
+    ntest.assert_eq(a[0].x, b[0].x)
+}
+
+test_grid_size()
+test_grid_points()
+test_grid_search()
+test_random_search()
+test_halving()
+test_train_test_split()
+test_kfold()
+test_best_and_is_better()
+test_validate_space()
+test_empty_grid_error()
+test_sample_reproducible()
+print("ntune: 11 tests passed")

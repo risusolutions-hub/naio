@@ -1,0 +1,13 @@
+[package]
+name = "niao_decimal"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Arbitrary-precision decimals and rationals for Niao (built on niao_bignum)"
+
+[dependencies]
+niao_bignum = { workspace = true }
+
+[[example]]
+name = "decimal_bench"
+path = "examples/decimal_bench.rs"

@@ -1,0 +1,98 @@
+import "npass"
+import "ntest"
+
+fn test_bcrypt_roundtrip() {
+    let h = npass.bcrypt_hash("secret", 4)
+    ntest.assert_true(npass.verify("secret", h))
+    ntest.assert_false(npass.verify("wrong", h))
+    ntest.assert_eq(npass.identify(h), "bcrypt")
+}
+
+fn test_argon2_roundtrip() {
+    let h = npass.argon2_hash("secret", {memory_kib: 8192, time_cost: 1})
+    ntest.assert_true(h.starts_with("$argon2id$"))
+    ntest.assert_true(npass.verify("secret", h))
+    ntest.assert_eq(npass.identify(h), "argon2id")
+}
+
+fn test_scrypt_roundtrip() {
+    let h = npass.scrypt_hash("secret", {log_n: 10, r: 8, p: 1})
+    ntest.assert_true(h.starts_with("$scrypt$"))
+    ntest.assert_true(npass.verify("secret", h))
+    ntest.assert_eq(npass.identify(h), "scrypt")
+}
+
+fn test_hash_default_scheme() {
+    let h = npass.hash("S3cret!")
+    ntest.assert_true(npass.verify("S3cret!", h))
+    ntest.assert_eq(npass.identify(h), "argon2id")
+}
+
+fn test_context_hash_verify() {
+    let ctx = npass.context({default: "bcrypt", bcrypt_cost: 4})
+    let h = ctx.hash("user-pass")
+    ntest.assert_true(ctx.verify("user-pass", h))
+    ntest.assert_false(ctx.verify("bad", h))
+}
+
+fn test_verify_and_update() {
+    let h = npass.bcrypt_hash("rotate-me", 4)
+    let r = npass.verify_and_update("rotate-me", h, {bcrypt_cost: 12})
+    ntest.assert_true(r.valid)
+    ntest.assert_true(type(r.new_hash) == "string")
+}
+
+fn test_needs_update_low_cost() {
+    let h = npass.bcrypt_hash("x", 4)
+    ntest.assert_true(npass.needs_update(h, {bcrypt_cost: 12}))
+}
+
+fn test_check_weak_password() {
+    let r = npass.check("password")
+    ntest.assert_false(r.ok)
+    ntest.assert_true(len(r.issues) > 0)
+}
+
+fn test_policy_validate() {
+    let p = npass.policy({
+        min_length: 12,
+        min_upper: 1,
+        min_lower: 1,
+        min_digit: 1,
+        min_special: 1,
+        min_score: 3
+    })
+    let good = p.validate("Tr0ub4dor&3Extra!")
+    ntest.assert_true(good.ok)
+    let bad = p.validate("short")
+    ntest.assert_false(bad.ok)
+}
+
+fn test_is_common() {
+    ntest.assert_true(npass.is_common("password"))
+    ntest.assert_false(npass.is_common("xK9!mQ2vLp4z"))
+}
+
+fn test_entropy() {
+    let e = npass.entropy("abc")
+    ntest.assert_true(e >= 0)
+}
+
+fn test_generate() {
+    let p = npass.generate(20)
+    ntest.assert_eq(len(p), 20)
+}
+
+fn test_identify_unknown() {
+    ntest.assert_eq(npass.identify("not-a-hash"), nil)
+}
+
+fn test_empty_password_error() {
+    let e = npass.hash("")
+    ntest.assert_error(e)
+}
+
+fn test_constants() {
+    ntest.assert_eq(npass.DEFAULT_SCHEME, "argon2id")
+    ntest.assert_true(npass.DEFAULT_BCRYPT_COST >= npass.MIN_BCRYPT_COST)
+}

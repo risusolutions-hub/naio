@@ -1,0 +1,16 @@
+[package]
+name = "niao_signal"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "nsignal_bench"
+path = "src/bin/nsignal_bench.rs"
+
+[target.'cfg(unix)'.dependencies]
+signal-hook = { version = "0.3", features = ["iterator"] }
+libc = "0.2"
+
+[target.'cfg(windows)'.dependencies]
+signal-hook = { version = "0.3" }

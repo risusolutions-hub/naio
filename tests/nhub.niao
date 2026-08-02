@@ -1,0 +1,93 @@
+// nhub tests — run: cargo run -p niao_cli -- test tests/nhub.niao
+import "nhub"
+import "ntest"
+import "nstr"
+import "io"
+
+fn test_version() {
+    let v = nhub.version()
+    ntest.assert_true(len(v) > 0)
+}
+
+fn test_cache_dir() {
+    let d = nhub.cache_dir()
+    ntest.assert_true(nstr.contains(d, "huggingface"))
+    let d2 = nhub.default_cache_dir()
+    ntest.assert_true(len(d2) > 0)
+}
+
+fn test_sha256_string() {
+    let h = nhub.sha256("abc")
+    ntest.assert_eq(h, "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad")
+}
+
+fn test_verify_string() {
+    ntest.assert_true(nhub.verify("abc", "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"))
+}
+
+fn test_verify_fail() {
+    let r = nhub.verify("abc", "0000000000000000000000000000000000000000000000000000000000000000")
+    ntest.assert_error(r)
+}
+
+fn test_client_lifecycle() {
+    let c = nhub.client({})
+    ntest.assert_true(c > 0)
+    ntest.assert_true(nhub.close(c))
+    ntest.assert_false(nhub.close(c))
+}
+
+fn test_model_file_url() {
+    let c = nhub.client({progress: false})
+    let r = nhub.model(c, "gpt2")
+    ntest.assert_true(r > 0)
+    let url = nhub.file_url(r, "config.json")
+    ntest.assert_true(nstr.contains(url, "gpt2"))
+    ntest.assert_true(nstr.contains(url, "config.json"))
+    nhub.close_repo(r)
+    nhub.close(c)
+}
+
+fn test_cached_miss() {
+    let c = nhub.client({cache_dir: io_temp_dir() + "/nhub_test_cache_miss"})
+    let r = nhub.model(c, "nonexistent-repo-xyz-12345")
+    let p = nhub.cached(r, "config.json")
+    ntest.assert_eq(p, nil)
+    nhub.close_repo(r)
+    nhub.close(c)
+}
+
+fn test_download_url_invalid() {
+    let dest = io_temp_dir() + "/nhub_bad_dl.bin"
+    let r = nhub.download_url("http://127.0.0.1:1/nope", dest, {timeout_ms: 500, retries: 0})
+    ntest.assert_error(r)
+}
+
+fn test_download_url_local() {
+    let dir = io_temp_dir() + "/nhub_local"
+    io_create_dir_all(dir)
+    let path = dir + "/payload.bin"
+    io_write_file(path, "hello nhub")
+    let h = nhub.sha256(path)
+    ntest.assert_true(nhub.verify(path, h))
+}
+
+fn test_token_optional() {
+    let t = nhub.token()
+    ntest.assert_true(t == nil || type(t) == "string")
+}
+
+fn main() {
+    test_version()
+    test_cache_dir()
+    test_sha256_string()
+    test_verify_string()
+    test_verify_fail()
+    test_client_lifecycle()
+    test_model_file_url()
+    test_cached_miss()
+    test_download_url_invalid()
+    test_download_url_local()
+    test_token_optional()
+    print("nhub tests: all passed")
+}

@@ -1,0 +1,125 @@
+// nhdf5 tests — create, groups, datasets, attrs, slices, errors.
+// Run: niao run examples/nhdf5_test.niao
+import "nhdf5"
+import "ntest"
+import "nfs"
+
+fn temp_path(name) {
+    let dir = nfs.temp_dir({prefix: "nhdf5_test_"})
+    return dir + "/" + name
+}
+
+fn test_create_read_write() {
+    let path = temp_path("roundtrip.h5")
+    let f = nhdf5.create(path)
+    let ds = nhdf5.create_dataset(f, "data", [4, 3], {dtype: "f64"})
+    let vals = [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0]
+    ntest.assert_true(nhdf5.write(ds, vals))
+    nhdf5.close(f)
+
+    let f2 = nhdf5.open(path)
+    let ds2 = nhdf5.dataset(f2, "data")
+    let shape = nhdf5.shape(ds2)
+    ntest.assert_eq(shape[0], 4)
+    ntest.assert_eq(shape[1], 3)
+    ntest.assert_eq(nhdf5.dtype(ds2), "f64")
+    let out = nhdf5.read(ds2, {nested: false})
+    ntest.assert_eq(len(out), 12)
+    ntest.assert_eq(out[0], 0.0)
+    nhdf5.close(f2)
+}
+
+fn test_groups_attrs() {
+    let path = temp_path("grp.h5")
+    let f = nhdf5.create(path)
+    ntest.assert_true(nhdf5.create_group(f, "run/exp"))
+    nhdf5.set_attr(f, "run/exp", "version", 2)
+    let attrs = nhdf5.attrs(f, "run/exp")
+    ntest.assert_eq(attrs.version, 2)
+    let keys = nhdf5.keys(f, "run")
+    ntest.assert_true(len(keys) >= 1)
+    ntest.assert_true(nhdf5.exists(f, "exp", "run"))
+    ntest.assert_eq(nhdf5.kind(f, "run/exp"), "group")
+    nhdf5.close(f)
+}
+
+fn test_slice_read() {
+    let path = temp_path("slice.h5")
+    let f = nhdf5.create(path)
+    let ds = nhdf5.create_dataset(f, "m", [10, 10], {dtype: "f64"})
+    let data = []
+    for i in 0..100 {
+        data = data + [i * 1.0]
+    }
+    nhdf5.write(ds, data)
+    nhdf5.close(f)
+
+    let f2 = nhdf5.open(path)
+    let ds2 = nhdf5.dataset(f2, "m")
+    let part = nhdf5.read(ds2, {
+        nested: false,
+        start: [0, 0],
+        count: [2, 3],
+    })
+    ntest.assert_eq(len(part), 6)
+    nhdf5.close(f2)
+}
+
+fn test_is_hdf5_and_version() {
+    let path = temp_path("magic.h5")
+    let f = nhdf5.create(path)
+    nhdf5.close(f)
+    ntest.assert_true(nhdf5.is_hdf5(path))
+    ntest.assert_false(nhdf5.is_hdf5(path + ".txt"))
+    let v = nhdf5.version()
+    ntest.assert_true(len(v) > 0)
+}
+
+fn test_missing_dataset_error() {
+    let path = temp_path("missing.h5")
+    let f = nhdf5.create(path)
+    let e = nhdf5.dataset(f, "nope")
+    ntest.assert_error(e)
+    nhdf5.close(f)
+}
+
+fn test_tree() {
+    let path = temp_path("tree.h5")
+    let f = nhdf5.create(path)
+    nhdf5.create_dataset(f, "x", [2], {dtype: "i64"})
+    nhdf5.create_group(f, "g")
+    let t = nhdf5.tree(f)
+    ntest.assert_eq(t.x.kind, "dataset")
+    nhdf5.close(f)
+}
+
+fn test_copy_file() {
+    let src = temp_path("src.h5")
+    let dst = temp_path("dst.h5")
+    let f = nhdf5.create(src)
+    nhdf5.create_dataset(f, "a", [3], {dtype: "i64"})
+    nhdf5.write(nhdf5.dataset(f, "a"), [1, 2, 3])
+    nhdf5.close(f)
+    ntest.assert_true(nhdf5.copy_file(src, dst))
+    ntest.assert_true(nhdf5.is_hdf5(dst))
+    let f2 = nhdf5.open(dst)
+    let v = nhdf5.read(nhdf5.dataset(f2, "a"), {nested: false})
+    ntest.assert_eq(v[1], 2)
+    nhdf5.close(f2)
+}
+
+fn main() {
+    ntest.case("create read write", test_create_read_write)
+    ntest.case("groups and attrs", test_groups_attrs)
+    ntest.case("slice read", test_slice_read)
+    ntest.case("is_hdf5 and version", test_is_hdf5_and_version)
+    ntest.case("missing dataset error", test_missing_dataset_error)
+    ntest.case("tree introspection", test_tree)
+    ntest.case("copy_file", test_copy_file)
+
+    let summary = ntest.run()
+    print(summary)
+    if summary.failed > 0 {
+        error("nhdf5 tests failed")
+    }
+}

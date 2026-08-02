@@ -1,0 +1,66 @@
+// Micro-benchmarks for nevent hot paths.
+// Run: niao run examples/nevent_bench.niao
+import "nevent"
+import "nbench"
+
+fn bench_match_topic() {
+    for i in 0..10000 {
+        let _ = nevent.match_topic("user.*", "user.created")
+    }
+    return 10000
+}
+
+fn bench_parse_topic() {
+    for i in 0..10000 {
+        let _ = nevent.parse_topic("order.item.paid")
+    }
+    return 10000
+}
+
+fn bench_emit_exact() {
+    let bus = nevent.new({max_listeners: 0})
+    nevent.on(bus, "hot.topic", fn() { })
+    for i in 0..5000 {
+        let _ = nevent.emit(bus, "hot.topic")
+    }
+    nevent.close(bus)
+    return 5000
+}
+
+fn bench_emit_wildcard() {
+    let bus = nevent.new({max_listeners: 0})
+    nevent.on(bus, "app.**", fn(t) { })
+    for i in 0..5000 {
+        let _ = nevent.emit(bus, "app.module.event")
+    }
+    nevent.close(bus)
+    return 5000
+}
+
+fn bench_subscribe() {
+    let bus = nevent.new({max_listeners: 0})
+    for i in 0..1000 {
+        nevent.on(bus, "t." + str(i), fn() { })
+    }
+    nevent.close(bus)
+    return 1000
+}
+
+fn main() {
+    let opts = {warmup: 2, iterations: 20}
+
+    let r1 = nbench.run("match_topic x10k", bench_match_topic, opts)
+    print("match_topic x10k:", "n=", r1.n, "mean=", r1.mean, "ns p50=", r1.p50)
+
+    let r2 = nbench.run("parse_topic x10k", bench_parse_topic, opts)
+    print("parse_topic x10k:", "n=", r2.n, "mean=", r2.mean, "ns p50=", r2.p50)
+
+    let r3 = nbench.run("emit exact x5k", bench_emit_exact, opts)
+    print("emit exact x5k:", "n=", r3.n, "mean=", r3.mean, "ns p50=", r3.p50)
+
+    let r4 = nbench.run("emit wildcard x5k", bench_emit_wildcard, opts)
+    print("emit wildcard x5k:", "n=", r4.n, "mean=", r4.mean, "ns p50=", r4.p50)
+
+    let r5 = nbench.run("subscribe x1k", bench_subscribe, opts)
+    print("subscribe x1k:", "n=", r5.n, "mean=", r5.mean, "ns p50=", r5.p50)
+}

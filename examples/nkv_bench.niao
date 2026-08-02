@@ -1,0 +1,42 @@
+import "nkv"
+import "nbench"
+
+fn setup(n) {
+    let db = nkv.memory()
+    let pairs = []
+    let i = 0
+    while i < n {
+        let k = "k" + str(i)
+        pairs.push({key: k, value: "v" + str(i)})
+        i = i + 1
+    }
+    nkv.put_many(db, pairs)
+    return db
+}
+
+let db = setup(5000)
+
+let put_r = nbench.run("nkv_put_1k", fn() {
+    let i = 0
+    while i < 1000 {
+        nkv.put(db, "bench" + str(i), i)
+        i = i + 1
+    }
+}, {warmup: 1, iterations: 5})
+
+let get_r = nbench.run("nkv_get_1k", fn() {
+    let i = 0
+    while i < 1000 {
+        nkv.get(db, "k" + str(i))
+        i = i + 1
+    }
+}, {warmup: 1, iterations: 10})
+
+let scan_r = nbench.run("nkv_prefix_scan", fn() {
+    nkv.scan(db, {prefix: "k1", limit: 200})
+}, {warmup: 1, iterations: 20})
+
+print(put_r)
+print(get_r)
+print(scan_r)
+nkv.close(db)

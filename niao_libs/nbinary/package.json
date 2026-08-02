@@ -1,0 +1,11 @@
+{
+    "name": "nbinary",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": "Binary data: struct pack/unpack, endianness, bit fields,\n                    varints, CRC32/64.  ~struct, bitstring ...",
+    "import_paths": [
+        "nbinary",
+        "std/nbinary"
+    ],
+    "builtin_count": 29
+}

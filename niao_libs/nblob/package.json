@@ -1,0 +1,18 @@
+{
+    "name": "nblob",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": "Unified object-store VFS: local dir, S3, Azure Blob, GCS behind one open/read/write/list API.  ~fsspec, smart_open  (over naws / nazure / ngcp)",
+    "import_paths": [
+        "nblob",
+        "std/nblob"
+    ],
+    "builtin_count": 38,
+    "error_codes": {
+        "E4570": "arity mismatch",
+        "E4571": "I/O, HTTP, or store error",
+        "E4572": "type mismatch",
+        "E4573": "invalid fs/file handle",
+        "E4574": "auth / missing credentials"
+    }
+}

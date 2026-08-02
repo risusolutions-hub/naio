@@ -1,0 +1,126 @@
+// nfunc integration tests — run: niao run tests/nfunc.niao
+import "ntest"
+import "nfunc"
+
+fn test_partial() {
+    let add = fn(a, b) { return a + b }
+    let inc = nfunc.partial(add, 1)
+    ntest.assert_eq(inc(5), 6)
+}
+
+fn test_partial_right() {
+    let sub = fn(a, b) { return a - b }
+    let from10 = nfunc.partial_right(sub, 3)
+    ntest.assert_eq(from10(10), 7)
+}
+
+fn test_curry() {
+    let add = fn(a, b) { return a + b }
+    let curried = nfunc.curry(add)
+    ntest.assert_eq(curried(2)(3), 5)
+}
+
+fn test_compose() {
+    let inc = fn(x) { return x + 1 }
+    let dbl = fn(x) { return x * 2 }
+    let f = nfunc.compose(inc, dbl)
+    ntest.assert_eq(f(3), 7)
+}
+
+fn test_pipe() {
+    let inc = fn(x) { return x + 1 }
+    let dbl = fn(x) { return x * 2 }
+    ntest.assert_eq(nfunc.pipe(3, dbl, inc), 7)
+}
+
+fn test_apply() {
+    let add = fn(a, b) { return a + b }
+    ntest.assert_eq(nfunc.apply(add, [4, 5]), 9)
+}
+
+fn test_memoize() {
+    let n = 0
+    let f = nfunc.memoize(fn(x) {
+        n = n + 1
+        return x * 10
+    })
+    ntest.assert_eq(f(2), 20)
+    ntest.assert_eq(f(2), 20)
+    ntest.assert_eq(n, 1)
+    let info = nfunc.cache_info(f)
+    ntest.assert_eq(info.hits, 1)
+    ntest.assert_eq(info.misses, 1)
+}
+
+fn test_memoize_lru() {
+    let f = nfunc.memoize_lru(fn(x) { return x * x }, 2)
+    ntest.assert_eq(f(3), 9)
+    ntest.assert_eq(f(4), 16)
+    ntest.assert_eq(f(5), 25)
+    ntest.assert_eq(f(3), 9)
+    let info = nfunc.cache_info(f)
+    ntest.assert_eq(info.currsize, 2)
+}
+
+fn test_once() {
+    let n = 0
+    let f = nfunc.once(fn() {
+        n = n + 1
+        return n
+    })
+    ntest.assert_eq(f(), 1)
+    ntest.assert_eq(f(), 1)
+}
+
+fn test_identity() {
+    ntest.assert_eq(nfunc.identity(42), 42)
+    let id = nfunc.identity()
+    ntest.assert_eq(id("ok"), "ok")
+}
+
+fn test_flip() {
+    let sub = fn(a, b) { return a - b }
+    ntest.assert_eq(nfunc.flip(sub)(3, 10), 7)
+}
+
+fn test_constant() {
+    ntest.assert_eq(nfunc.constant(99)(), 99)
+}
+
+fn test_arity() {
+    let f = fn(a, b, c) { return 0 }
+    ntest.assert_eq(nfunc.arity(f), 3)
+}
+
+fn test_cache_clear() {
+    let n = 0
+    let f = nfunc.once(fn() {
+        n = n + 1
+        return n
+    })
+    ntest.assert_eq(f(), 1)
+    nfunc.cache_clear(f)
+    ntest.assert_eq(f(), 2)
+}
+
+fn main() {
+    ntest.case("partial binds leading args", test_partial)
+    ntest.case("partial_right binds trailing args", test_partial_right)
+    ntest.case("curry unary application", test_curry)
+    ntest.case("compose right-to-left", test_compose)
+    ntest.case("pipe left-to-right", test_pipe)
+    ntest.case("apply with array args", test_apply)
+    ntest.case("memoize caches results", test_memoize)
+    ntest.case("memoize_lru evicts", test_memoize_lru)
+    ntest.case("once runs single time", test_once)
+    ntest.case("identity passthrough", test_identity)
+    ntest.case("flip swaps first two args", test_flip)
+    ntest.case("constant returns fixed value", test_constant)
+    ntest.case("arity reports param count", test_arity)
+    ntest.case("cache_clear resets once", test_cache_clear)
+
+    let summary = ntest.run()
+    if summary.failed > 0 {
+        print("FAILURES:", summary.failures)
+    }
+}

@@ -1,0 +1,13 @@
+[package]
+name = "niao_rpc"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "JSON-RPC 2.0 client/server engine for Niao (nrpc)"
+
+[[bin]]
+name = "nrpc_bench"
+path = "src/bin/nrpc_bench.rs"
+
+[dependencies]
+niao_json_core = { workspace = true }

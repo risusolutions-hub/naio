@@ -1,0 +1,21 @@
+[package]
+name = "niao_parquet"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Parquet + Arrow IPC read/write with nframe interop for Niao"
+
+[dependencies]
+arrow = "53"
+arrow-array = "53"
+arrow-ipc = "53"
+arrow-schema = "53"
+parquet = { version = "53", features = ["arrow"] }
+niao_frame = { workspace = true }
+niao_parallel = { workspace = true }
+memmap2 = "0.9"
+bytes = "1"
+
+[[bin]]
+name = "nparquet_bench"
+path = "src/bin/nparquet_bench.rs"

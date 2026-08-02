@@ -1,0 +1,45 @@
+// njpath hot-path bench — run via benchmarks/harness/run_bench.py
+import "njpath"
+
+fn store_doc() {
+    let books = []
+    let i = 0
+    while i < 64 {
+        books = books + [{
+            title: "Title " + str(i),
+            author: "Author " + str(i),
+            price: 8.95 + (i * 0.1),
+        }]
+        i = i + 1
+    }
+    return {store: {book: books, bicycle: {color: "red", price: 19.95}}}
+}
+
+fn main() {
+    let doc = store_doc()
+    let j = 0
+    while j < 50000 {
+        let _ = njpath.pointer_get(doc, "/store/book/0/author")
+        j = j + 1
+    }
+    let k = 0
+    while k < 10000 {
+        let _ = njpath.find(doc, "$.store.book[*].author")
+        k = k + 1
+    }
+    let ph = njpath.compile_path("$.store.book[*].price")
+    let m = 0
+    while m < 50000 {
+        let _ = njpath.path_search(ph, doc)
+        m = m + 1
+    }
+    njpath.close(ph)
+    let n = 0
+    while n < 5000 {
+        let _ = njpath.jmes(doc, "store.book[*].price | max(@)")
+        n = n + 1
+    }
+    let docs = [doc, doc, doc]
+    let _ = njpath.parallel_find(docs, "$.store.book[0].author", {threads: 4})
+    print("ok")
+}

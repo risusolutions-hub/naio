@@ -1,0 +1,112 @@
+import "nid"
+import "ntest"
+
+fn test_uuid4_valid() {
+    let u = nid.uuid4()
+    ntest.assert_true(nid.uuid_is_valid(u))
+    ntest.assert_eq(nid.uuid_version(u), 4)
+}
+
+fn test_uuid7_timestamp() {
+    let u = nid.uuid7()
+    ntest.assert_eq(nid.uuid_version(u), 7)
+    let ts = nid.uuid_timestamp(u)
+    ntest.assert_true(ts > 0)
+}
+
+fn test_uuid6() {
+    let u = nid.uuid6()
+    ntest.assert_eq(nid.uuid_version(u), 6)
+}
+
+fn test_uuid_bytes_roundtrip() {
+    let u = nid.uuid4()
+    let bytes = nid.uuid_bytes(u)
+    ntest.assert_eq(len(bytes), 16)
+    let back = nid.uuid_from_bytes(bytes)
+    ntest.assert_eq(back, u)
+}
+
+fn test_uuid_parse_ok() {
+    let u = nid.uuid4()
+    let p = nid.uuid_parse(u)
+    ntest.assert_true(p.ok)
+    ntest.assert_eq(p.value, u)
+}
+
+fn test_uuid_parse_fail() {
+    let p = nid.uuid_parse("not-a-uuid")
+    ntest.assert_false(p.ok)
+}
+
+fn test_ulid_shape() {
+    let u = nid.ulid()
+    ntest.assert_eq(len(u), 26)
+    ntest.assert_true(nid.ulid_is_valid(u))
+}
+
+fn test_ulid_parse() {
+    let u = nid.ulid()
+    let p = nid.ulid_parse(u)
+    ntest.assert_true(p.ok)
+    ntest.assert_true(p.timestamp > 0)
+}
+
+fn test_ulid_maker_monotonic() {
+    let m = nid.ulid_maker()
+    let a = m.next()
+    let b = m.next()
+    ntest.assert_true(b > a)
+}
+
+fn test_nanoid_default() {
+    let id = nid.nanoid()
+    ntest.assert_eq(len(id), nid.NANOID_SIZE)
+}
+
+fn test_nanoid_bulk() {
+    let ids = nid.nanoid_bulk(8, 12)
+    ntest.assert_eq(len(ids), 8)
+}
+
+fn test_snowflake_int() {
+    let id = nid.snowflake(2, 3)
+    ntest.assert_true(id > 0)
+    let parts = nid.snowflake_parse(id)
+    ntest.assert_eq(parts.worker_id, 2)
+    ntest.assert_eq(parts.datacenter_id, 3)
+}
+
+fn test_snowflake_maker() {
+    let m = nid.snowflake_maker(1, 1)
+    let a = m.next()
+    let b = m.next()
+    ntest.assert_true(b > a)
+}
+
+fn test_hashids_roundtrip() {
+    let h = nid.hashids("test-salt", 0)
+    let enc = h.encode(7, 8, 9)
+    let dec = h.decode(enc)
+    ntest.assert_eq(dec[0], 7)
+    ntest.assert_eq(dec[1], 8)
+    ntest.assert_eq(dec[2], 9)
+}
+
+fn test_hashids_min_length() {
+    let h = nid.hashids("", 10)
+    let enc = h.encode(1)
+    ntest.assert_true(len(enc) >= 10)
+}
+
+fn test_hashids_hex() {
+    let h = nid.hashids("x")
+    let enc = h.encode_hex("0102")
+    let dec = h.decode_hex(enc)
+    ntest.assert_eq(dec, "0102")
+}
+
+fn test_nanoid_bad_alphabet() {
+    let e = nid.nanoid(8, "aa")
+    ntest.assert_error(e)
+}

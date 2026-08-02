@@ -1,0 +1,11 @@
+{
+    "name": "nwebhook",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": "Webhook send/receive: HMAC signing + verification,\n                    timestamps, replay defense.  ~svix, standard-webhooks\n                    ...",
+    "import_paths": [
+        "nwebhook",
+        "std/nwebhook"
+    ],
+    "builtin_count": 12
+}

@@ -1,0 +1,129 @@
+import "nview"
+import "ntest"
+
+fn test_render_basic() {
+    let out = nview.render("Hello {{ name }}!", {name: "Ada"}, {autoescape: false})
+    ntest.assert_eq(out, "Hello Ada!")
+}
+
+fn test_empty_and_nil_ctx() {
+    let out = nview.render("static", {}, {autoescape: false})
+    ntest.assert_eq(out, "static")
+    let out2 = nview.render("x={{ missing }}", {}, {autoescape: false})
+    ntest.assert_eq(out2, "x=")
+}
+
+fn test_autoescape() {
+    let out = nview.render("{{ x }}", {x: "<b>"}, {autoescape: true})
+    ntest.assert_eq(out, "&lt;b&gt;")
+    let raw = nview.render("{{ x|safe }}", {x: "<b>"}, {autoescape: true})
+    ntest.assert_eq(raw, "<b>")
+}
+
+fn test_filters() {
+    let out = nview.render("{{ name|upper }}", {name: "ada"}, {autoescape: false})
+    ntest.assert_eq(out, "ADA")
+    let names = nview.filters()
+    ntest.assert_true(len(names) > 10)
+}
+
+fn test_compile_run_close() {
+    let t = nview.compile("{{ n }}", {autoescape: false})
+    ntest.assert_eq(nview.run(t, {n: 7}), "7")
+    ntest.assert_true(nview.close(t))
+    let e = nview.run(t, {n: 1})
+    ntest.assert_error(e)
+}
+
+fn test_inheritance_blocks() {
+    let e = nview.env({autoescape: false})
+    nview.add(e, "base.html", "<html>{% block body %}default{% endblock %}</html>")
+    nview.add(e, "child.html", "{% extends \"base.html\" %}{% block body %}child{% endblock %}")
+    let out = nview.render_named(e, "child.html", {})
+    ntest.assert_eq(out, "<html>child</html>")
+    ntest.assert_true(nview.has(e, "base.html"))
+    ntest.assert_true(len(nview.names(e)) >= 2)
+    ntest.assert_true(nview.remove(e, "child.html"))
+    ntest.assert_true(nview.env_close(e))
+}
+
+fn test_include_partial() {
+    let e = nview.env({autoescape: false})
+    nview.add(e, "partial.html", "[{{ v }}]")
+    let out = nview.render_in(e, "A{% include \"partial.html\" %}B", {v: 42})
+    ntest.assert_eq(out, "A[42]B")
+    nview.env_close(e)
+}
+
+fn test_for_if() {
+    let src = "{% for i in items %}{% if i > 1 %}{{ i }}{% endif %}{% endfor %}"
+    let out = nview.render(src, {items: [1, 2, 3]}, {autoescape: false})
+    ntest.assert_eq(out, "23")
+}
+
+fn test_valid_and_vars() {
+    ntest.assert_true(nview.valid("{{ x }}"))
+    ntest.assert_false(nview.valid("{% if %}"))
+    let v = nview.vars("{{ a }} {{ b|upper }}")
+    ntest.assert_true(len(v) >= 2)
+}
+
+fn test_escape_unescape() {
+    let e = nview.escape("a < b & \"c\"")
+    ntest.assert_true(e.contains("&lt;"))
+    ntest.assert_eq(nview.unescape(e), "a < b & \"c\"")
+    let a = nview.escape_attr("x\"y")
+    ntest.assert_true(a.contains("&quot;"))
+}
+
+fn test_batch() {
+    let rows = nview.batch("{{ n }}", [{n: 1}, {n: 2}, {n: 3}], {autoescape: false})
+    ntest.assert_eq(len(rows), 3)
+    ntest.assert_eq(rows[0], "1")
+    ntest.assert_eq(rows[2], "3")
+}
+
+fn test_parse_error() {
+    let e = nview.render("{% if %}", {}, {autoescape: false})
+    ntest.assert_error(e)
+    let e2 = nview.compile("{% for %}")
+    ntest.assert_error(e2)
+}
+
+fn test_bad_handle() {
+    let e = nview.run(999999, {})
+    ntest.assert_error(e)
+    let e2 = nview.has(999999, "x")
+    ntest.assert_error(e2)
+}
+
+fn test_unicode() {
+    let out = nview.render("こんにちは {{ name }}", {name: "世界"}, {autoescape: false})
+    ntest.assert_eq(out, "こんにちは 世界")
+}
+
+fn test_macros() {
+    let src = "{% macro greet(n) %}Hi {{ n }}{% endmacro %}{{ greet('Ada') }}"
+    let out = nview.render(src, {}, {autoescape: false})
+    ntest.assert_eq(out, "Hi Ada")
+}
+
+fn main() {
+    ntest.case("render basic", test_render_basic)
+    ntest.case("empty and nil ctx", test_empty_and_nil_ctx)
+    ntest.case("autoescape", test_autoescape)
+    ntest.case("filters", test_filters)
+    ntest.case("compile run close", test_compile_run_close)
+    ntest.case("inheritance blocks", test_inheritance_blocks)
+    ntest.case("include partial", test_include_partial)
+    ntest.case("for if", test_for_if)
+    ntest.case("valid and vars", test_valid_and_vars)
+    ntest.case("escape unescape", test_escape_unescape)
+    ntest.case("batch", test_batch)
+    ntest.case("parse error", test_parse_error)
+    ntest.case("bad handle", test_bad_handle)
+    ntest.case("unicode", test_unicode)
+    ntest.case("macros", test_macros)
+    let summary = ntest.run()
+    print(summary)
+}

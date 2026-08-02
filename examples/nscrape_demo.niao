@@ -1,0 +1,32 @@
+import "nscrape"
+
+let html = """
+<html lang="en"><head>
+<title>Polite scrape demo</title>
+<meta name="author" content="Niao">
+<meta name="description" content="Offline demo of nscrape extraction.">
+</head><body>
+<nav><a href="/">Home</a></nav>
+<article class="post-content">
+<h1>Polite scrape demo</h1>
+<p>nscrape combines robots.txt checks, per-host rate limits, retries, sitemap parsing,
+and readability-style article extraction in one Niao module.</p>
+<p>This offline demo never hits the network — it only shows extract and robots helpers.</p>
+</article>
+</body></html>
+"""
+
+let art = nscrape.extract(html, {url: "https://example.com/demo"})
+print("title:", art.title)
+print("byline:", art.byline)
+print("excerpt:", art.excerpt)
+print("text:", art.text)
+
+let robots = "User-agent: *\nDisallow: /admin\nAllow: /\nCrawl-delay: 0.25\nSitemap: https://example.com/sitemap.xml\n"
+print("allowed /:", nscrape.allowed(robots, "https://example.com/"))
+print("allowed /admin:", nscrape.allowed(robots, "https://example.com/admin"))
+print("crawl_delay_ms:", nscrape.crawl_delay(robots))
+print("sitemaps:", nscrape.sitemaps(robots))
+
+let sm = nscrape.parse_sitemap("<?xml version=\"1.0\"?><urlset><url><loc>https://example.com/a</loc></url><url><loc>https://example.com/b</loc></url></urlset>")
+print("sitemap urls:", len(sm.urls))

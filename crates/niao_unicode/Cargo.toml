@@ -1,0 +1,24 @@
+[package]
+name = "niao_unicode"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "Unicode correctness for Niao: normalization, graphemes, categories, display width, casefold"
+
+[lib]
+bench = false
+
+[[bin]]
+name = "unicode_bench"
+path = "src/bin/unicode_bench.rs"
+
+[dependencies]
+unicode-normalization = "0.1"
+unicode-segmentation = "1.11"
+unicode-width = "0.2"
+unicode-general-category = "1.0"
+unicode_names2 = "1.3"
+icu_properties = { version = "2.0", features = ["compiled_data"] }
+icu_locale_core = "2.0"
+niao_parallel = { workspace = true }

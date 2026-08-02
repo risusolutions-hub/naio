@@ -1,0 +1,16 @@
+// Measures nsorted insort + bisect + irange churn on int fast path.
+import "nsorted"
+fn main() {
+    let sl = nsorted_new_list([])
+    let i = 0
+    while i < 200000 {
+        nsorted_insort(sl, i % 5000)
+        let _ = nsorted_bisect_left(sl, i % 5000)
+        let _ = nsorted_bisect_right(sl, i % 5000)
+        if i % 100 == 0 {
+            let _ = nsorted_irange(sl, i % 1000, (i % 1000) + 500)
+        }
+        i = i + 1
+    }
+    print(nsorted_len(sl))
+}

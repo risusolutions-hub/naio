@@ -1,0 +1,24 @@
+// nwhen parse benchmark — run via benchmarks/harness/run_bench.py
+import "nwhen"
+import "time"
+
+let phrases = [
+    "next friday 5pm",
+    "in 2 weeks",
+    "tomorrow at noon",
+    "March 15, 2024",
+    "3 days ago",
+]
+
+let t0 = time.now_perf_us()
+let i = 0
+while i < 100000 {
+    let j = 0
+    while j < phrases.len() {
+        nwhen.parse(phrases[j])
+        j = j + 1
+    }
+    i = i + 1
+}
+let elapsed_ms = time.elapsed_bench_ms(t0)
+print("nwhen parse bench: 100000 x", phrases.len(), "phrases in", elapsed_ms, "ms")

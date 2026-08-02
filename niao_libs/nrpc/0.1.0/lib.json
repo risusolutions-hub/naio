@@ -1,0 +1,11 @@
+{
+    "name": "nrpc",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": "JSON-RPC 2.0 client/server over stdio, TCP, HTTP.\n                    ~jsonrpcserver\n...",
+    "import_paths": [
+        "nrpc",
+        "std/nrpc"
+    ],
+    "builtin_count": 44
+}

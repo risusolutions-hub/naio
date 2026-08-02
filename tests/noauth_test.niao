@@ -1,0 +1,97 @@
+import "noauth"
+import "ntest"
+
+fn test_pkce() {
+    let p = noauth.pkce()
+    ntest.assert_eq(p.method, "S256")
+    ntest.assert_true(len(p.verifier) >= 43)
+    ntest.assert_true(len(p.challenge) >= 43)
+    ntest.assert_eq(noauth.pkce_challenge("abc", "plain"), "abc")
+}
+
+fn test_random() {
+    let st = noauth.random_state()
+    let nc = noauth.random_nonce()
+    ntest.assert_true(len(st) >= 32)
+    ntest.assert_true(len(nc) >= 32)
+    ntest.assert_false(st == nc)
+}
+
+fn test_client_handle() {
+    let h = noauth.client({
+        client_id: "test-client",
+        token_endpoint: "https://idp.example.com/token",
+        authorization_endpoint: "https://idp.example.com/authorize",
+        redirect_uri: "https://app.example.com/cb",
+    })
+    ntest.assert_true(h > 0)
+    let info = noauth.client_info(h)
+    ntest.assert_eq(info.client_id, "test-client")
+    noauth.close(h)
+}
+
+fn test_auth_url() {
+    let h = noauth.client({
+        client_id: "cid",
+        token_endpoint: "https://idp.example.com/token",
+        authorization_endpoint: "https://idp.example.com/authorize",
+        redirect_uri: "https://app.example.com/cb",
+        scopes: ["openid", "profile"],
+    })
+    let pkce = noauth.pkce()
+    let url = noauth.auth_url(h, {state: "xyz", code_challenge: pkce.challenge})
+    ntest.assert_true(url.contains("client_id=cid"))
+    ntest.assert_true(url.contains("state=xyz"))
+    ntest.assert_true(url.contains("code_challenge="))
+    ntest.assert_true(url.contains("scope=openid"))
+    noauth.close(h)
+}
+
+fn test_parse_callback() {
+    let cb = noauth.parse_callback("https://app/cb?code=abc123&state=st1")
+    ntest.assert_eq(cb.code, "abc123")
+    ntest.assert_eq(cb.state, "st1")
+    ntest.assert_true(noauth.validate_state("st1", cb.state))
+
+    let err = noauth.parse_callback("https://app/cb?error=access_denied&error_description=nope")
+    ntest.assert_eq(err.error, "access_denied")
+    ntest.assert_nil(err.code)
+}
+
+fn test_parse_token() {
+    let json = "{\"access_token\":\"tok\",\"token_type\":\"Bearer\",\"expires_in\":3600,\"refresh_token\":\"rt\"}"
+    let t = noauth.parse_token(json)
+    ntest.assert_eq(t.access_token, "tok")
+    ntest.assert_eq(t.token_type, "Bearer")
+    ntest.assert_eq(t.expires_in, 3600)
+    ntest.assert_true(noauth.is_bearer(t))
+    ntest.assert_false(noauth.token_expired(t))
+}
+
+fn test_basic_auth() {
+    let hdr = noauth.basic_auth("id", "secret")
+    ntest.assert_true(hdr.starts_with("Basic "))
+}
+
+fn test_state_mismatch() {
+    let r = noauth.validate_state("expected", "other")
+    ntest.assert_true(ntest.is_error(r))
+}
+
+fn test_bad_client_config() {
+    let r = noauth.client({client_id: "x"})
+    ntest.assert_true(ntest.is_error(r))
+}
+
+ntest.case("pkce S256", test_pkce)
+ntest.case("random state/nonce", test_random)
+ntest.case("client handle lifecycle", test_client_handle)
+ntest.case("auth url builder", test_auth_url)
+ntest.case("callback parser", test_parse_callback)
+ntest.case("token json parser", test_parse_token)
+ntest.case("basic auth header", test_basic_auth)
+ntest.case("state mismatch error", test_state_mismatch)
+ntest.case("missing token_endpoint", test_bad_client_config)
+
+let summary = ntest.run()
+if !summary.ok { nos.exit(1) }

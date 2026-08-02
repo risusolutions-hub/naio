@@ -1,0 +1,16 @@
+[package]
+name = "niao_grpc"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "gRPC client/server over HTTP/2 for Niao (h2 + nproto message bytes)"
+
+[dependencies]
+bytes = "1"
+h2 = "0.4"
+http = "1"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "io-util", "sync", "time"] }
+
+[[bin]]
+name = "ngrpc_bench"
+path = "src/bin/ngrpc_bench.rs"

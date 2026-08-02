@@ -1,0 +1,11 @@
+{
+    "name": "nonnx",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": "ONNX model loading + CPU inference for small models.\n                    ~onnxruntime\n",
+    "import_paths": [
+        "nonnx",
+        "std/nonnx"
+    ],
+    "builtin_count": 14
+}

@@ -1,0 +1,19 @@
+[package]
+name = "niao_imap"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "IMAP4 + POP3 mailbox retrieval for Niao"
+
+[lib]
+bench = false
+
+[dependencies]
+rustls = "0.23"
+rustls-native-certs = "0.8"
+rustls-pki-types = "1"
+
+[[bin]]
+name = "nimap_bench"
+path = "src/bin/nimap_bench.rs"

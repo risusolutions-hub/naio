@@ -1,0 +1,11 @@
+{
+    "name": "ngraphql",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": "GraphQL client (queries, variables, fragments) +\n                    schema/server helpers.  ~gql, graphene, strawberry\n...",
+    "import_paths": [
+        "ngraphql",
+        "std/ngraphql"
+    ],
+    "builtin_count": 28
+}

@@ -1,0 +1,11 @@
+{
+    "name": "npdf",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": "PDF create (text, images, tables) + extract text and\n                    pages, merge/split.  ~reportlab, pypdf\n ...",
+    "import_paths": [
+        "npdf",
+        "std/npdf"
+    ],
+    "builtin_count": 32
+}

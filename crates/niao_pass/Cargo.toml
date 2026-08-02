@@ -1,0 +1,22 @@
+[package]
+name = "niao_pass"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "Password hashing (argon2id, bcrypt, scrypt) and strength policy checks"
+
+[lib]
+bench = false
+
+[dependencies]
+argon2 = { version = "0.5", features = ["password-hash"] }
+bcrypt = "0.16"
+password-hash = "0.5"
+scrypt = { version = "0.11", features = ["password-hash", "simple"] }
+niao_crypto = { workspace = true }
+niao_rand = { workspace = true }
+
+[[bin]]
+name = "npass_bench"
+path = "src/bin/npass_bench.rs"

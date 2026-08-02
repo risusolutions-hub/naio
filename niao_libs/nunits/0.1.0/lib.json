@@ -1,0 +1,11 @@
+{
+    "name": "nunits",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": "Physical units + quantity arithmetic, conversion,\n                    dimensional checks.  ~pint\n",
+    "import_paths": [
+        "nunits",
+        "std/nunits"
+    ],
+    "builtin_count": 30
+}

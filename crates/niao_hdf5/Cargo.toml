@@ -1,0 +1,15 @@
+[package]
+name = "niao_hdf5"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "HDF5 scientific dataset read/write for Niao (hdf5-metno-backed)"
+
+[dependencies]
+hdf5-metno = { version = "0.13", features = ["static", "zlib"] }
+ndarray = "0.17"
+niao_parallel = { workspace = true }
+
+[[bin]]
+name = "nhdf5_bench"
+path = "src/bin/nhdf5_bench.rs"

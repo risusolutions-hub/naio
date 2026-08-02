@@ -1,0 +1,32 @@
+{
+    "name": "ngcp",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": "Google Cloud helper: GCS, Pub/Sub, Firestore REST,\n                    Cloud Functions.  ~google-cloud-*  (peers naws/nazure)",
+    "import_paths": [
+        "ngcp",
+        "std/ngcp"
+    ],
+    "builtin_count": 13,
+    "api": {
+        "config": "({project, client_email?, private_key?, access_token?, token_uri?, scopes?}) -> config_id",
+        "gcs_put": "(config_id, bucket, object, body, content_type?) -> {etag, status}",
+        "gcs_get": "(config_id, bucket, object) -> {body, status, headers{}}",
+        "gcs_delete": "(config_id, bucket, object) -> true",
+        "gcs_list": "(config_id, bucket, prefix?) -> names[]",
+        "pubsub_publish": "(config_id, topic, data, attrs?) -> {message_ids[]}",
+        "pubsub_pull": "(config_id, subscription, max?) -> messages[]",
+        "pubsub_ack": "(config_id, subscription, ack_ids[]) -> true",
+        "firestore_get": "(config_id, collection, doc_id) -> fields{} | nil",
+        "firestore_set": "(config_id, collection, doc_id, fields{}) -> true",
+        "firestore_delete": "(config_id, collection, doc_id) -> true",
+        "firestore_query": "(config_id, collection, opts?) -> docs[]",
+        "function_invoke": "(config_id, url, payload, method?) -> {status, body}"
+    },
+    "error_codes": {
+        "E4540": "arity mismatch",
+        "E4541": "API or network error",
+        "E4542": "type mismatch",
+        "E4543": "auth / invalid config handle"
+    }
+}

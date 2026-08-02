@@ -1,0 +1,19 @@
+import "nsearch"
+
+fn main() {
+    // Offline helpers — no search server required.
+    let dsl = nsearch.es_query({q: "niao", fields: ["title"], size: 5})
+    print("ES DSL:", dsl)
+
+    let nd = nsearch.es_bulk_ndjson([
+        {action: "index", index: "docs", id: "1", doc: {title: "Hello Niao", tags: ["search"]}},
+    ])
+    print("bulk NDJSON lines:", len(nd))
+
+    print("meili filter:", nsearch.meili_filter(["year > 2020", "genres = SciFi"]))
+    print("typesense filter:", nsearch.ts_filter(["year:>2020", "in_stock:true"]))
+
+    let client = nsearch.elasticsearch({url: "http://localhost:9200"})
+    print("engine:", nsearch.engine(client), "info:", nsearch.info(client))
+    nsearch.close(client)
+}

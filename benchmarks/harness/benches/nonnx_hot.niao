@@ -1,0 +1,42 @@
+// nonnx bench harness — run: niao run benchmarks/harness/benches/nonnx_hot.niao
+import "nonnx"
+import "time"
+
+let FIXTURE = "crates/niao_onnx/tests/fixtures/mobilenetv2-7.onnx"
+
+fn main() {
+    nonnx.inspect(FIXTURE)
+
+    let t0 = time.now_perf_us()
+    let i = 0
+    while i < 20 {
+        nonnx.inspect(FIXTURE)
+        i = i + 1
+    }
+    print("inspect_20", time.elapsed_bench_ms(t0))
+
+    let t1 = time.now_perf_us()
+    i = 0
+    while i < 3 {
+        let h = nonnx.load(FIXTURE)
+        nonnx.close(h)
+        i = i + 1
+    }
+    print("load_close_3", time.elapsed_bench_ms(t1))
+
+    let h = nonnx.load(FIXTURE)
+    let ins = nonnx.inputs(h)
+    let name = ins[0].name
+    let shape = ins[0].shape
+    let feed = {}
+    feed[name] = nonnx.zeros(shape)
+
+    let t2 = time.now_perf_us()
+    i = 0
+    while i < 5 {
+        nonnx.run(h, feed)
+        i = i + 1
+    }
+    print("run_5", time.elapsed_bench_ms(t2))
+    nonnx.close(h)
+}

@@ -1,0 +1,167 @@
+// ndocstore integration tests — run: niao run examples/ndocstore_test.niao
+import "ndocstore"
+import "ntest"
+
+fn test_memory_crud() {
+    let db = ndocstore.memory()
+    ntest.assert_eq(ndocstore.len(db), 0)
+    let id = ndocstore.insert(db, {name: "Ada", age: 36})
+    ntest.assert_eq(id, 1)
+    let doc = ndocstore.get(db, id)
+    ntest.assert_eq(doc.name, "Ada")
+    ntest.assert_eq(doc._id, 1)
+    ntest.assert_eq(ndocstore.exists(db, 1), true)
+    ntest.assert_eq(ndocstore.exists(db, 99), false)
+    ndocstore.close(db)
+}
+
+fn test_search_ops() {
+    let db = ndocstore.memory()
+    ndocstore.insert_many(db, [
+        {name: "Ada", age: 36, city: "London"},
+        {name: "Bob", age: 25, city: "Paris"},
+        {name: "Cyd", age: 40, city: "London"},
+    ])
+    let adults = ndocstore.search(db, {gte: {age: 30}})
+    ntest.assert_eq(adults.len(), 2)
+    ntest.assert_eq(ndocstore.contains(db, {name: "Bob"}), true)
+    ntest.assert_eq(ndocstore.count(db, {eq: {city: "London"}}), 2)
+    let nested = ndocstore.search(db, {and: [{gt: {age: 30}}, {city: "London"}]})
+    ntest.assert_eq(nested.len(), 2)
+    let orq = ndocstore.search(db, {or: [{name: "Bob"}, {name: "Missing"}]})
+    ntest.assert_eq(orq.len(), 1)
+    ntest.assert_eq(ndocstore.contains(db, {contains: {name: "d"}}), true)
+    ntest.assert_eq(ndocstore.contains(db, {exists: "city"}), true)
+    ntest.assert_eq(ndocstore.contains(db, {exists: "missing"}), false)
+    ndocstore.close(db)
+}
+
+fn test_update_remove() {
+    let db = ndocstore.memory()
+    let ids = ndocstore.insert_many(db, [{n: 1}, {n: 2}, {n: 3}])
+    let updated = ndocstore.update(db, {n: 10}, {n: 2})
+    ntest.assert_eq(updated, 1)
+    ntest.assert_eq(ndocstore.get(db, ids[1]).n, 10)
+    let by_id = ndocstore.update(db, {n: 99}, ids[0])
+    ntest.assert_eq(by_id, 1)
+    let removed = ndocstore.remove(db, {gt: {n: 50}})
+    ntest.assert_eq(removed, 1)
+    ntest.assert_eq(ndocstore.len(db), 2)
+    ndocstore.truncate(db)
+    ntest.assert_eq(ndocstore.len(db), 0)
+    ndocstore.close(db)
+}
+
+fn test_upsert() {
+    let db = ndocstore.memory()
+    let id1 = ndocstore.upsert(db, {score: 1}, {name: "x"})
+    ntest.assert_eq(ndocstore.get(db, id1).name, "x")
+    let id2 = ndocstore.upsert(db, {score: 5}, {name: "x"})
+    ntest.assert_eq(id1, id2)
+    ntest.assert_eq(ndocstore.get(db, id1).score, 5)
+    ntest.assert_eq(ndocstore.len(db), 1)
+    ndocstore.close(db)
+}
+
+fn test_tables() {
+    let db = ndocstore.memory()
+    ndocstore.insert(db, {a: 1})
+    let users = ndocstore.table(db, "users")
+    ndocstore.insert(users, {login: "ada"})
+    ntest.assert_eq(ndocstore.len(db), 1)
+    ntest.assert_eq(ndocstore.len(users), 1)
+    let names = ndocstore.tables(db)
+    ntest.assert_eq(names.len(), 2)
+    ntest.assert_eq(ndocstore.default_table(users), "users")
+    ntest.assert_eq(ndocstore.drop_table(db, "users"), true)
+    ndocstore.close(db)
+}
+
+fn test_indexes() {
+    let db = ndocstore.memory()
+    for i in 0..100 {
+        ndocstore.insert(db, {k: i % 10, i: i})
+    }
+    ndocstore.create_index(db, "k")
+    let idx = ndocstore.indexes(db)
+    ntest.assert_eq(idx.len(), 1)
+    ntest.assert_eq(idx[0], "k")
+    let rows = ndocstore.search(db, {k: 3})
+    ntest.assert_eq(rows.len(), 10)
+    ntest.assert_eq(ndocstore.drop_index(db, "k"), true)
+    ndocstore.close(db)
+}
+
+fn test_json_roundtrip() {
+    let db = ndocstore.memory()
+    ndocstore.insert(db, {x: 1})
+    ndocstore.create_index(db, "x")
+    let text = ndocstore.to_json(db, false)
+    ndocstore.close(db)
+    let db2 = ndocstore.from_json(text)
+    ntest.assert_eq(ndocstore.len(db2), 1)
+    ntest.assert_eq(ndocstore.indexes(db2)[0], "x")
+    ntest.assert_eq(ndocstore.get(db2, 1).x, 1)
+    ndocstore.close(db2)
+}
+
+fn test_file_persist() {
+    let path = "target/ndocstore_ntest.json"
+    let db = ndocstore.open(path)
+    ndocstore.truncate(db)
+    ndocstore.insert(db, {ok: true, n: 7})
+    ndocstore.flush(db)
+    ntest.assert_eq(ndocstore.path(db), path)
+    ndocstore.close(db)
+    let db2 = ndocstore.open(path)
+    ntest.assert_eq(ndocstore.len(db2), 1)
+    ntest.assert_eq(ndocstore.get(db2, 1).n, 7)
+    ndocstore.close(db2)
+}
+
+fn test_invalid_handle() {
+    let db = ndocstore.memory()
+    ndocstore.close(db)
+    let e = ndocstore.len(db)
+    ntest.assert_error(e)
+}
+
+fn test_empty_and_in() {
+    let db = ndocstore.memory()
+    ntest.assert_eq(ndocstore.all(db).len(), 0)
+    ntest.assert_eq(ndocstore.search(db, {}).len(), 0)
+    ndocstore.insert(db, {tag: "a"})
+    ndocstore.insert(db, {tag: "b"})
+    let rows = ndocstore.search(db, {in: {tag: ["a", "c"]}})
+    ntest.assert_eq(rows.len(), 1)
+    let none = ndocstore.search(db, {nin: {tag: ["a", "b"]}})
+    ntest.assert_eq(none.len(), 0)
+    ndocstore.close(db)
+}
+
+fn test_dotted_path() {
+    let db = ndocstore.memory()
+    ndocstore.insert(db, {address: {city: "Kyoto", zip: 600}})
+    let rows = ndocstore.search(db, {eq: {"address.city": "Kyoto"}})
+    ntest.assert_eq(rows.len(), 1)
+    ndocstore.create_index(db, "address.city")
+    let rows2 = ndocstore.search(db, {"address.city": "Kyoto"})
+    ntest.assert_eq(rows2.len(), 1)
+    ndocstore.close(db)
+}
+
+fn main() {
+    ntest.case("memory crud", test_memory_crud)
+    ntest.case("search ops", test_search_ops)
+    ntest.case("update remove", test_update_remove)
+    ntest.case("upsert", test_upsert)
+    ntest.case("tables", test_tables)
+    ntest.case("indexes", test_indexes)
+    ntest.case("json roundtrip", test_json_roundtrip)
+    ntest.case("file persist", test_file_persist)
+    ntest.case("invalid handle", test_invalid_handle)
+    ntest.case("empty and in", test_empty_and_in)
+    ntest.case("dotted path", test_dotted_path)
+    let summary = ntest.run()
+    print(summary)
+}

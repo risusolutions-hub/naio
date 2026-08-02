@@ -1,0 +1,16 @@
+// Hot path: compose + partial call chain.
+import "nfunc"
+
+fn main() {
+    let add = fn(a, b) { return a + b }
+    let inc = nfunc.partial(add, 1)
+    let dbl = fn(x) { return x * 2 }
+    let f = nfunc.compose(inc, dbl)
+    let sum = 0
+    let i = 0
+    while i < 500000 {
+        sum = sum + f(i % 100)
+        i = i + 1
+    }
+    print(sum)
+}

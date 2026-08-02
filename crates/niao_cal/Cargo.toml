@@ -1,0 +1,14 @@
+[package]
+name = "niao_cal"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Calendar math: business days, holiday tables, week numbers, month grids for Niao"
+
+[dependencies]
+niao_time = { workspace = true }
+rayon = "1.10"
+
+[[bin]]
+name = "ncal_bench"
+path = "src/bin/ncal_bench.rs"

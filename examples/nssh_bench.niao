@@ -1,0 +1,23 @@
+// Micro-benchmarks for nssh helpers (no remote required).
+// Run: niao run examples/nssh_bench.niao
+import "nssh"
+import "nbench"
+
+fn bench_is_connected() {
+    return nssh.is_connected(1)
+}
+
+fn bench_agent_identities() {
+    let r = nssh.agent_identities()
+    return type(r)
+}
+
+fn main() {
+    let opts = {warmup: 5, iterations: 50}
+    let r1 = nbench.run("nssh.is_connected miss", bench_is_connected, opts)
+    print("is_connected miss: mean=", r1.mean, "ns p50=", r1.p50)
+    let r2 = nbench.run("nssh.agent_identities", bench_agent_identities, {warmup: 1, iterations: 5})
+    print("agent_identities: mean=", r2.mean, "ns p50=", r2.p50)
+}
+
+main()

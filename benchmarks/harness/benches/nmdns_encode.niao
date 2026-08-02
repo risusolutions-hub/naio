@@ -1,0 +1,28 @@
+// DNS wire encode/decode hot path (offline).
+
+import "nmdns"
+
+
+
+fn main() {
+
+    let rounds = 5000
+
+    let r = 0
+
+    while r < rounds {
+
+        let q = nmdns.encode_query("_http._tcp.local.", "PTR")
+
+        let msg = nmdns.decode_message(q)
+
+        let _ = msg.questions[0].name
+
+        r = r + 1
+
+    }
+
+    print("nmdns encode/decode x", rounds)
+
+}
+

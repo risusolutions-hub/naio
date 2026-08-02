@@ -1,0 +1,116 @@
+import "nmysql"
+import "nenv"
+
+fn main() {
+    // Offline helpers always run
+    assert(nmysql.escape_literal("a'b") == "'a''b'", "escape_literal")
+    assert(nmysql.quote_ident("a`b") == "`a``b`", "quote_ident")
+    assert(type(nmysql.version()) == "string", "version")
+    assert(len(nmysql.version()) > 0, "version non-empty")
+
+    let url = nenv.get("NIAO_MYSQL_URL")
+    if url == nil || url == "" {
+        print("skip live: NIAO_MYSQL_URL not set (offline helpers ok)")
+        return
+    }
+
+    let db = nmysql.connect(url)
+    assert(type(db) == "int", "connect returns handle")
+
+    nmysql.ping(db)
+    let ver = nmysql.server_version(db)
+    assert(len(ver) > 0, "server version")
+
+    let info = nmysql.conninfo(db)
+    assert(type(info) == "string", "conninfo")
+
+    let tbl = "nmysql_test_users"
+    nmysql.exec(db, "DROP TABLE IF EXISTS " + tbl)
+    nmysql.exec(db, "DROP TABLE IF EXISTS _nmysql_schema_version")
+
+    let applied = nmysql.migrate(db, [
+        {version: 1, sql: "CREATE TABLE " + tbl + " (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(64) NOT NULL, score INT DEFAULT 0)"},
+        {version: 2, sql: "CREATE INDEX idx_" + tbl + "_name ON " + tbl + "(name)"}
+    ])
+    assert(applied == 2, "migrate applied 2")
+
+    assert(nmysql.table_exists(db, tbl), "table exists")
+    assert(nmysql.table_exists(db, "_nmysql_schema_version"), "version table")
+
+    let tables = nmysql.list_tables(db)
+    assert(len(tables) >= 2, "list_tables")
+
+    let cols = nmysql.table_info(db, tbl)
+    assert(len(cols) == 3, "table_info columns")
+
+    let ins = nmysql.insert(db, tbl, {name: "Niao", score: 10})
+    assert(type(ins) == "object", "insert returns object")
+    assert(ins.affected_rows == 1, "insert affected")
+    assert(ins.last_insert_id > 0, "last_insert_id")
+
+    nmysql.exec(db, "INSERT INTO " + tbl + " (name, score) VALUES (?, ?)", ["Cat", 20])
+    assert(nmysql.affected_rows(db) == 1, "affected_rows")
+
+    let rows = nmysql.query(db, "SELECT id, name, score FROM " + tbl + " WHERE score >= ? ORDER BY id", [0])
+    assert(len(rows) == 2, "query row count")
+    assert(rows[0].name == "Niao", "query object field")
+
+    let compact = nmysql.query(db, "SELECT id, name FROM " + tbl, [], "array")
+    assert(len(compact.columns) == 2, "array format columns")
+    assert(len(compact.rows) == 2, "array format rows")
+
+    let one = nmysql.query_row(db, "SELECT name FROM " + tbl + " WHERE id = ?", [rows[1].id])
+    assert(one.name == "Cat", "query_row")
+
+    let val = nmysql.query_value(db, "SELECT score FROM " + tbl + " WHERE name = ?", ["Niao"])
+    assert(val == 10, "query_value")
+
+    let names = nmysql.query_column(db, "SELECT name FROM " + tbl + " ORDER BY id")
+    assert(len(names) == 2, "query_column")
+
+    // $N placeholders rewritten to ?
+    let dollar = nmysql.query_value(db, "SELECT score FROM " + tbl + " WHERE name = $1", ["Cat"])
+    assert(dollar == 20, "dollar placeholder")
+
+    let stmt = nmysql.prepare(db, "SELECT name FROM " + tbl + " WHERE id = ?")
+    nmysql.bind(stmt, 1, rows[1].id)
+    let srows = nmysql.stmt_query(stmt)
+    assert(len(srows) == 1, "stmt_query")
+    nmysql.stmt_reset(stmt)
+    nmysql.finalize(stmt)
+
+    nmysql.begin(db)
+    assert(nmysql.is_in_transaction(db), "in txn")
+    nmysql.exec(db, "UPDATE " + tbl + " SET score = score + 1 WHERE id = ?", [rows[0].id])
+    nmysql.savepoint(db, "sp1")
+    nmysql.exec(db, "UPDATE " + tbl + " SET score = 999 WHERE id = ?", [rows[0].id])
+    nmysql.rollback_to(db, "sp1")
+    nmysql.commit(db)
+    assert(!nmysql.is_in_transaction(db), "not in txn")
+
+    nmysql.batch(db, "INSERT INTO " + tbl + " (name, score) VALUES (?, ?)", [["A", 1], ["B", 2]])
+
+    let idxs2 = nmysql.list_indexes(db)
+    assert(len(idxs2) >= 1, "list_indexes")
+
+    let pool = nmysql.pool({url: url, max_size: 2})
+    let status = nmysql.pool_status(pool)
+    assert(status.size >= 0, "pool status")
+    let conn2 = nmysql.pool_get(pool)
+    assert(nmysql.query_value(conn2, "SELECT 1") == 1, "pool query")
+    nmysql.close(conn2)
+    nmysql.pool_close(pool)
+
+    let task = nmysql.async_query(db, "SELECT count(*) FROM " + tbl)
+    nmysql.task_wait(task)
+    assert(nmysql.task_done(task), "task done")
+    let count_rows = nmysql.task_result(task)
+    assert(type(count_rows) == "array", "async query result array")
+
+    let bad = nmysql.connect("mysql://invalid:invalid@127.0.0.1:1/nope")
+    assert(type(bad) != "int", "bad connect returns error")
+
+    nmysql.exec(db, "DROP TABLE IF EXISTS " + tbl)
+    nmysql.close(db)
+    print("nmysql tests ok")
+}

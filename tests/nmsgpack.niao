@@ -1,0 +1,130 @@
+import "nmsgpack"
+import "ntest"
+
+fn test_pack_unpack_roundtrip() {
+    let data = {name: "neko", n: 42, ok: true, tags: ["a", "b"]}
+    let raw = nmsgpack.pack(data)
+    ntest.assert_true(len(raw) > 0)
+    let back = nmsgpack.unpack(raw)
+    ntest.assert_eq(back.name, "neko")
+    ntest.assert_eq(back.n, 42)
+    ntest.assert_true(back.ok)
+    ntest.assert_eq(len(back.tags), 2)
+}
+
+fn test_pack_unpack_nil() {
+    let raw = nmsgpack.pack(nil)
+    let back = nmsgpack.unpack(raw)
+    ntest.assert_eq(back, nil)
+}
+
+fn test_pack_unpack_array() {
+    let raw = nmsgpack.pack([1, 2, 3])
+    let back = nmsgpack.unpack(raw)
+    ntest.assert_eq(len(back), 3)
+    ntest.assert_eq(back[0], 1)
+}
+
+fn test_pack_all_unpack_all() {
+    let raw = nmsgpack.pack_all([1, 2, 3])
+    let items = nmsgpack.unpack_all(raw)
+    ntest.assert_eq(len(items), 3)
+    ntest.assert_eq(items[1], 2)
+}
+
+fn test_valid() {
+    let raw = nmsgpack.pack({x: 1})
+    ntest.assert_true(nmsgpack.valid(raw))
+    ntest.assert_false(nmsgpack.valid([0xFF, 0xFF]))
+}
+
+fn test_ext_roundtrip() {
+    let ext = nmsgpack.ext(42, [0xCA, 0xFE])
+    let raw = nmsgpack.pack(ext)
+    let back = nmsgpack.unpack(raw)
+    ntest.assert_eq(back.code, 42)
+    ntest.assert_eq(len(back.data), 2)
+}
+
+fn test_timestamp_roundtrip() {
+    let ts = nmsgpack.timestamp(1_600_000_000, 100)
+    let raw = nmsgpack.pack(ts, {timestamp: true})
+    let back = nmsgpack.unpack(raw, {timestamp: true})
+    ntest.assert_eq(back.sec, 1_600_000_000)
+    ntest.assert_eq(back.nsec, 100)
+}
+
+fn test_use_bin_type_false() {
+    let raw = nmsgpack.pack("hello", {use_bin_type: false})
+    let back = nmsgpack.unpack(raw)
+    ntest.assert_eq(back, "hello")
+}
+
+fn test_aliases() {
+    let data = {a: 1}
+    let b = nmsgpack.packb(data)
+    let v = nmsgpack.loads(b)
+    ntest.assert_eq(v.a, 1)
+    let b2 = nmsgpack.dumps(data)
+    ntest.assert_eq(len(b), len(b2))
+}
+
+fn test_streaming_packer() {
+    let p = nmsgpack.packer()
+    ntest.assert_true(p.handle > 0)
+    nmsgpack.packer_pack(p.handle, 10)
+    nmsgpack.packer_pack(p.handle, 20)
+    let peek = nmsgpack.packer_bytes(p.handle)
+    ntest.assert_true(len(peek) > 0)
+    let raw = nmsgpack.packer_finish(p.handle)
+    let items = nmsgpack.unpack_all(raw)
+    ntest.assert_eq(len(items), 2)
+    ntest.assert_eq(items[0], 10)
+}
+
+fn test_streaming_unpacker() {
+    let raw = nmsgpack.pack_all([1, 2])
+    let u = nmsgpack.unpacker(nil, raw)
+    let a = nmsgpack.unpacker_next(u.handle)
+    let b = nmsgpack.unpacker_next(u.handle)
+    ntest.assert_eq(a, 1)
+    ntest.assert_eq(b, 2)
+    ntest.assert_eq(nmsgpack.unpacker_next(u.handle), nil)
+}
+
+fn test_unpack_error() {
+    let err = nmsgpack.unpack([0xC1])
+    ntest.assert_true(err != nil)
+}
+
+fn test_invalid_handle() {
+    let err = nmsgpack.packer_finish(999999)
+    ntest.assert_true(err != nil)
+}
+
+fn test_big_nested() {
+    let inner = {z: [1, 2, 3]}
+    let outer = {a: inner, b: "text"}
+    let raw = nmsgpack.pack(outer)
+    let back = nmsgpack.unpack(raw)
+    ntest.assert_eq(back.b, "text")
+    ntest.assert_eq(len(back.a.z), 3)
+}
+
+fn main() {
+    test_pack_unpack_roundtrip()
+    test_pack_unpack_nil()
+    test_pack_unpack_array()
+    test_pack_all_unpack_all()
+    test_valid()
+    test_ext_roundtrip()
+    test_timestamp_roundtrip()
+    test_use_bin_type_false()
+    test_aliases()
+    test_streaming_packer()
+    test_streaming_unpacker()
+    test_unpack_error()
+    test_invalid_handle()
+    test_big_nested()
+    print("nmsgpack: all tests passed")
+}

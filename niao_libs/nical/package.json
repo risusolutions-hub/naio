@@ -1,0 +1,11 @@
+{
+    "name": "nical",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": " iCalendar / vCard parse + generate, recurrence rules\n                    (RRULE).  ~icalendar, vobject\n...",
+    "import_paths": [
+        "nical",
+        "std/nical"
+    ],
+    "builtin_count": 19
+}

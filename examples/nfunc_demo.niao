@@ -1,0 +1,22 @@
+// nfunc demo — partial, curry, compose, memoize.
+// Run: niao run examples/nfunc_demo.niao
+import "nfunc"
+
+fn main() {
+    let add = fn(a, b) { return a + b }
+
+    print("partial:", nfunc.partial(add, 1)(5))
+    print("curry:", nfunc.curry(add)(2)(3))
+    print("compose:", nfunc.compose(fn(x) { return x + 1 }, fn(x) { return x * 2 })(3))
+    print("pipe:", nfunc.pipe(3, fn(x) { return x * 2 }, fn(x) { return x + 1 }))
+
+    let n = 0
+    let sq = nfunc.memoize_lru(fn(x) {
+        n = n + 1
+        return x * x
+    }, 64)
+    print("memo 5:", sq(5))
+    print("memo 5 cached:", sq(5))
+    print("calls:", n)
+    print("cache:", nfunc.cache_info(sq))
+}

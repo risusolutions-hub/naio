@@ -1,0 +1,299 @@
+// nrpc tests — codec, dispatch, framing, errors, conformance samples.
+// Run: niao run examples/nrpc_test.niao
+// Handlers are registered by name string (first-class fn values are not
+// currently usable as expression values in the VM).
+import "nrpc"
+import "nstr"
+
+fn check(name, cond, passed, failed) {
+    if cond {
+        return [passed + 1, failed]
+    }
+    print("FAIL:", name)
+    return [passed, failed + 1]
+}
+
+fn add_handler(p) {
+    return p[0] + p[1]
+}
+
+fn log_handler(p) {
+    return true
+}
+
+fn bad_handler(p) {
+    return nrpc.err(-32602, "need two args")
+}
+
+fn echo_handler(p) {
+    return p
+}
+
+fn ping_handler(p) {
+    return "pong"
+}
+
+fn one_handler(p) {
+    return 1
+}
+
+fn two_handler(p) {
+    return 2
+}
+
+fn subtract_handler(p) {
+    if type(p) == "array" {
+        return p[0] - p[1]
+    }
+    return p.minuend - p.subtrahend
+}
+
+fn main() {
+    let passed = 0
+    let failed = 0
+    let t
+
+    let req = nrpc.request("sum", [1, 2], 7)
+    t = check("is_request", nrpc.is_request(req), passed, failed)
+    passed = t[0]
+    failed = t[1]
+    t = check("method", req.method == "sum", passed, failed)
+    passed = t[0]
+    failed = t[1]
+    t = check("id", req.id == 7, passed, failed)
+    passed = t[0]
+    failed = t[1]
+    let text = nrpc.encode(req)
+    let back = nrpc.decode(text)
+    t = check("decode method", back.method == "sum", passed, failed)
+    passed = t[0]
+    failed = t[1]
+    t = check("decode id", back.id == 7, passed, failed)
+    passed = t[0]
+    failed = t[1]
+
+    let n = nrpc.notify("log", {msg: "hi"})
+    t = check("is_notification", nrpc.is_notification(n), passed, failed)
+    passed = t[0]
+    failed = t[1]
+    text = nrpc.encode(n)
+    t = check("no id key", !nstr.contains(text, "\"id\""), passed, failed)
+    passed = t[0]
+    failed = t[1]
+
+    let ok = nrpc.success(1, "pong")
+    t = check("is_response", nrpc.is_response(ok), passed, failed)
+    passed = t[0]
+    failed = t[1]
+    t = check("result", ok.result == "pong", passed, failed)
+    passed = t[0]
+    failed = t[1]
+    let err = nrpc.failure(1, nrpc.PARSE_ERROR(), "bad")
+    t = check("is_error", nrpc.is_error(err), passed, failed)
+    passed = t[0]
+    failed = t[1]
+    t = check("parse code", err.error.code == -32700, passed, failed)
+    passed = t[0]
+    failed = t[1]
+
+    let s = nrpc.new_server()
+    nrpc.method(s, "add", "add_handler")
+    let r = nrpc.dispatch(s, "{\"jsonrpc\":\"2.0\",\"method\":\"add\",\"params\":[2,3],\"id\":1}")
+    t = check("add result", r.result == 5, passed, failed)
+    passed = t[0]
+    failed = t[1]
+    nrpc.close(s)
+
+    s = nrpc.new_server()
+    nrpc.method(s, "log", "log_handler")
+    r = nrpc.dispatch(s, "{\"jsonrpc\":\"2.0\",\"method\":\"log\",\"params\":{\"x\":1}}")
+    t = check("notify nil", r == nil, passed, failed)
+    passed = t[0]
+    failed = t[1]
+    nrpc.close(s)
+
+    s = nrpc.new_server()
+    r = nrpc.dispatch(s, "{\"jsonrpc\":\"2.0\",\"method\":\"nope\",\"id\":1}")
+    t = check("not found", r.error.code == -32601, passed, failed)
+    passed = t[0]
+    failed = t[1]
+    nrpc.close(s)
+
+    s = nrpc.new_server()
+    nrpc.method(s, "bad", "bad_handler")
+    r = nrpc.dispatch(s, "{\"jsonrpc\":\"2.0\",\"method\":\"bad\",\"id\":9}")
+    t = check("err marker", r.error.code == -32602, passed, failed)
+    passed = t[0]
+    failed = t[1]
+    nrpc.close(s)
+
+    s = nrpc.new_server()
+    nrpc.method(s, "echo", "echo_handler")
+    let batch = "[{\"jsonrpc\":\"2.0\",\"method\":\"echo\",\"params\":[1],\"id\":1},{\"jsonrpc\":\"2.0\",\"method\":\"echo\",\"params\":[2]}]"
+    r = nrpc.dispatch(s, batch)
+    t = check("is_batch", nrpc.is_batch(r), passed, failed)
+    passed = t[0]
+    failed = t[1]
+    t = check("batch len", len(r) == 1, passed, failed)
+    passed = t[0]
+    failed = t[1]
+    t = check("batch result", r[0].result[0] == 1, passed, failed)
+    passed = t[0]
+    failed = t[1]
+    nrpc.close(s)
+
+    let c = nrpc.new_client()
+    let a = nrpc.call(c, "x")
+    let b = nrpc.call(c, "y", [1])
+    t = check("id1", a.id == 1, passed, failed)
+    passed = t[0]
+    failed = t[1]
+    t = check("id2", b.id == 2, passed, failed)
+    passed = t[0]
+    failed = t[1]
+    t = check("next", nrpc.next_id(c) == 3, passed, failed)
+    passed = t[0]
+    failed = t[1]
+    nrpc.close_client(c)
+
+    let pr = nrpc.parse_result(nrpc.success(3, 42))
+    t = check("ok", pr.ok, passed, failed)
+    passed = t[0]
+    failed = t[1]
+    t = check("result 42", pr.result == 42, passed, failed)
+    passed = t[0]
+    failed = t[1]
+    let pe = nrpc.parse_result(nrpc.failure(3, -32600, "x"))
+    t = check("not ok", !pe.ok, passed, failed)
+    passed = t[0]
+    failed = t[1]
+    t = check("err code", pe.error.code == -32600, passed, failed)
+    passed = t[0]
+    failed = t[1]
+
+    req = nrpc.request("ping", nil, 1)
+    let framed = nrpc.frame(req)
+    t = check("ends nl", nstr.ends_with(framed, "\n"), passed, failed)
+    passed = t[0]
+    failed = t[1]
+    let u = nrpc.unframe(framed)
+    t = check("one msg", len(u.messages) == 1, passed, failed)
+    passed = t[0]
+    failed = t[1]
+    t = check("method", u.messages[0].method == "ping", passed, failed)
+    passed = t[0]
+    failed = t[1]
+    t = check("empty rest", u.rest == "", passed, failed)
+    passed = t[0]
+    failed = t[1]
+
+    framed = nrpc.frame(req, "content-length")
+    t = check("has CL", nstr.contains(framed, "Content-Length:"), passed, failed)
+    passed = t[0]
+    failed = t[1]
+    u = nrpc.unframe(framed, "content-length")
+    t = check("one cl msg", len(u.messages) == 1, passed, failed)
+    passed = t[0]
+    failed = t[1]
+
+    s = nrpc.new_server()
+    nrpc.method(s, "ping", "ping_handler")
+    let out = nrpc.stdio_exchange(s, "{\"jsonrpc\":\"2.0\",\"method\":\"ping\",\"id\":1}")
+    t = check("stdio pong", nstr.contains(out, "pong"), passed, failed)
+    passed = t[0]
+    failed = t[1]
+    nrpc.close(s)
+
+    s = nrpc.new_server()
+    nrpc.method(s, "ping", "ping_handler")
+    out = nrpc.handle_http_body(s, "{\"jsonrpc\":\"2.0\",\"method\":\"ping\",\"id\":1}")
+    t = check("http pong", nstr.contains(out, "pong"), passed, failed)
+    passed = t[0]
+    failed = t[1]
+    nrpc.close(s)
+
+    let e = nrpc.close(999999)
+    t = check("invalid handle", type(e) == "error", passed, failed)
+    passed = t[0]
+    failed = t[1]
+
+    t = check("valid", nrpc.valid("{\"jsonrpc\":\"2.0\",\"method\":\"x\",\"id\":1}"), passed, failed)
+    passed = t[0]
+    failed = t[1]
+    t = check("bad brace", !nrpc.valid("{"), passed, failed)
+    passed = t[0]
+    failed = t[1]
+    t = check("null", !nrpc.valid("null"), passed, failed)
+    passed = t[0]
+    failed = t[1]
+    t = check("empty batch", !nrpc.valid("[]"), passed, failed)
+    passed = t[0]
+    failed = t[1]
+
+    a = nrpc.request("a", nil, 1)
+    b = nrpc.request("b", nil, 2)
+    text = nrpc.encode_batch([a, b])
+    t = check("starts [", nstr.starts_with(text, "["), passed, failed)
+    passed = t[0]
+    failed = t[1]
+    back = nrpc.decode(text)
+    t = check("batch", nrpc.is_batch(back), passed, failed)
+    passed = t[0]
+    failed = t[1]
+    t = check("batch2", len(back) == 2, passed, failed)
+    passed = t[0]
+    failed = t[1]
+
+    req = nrpc.request("speak", {text: "neko"}, "abc")
+    t = check("str id", req.id == "abc", passed, failed)
+    passed = t[0]
+    failed = t[1]
+    text = nrpc.encode(req)
+    back = nrpc.decode(text)
+    t = check("unicode", back.params.text == "neko", passed, failed)
+    passed = t[0]
+    failed = t[1]
+
+    s = nrpc.new_server()
+    r = nrpc.dispatch(s, "{not json")
+    t = check("parse err", r.error.code == -32700, passed, failed)
+    passed = t[0]
+    failed = t[1]
+    nrpc.close(s)
+
+    s = nrpc.new_server()
+    r = nrpc.dispatch(s, "[]")
+    t = check("empty batch err", r.error.code == -32600, passed, failed)
+    passed = t[0]
+    failed = t[1]
+    nrpc.close(s)
+
+    s = nrpc.new_server()
+    nrpc.method(s, "b", "one_handler")
+    nrpc.method(s, "a", "two_handler")
+    let names = nrpc.methods(s)
+    t = check("sorted a", names[0] == "a", passed, failed)
+    passed = t[0]
+    failed = t[1]
+    t = check("sorted b", names[1] == "b", passed, failed)
+    passed = t[0]
+    failed = t[1]
+    nrpc.close(s)
+
+    s = nrpc.new_server()
+    nrpc.method(s, "subtract", "subtract_handler")
+    r = nrpc.dispatch(s, "{\"jsonrpc\": \"2.0\", \"method\": \"subtract\", \"params\": [42, 23], \"id\": 1}")
+    t = check("positional", r.result == 19, passed, failed)
+    passed = t[0]
+    failed = t[1]
+    let r3 = nrpc.dispatch(s, "{\"jsonrpc\": \"2.0\", \"method\": \"subtract\", \"params\": {\"subtrahend\": 23, \"minuend\": 42}, \"id\": 3}")
+    t = check("named", r3.result == 19, passed, failed)
+    passed = t[0]
+    failed = t[1]
+    nrpc.close(s)
+
+    print("passed=", passed, "failed=", failed)
+    if failed > 0 {
+        error("nrpc tests failed")
+    }
+}

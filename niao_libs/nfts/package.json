@@ -1,0 +1,11 @@
+{
+    "name": "nfts",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": "Embedded full-text search: inverted index, BM25,\n                    phrase/prefix, facets (tantivy-class).  ~whoosh\n                    (pairs with nvec for hybrid keyword+vector RAG)\n",
+    "import_paths": [
+        "nfts",
+        "std/nfts"
+    ],
+    "builtin_count": 15
+}

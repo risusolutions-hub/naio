@@ -1,0 +1,11 @@
+{
+    "name": "nspeech",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": "Speech-to-text via whisper.cpp: files + mic,\n                    timestamps, VAD.  ~openai-whisper, speechrecognition\n                    (edge-friendly, fits low-end device goal)\n",
+    "import_paths": [
+        "nspeech",
+        "std/nspeech"
+    ],
+    "builtin_count": 14
+}

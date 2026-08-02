@@ -1,0 +1,11 @@
+{
+    "name": "ngraph",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": "Graph algorithms: shortest paths, centrality, communities, flows, toposort, layouts.  ~networkx (extends dsa's basic graph)",
+    "import_paths": [
+        "ngraph",
+        "std/ngraph"
+    ],
+    "builtin_count": 30
+}

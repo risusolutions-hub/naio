@@ -1,0 +1,57 @@
+// njwt micro-benchmarks — HS256 sign/verify hot paths.
+// Run: niao run examples/njwt_bench.niao
+import "njwt"
+import "nbench"
+
+const JWT_IO = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.reGQzG3OKdoIMWLDKOZ4TICJit3EW69cQE72E2CfzRE"
+
+fn bench_sign() {
+    let claims = {sub: "user-42", roles: ["admin"], exp: 9999999999}
+    for _ in 0..500 {
+        njwt.sign(claims, "benchmark-secret-key-32bytes!!")
+    }
+}
+
+fn bench_verify() {
+    let claims = {sub: "user-42", exp: 9999999999}
+    let token = njwt.sign(claims, "benchmark-secret-key-32bytes!!")
+    for _ in 0..500 {
+        njwt.verify(token, "benchmark-secret-key-32bytes!!", {validate_exp: false})
+    }
+}
+
+fn bench_verify_jwt_io() {
+    for _ in 0..500 {
+        njwt.verify(JWT_IO, "your-256-bit-secret", {validate_exp: false})
+    }
+}
+
+fn bench_decode() {
+    let token = njwt.sign({sub: "u"}, "secret")
+    for _ in 0..500 {
+        njwt.decode(token)
+    }
+}
+
+fn bench_roundtrip() {
+    let claims = {sub: "user-42", exp: 9999999999}
+    for _ in 0..200 {
+        let token = njwt.sign(claims, "benchmark-secret-key-32bytes!!")
+        njwt.verify(token, "benchmark-secret-key-32bytes!!", {validate_exp: false})
+    }
+}
+
+fn main() {
+    print("=== njwt micro-benchmarks ===")
+    let a = nbench.run("sign HS256 x500", bench_sign, {warmup: 2, iterations: 10})
+    let b = nbench.run("verify HS256 x500", bench_verify, {warmup: 2, iterations: 10})
+    let c = nbench.run("verify jwt.io vector x500", bench_verify_jwt_io, {warmup: 2, iterations: 10})
+    let d = nbench.run("decode x500", bench_decode, {warmup: 2, iterations: 10})
+    let e = nbench.run("roundtrip x200", bench_roundtrip, {warmup: 2, iterations: 10})
+    print(a)
+    print(b)
+    print(c)
+    print(d)
+    print(e)
+    nbench.clear()
+}

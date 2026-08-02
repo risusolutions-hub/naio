@@ -1,0 +1,12 @@
+[package]
+name = "niao_dsp"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Digital signal processing for Niao (~scipy.signal subset)"
+
+[dependencies]
+
+[[bin]]
+name = "ndsp_bench"
+path = "src/bin/ndsp_bench.rs"

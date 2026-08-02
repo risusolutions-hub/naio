@@ -1,0 +1,67 @@
+// Micro-benchmarks for nsignal hot paths.
+// Run: niao run examples/nsignal_bench.niao
+import "nsignal"
+import "nbench"
+
+fn bench_name_lookup() {
+    let n = nsignal.SIGINT
+    for i in 0..10000 {
+        let _ = nsignal.name(n)
+    }
+    return 10000
+}
+
+fn bench_number_parse() {
+    for i in 0..10000 {
+        let _ = nsignal.number("SIGTERM")
+    }
+    return 10000
+}
+
+fn bench_valid() {
+    return len(nsignal.valid())
+}
+
+fn bench_info() {
+    let n = nsignal.SIGINT
+    for i in 0..5000 {
+        let _ = nsignal.info(n)
+    }
+    return 5000
+}
+
+fn bench_poll_empty() {
+    for i in 0..10000 {
+        let _ = nsignal.poll()
+    }
+    return 10000
+}
+
+fn bench_pending_empty() {
+    for i in 0..10000 {
+        let _ = nsignal.pending()
+    }
+    return 10000
+}
+
+fn main() {
+    let opts = {warmup: 2, iterations: 20}
+
+    let r1 = nbench.run("name x10k", bench_name_lookup, opts)
+    print("name x10k:", "n=", r1.n, "mean=", r1.mean, "ns p50=", r1.p50)
+
+    let r2 = nbench.run("number parse x10k", bench_number_parse, opts)
+    print("number parse x10k:", "n=", r2.n, "mean=", r2.mean, "ns p50=", r2.p50)
+
+    let r3 = nbench.run("valid()", bench_valid, opts)
+    print("valid():", "n=", r3.n, "mean=", r3.mean, "ns p50=", r3.p50)
+
+    let r4 = nbench.run("info x5k", bench_info, opts)
+    print("info x5k:", "n=", r4.n, "mean=", r4.mean, "ns p50=", r4.p50)
+
+    let r5 = nbench.run("poll empty x10k", bench_poll_empty, opts)
+    print("poll empty x10k:", "n=", r5.n, "mean=", r5.mean, "ns p50=", r5.p50)
+
+    let r6 = nbench.run("pending empty x10k", bench_pending_empty, opts)
+    print("pending empty x10k:", "n=", r6.n, "mean=", r6.mean, "ns p50=", r6.p50)
+}

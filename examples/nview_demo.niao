@@ -1,0 +1,25 @@
+// nview demo — Jinja-style HTML templating
+import "nview"
+
+fn main() {
+    let page = nview.render(
+        "<h1>{{ title|e }}</h1>\n<ul>{% for u in users %}<li>{{ u.name|e }}</li>\n{% endfor %}</ul>",
+        {
+            title: "Neko crew",
+            users: [{name: "Ada"}, {name: "Grace"}, {name: "<script>"}]
+        },
+        {autoescape: true}
+    )
+    print(page)
+
+    let env = nview.env({autoescape: true})
+    nview.add(env, "base.html", "<!doctype html><html><body>{% block body %}{% endblock %}</body></html>")
+    nview.add(
+        env,
+        "home.html",
+        "{% extends \"base.html\" %}{% block body %}<p>{{ msg|e }}</p>{% include \"note.html\" %}{% endblock %}"
+    )
+    nview.add(env, "note.html", "<small>{{ note|e }}</small>")
+    print(nview.render_named(env, "home.html", {msg: "Hello", note: "via include"}))
+    nview.env_close(env)
+}

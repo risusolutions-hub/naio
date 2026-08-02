@@ -1,0 +1,261 @@
+// nfin tests — run: niao run tests/nfin.niao
+import "nfin"
+import "ntest"
+import "ndoc"
+import "io"
+
+fn test_fv_basic() {
+    let v = nfin.fv(0.05 / 12.0, 12.0, -100.0, 0.0)
+    ntest.assert_true(v > 1200.0)
+}
+
+fn test_pv_annuity() {
+    let v = nfin.pv(0.05 / 12.0, 120.0, -100.0)
+    ntest.assert_true(v > 9000.0)
+}
+
+fn test_pmt_mortgage() {
+    let p = nfin.pmt(0.05 / 12.0, 360.0, 100000.0)
+    ntest.assert_true(p < 0.0)
+    ntest.assert_near(p, 0.0 - 536.82, 0.01)
+}
+
+fn test_ipmt_first() {
+    let i = nfin.ipmt(0.05 / 12.0, 1.0, 360.0, 100000.0)
+    ntest.assert_near(i, 0.0 - 416.67, 0.5)
+}
+
+fn test_ppmt_first() {
+    let p = nfin.ppmt(0.05 / 12.0, 1.0, 360.0, 100000.0)
+    ntest.assert_true(p < 0.0)
+}
+
+fn test_nper() {
+    let n = nfin.nper(0.05 / 12.0, -536.82, 100000.0)
+    ntest.assert_not_error(n)
+    ntest.assert_near(n, 360.0, 1.0)
+}
+
+fn test_rate() {
+    let r = nfin.rate(12.0, -1000.0, 10000.0)
+    ntest.assert_not_error(r)
+}
+
+fn test_npv() {
+    let v = nfin.npv(0.05, [-15000.0, 1500.0, 2500.0, 3500.0, 4500.0, 6000.0])
+    ntest.assert_near(v, 122.89, 0.1)
+}
+
+fn test_npv_empty() {
+    let r = nfin.npv(0.05, [])
+    ntest.assert_error(r)
+}
+
+fn test_irr() {
+    let r = nfin.irr([-100.0, 39.0, 59.0, 55.0, 20.0])
+    ntest.assert_near(r, 0.280948, 0.0001)
+}
+
+fn test_irr_no_sign_change() {
+    let r = nfin.irr([100.0, 200.0, 300.0])
+    ntest.assert_error(r)
+}
+
+fn test_mirr() {
+    let r = nfin.mirr([-1000.0, 300.0, 400.0, 500.0], 0.05, 0.08)
+    ntest.assert_not_error(r)
+    ntest.assert_true(r > 0.0)
+}
+
+fn test_amortization() {
+    let s = nfin.amortization(0.05 / 12.0, 360, 100000.0)
+    ntest.assert_eq(len(s), 360)
+    ntest.assert_near(s[0].payment, 0.0 - 536.82, 0.01)
+    ntest.assert_true(s[359].balance < 1.0)
+}
+
+fn test_amortization_zero() {
+    let s = nfin.amortization(0.05, 0, 1000.0)
+    ntest.assert_eq(len(s), 0)
+}
+
+fn test_amortization_bad_pv() {
+    let r = nfin.amortization(0.05, 12, 0.0)
+    ntest.assert_error(r)
+}
+
+fn test_simple_return() {
+    let r = nfin.simple_return([100.0, 110.0, 99.0])
+    ntest.assert_eq(len(r), 2)
+    ntest.assert_near(r[0], 0.1, 0.000000000001)
+}
+
+fn test_simple_return_short() {
+    let r = nfin.simple_return([100.0])
+    ntest.assert_error(r)
+}
+
+fn test_log_return() {
+    let r = nfin.log_return([100.0, 110.0])
+    ntest.assert_near(r[0], 0.0953101798, 0.0000001)
+}
+
+fn test_log_return_zero_price() {
+    let r = nfin.log_return([0.0, 10.0])
+    ntest.assert_error(r)
+}
+
+fn test_cumulative_return() {
+    let c = nfin.cumulative_return([0.1, -0.05, 0.02])
+    ntest.assert_near(c[2], 0.0659, 0.001)
+}
+
+fn test_cagr() {
+    let r = nfin.cagr(100.0, 200.0, 10.0)
+    ntest.assert_near(r, 0.07177, 0.001)
+}
+
+fn test_sharpe() {
+    let rets = [0.01, -0.005, 0.02, 0.015, -0.01, 0.008]
+    let s = nfin.sharpe(rets, 0.0, 252.0)
+    ntest.assert_true(s > 0.0)
+}
+
+fn test_sharpe_flat() {
+    let r = nfin.sharpe([0.01, 0.01, 0.01], 0.0)
+    ntest.assert_error(r)
+}
+
+fn test_max_drawdown() {
+    let d = nfin.max_drawdown([100.0, 120.0, 90.0, 95.0])
+    ntest.assert_near(d.max_drawdown, 0.25, 0.000000000001)
+    ntest.assert_eq(d.peak_idx, 1)
+    ntest.assert_eq(d.trough_idx, 2)
+}
+
+fn test_max_drawdown_empty() {
+    let r = nfin.max_drawdown([])
+    ntest.assert_error(r)
+}
+
+fn test_sma() {
+    let v = nfin.sma([1.0, 2.0, 3.0, 4.0, 5.0], 3)
+    ntest.assert_eq(len(v), 5)
+    ntest.assert_near(v[2], 2.0, 0.000000000001)
+}
+
+fn test_sma_zero_period() {
+    let r = nfin.sma([1.0, 2.0], 0)
+    ntest.assert_error(r)
+}
+
+fn test_ema() {
+    let v = nfin.ema([1.0, 2.0, 3.0, 4.0, 5.0], 3)
+    ntest.assert_eq(len(v), 5)
+    ntest.assert_true(v[4] > 3.0)
+}
+
+fn test_rsi() {
+    let prices = [44.0, 44.25, 44.5, 43.75, 44.5, 44.0, 44.25, 44.75, 45.0, 45.25,
+                  45.5, 45.25, 45.5, 46.0, 46.25, 46.5, 46.75, 47.0, 47.25, 47.5]
+    let r = nfin.rsi(prices, 14)
+    ntest.assert_eq(len(r), len(prices))
+    ntest.assert_true(r[19] >= 0.0 && r[19] <= 100.0)
+}
+
+fn test_macd() {
+    let prices = [100.0, 101.0, 102.0, 103.0, 104.0, 105.0, 106.0, 107.0, 108.0, 109.0,
+                  110.0, 111.0, 112.0, 113.0, 114.0, 115.0, 116.0, 117.0, 118.0, 119.0,
+                  120.0, 121.0, 122.0, 123.0, 124.0, 125.0, 126.0, 127.0, 128.0, 129.0]
+    let m = nfin.macd(prices)
+    ntest.assert_eq(len(m.macd), len(prices))
+    ntest.assert_eq(len(m.signal), len(prices))
+    ntest.assert_eq(len(m.histogram), len(prices))
+}
+
+fn test_macd_bad_periods() {
+    let r = nfin.macd([1.0, 2.0, 3.0], 26, 12, 9)
+    ntest.assert_error(r)
+}
+
+fn test_bbands() {
+    let v = [100.0, 101.0, 102.0, 101.0, 100.0, 99.0, 98.0, 99.0, 100.0, 101.0]
+    let b = nfin.bbands(v, 5, 2.0)
+    ntest.assert_eq(len(b.upper), len(v))
+    ntest.assert_true(b.upper[9] > b.middle[9])
+    ntest.assert_true(b.middle[9] > b.lower[9])
+}
+
+fn test_atr() {
+    let high = [10.0, 11.0, 12.0, 11.5, 12.5, 13.0, 12.0, 11.0, 10.5, 11.0]
+    let low = [9.0, 10.0, 10.5, 10.0, 11.0, 11.5, 10.5, 9.5, 9.0, 9.5]
+    let close = [9.5, 10.5, 11.5, 10.8, 12.0, 12.2, 11.0, 10.0, 9.8, 10.5]
+    let a = nfin.atr(high, low, close, 5)
+    ntest.assert_eq(len(a), len(close))
+    ntest.assert_true(a[9] > 0.0)
+}
+
+fn test_atr_length_mismatch() {
+    let r = nfin.atr([1.0, 2.0], [1.0], [1.0])
+    ntest.assert_error(r)
+}
+
+fn test_stoch() {
+    let high = [10.0, 11.0, 12.0, 11.5, 12.5, 13.0, 12.0, 11.0, 10.5, 11.0,
+                11.5, 12.0, 12.5, 13.0, 12.5, 12.0, 11.5, 11.0, 10.5, 11.0]
+    let low = [9.0, 10.0, 10.5, 10.0, 11.0, 11.5, 10.5, 9.5, 9.0, 9.5,
+               10.0, 10.5, 11.0, 11.5, 11.0, 10.5, 10.0, 9.5, 9.0, 9.5]
+    let close = [9.5, 10.5, 11.5, 10.8, 12.0, 12.2, 11.0, 10.0, 9.8, 10.5,
+                 11.0, 11.5, 12.0, 12.5, 12.0, 11.5, 11.0, 10.5, 10.0, 10.5]
+    let s = nfin.stoch(high, low, close, 14, 3)
+    ntest.assert_eq(len(s.k), len(close))
+    ntest.assert_true(s.k[19] >= 0.0 && s.k[19] <= 100.0)
+}
+
+fn test_doctests() {
+    let src = io_read_file("crates/niao_runtime/src/nfin.rs")
+    ntest.assert_not_error(src)
+    let r = ndoc.run(src)
+    ntest.assert_true(r.ok)
+    ntest.assert_true(r.passed > 10)
+}
+
+fn main() {
+    test_fv_basic()
+    test_pv_annuity()
+    test_pmt_mortgage()
+    test_ipmt_first()
+    test_ppmt_first()
+    test_nper()
+    test_rate()
+    test_npv()
+    test_npv_empty()
+    test_irr()
+    test_irr_no_sign_change()
+    test_mirr()
+    test_amortization()
+    test_amortization_zero()
+    test_amortization_bad_pv()
+    test_simple_return()
+    test_simple_return_short()
+    test_log_return()
+    test_log_return_zero_price()
+    test_cumulative_return()
+    test_cagr()
+    test_sharpe()
+    test_sharpe_flat()
+    test_max_drawdown()
+    test_max_drawdown_empty()
+    test_sma()
+    test_sma_zero_period()
+    test_ema()
+    test_rsi()
+    test_macd()
+    test_macd_bad_periods()
+    test_bbands()
+    test_atr()
+    test_atr_length_mismatch()
+    test_stoch()
+    test_doctests()
+    print("nfin: all 37 tests passed")
+}

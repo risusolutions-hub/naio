@@ -1,0 +1,19 @@
+[package]
+name = "niao_textdiff"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "Line/word text diff, unified patches, 3-way merge"
+
+[lib]
+bench = false
+
+[dependencies]
+similar = { version = "3.1", features = ["inline", "unicode"] }
+diff_match_patch = "0.3"
+niao_parallel = { workspace = true }
+
+[[bin]]
+name = "textdiff_bench"
+path = "src/bin/textdiff_bench.rs"

@@ -1,0 +1,11 @@
+{
+    "name": "nbrowser",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": "Headless browser automation via CDP/WebDriver:\n                    navigate, click, fill, screenshot, PDF.  ~playwright,\n                    selenium\n",
+    "import_paths": [
+        "nbrowser",
+        "std/nbrowser"
+    ],
+    "builtin_count": 36
+}

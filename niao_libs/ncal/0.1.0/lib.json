@@ -1,0 +1,11 @@
+{
+    "name": "ncal",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": "Calendar math: business days, holiday tables, week\n                    numbers, month grids.  ~calendar, holidays, workalendar  ...",
+    "import_paths": [
+        "ncal",
+        "std/ncal"
+    ],
+    "builtin_count": 48
+}

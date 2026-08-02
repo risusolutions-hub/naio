@@ -1,0 +1,80 @@
+// Micro-benchmarks for nproc hot paths.
+// Run: niao run examples/nproc_bench.niao
+import "nproc"
+import "nbench"
+
+fn bench_channel_ping() {
+    let ch = nproc.channel(1024)
+    for i in 0..10000 {
+        nproc.channel_send(ch, i)
+        let _ = nproc.channel_recv(ch)
+    }
+    nproc.channel_close(ch)
+    return 10000
+}
+
+fn bench_pipe_echo() {
+    let p = nproc.pipe()
+    let h = p.handle
+    let payload = "x"
+    for i in 0..5000 {
+        nproc.pipe_write(h, payload)
+        let _ = nproc.pipe_read(h, 4)
+    }
+    nproc.pipe_close_write(h)
+    return 5000
+}
+
+fn bench_shm_write_read() {
+    let name = "bench_shm_" + str(nos.getpid())
+    let shm = nproc.shared_memory(name, 4096)
+    let data = "abcdefghij"
+    for i in 0..20000 {
+        nproc.shared_write(shm, 0, data)
+        let _ = nproc.shared_read(shm, 0, 10)
+    }
+    nproc.shared_unlink(name)
+    return 20000
+}
+
+fn bench_spawn_wait() {
+    let count = 0
+    for i in 0..20 {
+        let proc = nproc.spawn(["niao", "--version"])
+        let _ = nproc.wait(proc.handle)
+        nproc.close(proc.handle)
+        count = count + 1
+    }
+    return count
+}
+
+fn bench_pool_map() {
+    let pool = nproc.pool(4)
+    let cmds = []
+    for i in 0..40 {
+        cmds = cmds + [["niao", "--version"]]
+    }
+    let results = nproc.pool_map(pool, cmds)
+    nproc.pool_close(pool)
+    return len(results)
+}
+
+fn main() {
+    import "nos"
+    let opts = {warmup: 2, iterations: 12}
+
+    let r1 = nbench.run("channel ping 10k", bench_channel_ping, opts)
+    print("channel ping 10k:", "n=", r1.n, "mean=", r1.mean, "ns p50=", r1.p50)
+
+    let r2 = nbench.run("pipe write/read 5k", bench_pipe_echo, opts)
+    print("pipe write/read 5k:", "n=", r2.n, "mean=", r2.mean, "ns p50=", r2.p50)
+
+    let r3 = nbench.run("shm write/read 20k", bench_shm_write_read, opts)
+    print("shm write/read 20k:", "n=", r3.n, "mean=", r3.mean, "ns p50=", r3.p50)
+
+    let r4 = nbench.run("spawn/wait x20", bench_spawn_wait, opts)
+    print("spawn/wait x20:", "n=", r4.n, "mean=", r4.mean, "ns p50=", r4.p50)
+
+    let r5 = nbench.run("pool_map 40 cmds w=4", bench_pool_map, opts)
+    print("pool_map 40 cmds w=4:", "n=", r5.n, "mean=", r5.mean, "ns p50=", r5.p50)
+}

@@ -1,0 +1,11 @@
+{
+    "name": "nview",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": "Jinja-style templating: inheritance, blocks, filters,\n                    autoescape, partials -- for HTML/text output.  ~jinja2\n                    (distinct from ntemplate's LLM prompt templates)\n",
+    "import_paths": [
+        "nview",
+        "std/nview"
+    ],
+    "builtin_count": 22
+}

@@ -1,0 +1,9 @@
+import "nreq"
+
+fn main() {
+    let s = nreq.encode_form({a: "1"})
+    if s != "a=1" {
+        error("smoke failed: " + s)
+    }
+    print("nreq smoke ok")
+}

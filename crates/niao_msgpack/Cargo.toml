@@ -1,0 +1,15 @@
+[package]
+name = "niao_msgpack"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "MessagePack encode/decode and streaming for Niao (rmp-backed)"
+
+[dependencies]
+rmp = "0.8"
+rmpv = "1.3"
+niao_bignum = { workspace = true }
+
+[[bin]]
+name = "nmsgpack_bench"
+path = "src/bin/nmsgpack_bench.rs"

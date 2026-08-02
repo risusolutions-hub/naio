@@ -1,0 +1,22 @@
+// Micro-benchmarks for nbrowser helpers.
+// Run: niao run examples/nbrowser_bench.niao
+import "nbrowser"
+import "nbench"
+
+fn bench_is_connected() {
+    return nbrowser.is_connected(1)
+}
+
+fn bench_executable_path() {
+    return type(nbrowser.executable_path())
+}
+
+fn main() {
+    let opts = {warmup: 5, iterations: 200}
+    let r1 = nbench.run("nbrowser.is_connected miss", bench_is_connected, opts)
+    print("is_connected miss: mean=", r1.mean, "ns p50=", r1.p50)
+    let r2 = nbench.run("nbrowser.executable_path", bench_executable_path, {warmup: 2, iterations: 20})
+    print("executable_path: mean=", r2.mean, "ns p50=", r2.p50)
+}
+
+main()

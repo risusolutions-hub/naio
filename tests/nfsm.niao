@@ -1,0 +1,257 @@
+import "nfsm"
+import "ntest"
+
+fn traffic_spec() {
+    return {
+        initial: "red",
+        states: ["red", "green", "yellow"],
+        triggers: ["next"],
+        transitions: [
+            {trigger: "next", source: "red", dest: "green"},
+            {trigger: "next", source: "green", dest: "yellow"},
+            {trigger: "next", source: "yellow", dest: "red"},
+        ],
+    }
+}
+
+fn test_new_state() {
+    let m = nfsm.new(traffic_spec())
+    ntest.assert_eq(nfsm.state(m), "red")
+    nfsm.close(m)
+}
+
+fn test_send_cycle() {
+    let m = nfsm.new(traffic_spec())
+    let r = nfsm.send(m, "next")
+    ntest.assert_eq(r.dest, "green")
+    nfsm.send(m, "next")
+    nfsm.send(m, "next")
+    ntest.assert_eq(nfsm.state(m), "red")
+    ntest.assert_eq(nfsm.count(m), 3)
+    nfsm.close(m)
+}
+
+fn test_can_triggers() {
+    let m = nfsm.new(traffic_spec())
+    ntest.assert_true(nfsm.can(m, "next"))
+    let ts = nfsm.triggers(m)
+    ntest.assert_eq(len(ts), 1)
+    ntest.assert_eq(ts[0], "next")
+    nfsm.close(m)
+}
+
+fn test_guard_blocks() {
+    let spec = {
+        initial: "a",
+        states: ["a", "b"],
+        triggers: ["go"],
+        transitions: [
+            {
+                trigger: "go",
+                source: "a",
+                dest: "b",
+                guard: fn(ctx, e) { return false },
+            },
+        ],
+    }
+    let m = nfsm.new(spec)
+    let err = nfsm.send(m, "go")
+    ntest.assert_error(err)
+    ntest.assert_eq(nfsm.state(m), "a")
+    nfsm.close(m)
+}
+
+fn test_guard_allows() {
+    let spec = {
+        initial: "a",
+        states: ["a", "b"],
+        triggers: ["go"],
+        context: {ok: true},
+        transitions: [
+            {
+                trigger: "go",
+                source: "a",
+                dest: "b",
+                guard: fn(ctx, e) { return ctx.ok },
+            },
+        ],
+    }
+    let m = nfsm.new(spec)
+    let r = nfsm.send(m, "go")
+    ntest.assert_eq(r.dest, "b")
+    nfsm.close(m)
+}
+
+fn test_hooks_enter() {
+    let entered = []
+    let spec = {
+        initial: "idle",
+        states: ["idle", "on"],
+        triggers: ["power"],
+        transitions: [{trigger: "power", source: "idle", dest: "on"}],
+        hooks: {
+            on_enter: {
+                on: fn(ctx, e) { entered = [e.dest] },
+            },
+        },
+    }
+    let m = nfsm.new(spec)
+    nfsm.send(m, "power")
+    ntest.assert_eq(len(entered), 1)
+    ntest.assert_eq(entered[0], "on")
+    nfsm.close(m)
+}
+
+fn test_final() {
+    let spec = {
+        initial: "start",
+        states: ["start", "end"],
+        final: ["end"],
+        triggers: ["done"],
+        transitions: [{trigger: "done", source: "start", dest: "end"}],
+    }
+    let m = nfsm.new(spec)
+    ntest.assert_false(nfsm.is_final(m))
+    nfsm.send(m, "done")
+    ntest.assert_true(nfsm.is_final(m))
+    nfsm.close(m)
+}
+
+fn test_hierarchical() {
+    let spec = {
+        initial: "work",
+        states: [
+            {name: "work", initial: "busy"},
+            {name: "busy", parent: "work"},
+            "idle",
+        ],
+        triggers: ["pause", "resume"],
+        transitions: [
+            {trigger: "pause", source: "busy", dest: "idle"},
+            {trigger: "resume", source: "idle", dest: "work"},
+        ],
+    }
+    let m = nfsm.new(spec)
+    ntest.assert_eq(nfsm.state(m), "busy")
+    ntest.assert_true(nfsm.is_state(m, "work"))
+    nfsm.send(m, "pause")
+    ntest.assert_eq(nfsm.state(m), "idle")
+    nfsm.send(m, "resume")
+    ntest.assert_eq(nfsm.state(m), "busy")
+    nfsm.close(m)
+}
+
+fn test_internal_transition() {
+    let spec = {
+        initial: "on",
+        states: ["on"],
+        triggers: ["tick"],
+        transitions: [{trigger: "tick", source: "on", dest: "internal"}],
+    }
+    let m = nfsm.new(spec)
+    nfsm.send(m, "tick")
+    ntest.assert_eq(nfsm.state(m), "on")
+    ntest.assert_eq(nfsm.count(m), 1)
+    nfsm.close(m)
+}
+
+fn test_reset() {
+    let m = nfsm.new(traffic_spec())
+    nfsm.send(m, "next")
+    nfsm.reset(m)
+    ntest.assert_eq(nfsm.state(m), "red")
+    ntest.assert_eq(nfsm.count(m), 0)
+    nfsm.close(m)
+}
+
+fn test_history() {
+    let m = nfsm.new(traffic_spec())
+    nfsm.send(m, "next")
+    let h = nfsm.history(m)
+    ntest.assert_eq(len(h), 1)
+    ntest.assert_eq(h[0].source, "red")
+    ntest.assert_eq(h[0].dest, "green")
+    nfsm.clear_history(m)
+    ntest.assert_eq(len(nfsm.history(m)), 0)
+    nfsm.close(m)
+}
+
+fn test_context() {
+    let spec = {
+        initial: "a",
+        states: ["a"],
+        triggers: ["noop"],
+        context: {n: 1},
+        transitions: [],
+        ignore_invalid: true,
+    }
+    let m = nfsm.new(spec)
+    ntest.assert_eq(nfsm.context(m).n, 1)
+    nfsm.set_context(m, {n: 2})
+    ntest.assert_eq(nfsm.context(m).n, 2)
+    nfsm.close(m)
+}
+
+fn test_validate_ok() {
+    let ok = nfsm.validate(traffic_spec())
+    ntest.assert_eq(ok, true)
+}
+
+fn test_validate_bad() {
+    let bad = nfsm.validate({initial: "missing", states: ["a"], triggers: ["x"], transitions: []})
+    ntest.assert_error(bad)
+}
+
+fn test_dot_nonempty() {
+    let m = nfsm.new(traffic_spec())
+    let d = nfsm.dot(m)
+    ntest.assert_true(len(d) > 20)
+    nfsm.close(m)
+}
+
+fn test_info() {
+    let m = nfsm.new(traffic_spec())
+    let info = nfsm.info(m)
+    ntest.assert_eq(info.state, "red")
+    ntest.assert_eq(info.final, false)
+    nfsm.close(m)
+}
+
+fn test_invalid_handle() {
+    let err = nfsm.state(99999)
+    ntest.assert_error(err)
+}
+
+fn test_ignore_invalid() {
+    let m = nfsm.new({
+        initial: "a",
+        states: ["a"],
+        triggers: ["x"],
+        transitions: [],
+        ignore_invalid: true,
+    })
+    let r = nfsm.send(m, "nope")
+    ntest.assert_true(r == nil)
+    nfsm.close(m)
+}
+
+fn main() {
+    ntest.case("new/state", test_new_state)
+    ntest.case("send cycle", test_send_cycle)
+    ntest.case("can/triggers", test_can_triggers)
+    ntest.case("guard blocks", test_guard_blocks)
+    ntest.case("guard allows", test_guard_allows)
+    ntest.case("hooks enter", test_hooks_enter)
+    ntest.case("final", test_final)
+    ntest.case("hierarchical", test_hierarchical)
+    ntest.case("internal", test_internal_transition)
+    ntest.case("reset", test_reset)
+    ntest.case("history", test_history)
+    ntest.case("context", test_context)
+    ntest.case("validate ok", test_validate_ok)
+    ntest.case("validate bad", test_validate_bad)
+    ntest.case("dot", test_dot_nonempty)
+    ntest.case("info", test_info)
+    ntest.case("invalid handle", test_invalid_handle)
+    ntest.case("ignore invalid", test_ignore_invalid)
+}

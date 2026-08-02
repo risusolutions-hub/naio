@@ -1,0 +1,11 @@
+{
+    "name": "nmime",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": " File-type detection by magic bytes, extension<->MIME\n                    maps.  ~python-magic, filetype\n ...",
+    "import_paths": [
+        "nmime",
+        "std/nmime"
+    ],
+    "builtin_count": 43
+}

@@ -1,0 +1,11 @@
+{
+    "name": "npass",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": "Password hashing: argon2id, bcrypt, scrypt + strength\n                    policy checks.  ~passlib, argon2-cffi, bcrypt\n                    ...",
+    "import_paths": [
+        "npass",
+        "std/npass"
+    ],
+    "builtin_count": 14
+}

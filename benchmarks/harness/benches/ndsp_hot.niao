@@ -1,0 +1,20 @@
+// ndsp spectrogram/convolve benchmark for harness
+import "ndsp"
+import "time"
+
+fn main() {
+    let seed = [0.0, 0.001, 0.002, 0.003, 0.004, 0.005, 0.006, 0.007]
+    let t = ndsp.resample(seed, 4096)
+    let x = ndsp.chirp(t, 100.0, 0.5, 3000.0)
+    let h = ndsp.firwin(95, 0.08)
+
+    let t0 = time.now_perf_us()
+    let i = 0
+    while i < 100 {
+        ndsp.fftconvolve(x, h, "same")
+        ndsp.spectrogram(x, {fs: 8000.0, nperseg: 256, noverlap: 128})
+        i = i + 1
+    }
+    let elapsed_ms = time.elapsed_bench_ms(t0)
+    print("ndsp hot paths: 100 x (fftconvolve+spectrogram) N=4096 in", elapsed_ms, "ms")
+}

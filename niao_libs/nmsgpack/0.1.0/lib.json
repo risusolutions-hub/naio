@@ -1,0 +1,22 @@
+{
+
+    "name": "nmsgpack",
+
+    "version": "0.1.0",
+
+    "kind": "native",
+
+    "description": "MessagePack encode/decode, streaming.  ~msgpack...",
+
+    "import_paths": [
+
+        "nmsgpack",
+
+        "std/nmsgpack"
+
+    ],
+
+    "builtin_count": 22
+
+}
+

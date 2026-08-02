@@ -1,0 +1,11 @@
+{
+    "name": "nencoding",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": "Charset detection + transcoding: UTF-16, Shift-JIS, GBK, Latin-1, BOM handling. ~codecs, charset-normalizer...",
+    "import_paths": [
+        "nencoding",
+        "std/nencoding"
+    ],
+    "builtin_count": 13
+}

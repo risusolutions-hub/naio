@@ -1,0 +1,11 @@
+{
+    "name": "ndsp",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": "Signal processing: FIR/IIR filters, windows,\n                    convolution, resampling, spectrograms.  ~scipy.signal\n                    (pairs nnum FFT + naudio)\n",
+    "import_paths": [
+        "ndsp",
+        "std/ndsp"
+    ],
+    "builtin_count": 40
+}

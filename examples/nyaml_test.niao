@@ -1,0 +1,93 @@
+// nyaml tests — parse, emit, anchors, multi-doc, safe mode, errors.
+// Run: niao run examples/nyaml_test.niao
+import "nyaml"
+import "ntest"
+
+fn test_parse_scalar_map() {
+    let doc = nyaml.parse("name: niao\nport: 8080\nenabled: true\n")
+    ntest.assert_eq(doc.name, "niao")
+    ntest.assert_eq(doc.port, 8080)
+    ntest.assert_true(doc.enabled)
+}
+
+fn test_parse_sequence() {
+    let doc = nyaml.parse("items:\n  - alpha\n  - beta\n")
+    ntest.assert_eq(len(doc.items), 2)
+    ntest.assert_eq(doc.items[0], "alpha")
+}
+
+fn test_anchors_merge() {
+    let doc = nyaml.parse("defaults: &def\n  x: 1\nitem:\n  <<: *def\n  y: 2\n")
+    ntest.assert_eq(doc.item.x, 1)
+    ntest.assert_eq(doc.item.y, 2)
+}
+
+fn test_multi_doc() {
+    let docs = nyaml.parse_all("---\n{a: 1}\n---\n{b: 2}\n")
+    ntest.assert_eq(len(docs), 2)
+    ntest.assert_eq(docs[0].a, 1)
+    ntest.assert_eq(docs[1].b, 2)
+}
+
+fn test_emit_roundtrip() {
+    let src = "root:\n  child: 42\n"
+    let parsed = nyaml.parse(src)
+    let out = nyaml.emit(parsed)
+    let again = nyaml.parse(out)
+    ntest.assert_eq(again.root.child, 42)
+}
+
+fn test_emit_all() {
+    let text = nyaml.emit_all([{x: 1}, {y: 2}])
+    ntest.assert_true(nyaml.valid(text))
+    let docs = nyaml.parse_all(text)
+    ntest.assert_eq(len(docs), 2)
+}
+
+fn test_safe_rejects_python_tag() {
+    let bad = "!!python/object/apply:os.system\n- calc\n"
+    let e = nyaml.safe_parse(bad)
+    ntest.assert_error(e)
+}
+
+fn test_load_dump_aliases() {
+    let doc = nyaml.load("z: 99\n")
+    let text = nyaml.dump(doc)
+    ntest.assert_true(nyaml.valid(text))
+    ntest.assert_eq(nyaml.load(text).z, 99)
+}
+
+fn test_valid() {
+    ntest.assert_true(nyaml.valid("key: value\n"))
+    ntest.assert_false(nyaml.valid("key: [unclosed\n"))
+}
+
+fn test_parse_multi_error() {
+    let e = nyaml.parse("---\n{a:1}\n---\n{b:2}\n")
+    ntest.assert_error(e)
+}
+
+fn test_emit_pretty() {
+    let text = nyaml.emit_pretty({a: 1, b: [2, 3]}, {indent: 4})
+    ntest.assert_true(len(text) > 0)
+}
+
+fn main() {
+    ntest.case("parse scalar map", test_parse_scalar_map)
+    ntest.case("parse sequence", test_parse_sequence)
+    ntest.case("anchors and merge", test_anchors_merge)
+    ntest.case("multi-document parse_all", test_multi_doc)
+    ntest.case("emit roundtrip", test_emit_roundtrip)
+    ntest.case("emit_all multi-doc", test_emit_all)
+    ntest.case("safe mode rejects python tag", test_safe_rejects_python_tag)
+    ntest.case("load/dump aliases", test_load_dump_aliases)
+    ntest.case("valid predicate", test_valid)
+    ntest.case("parse errors on multi-doc", test_parse_multi_error)
+    ntest.case("emit_pretty", test_emit_pretty)
+
+    let summary = ntest.run()
+    print(summary)
+    if summary.failed > 0 {
+        error("nyaml tests failed")
+    }
+}

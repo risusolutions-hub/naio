@@ -1,0 +1,25 @@
+[package]
+name = "niao_tar"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "POSIX tar read/write with gzip and zstd compression"
+
+[lib]
+bench = false
+
+[dependencies]
+tar = "0.4"
+flate2 = "1"
+zstd = "0.13"
+filetime = "0.2"
+walkdir = "2"
+tempfile = "3.14"
+
+[dev-dependencies]
+tempfile = "3.14"
+
+[[bin]]
+name = "tar_bench"
+path = "src/bin/tar_bench.rs"

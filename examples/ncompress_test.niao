@@ -1,0 +1,134 @@
+// ncompress tests — block, stream, detect, parallel, errors.
+// Run: niao run examples/ncompress_test.niao
+import "ncompress"
+import "ntest"
+import "nbinary"
+
+fn make_payload(n) {
+    let v = byte_array[]
+    for i in 0..n {
+        v = v + byte_array[(i * 17 + 31) % 256]
+    }
+    return v
+}
+
+fn test_zstd_roundtrip() {
+    let raw = make_payload(4096)
+    let c = ncompress.compress(raw, "zstd", {level: 3})
+    ntest.assert_not_error(c)
+    let d = ncompress.decompress(c, "zstd")
+    ntest.assert_eq(d, raw)
+}
+
+fn test_lz4_roundtrip() {
+    let raw = byte_array[1, 2, 3, 4, 5]
+    let c = ncompress.lz4_compress(raw)
+    let d = ncompress.lz4_decompress(c)
+    ntest.assert_eq(d, raw)
+}
+
+fn test_brotli_roundtrip() {
+    let raw = make_payload(8192)
+    let c = ncompress.brotli_compress(raw, {level: 4})
+    let d = ncompress.brotli_decompress(c)
+    ntest.assert_eq(d, raw)
+}
+
+fn test_xz_roundtrip() {
+    let raw = byte_array[10, 20, 30]
+    let c = ncompress.xz_compress(raw)
+    let d = ncompress.xz_decompress(c)
+    ntest.assert_eq(d, raw)
+}
+
+fn test_detect() {
+    let c = ncompress.zstd_compress(byte_array[1])
+    ntest.assert_eq(ncompress.detect(c), "zstd")
+}
+
+fn test_decompress_auto() {
+    let raw = byte_array[9, 8, 7]
+    let c = ncompress.compress(raw, "lz4")
+    let d = ncompress.decompress_auto(c)
+    ntest.assert_eq(d, raw)
+}
+
+fn test_is_valid() {
+    let c = ncompress.compress(byte_array[1], "zstd")
+    ntest.assert_true(ncompress.is_valid(c, "zstd"))
+    ntest.assert_false(ncompress.is_valid(byte_array[0, 1, 2], "zstd"))
+}
+
+fn test_frame_info() {
+    let c = ncompress.compress(byte_array[1, 2], "zstd")
+    let info = ncompress.frame_info(c)
+    ntest.assert_eq(info.codec, "zstd")
+    ntest.assert_true(info.compressed_size > 0)
+}
+
+fn test_stream_compress() {
+    let raw = byte_array[72, 73]
+    let h = ncompress.stream_open("compress", "zstd")
+    ntest.assert_not_error(h)
+    ncompress.stream_write(h, raw)
+    let frame = ncompress.stream_finish(h)
+    let back = ncompress.decompress(frame, "zstd")
+    ntest.assert_eq(back, raw)
+}
+
+fn test_stream_decompress() {
+    let raw = make_payload(1024)
+    let frame = ncompress.compress(raw, "zstd")
+    let h = ncompress.stream_open("decompress", "zstd")
+    ncompress.stream_write(h, frame)
+    let out = ncompress.stream_finish(h)
+    ntest.assert_eq(out, raw)
+}
+
+fn test_parallel() {
+    let blocks = [byte_array[1], byte_array[2, 3], byte_array[4, 5, 6]]
+    let compressed = ncompress.parallel_compress(blocks, "lz4", {threads: 2})
+    ntest.assert_eq(len(compressed), 3)
+    let back = ncompress.parallel_decompress(compressed, "lz4", {threads: 2})
+    ntest.assert_eq(len(back), 3)
+    ntest.assert_eq(back[1], byte_array[2, 3])
+}
+
+fn test_invalid_level() {
+    let e = ncompress.compress(byte_array[1], "zstd", {level: 99})
+    ntest.assert_error(e)
+}
+
+fn test_corrupt_decompress() {
+    let e = ncompress.decompress(byte_array[0, 1, 2, 3], "zstd")
+    ntest.assert_error(e)
+}
+
+fn test_unknown_codec() {
+    let e = ncompress.compress(byte_array[1], "snappy")
+    ntest.assert_error(e)
+}
+
+fn test_invalid_handle() {
+    let e = ncompress.stream_read(99999)
+    ntest.assert_error(e)
+}
+
+fn main() {
+    test_zstd_roundtrip()
+    test_lz4_roundtrip()
+    test_brotli_roundtrip()
+    test_xz_roundtrip()
+    test_detect()
+    test_decompress_auto()
+    test_is_valid()
+    test_frame_info()
+    test_stream_compress()
+    test_stream_decompress()
+    test_parallel()
+    test_invalid_level()
+    test_corrupt_decompress()
+    test_unknown_codec()
+    test_invalid_handle()
+    print("ncompress tests: ok")
+}

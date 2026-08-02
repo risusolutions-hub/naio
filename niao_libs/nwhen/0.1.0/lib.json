@@ -1,0 +1,11 @@
+{
+    "name": "nwhen",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": " Natural-language + fuzzy date parsing (\"next friday\n                    5pm\", \"in 2 weeks\").  ~dateparser, dateutil (extends time)\n  ...",
+    "import_paths": [
+        "nwhen",
+        "std/nwhen"
+    ],
+    "builtin_count": 7
+}

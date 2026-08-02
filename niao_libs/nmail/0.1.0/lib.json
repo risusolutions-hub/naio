@@ -1,0 +1,11 @@
+{
+    "name": "nmail",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": " MIME email compose + parse: attachments, HTML+text\n                    alternatives, inline images.  ~email  (pairs nsmtp)\n ...",
+    "import_paths": [
+        "nmail",
+        "std/nmail"
+    ],
+    "builtin_count": 37
+}

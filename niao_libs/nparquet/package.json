@@ -1,0 +1,11 @@
+{
+    "name": "nparquet",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": " Parquet + Arrow IPC read/write, nframe interop for data interchange.  ~pyarrow  (beside ncolumnar's NCOL1) ...",
+    "import_paths": [
+        "nparquet",
+        "std/nparquet"
+    ],
+    "builtin_count": 18
+}

@@ -1,0 +1,31 @@
+// ndsp bench — run: niao run examples/ndsp_bench.niao
+import "ndsp"
+import "time"
+
+fn main() {
+    // Fixed-length synthetic chirp via time grid built with nnum if available;
+    // fall back to a compact literal grid repeated through resampling.
+    let seed = [0.0, 0.001, 0.002, 0.003, 0.004, 0.005, 0.006, 0.007]
+    let t = ndsp.resample(seed, 2048)
+    // scale resampled indices into seconds-ish range
+    let x = ndsp.chirp(t, 50.0, 1.0, 2000.0)
+    let h = ndsp.firwin(63, 0.1)
+
+    let t0 = time.now_perf_us()
+    let i = 0
+    while i < 200 {
+        ndsp.convolve(x, h, "same")
+        i = i + 1
+    }
+    let e0 = time.elapsed_bench_ms(t0)
+    print("ndsp convolve same: 200 x N=2048 taps=63 in", e0, "ms")
+
+    let t1 = time.now_perf_us()
+    i = 0
+    while i < 100 {
+        ndsp.spectrogram(x, {fs: 8000.0, nperseg: 256})
+        i = i + 1
+    }
+    let e1 = time.elapsed_bench_ms(t1)
+    print("ndsp spectrogram: 100 x N=2048 nperseg=256 in", e1, "ms")
+}

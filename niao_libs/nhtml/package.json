@@ -1,0 +1,11 @@
+{
+    "name": "nhtml",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": "Forgiving HTML5 parser, CSS selectors, tree walking,\n                    text extraction, escape/unescape.  ~BeautifulSoup4 ...",
+    "import_paths": [
+        "nhtml",
+        "std/nhtml"
+    ],
+    "builtin_count": 47
+}

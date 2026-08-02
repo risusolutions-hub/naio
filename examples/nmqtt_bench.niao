@@ -1,0 +1,55 @@
+// Micro-benchmarks for nmqtt codec hot paths.
+// Run: niao run examples/nmqtt_bench.niao
+import "nmqtt"
+import "nbench"
+
+fn main() {
+    let opts = {warmup: 5, iterations: 200}
+    let n = 1024
+    let payload = make_string_payload(n)
+
+    let r1 = nbench.run("nmqtt.encode_connect", fn() {
+        let p = nmqtt.encode_connect({
+            host: "broker.local",
+            client_id: "bench-client",
+            username: "user",
+            password: "secret",
+            will: { topic: "status/edge", payload: "offline", qos: 1, retain: true }
+        })
+        return len(p)
+    }, opts)
+    print("encode_connect: mean=", r1.mean, "ns p50=", r1.p50)
+
+    let r2 = nbench.run("nmqtt.encode_publish_1KiB", fn() {
+        let p = nmqtt.encode_publish("fleet/device-42/telemetry", payload, {qos: 1, packet_id: 7})
+        return len(p)
+    }, opts)
+    print("encode_publish_1KiB: mean=", r2.mean, "ns p50=", r2.p50)
+
+    let r3 = nbench.run("nmqtt.decode_publish_1KiB", fn() {
+        let p = nmqtt.encode_publish("fleet/device-42/telemetry", payload, {qos: 1, packet_id: 7})
+        let d = nmqtt.decode_packet(p)
+        return d.qos
+    }, opts)
+    print("decode_publish_1KiB: mean=", r3.mean, "ns p50=", r3.p50)
+
+    let r4 = nbench.run("nmqtt.topic_matches", fn() {
+        return nmqtt.topic_matches("fleet/+/telemetry/#", "fleet/device-42/telemetry/cpu")
+    }, opts)
+    print("topic_matches: mean=", r4.mean, "ns p50=", r4.p50)
+
+    let r5 = nbench.run("naive_len_1KiB", fn() {
+        return len("fleet/device-42/telemetry") + len(payload)
+    }, opts)
+    print("naive_len_1KiB: mean=", r5.mean, "ns p50=", r5.p50)
+}
+
+fn make_string_payload(n) {
+    let s = ""
+    let i = 0
+    while i < n {
+        s = s + "a"
+        i = i + 1
+    }
+    return s
+}

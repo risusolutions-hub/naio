@@ -1,0 +1,12 @@
+[package]
+name = "niao_fin"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Financial math for Niao (~numpy-financial + TA-Lib indicators subset)"
+
+[dependencies]
+
+[[bin]]
+name = "nfin_bench"
+path = "src/bin/nfin_bench.rs"

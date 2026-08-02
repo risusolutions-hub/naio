@@ -1,0 +1,22 @@
+// Hot path: compile once, execute_compiled in a tight loop.
+import "nexpr"
+
+fn main() {
+    let formula = nexpr.compile("price * qty * (1 + tax_rate) + shipping if qty > 0 else 0")
+    let ev = nexpr.evaluator({
+        "price": 19.995,
+        "qty": 3,
+        "tax_rate": 0.0825,
+        "shipping": 4.99
+    })
+    let total = 0.0
+    let i = 0
+    while i < 500000 {
+        let v = nexpr.execute_compiled(ev, formula)
+        total = total + v
+        i = i + 1
+    }
+    print(total)
+    nexpr.free(ev)
+    nexpr.free_compiled(formula)
+}

@@ -1,0 +1,18 @@
+[package]
+name = "niao_dataset"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "Dataset loading: splits, shuffling, streaming batches, common formats (~datasets, torch dataloader subset)"
+
+[lib]
+bench = false
+
+[[bin]]
+name = "dataset_bench"
+path = "src/bin/dataset_bench.rs"
+
+[dependencies]
+niao_frame = { workspace = true }
+rand = "0.8"

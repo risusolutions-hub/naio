@@ -1,0 +1,15 @@
+[package]
+name = "niao_zip"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "ZIP archive read/write, streaming, per-entry compression and AES encryption for Niao"
+
+[dependencies]
+zip = { version = "2.2", default-features = false, features = ["deflate", "bzip2", "zstd", "lzma", "time", "aes-crypto"] }
+niao_parallel = { workspace = true }
+memmap2 = "0.9"
+
+[[bin]]
+name = "nzip_bench"
+path = "src/bin/nzip_bench.rs"

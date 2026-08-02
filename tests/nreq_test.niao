@@ -1,0 +1,148 @@
+import "ntest"
+import "nreq"
+import "nstr"
+import "json" as j
+
+fn test_encode_form() {
+    let s = nreq.encode_form({hello: "world", a: "b"})
+    ntest.assert_true(nstr.contains(s, "hello=world"))
+    ntest.assert_true(nstr.contains(s, "a=b"))
+}
+
+fn test_encode_form_empty() {
+    ntest.assert_eq(nreq.encode_form({}), "")
+}
+
+fn test_decode_form() {
+    let m = nreq.decode_form("a=1&b=2")
+    ntest.assert_eq(m.a, "1")
+    ntest.assert_eq(m.b, "2")
+    let empty = nreq.decode_form("")
+    ntest.assert_eq(nreq.encode_form(empty), "")
+}
+
+fn test_decode_form_special_chars() {
+    let enc = nreq.encode_form({key: "a&b", space: "x y"})
+    let m = nreq.decode_form(enc)
+    ntest.assert_eq(m.key, "a&b")
+    ntest.assert_eq(m.space, "x y")
+    let enc2 = nreq.encode_form({k: "a+b"})
+    let m2 = nreq.decode_form(enc2)
+    ntest.assert_eq(m2.k, "a+b")
+}
+
+fn test_basic_auth_bearer() {
+    let b = nreq.basic_auth("u", "p")
+    ntest.assert_true(nstr.starts_with(b, "Basic "))
+    ntest.assert_eq(nreq.bearer("tok"), "Bearer tok")
+}
+
+fn test_join_and_url() {
+    let u = nreq.join("https://example.com/api/", "v1/items")
+    ntest.assert_true(nstr.contains(u, "example.com"))
+    ntest.assert_true(nstr.contains(u, "v1"))
+    let q = nreq.url("https://ex.com/search", {q: "niao", page: "1"})
+    ntest.assert_true(nstr.contains(q, "q=niao"))
+    ntest.assert_true(nstr.contains(q, "page=1"))
+}
+
+fn test_multipart() {
+    let m = nreq.multipart([{name: "title", data: "hello"}, {name: "f", filename: "a.txt", data: "bin", content_type: "text/plain"}])
+    ntest.assert_true(nstr.contains(m.content_type, "multipart/form-data"))
+    ntest.assert_true(nstr.contains(m.body, "hello"))
+    ntest.assert_true(nstr.contains(m.body, "filename=\"a.txt\""))
+}
+
+fn test_multipart_empty_errors() {
+    let r = nreq.multipart([])
+    ntest.assert_error(r)
+}
+
+fn test_parse_set_cookie() {
+    let c = nreq.parse_set_cookie("session=abc123; Path=/; HttpOnly")
+    ntest.assert_eq(c.name, "session")
+    ntest.assert_eq(c.value, "abc123")
+    ntest.assert_eq(c.path, "/")
+    ntest.assert_eq(c.http_only, true)
+}
+
+fn test_parse_set_cookie_errors() {
+    ntest.assert_error(nreq.parse_set_cookie(""))
+    ntest.assert_error(nreq.parse_set_cookie("novalue"))
+}
+
+fn test_cookie_header() {
+    let h = nreq.cookie_header({a: "1", b: "2"})
+    ntest.assert_true(nstr.contains(h, "a=1"))
+    ntest.assert_true(nstr.contains(h, "b=2"))
+}
+
+fn test_session_lifecycle() {
+    let s = nreq.session({base_url: "https://api.example.com", timeout_ms: 5000, retries: 2})
+    ntest.assert_true(s > 0)
+    let info = nreq.session_info(s)
+    ntest.assert_eq(info.base_url, "https://api.example.com")
+    ntest.assert_eq(info.timeout_ms, 5000)
+    ntest.assert_eq(info.retries, 2)
+    nreq.set_cookie(s, "sid", "xyz", {path: "/"})
+    let jar = nreq.cookies(s)
+    ntest.assert_eq(jar.sid.value, "xyz")
+    ntest.assert_eq(nreq.clear_cookies(s), true)
+    ntest.assert_eq(nreq.close(s), true)
+}
+
+fn test_invalid_handle() {
+    let r = nreq.session_info(999999)
+    ntest.assert_error(r)
+}
+
+fn test_ok_and_raise() {
+    let good = {status: 200, ok: true, body: "hi"}
+    let bad = {status: 404, ok: false, body: "missing"}
+    ntest.assert_eq(nreq.ok(good), true)
+    ntest.assert_eq(nreq.ok(bad), false)
+    ntest.assert_eq(nreq.raise_for_status(good).status, 200)
+    ntest.assert_error(nreq.raise_for_status(bad))
+}
+
+fn test_json_helper() {
+    let body = "{\"n\": 42}"
+    let r = {status: 200, body: body}
+    let j = nreq.json(r)
+    ntest.assert_eq(j.n, 42)
+    ntest.assert_error(nreq.json({status: 200, body: "{bad"}))
+}
+
+fn test_default_headers() {
+    let h = nreq.default_headers()
+    ntest.assert_true(j.has(h, "User-Agent"))
+    ntest.assert_true(nstr.starts_with(j.get(h, "User-Agent"), "nreq/"))
+}
+
+fn test_boundary() {
+    let b1 = nreq.boundary()
+    let b2 = nreq.boundary()
+    ntest.assert_true(len(b1) > 8)
+    ntest.assert_true(b1 != b2)
+}
+
+fn main() {
+    test_encode_form()
+    test_encode_form_empty()
+    test_decode_form()
+    test_decode_form_special_chars()
+    test_basic_auth_bearer()
+    test_join_and_url()
+    test_multipart()
+    test_multipart_empty_errors()
+    test_parse_set_cookie()
+    test_parse_set_cookie_errors()
+    test_cookie_header()
+    test_session_lifecycle()
+    test_invalid_handle()
+    test_ok_and_raise()
+    test_json_helper()
+    test_default_headers()
+    test_boundary()
+    print("nreq tests ok")
+}

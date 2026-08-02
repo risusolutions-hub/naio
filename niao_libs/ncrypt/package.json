@@ -1,0 +1,11 @@
+{
+    "name": "ncrypt",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": "Modern crypto: AES-GCM, ChaCha20-Poly1305, RSA,\n                    Ed25519/X25519, HKDF/PBKDF2, X.509 parse, CSPRNG,\n                    constant-time compare.  ~cryptography, pynacl, secrets\n                    (extends crypto's SHA/HMAC)\n ...",
+    "import_paths": [
+        "ncrypt",
+        "std/ncrypt"
+    ],
+    "builtin_count": 38
+}

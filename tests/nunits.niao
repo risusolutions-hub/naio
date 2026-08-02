@@ -1,0 +1,180 @@
+// nunits tests — run: niao run tests/nunits.niao
+import "nunits"
+import "ntest"
+
+fn test_parse_simple_length() {
+    let q = nunits.parse("5 m")
+    ntest.assert_eq(nunits.magnitude(q), 5.0)
+    ntest.assert_eq(nunits.unit_of(q), "m")
+    ntest.assert_false(nunits.dimensionless(q))
+    nunits.close(q)
+}
+
+fn test_km_to_m_conversion() {
+    let q = nunits.parse("1 km")
+    let m = nunits.to(q, "m")
+    ntest.assert_near(nunits.magnitude(m), 1000.0, 0.000001)
+    nunits.close(q)
+    nunits.close(m)
+}
+
+fn test_quantity_constructor() {
+    let q = nunits.quantity(3.5, "km")
+    ntest.assert_near(nunits.magnitude(q), 3.5, 0.000001)
+    nunits.close(q)
+}
+
+fn test_add_compatible_lengths() {
+    let a = nunits.parse("1 km")
+    let b = nunits.parse("500 m")
+    let c = nunits.add(a, b)
+    let cm = nunits.to(c, "m")
+    ntest.assert_near(nunits.magnitude(cm), 1500.0, 0.000001)
+    nunits.close(a)
+    nunits.close(b)
+    nunits.close(c)
+    nunits.close(cm)
+}
+
+fn test_mul_builds_area() {
+    let a = nunits.parse("3 m")
+    let b = nunits.parse("4 m")
+    let area = nunits.mul(a, b)
+    ntest.assert_eq(nunits.dimension(area), "m^2")
+    ntest.assert_near(nunits.magnitude(area), 12.0, 0.000001)
+    nunits.close(a)
+    nunits.close(b)
+    nunits.close(area)
+}
+
+fn test_div_velocity() {
+    let d = nunits.parse("100 m")
+    let t = nunits.parse("10 s")
+    let v = nunits.div(d, t)
+    ntest.assert_eq(nunits.dimension(v), "m/s")
+    ntest.assert_near(nunits.magnitude(v), 10.0, 0.000001)
+    nunits.close(d)
+    nunits.close(t)
+    nunits.close(v)
+}
+
+fn test_incompatible_add_is_catchable() {
+    let a = nunits.parse("1 m")
+    let b = nunits.parse("1 s")
+    let r = nunits.add(a, b)
+    ntest.assert_error(r)
+    nunits.close(a)
+    nunits.close(b)
+}
+
+fn test_compare_ordering() {
+    let a = nunits.parse("2 m")
+    let b = nunits.parse("5 m")
+    ntest.assert_eq(nunits.compare(a, b), -1)
+    nunits.close(a)
+    nunits.close(b)
+}
+
+fn test_valid_unit_and_quantity() {
+    ntest.assert_true(nunits.valid_unit("meter"))
+    ntest.assert_true(nunits.valid_quantity("10 ft"))
+    ntest.assert_false(nunits.valid_unit("not_a_unit_xyz"))
+    ntest.assert_false(nunits.valid_quantity(""))
+}
+
+fn test_parse_compound_unit() {
+    let q = nunits.parse("9.8 m/s^2")
+    ntest.assert_eq(nunits.dimension(q), "m/s^2")
+    nunits.close(q)
+}
+
+fn test_convert_scalar() {
+    let v = nunits.convert(1, "km", "m")
+    ntest.assert_near(v, 1000.0, 0.000001)
+}
+
+fn test_temperature_celsius_to_kelvin() {
+    let c = nunits.parse("0 degC")
+    let k = nunits.to(c, "K")
+    ntest.assert_near(nunits.magnitude(k), 273.15, 0.000001)
+    nunits.close(c)
+    nunits.close(k)
+}
+
+fn test_mph_parses_as_velocity() {
+    let q = nunits.parse("60 mph")
+    ntest.assert_eq(nunits.dimension(q), "m/s")
+    let ms = nunits.to(q, "m/s")
+    ntest.assert_near(nunits.magnitude(ms), 26.8224, 0.01)
+    nunits.close(q)
+    nunits.close(ms)
+}
+
+fn test_define_custom_unit() {
+    nunits.reset()
+    let ok = nunits.define("my_km", "1000*m")
+    ntest.assert_true(ok)
+    ntest.assert_true(nunits.valid_unit("my_km"))
+    let q = nunits.parse("2 my_km")
+    let m = nunits.to(q, "m")
+    ntest.assert_near(nunits.magnitude(m), 2000.0, 0.000001)
+    nunits.close(q)
+    nunits.close(m)
+    nunits.reset()
+}
+
+fn test_dimensionless_as_float() {
+    let q = nunits.parse("3.14")
+    ntest.assert_true(nunits.dimensionless(q))
+    ntest.assert_near(nunits.as_float(q), 3.14, 0.000001)
+    nunits.close(q)
+}
+
+fn test_sqrt_area_to_length() {
+    let a = nunits.parse("25 m^2")
+    let side = nunits.sqrt(a)
+    ntest.assert_near(nunits.magnitude(side), 5.0, 0.000001)
+    nunits.close(a)
+    nunits.close(side)
+}
+
+fn test_empty_parse_fails() {
+    ntest.assert_false(nunits.valid_quantity("   "))
+}
+
+fn test_division_by_zero_quantity() {
+    let a = nunits.parse("10 m")
+    let z = nunits.parse("0 s")
+    let r = nunits.div(a, z)
+    ntest.assert_error(r)
+    nunits.close(a)
+    nunits.close(z)
+}
+
+fn test_definitions_non_empty() {
+    let names = nunits.definitions()
+    ntest.assert_true(len(names) > 20)
+}
+
+fn main() {
+    test_parse_simple_length()
+    test_km_to_m_conversion()
+    test_quantity_constructor()
+    test_add_compatible_lengths()
+    test_mul_builds_area()
+    test_div_velocity()
+    test_incompatible_add_is_catchable()
+    test_compare_ordering()
+    test_valid_unit_and_quantity()
+    test_parse_compound_unit()
+    test_convert_scalar()
+    test_temperature_celsius_to_kelvin()
+    test_mph_parses_as_velocity()
+    test_define_custom_unit()
+    test_dimensionless_as_float()
+    test_sqrt_area_to_length()
+    test_empty_parse_fails()
+    test_division_by_zero_quantity()
+    test_definitions_non_empty()
+    print("nunits: all 19 tests passed")
+}

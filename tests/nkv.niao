@@ -1,0 +1,184 @@
+import "nkv"
+import "ntest"
+import "nos"
+
+fn temp_db(name) {
+    let base = nos.getenv("TEMP")
+    if base == nil { base = "/tmp" }
+    return base + "/nkv_test_" + name + ".nkv"
+}
+
+fn test_memory_put_get() {
+    let db = nkv.memory()
+    nkv.put(db, "a", "1")
+    ntest.assert_eq(nkv.get(db, "a"), "1")
+    ntest.assert_eq(nkv.get(db, "missing"), nil)
+    ntest.assert_eq(nkv.has(db, "a"), true)
+    ntest.assert_eq(nkv.has(db, "missing"), false)
+    ntest.assert_eq(nkv.get_or(db, "missing", "x"), "x")
+    nkv.close(db)
+}
+
+fn test_typed_values() {
+    let db = nkv.memory()
+    nkv.put(db, "n", nil)
+    nkv.put(db, "b", true)
+    nkv.put(db, "i", 42)
+    nkv.put(db, "f", 3.5)
+    nkv.put(db, "s", "hi")
+    ntest.assert_eq(nkv.get(db, "n"), nil)
+    ntest.assert_eq(nkv.get(db, "b"), true)
+    ntest.assert_eq(nkv.get(db, "i"), 42)
+    ntest.assert_near(nkv.get(db, "f"), 3.5, 0.0001)
+    ntest.assert_eq(nkv.get(db, "s"), "hi")
+    nkv.close(db)
+}
+
+fn test_empty_key_value() {
+    let db = nkv.memory()
+    nkv.put(db, "", "")
+    ntest.assert_eq(nkv.get(db, ""), "")
+    ntest.assert_eq(nkv.len(db), 1)
+    nkv.close(db)
+}
+
+fn test_unicode() {
+    let db = nkv.memory()
+    nkv.put(db, "名前", "猫🐱")
+    ntest.assert_eq(nkv.get(db, "名前"), "猫🐱")
+    nkv.close(db)
+}
+
+fn test_overwrite_remove_clear() {
+    let db = nkv.memory()
+    nkv.put(db, "k", "v1")
+    nkv.put(db, "k", "v2")
+    ntest.assert_eq(nkv.get(db, "k"), "v2")
+    ntest.assert_eq(nkv.remove(db, "k"), true)
+    ntest.assert_eq(nkv.remove(db, "k"), false)
+    nkv.put(db, "a", 1)
+    nkv.put(db, "b", 2)
+    ntest.assert_eq(nkv.clear(db), 2)
+    ntest.assert_eq(nkv.len(db), 0)
+    nkv.close(db)
+}
+
+fn test_prefix_scan() {
+    let db = nkv.memory()
+    nkv.put(db, "user:1", "a")
+    nkv.put(db, "user:2", "b")
+    nkv.put(db, "z", "c")
+    let rows = nkv.scan(db, {prefix: "user:"})
+    ntest.assert_eq(rows.len(), 2)
+    ntest.assert_eq(rows[0].key, "user:1")
+    ntest.assert_eq(rows[1].value, "b")
+    let ks = nkv.keys(db, {prefix: "user:"})
+    ntest.assert_eq(ks, ["user:1", "user:2"])
+    nkv.close(db)
+}
+
+fn test_range_reverse_limit() {
+    let db = nkv.memory()
+    nkv.put(db, "a", 1)
+    nkv.put(db, "b", 2)
+    nkv.put(db, "c", 3)
+    nkv.put(db, "d", 4)
+    let rows = nkv.scan(db, {start: "b", end: "d", end_inclusive: true, reverse: true, limit: 2})
+    ntest.assert_eq(rows.len(), 2)
+    ntest.assert_eq(rows[0].key, "d")
+    ntest.assert_eq(rows[1].key, "c")
+    ntest.assert_eq(nkv.first(db).key, "a")
+    ntest.assert_eq(nkv.last(db).key, "d")
+    nkv.close(db)
+}
+
+fn test_snapshot_isolation() {
+    let db = nkv.memory()
+    nkv.put(db, "k", "v1")
+    let snap = nkv.snapshot(db)
+    nkv.put(db, "k", "v2")
+    ntest.assert_eq(nkv.get(snap, "k"), "v1")
+    ntest.assert_eq(nkv.get(db, "k"), "v2")
+    nkv.close(snap)
+    nkv.close(db)
+}
+
+fn test_write_txn_commit_abort() {
+    let db = nkv.memory()
+    let tx = nkv.begin(db, "write")
+    nkv.put(tx, "x", 1)
+    nkv.commit(tx)
+    ntest.assert_eq(nkv.get(db, "x"), 1)
+
+    let tx2 = nkv.begin(db)
+    nkv.put(tx2, "y", 2)
+    nkv.abort(tx2)
+    ntest.assert_eq(nkv.get(db, "y"), nil)
+    nkv.close(db)
+}
+
+fn test_put_many_get_many() {
+    let db = nkv.memory()
+    let n = nkv.put_many(db, [{key: "a", value: 1}, {key: "b", value: 2}])
+    ntest.assert_eq(n, 2)
+    let vals = nkv.get_many(db, ["a", "missing", "b"])
+    ntest.assert_eq(vals[0], 1)
+    ntest.assert_eq(vals[1], nil)
+    ntest.assert_eq(vals[2], 2)
+    nkv.close(db)
+}
+
+fn test_named_tables() {
+    let db = nkv.memory()
+    nkv.put(db, "k", "in-main")
+    nkv.put(db, "k", "in-meta", "meta")
+    ntest.assert_eq(nkv.get(db, "k"), "in-main")
+    ntest.assert_eq(nkv.get(db, "k", "meta"), "in-meta")
+    let names = nkv.tables(db)
+    ntest.assert_contains(names, "main")
+    ntest.assert_contains(names, "meta")
+    ntest.assert_eq(nkv.drop_table(db, "meta"), true)
+    ntest.assert_eq(nkv.get(db, "k", "meta"), nil)
+    nkv.close(db)
+}
+
+fn test_file_persist() {
+    let path = temp_db("persist")
+    let db = nkv.open(path, {create: true})
+    nkv.put(db, "persist", "yes")
+    nkv.sync(db)
+    nkv.close(db)
+    let db2 = nkv.open(path, {create: false})
+    ntest.assert_eq(nkv.get(db2, "persist"), "yes")
+    ntest.assert_eq(type(nkv.path(db2)), "string")
+    let st = nkv.stats(db2)
+    ntest.assert_true(st.page_size > 0)
+    nkv.close(db2)
+}
+
+fn test_invalid_handle() {
+    let e = nkv.get(999999, "k")
+    ntest.assert_error(e)
+}
+
+fn test_default_table_const() {
+    ntest.assert_eq(nkv.DEFAULT_TABLE, "main")
+}
+
+ntest.case("memory put/get/has/get_or", test_memory_put_get)
+ntest.case("typed values", test_typed_values)
+ntest.case("empty key/value", test_empty_key_value)
+ntest.case("unicode keys/values", test_unicode)
+ntest.case("overwrite remove clear", test_overwrite_remove_clear)
+ntest.case("prefix scan", test_prefix_scan)
+ntest.case("range reverse limit first/last", test_range_reverse_limit)
+ntest.case("snapshot isolation", test_snapshot_isolation)
+ntest.case("write txn commit/abort", test_write_txn_commit_abort)
+ntest.case("put_many get_many", test_put_many_get_many)
+ntest.case("named tables", test_named_tables)
+ntest.case("file persist sync stats", test_file_persist)
+ntest.case("invalid handle error", test_invalid_handle)
+ntest.case("DEFAULT_TABLE constant", test_default_table_const)
+
+let summary = ntest.run()
+if !summary.ok { nos.exit(1) }

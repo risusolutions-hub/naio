@@ -1,0 +1,11 @@
+{
+    "name": "ngcp",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": "Google Cloud helper: GCS, Pub/Sub, Firestore REST,\n                    Cloud Functions.  ~google-cloud-*  (peers naws/nazure)",
+    "import_paths": [
+        "ngcp",
+        "std/ngcp"
+    ],
+    "builtin_count": 13
+}

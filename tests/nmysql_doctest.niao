@@ -1,0 +1,40 @@
+import "ndoc"
+
+fn repo_root() {
+    let candidates = [".", "..", "../.."]
+    for r in candidates {
+        if io_exists(io_join(r, "crates/niao_runtime/src/nmysql/mod.rs")) {
+            return r
+        }
+    }
+    assert(false, "cannot locate nmysql sources from cwd")
+    return "."
+}
+
+fn main() {
+    let root = repo_root()
+    let files = [
+        "connection.rs",
+        "mod.rs",
+        "pool.rs",
+        "stmt.rs",
+        "bg.rs"
+    ]
+    let total = 0
+    let passed = 0
+    let failed = 0
+    for name in files {
+        let path = io_join(root, "crates/niao_runtime/src/nmysql/" + name)
+        let src = io_read_file(path)
+        assert(!is_error(src), "read failed: " + path)
+        let result = ndoc.run(src)
+        total = total + result.total
+        passed = passed + result.passed
+        failed = failed + result.failed
+        assert(result.ok, "doctest failed in " + path)
+        print("ok ", path, " passed=", result.passed)
+    }
+    print("doctests total=", total, " passed=", passed, " failed=", failed)
+    assert(failed == 0, "doctests must pass")
+    assert(total > 0, "must find doctests")
+}

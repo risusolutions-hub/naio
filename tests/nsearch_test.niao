@@ -1,0 +1,180 @@
+import "ntest"
+import "nsearch"
+import "nstr"
+
+fn test_join() {
+    let u = nsearch.join("http://localhost:9200/", "_search")
+    ntest.assert_true(nstr.contains(u, "9200"))
+    ntest.assert_true(nstr.contains(u, "_search"))
+    let abs = nsearch.join("http://a/", "http://b/x")
+    ntest.assert_eq(abs, "http://b/x")
+}
+
+fn test_encode_params() {
+    let s = nsearch.encode_params({q: "a b", page: "1"})
+    ntest.assert_true(nstr.contains(s, "page=1"))
+    ntest.assert_true(nstr.contains(s, "q="))
+    ntest.assert_eq(nsearch.encode_params({}), "")
+}
+
+fn test_es_query_match_all() {
+    let s = nsearch.es_query({match_all: true, size: 10})
+    ntest.assert_true(nstr.contains(s, "match_all"))
+    ntest.assert_true(nstr.contains(s, "size"))
+}
+
+fn test_es_query_multi_match() {
+    let s = nsearch.es_query({q: "niao", fields: ["title", "body"], size: 5})
+    ntest.assert_true(nstr.contains(s, "multi_match"))
+    ntest.assert_true(nstr.contains(s, "niao"))
+    ntest.assert_true(nstr.contains(s, "title"))
+}
+
+fn test_es_query_empty_is_match_all() {
+    let s = nsearch.es_query({})
+    ntest.assert_true(nstr.contains(s, "match_all"))
+}
+
+fn test_es_query_raw_body() {
+    let s = nsearch.es_query({body: {query: {term: {status: "open"}}}})
+    ntest.assert_true(nstr.contains(s, "term"))
+    ntest.assert_true(nstr.contains(s, "status"))
+}
+
+fn test_es_bulk_ndjson() {
+    let nd = nsearch.es_bulk_ndjson([
+        {action: "index", index: "docs", id: "1", doc: {title: "hi"}},
+        {action: "delete", index: "docs", id: "2"},
+    ])
+    ntest.assert_true(nstr.contains(nd, "_index"))
+    ntest.assert_true(nstr.contains(nd, "docs"))
+    ntest.assert_true(nstr.contains(nd, "title"))
+}
+
+fn test_es_bulk_ndjson_empty_errors() {
+    let r = nsearch.es_bulk_ndjson([])
+    ntest.assert_error(r)
+}
+
+fn test_meili_filter() {
+    ntest.assert_eq(
+        nsearch.meili_filter(["genre = action", "year > 2000"]),
+        "genre = action AND year > 2000"
+    )
+    ntest.assert_eq(nsearch.meili_filter([]), "")
+}
+
+fn test_ts_filter() {
+    ntest.assert_eq(
+        nsearch.ts_filter(["year:>2000", "in_stock:true"]),
+        "year:>2000 && in_stock:true"
+    )
+}
+
+fn test_client_lifecycle_all_engines() {
+    let es = nsearch.elasticsearch({url: "http://localhost:9200"})
+    ntest.assert_eq(nsearch.engine(es), "elasticsearch")
+    let info = nsearch.info(es)
+    ntest.assert_eq(info.engine, "elasticsearch")
+    ntest.assert_true(nstr.contains(info.url, "9200"))
+    ntest.assert_true(nsearch.close(es))
+
+    let os = nsearch.opensearch({url: "http://localhost:9200", username: "admin", password: "x"})
+    ntest.assert_eq(nsearch.engine(os), "opensearch")
+    ntest.assert_true(nsearch.close(os))
+
+    let m = nsearch.meilisearch({url: "http://localhost:7700", key: "MASTER"})
+    ntest.assert_eq(nsearch.engine(m), "meilisearch")
+    ntest.assert_true(nsearch.close(m))
+
+    let t = nsearch.typesense({url: "http://localhost:8108", api_key: "xyz"})
+    ntest.assert_eq(nsearch.engine(t), "typesense")
+    ntest.assert_true(nsearch.close(t))
+}
+
+fn test_invalid_handle() {
+    let r = nsearch.info(999999)
+    ntest.assert_error(r)
+    let closed = nsearch.close(999999)
+    ntest.assert_eq(closed, false)
+}
+
+fn test_ok_and_raise() {
+    let good = {status: 200, ok: true, body: "{}", url: "http://x", elapsed_ms: 1}
+    let bad = {status: 500, ok: false, body: "boom", url: "http://x", elapsed_ms: 1}
+    ntest.assert_true(nsearch.ok(good))
+    ntest.assert_true(!nsearch.ok(bad))
+    let raised = nsearch.raise_for_status(bad)
+    ntest.assert_error(raised)
+    let same = nsearch.raise_for_status(good)
+    ntest.assert_eq(same.status, 200)
+}
+
+fn test_json_parse() {
+    let r = {status: 200, ok: true, body: "{\"a\":1,\"b\":\"x\"}", url: "u", elapsed_ms: 0}
+    let j = nsearch.json(r)
+    ntest.assert_eq(j.a, 1)
+    ntest.assert_eq(j.b, "x")
+}
+
+fn test_hits_es() {
+    let body = "{\"hits\":{\"hits\":[{\"_source\":{\"title\":\"a\"}},{\"_source\":{\"title\":\"b\"}}]}}"
+    let hits = nsearch.hits({engine: "elasticsearch", body: body})
+    ntest.assert_eq(len(hits), 2)
+    ntest.assert_eq(hits[0].title, "a")
+}
+
+fn test_hits_meili() {
+    let body = "{\"hits\":[{\"id\":1},{\"id\":2}],\"estimatedTotalHits\":2}"
+    let hits = nsearch.hits({engine: "meilisearch", body: body})
+    ntest.assert_eq(len(hits), 2)
+}
+
+fn test_hits_typesense() {
+    let body = "{\"hits\":[{\"document\":{\"id\":\"1\"}},{\"document\":{\"id\":\"2\"}}]}"
+    let hits = nsearch.hits({engine: "typesense", body: body})
+    ntest.assert_eq(len(hits), 2)
+    ntest.assert_eq(hits[0].id, "1")
+}
+
+fn test_unicode_params() {
+    let s = nsearch.encode_params({q: "猫", tag: "日本語"})
+    ntest.assert_true(nstr.contains(s, "q="))
+    ntest.assert_true(nstr.contains(s, "tag="))
+}
+
+fn test_es_query_term_and_match() {
+    let s = nsearch.es_query({
+        match: {title: "hello"},
+        term: {status: "published"},
+        size: 3,
+    })
+    ntest.assert_true(nstr.contains(s, "bool") || nstr.contains(s, "match"))
+    ntest.assert_true(nstr.contains(s, "hello"))
+}
+
+fn main() {
+    ntest.case("join", test_join)
+    ntest.case("encode_params", test_encode_params)
+    ntest.case("es_query_match_all", test_es_query_match_all)
+    ntest.case("es_query_multi_match", test_es_query_multi_match)
+    ntest.case("es_query_empty", test_es_query_empty_is_match_all)
+    ntest.case("es_query_raw_body", test_es_query_raw_body)
+    ntest.case("es_bulk_ndjson", test_es_bulk_ndjson)
+    ntest.case("es_bulk_empty", test_es_bulk_ndjson_empty_errors)
+    ntest.case("meili_filter", test_meili_filter)
+    ntest.case("ts_filter", test_ts_filter)
+    ntest.case("client_lifecycle", test_client_lifecycle_all_engines)
+    ntest.case("invalid_handle", test_invalid_handle)
+    ntest.case("ok_raise", test_ok_and_raise)
+    ntest.case("json_parse", test_json_parse)
+    ntest.case("hits_es", test_hits_es)
+    ntest.case("hits_meili", test_hits_meili)
+    ntest.case("hits_typesense", test_hits_typesense)
+    ntest.case("unicode_params", test_unicode_params)
+    ntest.case("es_query_term_match", test_es_query_term_and_match)
+    let summary = ntest.run()
+    if !summary.ok {
+        nos.exit(1)
+    }
+}

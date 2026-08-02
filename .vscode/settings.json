@@ -1,5 +1,19 @@
 {
   "terminal.integrated.env.windows": {
     "PATH": "C:\\Users\\vivek\\.cargo\\bin;${env:PATH}"
+  },
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/dist/**": true,
+    "**/target/**": true,
+    "**/build/**": true,
+    "**/.git/objects/**": true,
+    "**/niao_libs/**/node_modules/**": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/target": true,
+    "**/build": true
   }
 }

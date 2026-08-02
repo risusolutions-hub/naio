@@ -1,0 +1,119 @@
+// nbrowser offline + live tests.
+// Run: niao run --mode interp tests/nbrowser_test.niao
+import "ntest"
+import "nbrowser"
+
+fn test_executable_path_type() {
+    let p = nbrowser.executable_path()
+    ntest.assert_true(p == nil || type(p) == "string")
+}
+
+fn test_is_connected_miss() {
+    ntest.assert_false(nbrowser.is_connected(999999))
+}
+
+fn test_goto_invalid_handle() {
+    let v = nbrowser.goto(999999, "about:blank")
+    ntest.assert_error(v)
+}
+
+fn test_click_empty_selector() {
+    let v = nbrowser.click(1, "")
+    ntest.assert_error(v)
+}
+
+fn test_fill_empty_selector() {
+    let v = nbrowser.fill(1, "  ", "x")
+    ntest.assert_error(v)
+}
+
+fn test_eval_invalid_handle() {
+    let v = nbrowser.eval(999999, "1")
+    ntest.assert_error(v)
+}
+
+fn test_screenshot_invalid_handle() {
+    let v = nbrowser.screenshot(999999)
+    ntest.assert_error(v)
+}
+
+fn test_pdf_invalid_handle() {
+    let v = nbrowser.pdf(999999)
+    ntest.assert_error(v)
+}
+
+fn test_connect_missing_endpoint() {
+    let caught = false
+    try {
+        nbrowser.connect({})
+    } catch (e) {
+        caught = true
+    }
+    ntest.assert_true(caught)
+}
+
+fn test_set_viewport_missing_dims() {
+    let caught = false
+    try {
+        nbrowser.set_viewport(1, {})
+    } catch (e) {
+        caught = true
+    }
+    ntest.assert_true(caught)
+}
+
+fn test_launch_bad_executable() {
+    let v = nbrowser.launch({executable: "C:/no/such/nbrowser-chrome.exe", timeout_ms: 500})
+    ntest.assert_error(v)
+}
+
+fn test_live_data_url_if_browser() {
+    let exe = nbrowser.executable_path()
+    if exe == nil {
+        ntest.assert_true(true)
+        return
+    }
+    let b = nbrowser.launch({headless: true, no_sandbox: true, timeout_ms: 60000})
+    if is_error(b) {
+        // Environment may detect a path that cannot launch; treat as soft skip.
+        ntest.assert_true(true)
+        return
+    }
+    let p = nbrowser.new_page(b)
+    let html = "data:text/html,<html><body><h1 id='t'>Hi</h1><input id='q'/><button id='b' onclick=\"document.getElementById('t').textContent='Ok'\">x</button></body></html>"
+    let g = nbrowser.goto(p, html)
+    ntest.assert_true(g.ok)
+    ntest.assert_eq(nbrowser.text(p, "#t"), "Hi")
+    ntest.assert_true(nbrowser.exists(p, "#b"))
+    nbrowser.fill(p, "#q", "niào")
+    ntest.assert_eq(nbrowser.eval(p, "document.querySelector('#q').value"), "niào")
+    nbrowser.click(p, "#b")
+    ntest.assert_eq(nbrowser.text(p, "#t"), "Ok")
+    let png = nbrowser.screenshot(p, {full_page: true})
+    ntest.assert_true(len(png) > 100)
+    let doc = nbrowser.pdf(p)
+    ntest.assert_true(len(doc) > 100)
+    nbrowser.close(b)
+    ntest.assert_false(nbrowser.is_connected(b))
+}
+
+fn main() {
+    ntest.case("executable_path type", test_executable_path_type)
+    ntest.case("is_connected miss", test_is_connected_miss)
+    ntest.case("goto invalid handle", test_goto_invalid_handle)
+    ntest.case("click empty selector", test_click_empty_selector)
+    ntest.case("fill empty selector", test_fill_empty_selector)
+    ntest.case("eval invalid handle", test_eval_invalid_handle)
+    ntest.case("screenshot invalid handle", test_screenshot_invalid_handle)
+    ntest.case("pdf invalid handle", test_pdf_invalid_handle)
+    ntest.case("connect missing endpoint", test_connect_missing_endpoint)
+    ntest.case("set_viewport missing dims", test_set_viewport_missing_dims)
+    ntest.case("launch bad executable", test_launch_bad_executable)
+    ntest.case("live data url if browser", test_live_data_url_if_browser)
+    let summary = ntest.run()
+    if !summary.ok {
+        nos.exit(1)
+    }
+}
+
+main()

@@ -1,0 +1,25 @@
+[package]
+name = "niao_oauth"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "OAuth2 + OIDC client flows for Niao (~authlib, oauthlib subset)"
+
+[lib]
+bench = false
+
+[dependencies]
+niao_http = { workspace = true }
+niao_json_core = { workspace = true }
+niao_crypto = { workspace = true }
+niao_codec = { workspace = true }
+niao_rand = { workspace = true }
+niao_parallel = { workspace = true }
+niao_time = { workspace = true }
+rsa = { version = "0.9", features = ["sha2", "pem"] }
+sha2 = "0.10"
+
+[[bin]]
+name = "noauth_bench"
+path = "src/bin/noauth_bench.rs"

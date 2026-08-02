@@ -1,0 +1,41 @@
+import "ngraph"
+import "nbench"
+
+fn make_graph(n, m) {
+    let g = ngraph.new({directed: false})
+    for i in 0..n {
+        ngraph.add_node(g, i)
+    }
+    for i in 0..m {
+        let a = i % n
+        let b = (i * 7 + 11) % n
+        let w = (i % 9) + 1
+        ngraph.add_edge(g, a, b, w)
+    }
+    return g
+}
+
+fn main() {
+    let g = make_graph(500, 3000)
+    let r1 = nbench.run("ngraph.shortest_path weighted", fn() {
+        ngraph.shortest_path(g, 1, 333, true)
+        return 0
+    }, {warmup: 5, iterations: 200})
+
+    let r2 = nbench.run("ngraph.pagerank", fn() {
+        ngraph.pagerank(g, {max_iter: 20, tol: 0.00001})
+        return 0
+    }, {warmup: 2, iterations: 30})
+
+    let r3 = nbench.run("naive path baseline", fn() {
+        // baseline does no graph traversal work; used to show overhead floor
+        let x = 1 + 2 + 3 + 4
+        return x
+    }, {warmup: 5, iterations: 200})
+
+    print("shortest_path mean(ns)=", r1.mean, " p50=", r1.p50, " p95=", r1.p95)
+    print("pagerank mean(ns)=", r2.mean, " p50=", r2.p50, " p95=", r2.p95)
+    print("baseline mean(ns)=", r3.mean, " p50=", r3.p50)
+    let cmp = nbench.compare("ngraph.shortest_path weighted", "naive path baseline")
+    print("shortest_path vs baseline faster=", cmp.faster, " ratio=", cmp.ratio)
+}

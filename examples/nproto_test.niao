@@ -1,0 +1,139 @@
+// nproto tests — compile, encode/decode, JSON, maps, errors.
+// Run: niao run examples/nproto_test.niao
+import "nproto"
+import "ntest"
+
+const PERSON_PROTO = "syntax = \"proto3\";\npackage test;\n\nenum Role {\n  ROLE_UNKNOWN = 0;\n  ROLE_ADMIN = 1;\n}\n\nmessage Person {\n  string name = 1;\n  int32 age = 2;\n  repeated string tags = 3;\n  map<string, int32> scores = 4;\n  Role role = 5;\n}\n"
+
+fn make_schema() {
+    return nproto.compile(PERSON_PROTO, {filename: "person.proto"})
+}
+
+fn test_compile_and_describe() {
+    let schema = make_schema()
+    let names = nproto.message_names(schema)
+    ntest.assert_true(len(names) > 0)
+    let info = nproto.describe(schema, "test.Person")
+    ntest.assert_eq(info.full_name, "test.Person")
+    ntest.assert_true(len(info.fields) >= 4)
+    nproto.close_schema(schema)
+}
+
+fn test_new_set_get() {
+    let schema = make_schema()
+    let msg = nproto.new_message(schema, "test.Person", {
+        name: "Alice",
+        age: 30,
+        tags: ["dev"],
+        scores: {math: 99}
+    })
+    ntest.assert_eq(nproto.get(msg, "name"), "Alice")
+    ntest.assert_eq(nproto.get(msg, "age"), 30)
+    ntest.assert_true(nproto.has(msg, "tags"))
+    nproto.close_message(msg)
+    nproto.close_schema(schema)
+}
+
+fn test_encode_decode_roundtrip() {
+    let schema = make_schema()
+    let msg = nproto.new_message(schema, "test.Person", {name: "Bob", age: 21})
+    let bytes = nproto.encode(msg)
+    let decoded = nproto.decode(schema, "test.Person", bytes)
+    ntest.assert_eq(nproto.get(decoded, "name"), "Bob")
+    ntest.assert_eq(nproto.get(decoded, "age"), 21)
+    nproto.close_message(msg)
+    nproto.close_message(decoded)
+    nproto.close_schema(schema)
+}
+
+fn test_json_roundtrip() {
+    let schema = make_schema()
+    let msg = nproto.new_message(schema, "test.Person", {name: "Carol", age: 40})
+    let json = nproto.to_json(msg)
+    let again = nproto.from_json(schema, "test.Person", json)
+    ntest.assert_eq(nproto.get(again, "name"), "Carol")
+    nproto.close_message(msg)
+    nproto.close_message(again)
+    nproto.close_schema(schema)
+}
+
+fn test_merge_and_clone() {
+    let schema = make_schema()
+    let a = nproto.new_message(schema, "test.Person", {name: "A", age: 1})
+    let b = nproto.new_message(schema, "test.Person", {age: 2, tags: ["x"]})
+    nproto.merge(a, b)
+    ntest.assert_eq(nproto.get(a, "name"), "A")
+    ntest.assert_eq(nproto.get(a, "age"), 2)
+    let c = nproto.clone(a)
+    ntest.assert_eq(nproto.type_name(c), "test.Person")
+    nproto.close_message(a)
+    nproto.close_message(b)
+    nproto.close_message(c)
+    nproto.close_schema(schema)
+}
+
+fn test_descriptor_set_roundtrip() {
+    let schema = make_schema()
+    let bytes = nproto.save_descriptor_set(schema)
+    ntest.assert_true(nproto.valid_descriptor_set(bytes))
+    let schema2 = nproto.load_descriptor_set(bytes)
+    ntest.assert_eq(len(nproto.message_names(schema2)), len(nproto.message_names(schema)))
+    nproto.close_schema(schema)
+    nproto.close_schema(schema2)
+}
+
+fn test_decode_raw() {
+    let schema = make_schema()
+    let msg = nproto.new_message(schema, "test.Person", {name: "Z", age: 7})
+    let bytes = nproto.encode(msg)
+    let fields = nproto.decode_raw(bytes)
+    ntest.assert_true(len(fields) >= 2)
+    nproto.close_message(msg)
+    nproto.close_schema(schema)
+}
+
+fn test_varint_helpers() {
+    let enc = nproto.encode_varint(300)
+    let dec = nproto.decode_varint(enc)
+    ntest.assert_eq(dec.value, 300)
+}
+
+fn test_codegen() {
+    let schema = make_schema()
+    let code = nproto.codegen(schema, {include_helpers: true})
+    ntest.assert_true(len(code) > 0)
+    ntest.assert_true(code.contains("new_Person"))
+    nproto.close_schema(schema)
+}
+
+fn test_unknown_message_error() {
+    let schema = make_schema()
+    let e = nproto.new_message(schema, "test.Missing", {})
+    ntest.assert_error(e)
+    nproto.close_schema(schema)
+}
+
+fn test_invalid_handle() {
+    let e = nproto.get(99999, "name")
+    ntest.assert_error(e)
+}
+
+fn main() {
+    ntest.case("compile and describe", test_compile_and_describe)
+    ntest.case("new set get", test_new_set_get)
+    ntest.case("encode decode roundtrip", test_encode_decode_roundtrip)
+    ntest.case("json roundtrip", test_json_roundtrip)
+    ntest.case("merge and clone", test_merge_and_clone)
+    ntest.case("descriptor set roundtrip", test_descriptor_set_roundtrip)
+    ntest.case("decode_raw", test_decode_raw)
+    ntest.case("varint helpers", test_varint_helpers)
+    ntest.case("codegen", test_codegen)
+    ntest.case("unknown message error", test_unknown_message_error)
+    ntest.case("invalid handle", test_invalid_handle)
+
+    let summary = ntest.run()
+    print(summary)
+    if summary.failed > 0 {
+        error("nproto tests failed")
+    }
+}

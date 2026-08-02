@@ -1,0 +1,84 @@
+// nopenapi ntest suite — run: niao run tests/nopenapi.niao
+import "nopenapi"
+import "ntest"
+
+ntest.case("normalize_path colon", fn() {
+    ntest.assert_eq(nopenapi.normalize_path("/users/:id"), "/users/{id}")
+})
+
+ntest.case("normalize_path empty", fn() {
+    ntest.assert_eq(nopenapi.normalize_path(""), "/")
+})
+
+ntest.case("path_params", fn() {
+    let p = nopenapi.path_params("/users/:id/posts/:pid")
+    ntest.assert_eq(len(p), 2)
+    ntest.assert_eq(p[0], "id")
+    ntest.assert_eq(p[1], "pid")
+})
+
+ntest.case("operation_id", fn() {
+    ntest.assert_eq(nopenapi.operation_id("GET", "/users/:id"), "get_users_by_id")
+})
+
+ntest.case("from_ahiru paths", fn() {
+    let doc = nopenapi.from_ahiru([
+        {method: "GET", path: "/health"},
+        {method: "GET", path: "/users/:id", permission: "users.read"},
+    ], {title: "T", version: "1"})
+    let paths = nopenapi.paths(doc)
+    ntest.assert_eq(len(paths), 2)
+    ntest.assert_eq(paths[0], "/health")
+    ntest.assert_eq(paths[1], "/users/{id}")
+    ntest.assert(nopenapi.is_valid(doc))
+    nopenapi.close(doc)
+})
+
+ntest.case("infer_schema object", fn() {
+    let s = nopenapi.infer_schema({id: 1, name: "a"})
+    ntest.assert_eq(s.type, "object")
+})
+
+ntest.case("client_stub contains http", fn() {
+    let doc = nopenapi.from_routes([
+        {method: "GET", path: "/health", summary: "ok"},
+    ], {title: "API", version: "1"})
+    let stub = nopenapi.client_stub(doc, {base_url: "http://localhost"})
+    ntest.assert(stub.contains("import \"http\""))
+    ntest.assert(stub.contains("http.get"))
+    nopenapi.close(doc)
+})
+
+ntest.case("parse invalid returns error", fn() {
+    let e = nopenapi.parse("{")
+    ntest.assert_eq(type(e), "error")
+})
+
+ntest.case("closed handle errors", fn() {
+    let doc = nopenapi.create({title: "X", version: "1"})
+    nopenapi.close(doc)
+    let e = nopenapi.version(doc)
+    ntest.assert_eq(type(e), "error")
+})
+
+ntest.case("merge paths", fn() {
+    let a = nopenapi.from_routes([{method: "GET", path: "/a"}], {title: "A", version: "1"})
+    let b = nopenapi.from_routes([{method: "GET", path: "/b"}], {title: "B", version: "2"})
+    let m = nopenapi.merge(a, b)
+    let paths = nopenapi.paths(m)
+    ntest.assert_eq(len(paths), 2)
+    nopenapi.close(a)
+    nopenapi.close(b)
+    nopenapi.close(m)
+})
+
+ntest.case("unicode summary", fn() {
+    let doc = nopenapi.from_routes([
+        {method: "GET", path: "/こんにちは", summary: "挨拶"},
+    ], {title: "日本語", version: "1"})
+    ntest.assert(nopenapi.is_valid(doc))
+    nopenapi.close(doc)
+})
+
+let summary = ntest.run()
+print(summary)

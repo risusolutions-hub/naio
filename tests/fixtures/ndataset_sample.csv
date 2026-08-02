@@ -1,0 +1,9 @@
+label,score,split
+a,0.10,train
+b,0.20,train
+c,0.30,val
+d,0.40,test
+e,0.50,train
+f,0.60,val
+g,0.70,test
+h,0.80,train

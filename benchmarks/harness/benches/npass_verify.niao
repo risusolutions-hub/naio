@@ -1,0 +1,54 @@
+// npass hot-path bench — run via benchmarks/harness/run_bench.py
+import "npass"
+
+const PASSWORD = "benchmark-secret-Tr0ub4dor&3"
+
+fn main() {
+    let h_bcrypt = npass.bcrypt_hash(PASSWORD, 4)
+    let h_argon = npass.argon2_hash(PASSWORD, {memory_kib: 8192, time_cost: 1})
+    let h_scrypt = npass.scrypt_hash(PASSWORD, {log_n: 10, r: 8, p: 1})
+
+    let i = 0
+    while i < 200 {
+        let _ = npass.bcrypt_hash(PASSWORD, 4)
+        i = i + 1
+    }
+
+    let j = 0
+    while j < 5000 {
+        let _ = npass.verify(PASSWORD, h_bcrypt)
+        j = j + 1
+    }
+
+    let k = 0
+    while k < 50 {
+        let _ = npass.argon2_hash(PASSWORD, {memory_kib: 8192, time_cost: 1})
+        k = k + 1
+    }
+
+    let m = 0
+    while m < 2000 {
+        let _ = npass.verify(PASSWORD, h_argon)
+        m = m + 1
+    }
+
+    let n = 0
+    while n < 10000 {
+        let _ = npass.check("MyP@ssw0rd123!")
+        n = n + 1
+    }
+
+    let p = 0
+    while p < 2000 {
+        let _ = npass.generate(16)
+        p = p + 1
+    }
+
+    let q = 0
+    while q < 1000 {
+        let _ = npass.identify(h_scrypt)
+        q = q + 1
+    }
+
+    print(1)
+}

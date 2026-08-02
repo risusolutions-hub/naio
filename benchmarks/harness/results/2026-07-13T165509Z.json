@@ -1,0 +1,11 @@
+{
+  "timestamp": "2026-07-13T165509Z",
+  "niao": "C:\\Risu\\Neko\\target\\release\\niao.exe",
+  "runs": 5,
+  "results": {
+    "nsanitize_clean": {
+      "status": "error",
+      "detail": "Error: \"E2005: module not found: C:\\\\Risu\\\\Neko\\\\benchmarks\\\\harness\\\\benches\\\\nsanitize.niao\""
+    }
+  }
+}

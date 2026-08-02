@@ -1,0 +1,38 @@
+import "nmysql"
+import "nbench"
+
+fn main() {
+    let lit = "hello world's quote"
+    let ident = "table`name"
+
+    let r1 = nbench.run("escape_literal", fn() {
+        nmysql.escape_literal(lit)
+        return 0
+    }, {warmup: 5, iterations: 200})
+
+    let r2 = nbench.run("quote_ident", fn() {
+        nmysql.quote_ident(ident)
+        return 0
+    }, {warmup: 5, iterations: 200})
+
+    let r3 = nbench.run("version", fn() {
+        nmysql.version()
+        return 0
+    }, {warmup: 5, iterations: 200})
+
+    // Naive baseline: allocate a longer string repeatedly in Niao
+    let r4 = nbench.run("naive_escape", fn() {
+        let out = "'" + lit + "'"
+        // simulate quote doubling cost
+        let _ = out + out
+        return 0
+    }, {warmup: 5, iterations: 200})
+
+    print("escape_literal ns mean=", r1.mean, " p50=", r1.p50)
+    print("quote_ident ns mean=", r2.mean, " p50=", r2.p50)
+    print("version ns mean=", r3.mean, " p50=", r3.p50)
+    print("naive_escape ns mean=", r4.mean, " p50=", r4.p50)
+    let cmp = nbench.compare("escape_literal", "naive_escape")
+    print("escape vs naive: faster=", cmp.faster, " ratio=", cmp.ratio)
+    print("nmysql bench done")
+}

@@ -1,0 +1,11 @@
+{
+    "name": "nreq",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": "Ergonomic HTTP client: sessions, cookie jar, retries, redirects, connection pooling, multipart upload, streaming download, proxies.  ~requests, httpx (ergonomic layer over net, like requests over urllib)",
+    "import_paths": [
+        "nreq",
+        "std/nreq"
+    ],
+    "builtin_count": 28
+}

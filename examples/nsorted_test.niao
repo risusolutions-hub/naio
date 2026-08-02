@@ -1,0 +1,70 @@
+// nsorted integration tests — run: niao run examples/nsorted_test.niao
+import "nsorted"
+import "ntest"
+
+fn test_list_bisect() {
+    let sl = nsorted.new_list([3, 1, 2, 2])
+    ntest.assert_eq(nsorted.len(sl), 4)
+    ntest.assert_eq(nsorted.bisect_left(sl, 2), 1)
+    ntest.assert_eq(nsorted.bisect_right(sl, 2), 3)
+    ntest.assert_eq(nsorted.count(sl, 2), 2)
+    ntest.assert_eq(nsorted.index(sl, 3), 3)
+    nsorted.discard(sl, 2)
+    ntest.assert_eq(nsorted.len(sl), 3)
+    ntest.assert_eq(nsorted.min(sl), 1)
+    ntest.assert_eq(nsorted.max(sl), 3)
+    nsorted.close(sl)
+}
+
+fn test_set() {
+    let ss = nsorted.new_set([5, 1, 3, 1])
+    ntest.assert_eq(nsorted.len(ss), 3)
+    ntest.assert_true(nsorted.contains(ss, 3))
+    ntest.assert_false(nsorted.contains(ss, 9))
+    ntest.assert_eq(nsorted.index(ss, 5), 2)
+    nsorted.close(ss)
+}
+
+fn test_dict() {
+    let sd = nsorted.new_dict({z: 26, a: 1, m: 13})
+    ntest.assert_eq(nsorted.get(sd, "a"), 1)
+    ntest.assert_eq(nsorted.get(sd, "missing"), nil)
+    let k = nsorted.keys(sd)
+    ntest.assert_eq(k[0], "a")
+    let item = nsorted.peekitem(sd, -1)
+    ntest.assert_eq(item.key, "z")
+    nsorted.close(sd)
+}
+
+fn test_bisect_arr() {
+    let a = [1, 3, 3, 5]
+    ntest.assert_eq(nsorted.bisect_left_arr(a, 3), 1)
+    ntest.assert_eq(nsorted.bisect_right_arr(a, 3), 3)
+    let b = nsorted.insort_arr(a, 4)
+    ntest.assert_eq(b[3], 4)
+}
+
+fn test_nearest() {
+    let sl = nsorted.new_list([1, 4, 9, 16])
+    ntest.assert_eq(nsorted.nearest(sl, 5, "left"), 4)
+    ntest.assert_eq(nsorted.nearest(sl, 5, "right"), 9)
+    nsorted.close(sl)
+}
+
+fn test_empty_error() {
+    let sl = nsorted.new_list([])
+    let e = nsorted.min(sl)
+    ntest.assert_error(e)
+    nsorted.close(sl)
+}
+
+fn main() {
+    ntest.case("list bisect", test_list_bisect)
+    ntest.case("set ops", test_set)
+    ntest.case("dict order", test_dict)
+    ntest.case("array bisect", test_bisect_arr)
+    ntest.case("nearest lookup", test_nearest)
+    ntest.case("empty min error", test_empty_error)
+    let summary = ntest.run()
+    print(summary)
+}

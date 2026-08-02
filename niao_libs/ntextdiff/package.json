@@ -1,0 +1,22 @@
+{
+
+    "name": "ntextdiff",
+
+    "version": "0.1.0",
+
+    "kind": "native",
+
+    "description": " Line/word text diff, unified patches, 3-way merge.\n                    ~difflib, diff-match-patch  (beside ndiff structural)\n ...",
+
+    "import_paths": [
+
+        "ntextdiff",
+
+        "std/ntextdiff"
+
+    ],
+
+    "builtin_count": 30
+
+}
+

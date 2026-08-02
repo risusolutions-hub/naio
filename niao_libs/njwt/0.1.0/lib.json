@@ -1,0 +1,11 @@
+{
+    "name": "njwt",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": "JWT / JWS sign + verify (HS/RS/ES/EdDSA), claims and\n                    expiry validation, JWKS fetch.  ~pyjwt, python-jose ...",
+    "import_paths": [
+        "njwt",
+        "std/njwt"
+    ],
+    "builtin_count": 13
+}

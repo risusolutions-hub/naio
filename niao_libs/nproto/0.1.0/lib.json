@@ -1,0 +1,11 @@
+{
+    "name": "nproto",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": "Protocol Buffers codec + codegen from .proto files.\n                    ~protobuf\n...",
+    "import_paths": [
+        "nproto",
+        "std/nproto"
+    ],
+    "builtin_count": 29
+}

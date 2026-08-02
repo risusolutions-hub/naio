@@ -1,0 +1,15 @@
+[package]
+name = "niao_mqtt"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "MQTT 3.1.1/5 client: QoS 0-2, TLS, reconnect, wills"
+
+[dependencies]
+rustls = "0.23"
+rustls-native-certs = "0.8"
+rustls-pki-types = "1"
+
+[[bin]]
+name = "mqtt_bench"
+path = "src/bin/mqtt_bench.rs"

@@ -1,0 +1,11 @@
+{
+    "name": "ntune",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": "Hyperparameter search: grid, random, successive halving over nlearn/neval.  ~optuna",
+    "import_paths": [
+        "ntune",
+        "std/ntune"
+    ],
+    "builtin_count": 12
+}

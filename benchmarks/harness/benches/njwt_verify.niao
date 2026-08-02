@@ -1,0 +1,13 @@
+// njwt harness bench — HS256 verify throughput
+import "njwt"
+
+const JWT_IO = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.reGQzG3OKdoIMWLDKOZ4TICJit3EW69cQE72E2CfzRE"
+const ITERS = 10000
+
+fn main() {
+    let opts = {validate_exp: false}
+    for _ in 0..ITERS {
+        njwt.verify(JWT_IO, "your-256-bit-secret", opts)
+    }
+    print("njwt_verify", ITERS, "iterations done")
+}

@@ -1,0 +1,19 @@
+[package]
+name = "niao_docstore"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "Embedded JSON document store with queries and secondary indexes (~tinydb)"
+
+[lib]
+bench = false
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+rayon = "1"
+
+[[bin]]
+name = "docstore_bench"
+path = "src/bin/docstore_bench.rs"

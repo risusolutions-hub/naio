@@ -1,0 +1,11 @@
+{
+    "name": "ngeo",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": "Geospatial: haversine, GeoJSON, points/polygons,\n                    bounding boxes, tile math.  ~shapely, geopy, geojson",
+    "import_paths": [
+        "ngeo",
+        "std/ngeo"
+    ],
+    "builtin_count": 43
+}

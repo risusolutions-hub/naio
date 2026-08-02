@@ -1,0 +1,132 @@
+import "notp"
+import "ntest"
+
+const SECRET = "JBSWY3DPEHPK3PXP"
+const RFC_SECRET = "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ"
+
+fn test_hotp_rfc4226() {
+    let h = notp.hotp(RFC_SECRET)
+    ntest.assert_eq(h.at(0), "755224")
+    ntest.assert_eq(h.at(1), "287082")
+    ntest.assert_eq(h.at(9), "520489")
+}
+
+fn test_hotp_google_example() {
+    let h = notp.hotp(SECRET)
+    ntest.assert_eq(h.at(0), "282760")
+    ntest.assert_eq(h.at(1), "996554")
+}
+
+fn test_hotp_at_flat() {
+    ntest.assert_eq(notp.hotp_at(RFC_SECRET, 0), "755224")
+}
+
+fn test_totp_at_59() {
+    ntest.assert_eq(notp.totp_at(RFC_SECRET, 59), "287082")
+    ntest.assert_eq(notp.totp_at(SECRET, 59), "996554")
+}
+
+fn test_totp_at_rfc6238() {
+    ntest.assert_eq(notp.totp_at(RFC_SECRET, 1111111111), "050471")
+    ntest.assert_eq(
+        notp.totp_at(RFC_SECRET, 1111111111, {digits: 8}),
+        "14050471",
+    )
+}
+
+fn test_totp_handle_now_at() {
+    let t = notp.totp(RFC_SECRET)
+    let code = t.at(59)
+    ntest.assert_eq(code, "287082")
+}
+
+fn test_totp_verify() {
+    let t = notp.totp(RFC_SECRET)
+    let code = t.at(1111111111)
+    ntest.assert_true(t.verify(code, 1111111111, 0))
+    ntest.assert_true(t.verify(code, 1111111111 + 30, 1))
+    ntest.assert_false(t.verify("000000", 1111111111, 0))
+}
+
+fn test_hotp_verify() {
+    let h = notp.hotp(RFC_SECRET)
+    ntest.assert_true(h.verify("755224", 0))
+    ntest.assert_false(h.verify("755224", 1))
+}
+
+fn test_hotp_verify_window() {
+    let h = notp.hotp(RFC_SECRET)
+    let matched = h.verify_window("287082", 0, 2)
+    ntest.assert_eq(matched, 1)
+}
+
+fn test_compare_constant_time() {
+    ntest.assert_true(notp.compare("123456", "123456"))
+    ntest.assert_false(notp.compare("123456", "123457"))
+}
+
+fn test_random_base32() {
+    let s = notp.random_base32()
+    ntest.assert_eq(len(s), 32)
+    let s16 = notp.random_base32(16)
+    ntest.assert_eq(len(s16), 16)
+}
+
+fn test_base32_roundtrip() {
+    let bytes = notp.base32_decode(SECRET)
+    let enc = notp.base32_encode(bytes)
+    ntest.assert_eq(enc, SECRET)
+}
+
+fn test_parse_uri_totp() {
+    let uri = "otpauth://totp/Example:user%40example.com?secret=JBSWY3DPEHPK3PXP&issuer=Example"
+    let p = notp.parse_uri(uri)
+    ntest.assert_true(p.ok)
+    ntest.assert_eq(p.value.kind, "totp")
+    ntest.assert_eq(p.value.at(59), "996554")
+}
+
+fn test_provisioning_uri() {
+    let t = notp.totp(SECRET, {issuer: "MyApp"})
+    let uri = t.provisioning_uri("user@example.com", "MyApp")
+    ntest.assert_true(uri.starts_with("otpauth://totp/"))
+    let p = notp.parse_uri(uri)
+    ntest.assert_true(p.ok)
+}
+
+fn test_totp_at_bulk() {
+    let codes = notp.totp_at_bulk(RFC_SECRET, [59, 1111111111])
+    ntest.assert_eq(len(codes), 2)
+    ntest.assert_eq(codes[0], "287082")
+    ntest.assert_eq(codes[1], "050471")
+}
+
+fn test_hotp_at_bulk() {
+    let codes = notp.hotp_at_bulk(RFC_SECRET, [0, 1, 2])
+    ntest.assert_eq(len(codes), 3)
+    ntest.assert_eq(codes[0], "755224")
+}
+
+fn test_invalid_secret() {
+    let e = notp.hotp_at("!!!", 0)
+    ntest.assert_error(e)
+}
+
+fn test_invalid_digits() {
+    let e = notp.totp(SECRET, {digits: 0})
+    ntest.assert_error(e)
+}
+
+fn test_sha256_digest() {
+    let code = notp.totp_at(
+        SECRET,
+        59,
+        {digest: "sha256", digits: 8},
+    )
+    ntest.assert_eq(len(code), 8)
+}
+
+fn test_parse_uri_invalid() {
+    let p = notp.parse_uri("not-a-uri")
+    ntest.assert_false(p.ok)
+}

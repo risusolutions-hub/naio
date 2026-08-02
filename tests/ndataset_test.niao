@@ -1,0 +1,215 @@
+// ndataset tests — run: cargo run -p niao_cli -- run tests/ndataset_test.niao
+import "ndataset"
+import "ntest"
+
+fn sample_rows() {
+    return [{id: 1, label: "a", score: 0.1}, {id: 2, label: "b", score: 0.2}, {id: 3, label: "a", score: 0.3}, {id: 4, label: "c", score: 0.4}, {id: 5, label: "b", score: 0.5}]
+}
+
+fn test_from_rows() {
+    let ds = ndataset.from_rows(sample_rows())
+    ntest.assert_eq(ndataset.len(ds), 5)
+    let cols = ndataset.columns(ds)
+    ntest.assert_true(len(cols) >= 3)
+    let row = ndataset.get(ds, 0)
+    ntest.assert_eq(row.id, 1)
+    ndataset.close(ds)
+}
+
+fn test_from_rows_empty() {
+    let ds = ndataset.from_rows([])
+    ntest.assert_eq(ndataset.len(ds), 0)
+    ndataset.close(ds)
+}
+
+fn test_get_negative_index() {
+    let ds = ndataset.from_rows(sample_rows())
+    let last = ndataset.get(ds, -1)
+    ntest.assert_eq(last.id, 5)
+    ndataset.close(ds)
+}
+
+fn test_get_out_of_range() {
+    let ds = ndataset.from_rows(sample_rows())
+    let r = ndataset.get(ds, 99)
+    ntest.assert_error(r)
+    ndataset.close(ds)
+}
+
+fn test_select() {
+    let ds = ndataset.from_rows(sample_rows())
+    let sub = ndataset.select(ds, ["id", "label"])
+    ntest.assert_eq(len(ndataset.columns(sub)), 2)
+    let row = ndataset.get(sub, 1)
+    ntest.assert_eq(row.label, "b")
+    ntest.assert_eq(row.id, 2)
+    ndataset.close(sub)
+    ndataset.close(ds)
+}
+
+fn test_filter_eq() {
+    let ds = ndataset.from_rows(sample_rows())
+    let f = ndataset.filter_eq(ds, "label", "a")
+    ntest.assert_eq(ndataset.len(f), 2)
+    ndataset.close(f)
+    ndataset.close(ds)
+}
+
+fn test_shuffle() {
+    let ds = ndataset.from_rows(sample_rows())
+    let a = ndataset.shuffle(ds, 42)
+    let b = ndataset.shuffle(ds, 42)
+    ntest.assert_eq(ndataset.len(a), 5)
+    ntest.assert_eq(ndataset.get(a, 0).id, ndataset.get(b, 0).id)
+    ndataset.close(a)
+    ndataset.close(b)
+    ndataset.close(ds)
+}
+
+fn test_split() {
+    let ds = ndataset.from_rows(sample_rows())
+    let parts = ndataset.split(ds, 0.6, {val: 0.2, seed: 7})
+    ntest.assert_true(ndataset.len(parts.train) >= 1)
+    ntest.assert_true(ndataset.len(parts.val) >= 1)
+    ntest.assert_true(ndataset.len(parts.test) >= 1)
+    let total = ndataset.len(parts.train) + ndataset.len(parts.val) + ndataset.len(parts.test)
+    ntest.assert_eq(total, 5)
+    ndataset.close(parts.train)
+    ndataset.close(parts.val)
+    ndataset.close(parts.test)
+    ndataset.close(ds)
+}
+
+fn test_concat() {
+    let a = ndataset.from_rows([{x: 1}, {x: 2}])
+    let b = ndataset.from_rows([{x: 3}])
+    let c = ndataset.concat([a, b])
+    ntest.assert_eq(ndataset.len(c), 3)
+    ndataset.close(c)
+    ndataset.close(a)
+    ndataset.close(b)
+}
+
+fn test_take_skip() {
+    let ds = ndataset.from_rows(sample_rows())
+    let t = ndataset.take(ds, 2)
+    ntest.assert_eq(ndataset.len(t), 2)
+    let s = ndataset.skip(ds, 3)
+    ntest.assert_eq(ndataset.len(s), 2)
+    ndataset.close(t)
+    ndataset.close(s)
+    ndataset.close(ds)
+}
+
+fn test_to_rows() {
+    let ds = ndataset.from_rows(sample_rows())
+    let rows = ndataset.to_rows(ds)
+    ntest.assert_eq(len(rows), 5)
+    ndataset.close(ds)
+}
+
+fn test_batch_iterate() {
+    let ds = ndataset.from_rows(sample_rows())
+    let loader = ndataset.batch(ds, 2, {shuffle: true, seed: 1})
+    let count = 0
+    let total = 0
+    while true {
+        let batch = ndataset.next(loader)
+        if batch == nil {
+            break
+        }
+        count = count + 1
+        total = total + len(batch)
+    }
+    ntest.assert_eq(total, 5)
+    ntest.assert_true(count >= 2)
+    ndataset.reset(loader)
+    let again = ndataset.next(loader)
+    ntest.assert_true(len(again) > 0)
+    ndataset.close_loader(loader)
+    ndataset.close(ds)
+}
+
+fn test_batch_drop_last() {
+    let ds = ndataset.from_rows(sample_rows())
+    let loader = ndataset.batch(ds, 2, {drop_last: true})
+    let total = 0
+    while true {
+        let batch = ndataset.next(loader)
+        if batch == nil {
+            break
+        }
+        total = total + len(batch)
+    }
+    ntest.assert_eq(total, 4)
+    ndataset.close_loader(loader)
+    ndataset.close(ds)
+}
+
+fn test_from_csv() {
+    let ds = ndataset.from_csv("tests/fixtures/ndataset_sample.csv")
+    ntest.assert_eq(ndataset.len(ds), 8)
+    ntest.assert_true(len(ndataset.columns(ds)) >= 2)
+    ndataset.close(ds)
+}
+
+fn test_from_json() {
+    let ds = ndataset.from_json("tests/fixtures/ndataset_sample.json")
+    ntest.assert_eq(ndataset.len(ds), 2)
+    let row = ndataset.get(ds, 0)
+    ntest.assert_eq(row.name, "alice")
+    ndataset.close(ds)
+}
+
+fn test_from_jsonl() {
+    let ds = ndataset.from_jsonl("tests/fixtures/ndataset_sample.jsonl")
+    ntest.assert_eq(ndataset.len(ds), 3)
+    let f = ndataset.filter_eq(ds, "tag", "x")
+    ntest.assert_eq(ndataset.len(f), 2)
+    ndataset.close(f)
+    ndataset.close(ds)
+}
+
+fn test_invalid_handle() {
+    let ds = ndataset.from_rows([{a: 1}])
+    ndataset.close(ds)
+    let r = ndataset.len(ds)
+    ntest.assert_error(r)
+}
+
+fn test_split_invalid_ratio() {
+    let ds = ndataset.from_rows(sample_rows())
+    let r = ndataset.split(ds, 1.5)
+    ntest.assert_error(r)
+    ndataset.close(ds)
+}
+
+fn test_batch_zero_size() {
+    let ds = ndataset.from_rows(sample_rows())
+    let r = ndataset.batch(ds, 0)
+    ntest.assert_error(r)
+    ndataset.close(ds)
+}
+
+fn main() {
+    test_from_rows()
+    test_from_rows_empty()
+    test_get_negative_index()
+    test_get_out_of_range()
+    test_select()
+    test_filter_eq()
+    test_shuffle()
+    test_split()
+    test_concat()
+    test_take_skip()
+    test_to_rows()
+    test_batch_iterate()
+    test_batch_drop_last()
+    test_from_csv()
+    test_from_json()
+    test_from_jsonl()
+    test_invalid_handle()
+    test_split_invalid_ratio()
+    test_batch_zero_size()
+    print("ndataset: all tests passed")
+}

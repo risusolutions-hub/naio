@@ -1,0 +1,65 @@
+// ncbor micro-benchmarks — encode/decode hot paths.
+// Run: niao run examples/ncbor_bench.niao
+import "ncbor"
+import "nbench"
+
+fn make_iot_doc() {
+    let sensors = []
+    for i in 0..500 {
+        sensors.push({
+            id: i,
+            temp: 20.0 + i * 0.1,
+            ts: "2026-07-13T12:00:00Z",
+            raw: byte_array[0; 16]
+        })
+    }
+    return {sensors: sensors}
+}
+
+fn bench_encode() {
+    let doc = make_iot_doc()
+    for _ in 0..200 {
+        ncbor.encode(doc)
+    }
+}
+
+fn bench_decode() {
+    let doc = make_iot_doc()
+    let data = ncbor.encode(doc)
+    for _ in 0..200 {
+        ncbor.decode(data)
+    }
+}
+
+fn bench_canonical() {
+    let doc = make_iot_doc()
+    for _ in 0..200 {
+        ncbor.encode_canonical(doc)
+    }
+}
+
+fn bench_roundtrip() {
+    let doc = make_iot_doc()
+    for _ in 0..100 {
+        let data = ncbor.encode(doc)
+        ncbor.decode(data)
+    }
+}
+
+fn main() {
+    print("=== ncbor micro-benchmarks ===")
+    let doc = make_iot_doc()
+    let data = ncbor.encode(doc)
+    print("IoT doc encoded size:", len(data), "bytes")
+
+    let a = nbench.run("encode 500-sensor doc x200", bench_encode, {warmup: 1, iterations: 5})
+    let b = nbench.run("decode IoT doc x200", bench_decode, {warmup: 1, iterations: 5})
+    let c = nbench.run("encode_canonical x200", bench_canonical, {warmup: 1, iterations: 5})
+    let d = nbench.run("roundtrip x100", bench_roundtrip, {warmup: 1, iterations: 5})
+
+    print(a)
+    print(b)
+    print(c)
+    print(d)
+    nbench.clear()
+}

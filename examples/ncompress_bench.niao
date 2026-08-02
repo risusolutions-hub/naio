@@ -1,0 +1,105 @@
+// Micro-benchmarks for ncompress hot paths.
+// Run: niao run examples/ncompress_bench.niao
+import "ncompress"
+import "nbench"
+import "ncl"
+
+fn make_payload(n) {
+    let v = byte_array[]
+    for i in 0..n {
+        v = v + byte_array[(i * 17 + 31) % 256]
+    }
+    return v
+}
+
+fn bench_zstd_compress_64k() {
+    let raw = make_payload(65536)
+    let c = ncompress.compress(raw, "zstd", {level: 3})
+    return len(c)
+}
+
+fn bench_zstd_decompress_64k() {
+    let raw = make_payload(65536)
+    let c = ncompress.compress(raw, "zstd", {level: 3})
+    let d = ncompress.decompress(c, "zstd")
+    return len(d)
+}
+
+fn bench_lz4_compress_64k() {
+    let raw = make_payload(65536)
+    let c = ncompress.lz4_compress(raw)
+    return len(c)
+}
+
+fn bench_lz4_decompress_64k() {
+    let raw = make_payload(65536)
+    let c = ncompress.lz4_compress(raw)
+    let d = ncompress.lz4_decompress(c)
+    return len(d)
+}
+
+fn bench_brotli_compress_64k() {
+    let raw = make_payload(65536)
+    let c = ncompress.brotli_compress(raw, {level: 6})
+    return len(c)
+}
+
+fn bench_brotli_decompress_64k() {
+    let raw = make_payload(65536)
+    let c = ncompress.brotli_compress(raw, {level: 6})
+    let d = ncompress.brotli_decompress(c)
+    return len(d)
+}
+
+fn bench_xz_compress_64k() {
+    let raw = make_payload(65536)
+    let c = ncompress.xz_compress(raw, {level: 6})
+    return len(c)
+}
+
+fn bench_xz_decompress_64k() {
+    let raw = make_payload(65536)
+    let c = ncompress.xz_compress(raw, {level: 6})
+    let d = ncompress.xz_decompress(c)
+    return len(d)
+}
+
+fn bench_parallel_lz4_8x8k() {
+    let blocks = []
+    for i in 0..8 {
+        blocks = blocks + [make_payload(8192)]
+    }
+    let c = ncompress.parallel_compress(blocks, "lz4", {threads: 4})
+    return len(c)
+}
+
+fn main() {
+    let opts = {warmup: 2, iterations: 20}
+
+    let r1 = nbench.run("zstd compress 64KiB L3", bench_zstd_compress_64k, opts)
+    print("zstd compress 64KiB:", "mean=", r1.mean, "ns p50=", r1.p50)
+
+    let r2 = nbench.run("zstd decompress 64KiB", bench_zstd_decompress_64k, opts)
+    print("zstd decompress 64KiB:", "mean=", r2.mean, "ns p50=", r2.p50)
+
+    let r3 = nbench.run("lz4 compress 64KiB", bench_lz4_compress_64k, opts)
+    print("lz4 compress 64KiB:", "mean=", r3.mean, "ns p50=", r3.p50)
+
+    let r4 = nbench.run("lz4 decompress 64KiB", bench_lz4_decompress_64k, opts)
+    print("lz4 decompress 64KiB:", "mean=", r4.mean, "ns p50=", r4.p50)
+
+    let r5 = nbench.run("brotli compress 64KiB L6", bench_brotli_compress_64k, opts)
+    print("brotli compress 64KiB:", "mean=", r5.mean, "ns p50=", r5.p50)
+
+    let r6 = nbench.run("brotli decompress 64KiB", bench_brotli_decompress_64k, opts)
+    print("brotli decompress 64KiB:", "mean=", r6.mean, "ns p50=", r6.p50)
+
+    let r7 = nbench.run("xz compress 64KiB L6", bench_xz_compress_64k, opts)
+    print("xz compress 64KiB:", "mean=", r7.mean, "ns p50=", r7.p50)
+
+    let r8 = nbench.run("xz decompress 64KiB", bench_xz_decompress_64k, opts)
+    print("xz decompress 64KiB:", "mean=", r8.mean, "ns p50=", r8.p50)
+
+    let r9 = nbench.run("parallel lz4 8x8KiB", bench_parallel_lz4_8x8k, opts)
+    print("parallel lz4 8x8KiB:", "mean=", r9.mean, "ns p50=", r9.p50)
+}

@@ -1,0 +1,87 @@
+import "nglob"
+import "ntest"
+
+fn test_fnmatch() {
+    ntest.assert_true(nglob.match("foo.py", "*.py"))
+    ntest.assert_false(nglob.match_case("Foo.py", "*.py"))
+    ntest.assert_true(nglob.match("Foo.py", "*.py", {case_insensitive: true}))
+    ntest.assert_eq(nglob.filter(["a.py", "b.txt"], "*.py")[0], "a.py")
+    ntest.assert_true(nglob.has_magic("*.py"))
+    ntest.assert_false(nglob.has_magic("plain.txt"))
+    let esc = nglob.escape("a*b")
+    ntest.assert_true(nglob.match("a*b", esc))
+}
+
+fn test_translate() {
+    let re = nglob.translate("*.py")
+    ntest.assert_true(len(re) > 0)
+}
+
+fn test_compile() {
+    let m = nglob.compile(["*.rs", "*.toml"])
+    ntest.assert_true(nglob.matches(m, "lib.rs"))
+    ntest.assert_true(nglob.matches(m, "Cargo.toml"))
+    ntest.assert_false(nglob.matches(m, "readme.md"))
+    ntest.assert_eq(nglob.pattern_count(m), 2)
+    ntest.assert_false(nglob.is_gitignore(m))
+    nglob.close(m)
+}
+
+fn test_gitignore() {
+    let neg = "!" + "tests/**"
+    let m = nglob.compile(["*.py", neg], {gitignore: true})
+    ntest.assert_true(nglob.is_gitignore(m))
+    ntest.assert_true(nglob.ignored(m, "vendor/x.py"))
+    ntest.assert_false(nglob.ignored(m, "tests/x.py"))
+    ntest.assert_eq(nglob.classify(m, "main.py"), "ignore")
+    nglob.close(m)
+}
+
+fn test_match_any() {
+    ntest.assert_true(nglob.match_any("x.rs", ["*.py", "*.rs"]))
+    ntest.assert_false(nglob.match_any("x.md", ["*.py", "*.rs"]))
+}
+
+fn test_glob() {
+    let hits = nglob.glob("*.toml", {root: "crates/niao_glob"})
+    ntest.assert_true(len(hits) >= 1)
+}
+
+fn test_walk() {
+    let pat = "*" + "*" + "/*.rs"
+    let entries = nglob.walk("crates/niao_glob", {include: [pat], gitignore: false})
+    ntest.assert_true(len(entries) > 0)
+    ntest.assert_true(entries[0].path != "")
+}
+
+fn test_parallel_filter() {
+    let paths = ["a.py", "b.rs", "c.txt"]
+    let hits = nglob.parallel_filter(paths, "*.py")
+    ntest.assert_eq(len(hits), 1)
+    ntest.assert_eq(hits[0], "a.py")
+}
+
+fn test_invalid_pattern() {
+    let e = nglob.match("x", "[unclosed")
+    ntest.assert_error(e)
+}
+
+fn test_bad_handle() {
+    let e = nglob.matches(999999, "x.py")
+    ntest.assert_error(e)
+}
+
+fn main() {
+    ntest.case("fnmatch", test_fnmatch)
+    ntest.case("translate", test_translate)
+    ntest.case("compile matcher", test_compile)
+    ntest.case("gitignore", test_gitignore)
+    ntest.case("match_any", test_match_any)
+    ntest.case("filesystem glob", test_glob)
+    ntest.case("walk", test_walk)
+    ntest.case("parallel filter", test_parallel_filter)
+    ntest.case("invalid pattern", test_invalid_pattern)
+    ntest.case("bad handle", test_bad_handle)
+    let summary = ntest.run()
+    print(summary)
+}

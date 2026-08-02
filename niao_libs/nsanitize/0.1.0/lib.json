@@ -1,0 +1,22 @@
+{
+
+    "name": "nsanitize",
+
+    "version": "0.1.0",
+
+    "kind": "native",
+
+    "description": "Allowlist HTML sanitizer for user content (XSS-safe),\n                    URL scheme policy.  ~bleach, nh3 ...",
+
+    "import_paths": [
+
+        "nsanitize",
+
+        "std/nsanitize"
+
+    ],
+
+    "builtin_count": 14
+
+}
+

@@ -1,0 +1,11 @@
+{
+    "name": "ncbor",
+    "version": "0.1.0",
+    "kind": "native",
+    "description": " CBOR encode/decode (IoT / COSE friendly).  ~cbor2 ...",
+    "import_paths": [
+        "ncbor",
+        "std/ncbor"
+    ],
+    "builtin_count": 10
+}
