@@ -78,9 +78,10 @@ impl super::Vm {
         }
         if (self.alloc_since_gc >= GC_INTERVAL
             || self.heap.len() + self.native_ds.len() >= self.gc_threshold)
-            && (!self.frames.is_empty() || !self.stack.is_empty()) {
-                self.collect();
-            }
+            && (!self.frames.is_empty() || !self.stack.is_empty())
+        {
+            self.collect();
+        }
     }
 
     fn collect(&mut self) {

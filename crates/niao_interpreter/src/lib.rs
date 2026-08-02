@@ -515,11 +515,7 @@ impl Interpreter {
         env: Rc<Environment>,
     ) -> Result<ExecResult, RuntimeError> {
         match stmt {
-            Stmt::VarDecl {
-                name,
-                init,
-                ..
-            } => {
+            Stmt::VarDecl { name, init, .. } => {
                 let val = if let Some(expr) = init {
                     self.eval_expr(expr, Rc::clone(&env))?
                 } else {
