@@ -1,3 +1,5 @@
+pub mod ahiru_pool;
+pub mod call_bridge;
 mod dsa_fast;
 mod dsa_loops;
 mod fast_val;
@@ -12,8 +14,6 @@ mod nmongo_fast;
 #[cfg(feature = "nrag")]
 mod nrag_fast;
 mod turbo;
-pub mod call_bridge;
-pub mod ahiru_pool;
 
 use dsa_loops::{DsaLoopRegion, DsaLoopState};
 use fast_val::{value_to_fast, FastVal, HeapMut};
@@ -171,7 +171,11 @@ impl Vm {
     }
 
     /// Load bytecode definitions without executing the entry function.
-    pub fn init_module(&mut self, module: &BytecodeModule, _base_dir: &Path) -> Result<(), VmError> {
+    pub fn init_module(
+        &mut self,
+        module: &BytecodeModule,
+        _base_dir: &Path,
+    ) -> Result<(), VmError> {
         if module.fast_path.is_some() {
             return Err(VmError::Runtime(RuntimeError::at(
                 Span::dummy(),
@@ -347,7 +351,13 @@ impl Vm {
         self.memo_caches = self
             .functions
             .iter()
-            .map(|f| if f.memoize { Some(MemoCache::new()) } else { None })
+            .map(|f| {
+                if f.memoize {
+                    Some(MemoCache::new())
+                } else {
+                    None
+                }
+            })
             .collect();
         self.loop_regions = self
             .functions
@@ -355,11 +365,8 @@ impl Vm {
             .map(|f| turbo::find_regions(&f.code, &self.constants))
             .collect();
 
-        let fast_by_fidx: HashMap<u16, u8> = self
-            .dsa_fast_paths
-            .iter()
-            .map(|(&k, v)| (k, v.0))
-            .collect();
+        let fast_by_fidx: HashMap<u16, u8> =
+            self.dsa_fast_paths.iter().map(|(&k, v)| (k, v.0)).collect();
         self.dsa_loops = self
             .functions
             .iter()
@@ -440,6 +447,27 @@ impl Vm {
         Ok(())
     }
 
+    /// Run until the frame stack returns to `depth_before` (exclusive nested call).
+    /// Used when native code re-enters the VM to invoke a user handler.
+    pub(crate) fn run_nested_until(&mut self, depth_before: usize) -> Result<(), VmError> {
+        loop {
+            match self.dispatch_step() {
+                Ok(StepOutcome::Done) => return Ok(()),
+                Ok(StepOutcome::Continue) => {
+                    if self.frames.len() <= depth_before {
+                        return Ok(());
+                    }
+                }
+                Err(e) => {
+                    if self.handle_try(&e)? {
+                        continue;
+                    }
+                    return Err(e);
+                }
+            }
+        }
+    }
+
     #[inline(never)]
     fn dispatch(&mut self) -> Result<(), VmError> {
         loop {
@@ -500,429 +528,407 @@ impl Vm {
         self.frames[frame_top].ip = ip + 1;
 
         match op {
-                OpCode::Const(idx) => {
-                    debug_assert!((*idx as usize) < self.constants.len());
-                    let val = unsafe { *self.constants.get_unchecked(*idx as usize) };
-                    self.stack.push(val);
-                }
-                OpCode::Load(idx) => {
-                    let slot = *idx as usize;
-                    let frame = unsafe { self.frames.get_unchecked(frame_top) };
-                    let mut val = if slot < frame.locals.len() {
-                        unsafe { *frame.locals.get_unchecked(slot) }
-                    } else {
-                        FastVal::NIL
-                    };
-                    if matches!(val, FastVal::Nil) {
-                        if let Some(name) = self.slot_names.get(slot).filter(|n| !n.is_empty()) {
-                            if let Some(global) = self.globals.get(name) {
-                                let global_ref = Rc::clone(&global);
-                                val = if let Some(heap_idx) = self
-                                    .heap
-                                    .iter()
-                                    .position(|cell| Rc::ptr_eq(cell, &global_ref))
-                                {
-                                    FastVal::Heap(heap_idx as u32)
-                                } else {
-                                    let mut heap = HeapMut { vm: self };
-                                    value_to_fast(&global_ref.borrow(), &mut heap)
-                                };
-                                if slot < self.frames[frame_top].locals.len() {
-                                    self.frames[frame_top].locals[slot] = val;
-                                }
-                            }
-                        }
-                    }
-                    self.stack.push(val);
-                }
-                OpCode::Store(idx) => {
-                    let val = self.stack.pop().ok_or(VmError::StackUnderflow)?;
-                    let slot = *idx as usize;
-                    if slot < self.frames[frame_top].locals.len() {
-                        self.frames[frame_top].locals[slot] = val;
-                    }
-                }
-                OpCode::BindGlobal(idx) => {
-                    let val = self.stack.pop().ok_or(VmError::StackUnderflow)?;
-                    let slot = *idx as usize;
+            OpCode::Const(idx) => {
+                debug_assert!((*idx as usize) < self.constants.len());
+                let val = unsafe { *self.constants.get_unchecked(*idx as usize) };
+                self.stack.push(val);
+            }
+            OpCode::Load(idx) => {
+                let slot = *idx as usize;
+                let frame = unsafe { self.frames.get_unchecked(frame_top) };
+                let mut val = if slot < frame.locals.len() {
+                    unsafe { *frame.locals.get_unchecked(slot) }
+                } else {
+                    FastVal::NIL
+                };
+                if matches!(val, FastVal::Nil) {
                     if let Some(name) = self.slot_names.get(slot).filter(|n| !n.is_empty()) {
-                        let value_ref = self.fast_to_value_ref(val);
-                        self.globals.define(name.clone(), value_ref);
-                    }
-                    if slot < self.frames[frame_top].locals.len() {
-                        self.frames[frame_top].locals[slot] = val;
-                    }
-                }
-                OpCode::Add => self.do_int_binop(BinOp::Add)?,
-                OpCode::Sub => self.do_int_binop(BinOp::Sub)?,
-                OpCode::Mul => self.do_int_binop(BinOp::Mul)?,
-                OpCode::Div => self.do_int_binop(BinOp::Div)?,
-                OpCode::FloorDiv => self.do_int_binop(BinOp::FloorDiv)?,
-                OpCode::Mod => self.do_int_binop(BinOp::Mod)?,
-                OpCode::Eq => self.do_binop(BinOp::Eq)?,
-                OpCode::Ne => self.do_binop(BinOp::Ne)?,
-                OpCode::Lt => self.do_binop(BinOp::Lt)?,
-                OpCode::Gt => self.do_binop(BinOp::Gt)?,
-                OpCode::Le => self.do_binop(BinOp::Le)?,
-                OpCode::Ge => self.do_binop(BinOp::Ge)?,
-                OpCode::And => self.do_binop(BinOp::And)?,
-                OpCode::Or => self.do_binop(BinOp::Or)?,
-                OpCode::Not => self.do_unaryop(UnaryOp::Not)?,
-                OpCode::Neg => self.do_unaryop(UnaryOp::Neg)?,
-                OpCode::Call { func: fidx, argc } => {
-                    let fidx = *fidx;
-                    let argc = *argc as usize;
-                    if self.print_super_boom_factorial_native_idx == Some(fidx) && argc == 1 {
-                        if let Some(FastVal::Int(n)) = self.stack.last().copied() {
-                            self.stack.pop();
-                            print_super_boom_factorial_int(n);
-                            return Ok(StepOutcome::Continue);
-                        }
-                    }
-                    if self.super_boom_factorial_native_idx == Some(fidx) && argc == 1 {
-                        if let Some(FastVal::Int(n)) = self.stack.pop() {
-                            match super_boom_factorial_compute(n) {
-                                Value::Int(v) => self.stack.push(FastVal::Int(v)),
-                                Value::BigInt(b) => {
-                                    let idx = self.alloc_heap(Value::BigInt(b).ref_cell());
-                                    self.stack.push(FastVal::Heap(idx));
-                                }
-                                _ => self.stack.push(FastVal::NIL),
-                            }
-                            return Ok(StepOutcome::Continue);
-                        }
-                    }
-                    if self.print_super_boom_math_native_idx == Some(fidx) && argc == 1 {
-                        if let Some(FastVal::Int(n)) = self.stack.last().copied() {
-                            self.stack.pop();
-                            print_super_boom_math_int(n);
-                            return Ok(StepOutcome::Continue);
-                        }
-                    }
-                    if self.super_boom_math_native_idx == Some(fidx) && argc == 1 {
-                        if let Some(FastVal::Int(n)) = self.stack.pop() {
-                            self.stack.push(FastVal::Int(super_boom_math_compute(n)));
-                            return Ok(StepOutcome::Continue);
-                        }
-                    }
-                    if self.print_native_idx == Some(fidx) && argc == 1 {
-                        if let Some(v) = self.stack.last().copied() {
-                            match v {
-                                FastVal::Int(n) => {
-                                    self.stack.pop();
-                                    print_int_line(n);
-                                    return Ok(StepOutcome::Continue);
-                                }
-                                FastVal::Heap(idx) => {
-                                    if let Value::BigInt(n) = &*self.heap[idx as usize].borrow() {
-                                        self.stack.pop();
-                                        print_bigint_line(n);
-                                        return Ok(StepOutcome::Continue);
-                                    }
-                                }
-                                _ => {}
-                            }
-                        }
-                    }
-                    let ncl_fast = self.ncl_fast_paths.get(&fidx).copied();
-                    let json_fast = self.json_fast_paths.get(&fidx).copied();
-                    let io_fast = self.io_fast_paths.get(&fidx).copied();
-                    let nml_fast = self.nml_fast_paths.get(&fidx).copied();
-                    let nmongo_fast = self.nmongo_fast_paths.get(&fidx).copied();
-                    #[cfg(feature = "nrag")]
-                    let nrag_fast = self.nrag_fast_paths.get(&fidx).copied();
-                    #[cfg(feature = "nllm")]
-                    let nllm_fast = self.nllm_fast_paths.get(&fidx).copied();
-                    let dsa_fast = self.dsa_fast_paths.get(&fidx).copied();
-                    let native = self.native_indices.get(&fidx).map(Rc::clone);
-
-                    if let Some(path) = ncl_fast {
-                        if ncl_fast::NclFastPath::try_execute(&mut self.stack, &self.heap, argc, path)
-                        {
-                            return Ok(StepOutcome::Continue);
-                        }
-                    }
-                    if let Some(path) = json_fast {
-                        let base = self.stack.len() - argc;
-                        let arg_vals: Vec<FastVal> = self.stack[base..].to_vec();
-                        self.stack.truncate(base);
-                        let refs = Arc::clone(&self.native_refs);
-                        let heap_snap = self.heap.clone();
-                        let out = {
-                            let mut heap = HeapMut { vm: self };
-                            json_fast::JsonFastPath::try_execute(
-                                &arg_vals,
-                                &heap_snap,
-                                &refs,
-                                path,
-                                &mut heap,
-                            )
-                        };
-                        if let Some(v) = out {
-                            self.stack.push(v);
-                            return Ok(StepOutcome::Continue);
-                        }
-                        for v in arg_vals {
-                            self.stack.push(v);
-                        }
-                    }
-                    if let Some(path) = io_fast {
-                        let base = self.stack.len() - argc;
-                        let arg_vals: Vec<FastVal> = self.stack[base..].to_vec();
-                        self.stack.truncate(base);
-                        let refs = Arc::clone(&self.native_refs);
-                        let heap_snap = self.heap.clone();
-                        let out = {
-                            let mut heap = HeapMut { vm: self };
-                            io_fast::IoFastPath::try_execute(
-                                &arg_vals,
-                                &heap_snap,
-                                &refs,
-                                path,
-                                &mut heap,
-                            )
-                        };
-                        if let Some(v) = out {
-                            self.stack.push(v);
-                            return Ok(StepOutcome::Continue);
-                        }
-                        for v in arg_vals {
-                            self.stack.push(v);
-                        }
-                    }
-                    if let Some(path) = nml_fast {
-                        let base = self.stack.len() - argc;
-                        if matches!(path, nml_fast::NmlFastPath::BackwardStep)
-                            && nml_fast::NmlFastPath::try_backward_step(&self.stack, &self.heap, argc)
-                        {
-                            self.stack.truncate(base);
-                            self.stack.push(FastVal::Nil);
-                            return Ok(StepOutcome::Continue);
-                        }
-                        if let Some(handle_id) = path.try_execute(&self.stack, &self.heap, argc) {
-                            self.stack.truncate(base);
-                            let idx = self.alloc_heap(Value::NmlHandle(handle_id).ref_cell());
-                            self.stack.push(FastVal::Heap(idx));
-                            return Ok(StepOutcome::Continue);
-                        }
-                    }
-                    if let Some(path) = nmongo_fast {
-                        let base = self.stack.len() - argc;
-                        let args = nmongo_fast::args_from_stack(
-                            &self.stack,
-                            base,
-                            argc,
-                            &self.heap,
-                            &self.native_refs,
-                        );
-                        if let Some(result) = nmongo_fast::NmongoFastPath::try_execute_args(&args, path) {
-                            let out = {
-                                let mut heap = fast_val::HeapMut { vm: self };
-                                nmongo_fast::to_fast_val(result, &mut heap)
-                            };
-                            self.stack.truncate(base);
-                            self.stack.push(out);
-                            return Ok(StepOutcome::Continue);
-                        }
-                    }
-                    #[cfg(feature = "nrag")]
-                    if let Some(path) = nrag_fast {
-                        if nrag_fast::NragFastPath::try_execute_stack(&mut self.stack, argc, path) {
-                            return Ok(StepOutcome::Continue);
-                        }
-                        let base = self.stack.len() - argc;
-                        let arg_vals: Vec<FastVal> = self.stack[base..].to_vec();
-                        self.stack.truncate(base);
-                        let refs = Arc::clone(&self.native_refs);
-                        let heap_snap = self.heap.clone();
-                        let out = {
-                            let mut heap = HeapMut { vm: self };
-                            nrag_fast::NragFastPath::try_execute_heap(
-                                &arg_vals,
-                                &heap_snap,
-                                &refs,
-                                path,
-                                &mut heap,
-                            )
-                        };
-                        if let Some(v) = out {
-                            self.stack.push(v);
-                            return Ok(StepOutcome::Continue);
-                        }
-                        for v in arg_vals {
-                            self.stack.push(v);
-                        }
-                    }
-                    #[cfg(feature = "nllm")]
-                    if let Some(path) = nllm_fast {
-                        if nllm_fast::NllmFastPath::try_execute_stack(
-                            &mut self.stack,
-                            &self.heap,
-                            &self.native_refs,
-                            argc,
-                            path,
-                        ) {
-                            return Ok(StepOutcome::Continue);
-                        }
-                        let base = self.stack.len() - argc;
-                        let arg_vals: Vec<FastVal> = self.stack[base..].to_vec();
-                        self.stack.truncate(base);
-                        let refs = Arc::clone(&self.native_refs);
-                        let heap_snap = self.heap.clone();
-                        let out = {
-                            let mut heap = HeapMut { vm: self };
-                            nllm_fast::NllmFastPath::try_execute_heap(
-                                &arg_vals,
-                                &heap_snap,
-                                &refs,
-                                path,
-                                &mut heap,
-                            )
-                        };
-                        if let Some(v) = out {
-                            self.stack.push(v);
-                            return Ok(StepOutcome::Continue);
-                        }
-                        for v in arg_vals {
-                            self.stack.push(v);
-                        }
-                    }
-                    if let Some(native) = native {
-                        if let Some(path) = dsa_fast {
-                            if let Some(result) =
-                                path.execute(&mut self.stack, &self.heap, &self.native_ds, argc)
+                        if let Some(global) = self.globals.get(name) {
+                            let global_ref = Rc::clone(&global);
+                            val = if let Some(heap_idx) = self
+                                .heap
+                                .iter()
+                                .position(|cell| Rc::ptr_eq(cell, &global_ref))
                             {
-                                self.stack.push(result);
-                                return Ok(StepOutcome::Continue);
-                            }
-                        }
-                        self.call_args.clear();
-                        self.call_args.reserve(argc);
-                        for _ in 0..argc {
-                            let v = self.stack.pop().ok_or(VmError::StackUnderflow)?;
-                            self.call_args.push(self.fast_to_value_ref(v));
-                        }
-                        self.call_args.reverse();
-                        let result = self.call_native(&native, &self.call_args)?;
-                        let out = match &*result.borrow() {
-                            Value::Int(v) => FastVal::Int(*v),
-                            Value::Float(v) => FastVal::Float(*v),
-                            Value::Bool(v) => FastVal::Bool(*v),
-                            Value::Nil => FastVal::Nil,
-                            Value::Native(ds) => self.alloc_native(Rc::clone(ds)),
-                            _ => FastVal::Heap(self.alloc_heap(Rc::clone(&result))),
-                        };
-                        self.stack.push(out);
-                    } else if self.user_fn_indices.contains(&fidx) {
-                        self.enter_frame(fidx as usize, argc)?;
-                    } else {
-                        return Err(VmError::UnknownFunction(format!("idx_{fidx}")));
-                    }
-                }
-                OpCode::Return => {
-                    let val = self.stack.pop().unwrap_or(FastVal::NIL);
-                    let frame = self.frames.pop().unwrap();
-                    if let Some(key) = frame.memo_key {
-                        if let Some(cache) = &mut self.memo_caches[frame.func_idx] {
-                            cache.insert(key, val);
-                        }
-                    }
-                    self.frame_pool.push(frame.locals);
-                    if self.frames.is_empty() {
-                        return Ok(StepOutcome::Done);
-                    }
-                    self.stack.push(val);
-                }
-                OpCode::Jump(target) => {
-                    let t = *target as usize;
-                    if t <= ip {
-                        // Loop backedge: hand remaining iterations to the turbo tier.
-                        let region = self.loop_regions[func_idx]
-                            .iter()
-                            .find(|(j, _)| *j == ip)
-                            .map(|(_, r)| Rc::clone(r));
-                        if let Some(region) = region {
-                            if let Some(resume) = self.run_turbo(&region, frame_top) {
-                                self.frames[frame_top].ip = resume;
-                                return Ok(StepOutcome::Continue);
+                                FastVal::Heap(heap_idx as u32)
+                            } else {
+                                let mut heap = HeapMut { vm: self };
+                                value_to_fast(&global_ref.borrow(), &mut heap)
+                            };
+                            if slot < self.frames[frame_top].locals.len() {
+                                self.frames[frame_top].locals[slot] = val;
                             }
                         }
                     }
-                    self.frames[frame_top].ip = t;
                 }
-                OpCode::JumpIfFalse(target) => {
-                    let val = self.stack.pop().ok_or(VmError::StackUnderflow)?;
-                    if !val.is_truthy() {
-                        self.frames[frame_top].ip = *target as usize;
-                    }
-                }
-                OpCode::Pop => {
-                    self.stack.pop();
-                }
-                OpCode::MakeArray(n) => {
-                    let n = *n as usize;
-                    let refs = &self.native_refs;
-                    let mut items = Vec::with_capacity(n);
-                    for _ in 0..n {
-                        items.push(
-                            self.stack
-                                .pop()
-                                .ok_or(VmError::StackUnderflow)?
-                                .to_value_ref(&self.heap, &refs),
-                        );
-                    }
-                    items.reverse();
-                    let idx = self.alloc_heap(Value::Array(items).ref_cell());
-                    self.stack.push(FastVal::Heap(idx));
-                }
-                OpCode::MakeObject(fields) => {
-                    let f = fields.clone();
-                    self.do_make_object(&f)?;
-                }
-                OpCode::MakeInstance { class, fields } => {
-                    self.do_make_instance(*class, *fields)?
-                }
-                OpCode::GetField(idx) => self.do_get_field(*idx)?,
-                OpCode::SetField(idx) => self.do_set_field(*idx)?,
-                OpCode::GetIndex => self.do_get_index()?,
-                OpCode::SetIndex => self.do_set_index()?,
-                OpCode::CallMethod { field, argc } => {
-                    self.do_call_method(*field, *argc as usize)?
-                }
-                OpCode::CallSuper { method, argc } => {
-                    self.do_call_super(*method, *argc as usize)?
-                }
-                OpCode::TryBegin(catch_ip) => {
-                    self.try_stack.push(TryHandler {
-                        catch_ip: *catch_ip as usize,
-                        frame_depth: self.frames.len(),
-                        stack_len: self.stack.len(),
-                    });
-                }
-                OpCode::TryEnd(end_ip) => {
-                    self.try_stack.pop();
-                    self.frames[frame_top].ip = *end_ip as usize;
-                }
-                OpCode::Throw => {
-                    let val = self.stack.pop().ok_or(VmError::StackUnderflow)?;
-                    let value_ref = self.fast_to_value_ref(val);
-                    let runtime_err = match &*value_ref.borrow() {
-                        Value::Error(e) => RuntimeError::thrown(e.clone()),
-                        other => RuntimeError::thrown(niao_errors::NiaoErrorValue::from_message(
-                            other.to_string(),
-                            Span::dummy(),
-                        )),
-                    };
-                    return Err(VmError::Runtime(runtime_err));
-                }
-                OpCode::Halt => {
-                    let locals = self.frames.pop().unwrap().locals;
-                    self.frame_pool.push(locals);
-                    if self.frames.is_empty() {
-                        return Ok(StepOutcome::Done);
-                    }
+                self.stack.push(val);
+            }
+            OpCode::Store(idx) => {
+                let val = self.stack.pop().ok_or(VmError::StackUnderflow)?;
+                let slot = *idx as usize;
+                if slot < self.frames[frame_top].locals.len() {
+                    self.frames[frame_top].locals[slot] = val;
                 }
             }
+            OpCode::BindGlobal(idx) => {
+                let val = self.stack.pop().ok_or(VmError::StackUnderflow)?;
+                let slot = *idx as usize;
+                if let Some(name) = self.slot_names.get(slot).filter(|n| !n.is_empty()) {
+                    let value_ref = self.fast_to_value_ref(val);
+                    self.globals.define(name.clone(), value_ref);
+                }
+                if slot < self.frames[frame_top].locals.len() {
+                    self.frames[frame_top].locals[slot] = val;
+                }
+            }
+            OpCode::Add => self.do_int_binop(BinOp::Add)?,
+            OpCode::Sub => self.do_int_binop(BinOp::Sub)?,
+            OpCode::Mul => self.do_int_binop(BinOp::Mul)?,
+            OpCode::Div => self.do_int_binop(BinOp::Div)?,
+            OpCode::FloorDiv => self.do_int_binop(BinOp::FloorDiv)?,
+            OpCode::Mod => self.do_int_binop(BinOp::Mod)?,
+            OpCode::Eq => self.do_binop(BinOp::Eq)?,
+            OpCode::Ne => self.do_binop(BinOp::Ne)?,
+            OpCode::Lt => self.do_binop(BinOp::Lt)?,
+            OpCode::Gt => self.do_binop(BinOp::Gt)?,
+            OpCode::Le => self.do_binop(BinOp::Le)?,
+            OpCode::Ge => self.do_binop(BinOp::Ge)?,
+            OpCode::And => self.do_binop(BinOp::And)?,
+            OpCode::Or => self.do_binop(BinOp::Or)?,
+            OpCode::Not => self.do_unaryop(UnaryOp::Not)?,
+            OpCode::Neg => self.do_unaryop(UnaryOp::Neg)?,
+            OpCode::Call { func: fidx, argc } => {
+                let fidx = *fidx;
+                let argc = *argc as usize;
+                if self.print_super_boom_factorial_native_idx == Some(fidx) && argc == 1 {
+                    if let Some(FastVal::Int(n)) = self.stack.last().copied() {
+                        self.stack.pop();
+                        print_super_boom_factorial_int(n);
+                        return Ok(StepOutcome::Continue);
+                    }
+                }
+                if self.super_boom_factorial_native_idx == Some(fidx) && argc == 1 {
+                    if let Some(FastVal::Int(n)) = self.stack.pop() {
+                        match super_boom_factorial_compute(n) {
+                            Value::Int(v) => self.stack.push(FastVal::Int(v)),
+                            Value::BigInt(b) => {
+                                let idx = self.alloc_heap(Value::BigInt(b).ref_cell());
+                                self.stack.push(FastVal::Heap(idx));
+                            }
+                            _ => self.stack.push(FastVal::NIL),
+                        }
+                        return Ok(StepOutcome::Continue);
+                    }
+                }
+                if self.print_super_boom_math_native_idx == Some(fidx) && argc == 1 {
+                    if let Some(FastVal::Int(n)) = self.stack.last().copied() {
+                        self.stack.pop();
+                        print_super_boom_math_int(n);
+                        return Ok(StepOutcome::Continue);
+                    }
+                }
+                if self.super_boom_math_native_idx == Some(fidx) && argc == 1 {
+                    if let Some(FastVal::Int(n)) = self.stack.pop() {
+                        self.stack.push(FastVal::Int(super_boom_math_compute(n)));
+                        return Ok(StepOutcome::Continue);
+                    }
+                }
+                if self.print_native_idx == Some(fidx) && argc == 1 {
+                    if let Some(v) = self.stack.last().copied() {
+                        match v {
+                            FastVal::Int(n) => {
+                                self.stack.pop();
+                                print_int_line(n);
+                                return Ok(StepOutcome::Continue);
+                            }
+                            FastVal::Heap(idx) => {
+                                if let Value::BigInt(n) = &*self.heap[idx as usize].borrow() {
+                                    self.stack.pop();
+                                    print_bigint_line(n);
+                                    return Ok(StepOutcome::Continue);
+                                }
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+                let ncl_fast = self.ncl_fast_paths.get(&fidx).copied();
+                let json_fast = self.json_fast_paths.get(&fidx).copied();
+                let io_fast = self.io_fast_paths.get(&fidx).copied();
+                let nml_fast = self.nml_fast_paths.get(&fidx).copied();
+                let nmongo_fast = self.nmongo_fast_paths.get(&fidx).copied();
+                #[cfg(feature = "nrag")]
+                let nrag_fast = self.nrag_fast_paths.get(&fidx).copied();
+                #[cfg(feature = "nllm")]
+                let nllm_fast = self.nllm_fast_paths.get(&fidx).copied();
+                let dsa_fast = self.dsa_fast_paths.get(&fidx).copied();
+                let native = self.native_indices.get(&fidx).map(Rc::clone);
+
+                if let Some(path) = ncl_fast {
+                    if ncl_fast::NclFastPath::try_execute(&mut self.stack, &self.heap, argc, path) {
+                        return Ok(StepOutcome::Continue);
+                    }
+                }
+                if let Some(path) = json_fast {
+                    let base = self.stack.len() - argc;
+                    let arg_vals: Vec<FastVal> = self.stack[base..].to_vec();
+                    self.stack.truncate(base);
+                    let refs = Arc::clone(&self.native_refs);
+                    let heap_snap = self.heap.clone();
+                    let out = {
+                        let mut heap = HeapMut { vm: self };
+                        json_fast::JsonFastPath::try_execute(
+                            &arg_vals, &heap_snap, &refs, path, &mut heap,
+                        )
+                    };
+                    if let Some(v) = out {
+                        self.stack.push(v);
+                        return Ok(StepOutcome::Continue);
+                    }
+                    for v in arg_vals {
+                        self.stack.push(v);
+                    }
+                }
+                if let Some(path) = io_fast {
+                    let base = self.stack.len() - argc;
+                    let arg_vals: Vec<FastVal> = self.stack[base..].to_vec();
+                    self.stack.truncate(base);
+                    let refs = Arc::clone(&self.native_refs);
+                    let heap_snap = self.heap.clone();
+                    let out = {
+                        let mut heap = HeapMut { vm: self };
+                        io_fast::IoFastPath::try_execute(
+                            &arg_vals, &heap_snap, &refs, path, &mut heap,
+                        )
+                    };
+                    if let Some(v) = out {
+                        self.stack.push(v);
+                        return Ok(StepOutcome::Continue);
+                    }
+                    for v in arg_vals {
+                        self.stack.push(v);
+                    }
+                }
+                if let Some(path) = nml_fast {
+                    let base = self.stack.len() - argc;
+                    if matches!(path, nml_fast::NmlFastPath::BackwardStep)
+                        && nml_fast::NmlFastPath::try_backward_step(&self.stack, &self.heap, argc)
+                    {
+                        self.stack.truncate(base);
+                        self.stack.push(FastVal::Nil);
+                        return Ok(StepOutcome::Continue);
+                    }
+                    if let Some(handle_id) = path.try_execute(&self.stack, &self.heap, argc) {
+                        self.stack.truncate(base);
+                        let idx = self.alloc_heap(Value::NmlHandle(handle_id).ref_cell());
+                        self.stack.push(FastVal::Heap(idx));
+                        return Ok(StepOutcome::Continue);
+                    }
+                }
+                if let Some(path) = nmongo_fast {
+                    let base = self.stack.len() - argc;
+                    let args = nmongo_fast::args_from_stack(
+                        &self.stack,
+                        base,
+                        argc,
+                        &self.heap,
+                        &self.native_refs,
+                    );
+                    if let Some(result) = nmongo_fast::NmongoFastPath::try_execute_args(&args, path)
+                    {
+                        let out = {
+                            let mut heap = fast_val::HeapMut { vm: self };
+                            nmongo_fast::to_fast_val(result, &mut heap)
+                        };
+                        self.stack.truncate(base);
+                        self.stack.push(out);
+                        return Ok(StepOutcome::Continue);
+                    }
+                }
+                #[cfg(feature = "nrag")]
+                if let Some(path) = nrag_fast {
+                    if nrag_fast::NragFastPath::try_execute_stack(&mut self.stack, argc, path) {
+                        return Ok(StepOutcome::Continue);
+                    }
+                    let base = self.stack.len() - argc;
+                    let arg_vals: Vec<FastVal> = self.stack[base..].to_vec();
+                    self.stack.truncate(base);
+                    let refs = Arc::clone(&self.native_refs);
+                    let heap_snap = self.heap.clone();
+                    let out = {
+                        let mut heap = HeapMut { vm: self };
+                        nrag_fast::NragFastPath::try_execute_heap(
+                            &arg_vals, &heap_snap, &refs, path, &mut heap,
+                        )
+                    };
+                    if let Some(v) = out {
+                        self.stack.push(v);
+                        return Ok(StepOutcome::Continue);
+                    }
+                    for v in arg_vals {
+                        self.stack.push(v);
+                    }
+                }
+                #[cfg(feature = "nllm")]
+                if let Some(path) = nllm_fast {
+                    if nllm_fast::NllmFastPath::try_execute_stack(
+                        &mut self.stack,
+                        &self.heap,
+                        &self.native_refs,
+                        argc,
+                        path,
+                    ) {
+                        return Ok(StepOutcome::Continue);
+                    }
+                    let base = self.stack.len() - argc;
+                    let arg_vals: Vec<FastVal> = self.stack[base..].to_vec();
+                    self.stack.truncate(base);
+                    let refs = Arc::clone(&self.native_refs);
+                    let heap_snap = self.heap.clone();
+                    let out = {
+                        let mut heap = HeapMut { vm: self };
+                        nllm_fast::NllmFastPath::try_execute_heap(
+                            &arg_vals, &heap_snap, &refs, path, &mut heap,
+                        )
+                    };
+                    if let Some(v) = out {
+                        self.stack.push(v);
+                        return Ok(StepOutcome::Continue);
+                    }
+                    for v in arg_vals {
+                        self.stack.push(v);
+                    }
+                }
+                if let Some(native) = native {
+                    if let Some(path) = dsa_fast {
+                        if let Some(result) =
+                            path.execute(&mut self.stack, &self.heap, &self.native_ds, argc)
+                        {
+                            self.stack.push(result);
+                            return Ok(StepOutcome::Continue);
+                        }
+                    }
+                    self.call_args.clear();
+                    self.call_args.reserve(argc);
+                    for _ in 0..argc {
+                        let v = self.stack.pop().ok_or(VmError::StackUnderflow)?;
+                        self.call_args.push(self.fast_to_value_ref(v));
+                    }
+                    self.call_args.reverse();
+                    let result = self.call_native(&native, &self.call_args)?;
+                    let out = match &*result.borrow() {
+                        Value::Int(v) => FastVal::Int(*v),
+                        Value::Float(v) => FastVal::Float(*v),
+                        Value::Bool(v) => FastVal::Bool(*v),
+                        Value::Nil => FastVal::Nil,
+                        Value::Native(ds) => self.alloc_native(Rc::clone(ds)),
+                        _ => FastVal::Heap(self.alloc_heap(Rc::clone(&result))),
+                    };
+                    self.stack.push(out);
+                } else if self.user_fn_indices.contains(&fidx) {
+                    self.enter_frame(fidx as usize, argc)?;
+                } else {
+                    return Err(VmError::UnknownFunction(format!("idx_{fidx}")));
+                }
+            }
+            OpCode::Return => {
+                let val = self.stack.pop().unwrap_or(FastVal::NIL);
+                let frame = self.frames.pop().unwrap();
+                if let Some(key) = frame.memo_key {
+                    if let Some(cache) = &mut self.memo_caches[frame.func_idx] {
+                        cache.insert(key, val);
+                    }
+                }
+                self.frame_pool.push(frame.locals);
+                if self.frames.is_empty() {
+                    return Ok(StepOutcome::Done);
+                }
+                self.stack.push(val);
+            }
+            OpCode::Jump(target) => {
+                let t = *target as usize;
+                if t <= ip {
+                    // Loop backedge: hand remaining iterations to the turbo tier.
+                    let region = self.loop_regions[func_idx]
+                        .iter()
+                        .find(|(j, _)| *j == ip)
+                        .map(|(_, r)| Rc::clone(r));
+                    if let Some(region) = region {
+                        if let Some(resume) = self.run_turbo(&region, frame_top) {
+                            self.frames[frame_top].ip = resume;
+                            return Ok(StepOutcome::Continue);
+                        }
+                    }
+                }
+                self.frames[frame_top].ip = t;
+            }
+            OpCode::JumpIfFalse(target) => {
+                let val = self.stack.pop().ok_or(VmError::StackUnderflow)?;
+                if !val.is_truthy() {
+                    self.frames[frame_top].ip = *target as usize;
+                }
+            }
+            OpCode::Pop => {
+                self.stack.pop();
+            }
+            OpCode::MakeArray(n) => {
+                let n = *n as usize;
+                let refs = &self.native_refs;
+                let mut items = Vec::with_capacity(n);
+                for _ in 0..n {
+                    items.push(
+                        self.stack
+                            .pop()
+                            .ok_or(VmError::StackUnderflow)?
+                            .to_value_ref(&self.heap, &refs),
+                    );
+                }
+                items.reverse();
+                let idx = self.alloc_heap(Value::Array(items).ref_cell());
+                self.stack.push(FastVal::Heap(idx));
+            }
+            OpCode::MakeObject(fields) => {
+                let f = fields.clone();
+                self.do_make_object(&f)?;
+            }
+            OpCode::MakeInstance { class, fields } => self.do_make_instance(*class, *fields)?,
+            OpCode::GetField(idx) => self.do_get_field(*idx)?,
+            OpCode::SetField(idx) => self.do_set_field(*idx)?,
+            OpCode::GetIndex => self.do_get_index()?,
+            OpCode::SetIndex => self.do_set_index()?,
+            OpCode::CallMethod { field, argc } => self.do_call_method(*field, *argc as usize)?,
+            OpCode::CallSuper { method, argc } => self.do_call_super(*method, *argc as usize)?,
+            OpCode::TryBegin(catch_ip) => {
+                self.try_stack.push(TryHandler {
+                    catch_ip: *catch_ip as usize,
+                    frame_depth: self.frames.len(),
+                    stack_len: self.stack.len(),
+                });
+            }
+            OpCode::TryEnd(end_ip) => {
+                self.try_stack.pop();
+                self.frames[frame_top].ip = *end_ip as usize;
+            }
+            OpCode::Throw => {
+                let val = self.stack.pop().ok_or(VmError::StackUnderflow)?;
+                let value_ref = self.fast_to_value_ref(val);
+                let runtime_err = match &*value_ref.borrow() {
+                    Value::Error(e) => RuntimeError::thrown(e.clone()),
+                    other => RuntimeError::thrown(niao_errors::NiaoErrorValue::from_message(
+                        other.to_string(),
+                        Span::dummy(),
+                    )),
+                };
+                return Err(VmError::Runtime(runtime_err));
+            }
+            OpCode::Halt => {
+                let locals = self.frames.pop().unwrap().locals;
+                self.frame_pool.push(locals);
+                if self.frames.is_empty() {
+                    return Ok(StepOutcome::Done);
+                }
+            }
+        }
         Ok(StepOutcome::Continue)
     }
 
@@ -946,50 +952,48 @@ impl Vm {
             BinOp::Add | BinOp::Sub | BinOp::Mul | BinOp::Div | BinOp::FloorDiv | BinOp::Mod
         ) {
             match (lhs, rhs) {
-                (FastVal::Int(a), FastVal::Int(b)) => {
-                    match op {
-                        BinOp::Add => match a.checked_add(b) {
-                            Some(v) => FastVal::Int(v),
-                            None => self.promote_bigint_binop(a, b, |x, y| x + y)?,
-                        },
-                        BinOp::Sub => match a.checked_sub(b) {
-                            Some(v) => FastVal::Int(v),
-                            None => self.promote_bigint_binop(a, b, |x, y| x - y)?,
-                        },
-                        BinOp::Mul => match a.checked_mul(b) {
-                            Some(v) => FastVal::Int(v),
-                            None => self.promote_bigint_binop(a, b, |x, y| x * y)?,
-                        },
-                        BinOp::Div => {
-                            if b == 0 {
-                                return Err(VmError::Runtime(RuntimeError::DivisionByZero {
-                                    line: 0,
-                                    col: 0,
-                                }));
-                            }
-                            FastVal::Float(a as f64 / b as f64)
+                (FastVal::Int(a), FastVal::Int(b)) => match op {
+                    BinOp::Add => match a.checked_add(b) {
+                        Some(v) => FastVal::Int(v),
+                        None => self.promote_bigint_binop(a, b, |x, y| x + y)?,
+                    },
+                    BinOp::Sub => match a.checked_sub(b) {
+                        Some(v) => FastVal::Int(v),
+                        None => self.promote_bigint_binop(a, b, |x, y| x - y)?,
+                    },
+                    BinOp::Mul => match a.checked_mul(b) {
+                        Some(v) => FastVal::Int(v),
+                        None => self.promote_bigint_binop(a, b, |x, y| x * y)?,
+                    },
+                    BinOp::Div => {
+                        if b == 0 {
+                            return Err(VmError::Runtime(RuntimeError::DivisionByZero {
+                                line: 0,
+                                col: 0,
+                            }));
                         }
-                        BinOp::FloorDiv => {
-                            if b == 0 {
-                                return Err(VmError::Runtime(RuntimeError::DivisionByZero {
-                                    line: 0,
-                                    col: 0,
-                                }));
-                            }
-                            FastVal::Int(a / b)
-                        }
-                        BinOp::Mod => {
-                            if b == 0 {
-                                return Err(VmError::Runtime(RuntimeError::DivisionByZero {
-                                    line: 0,
-                                    col: 0,
-                                }));
-                            }
-                            FastVal::Int(a % b)
-                        }
-                        _ => unreachable!(),
+                        FastVal::Float(a as f64 / b as f64)
                     }
-                }
+                    BinOp::FloorDiv => {
+                        if b == 0 {
+                            return Err(VmError::Runtime(RuntimeError::DivisionByZero {
+                                line: 0,
+                                col: 0,
+                            }));
+                        }
+                        FastVal::Int(a / b)
+                    }
+                    BinOp::Mod => {
+                        if b == 0 {
+                            return Err(VmError::Runtime(RuntimeError::DivisionByZero {
+                                line: 0,
+                                col: 0,
+                            }));
+                        }
+                        FastVal::Int(a % b)
+                    }
+                    _ => unreachable!(),
+                },
                 (FastVal::Float(a), FastVal::Float(b)) => match op {
                     BinOp::Add => FastVal::Float(a + b),
                     BinOp::Sub => FastVal::Float(a - b),
@@ -1164,7 +1168,8 @@ impl Vm {
                 map.insert(field, val.to_value_ref(&self.heap, &self.native_refs));
             }
             Value::Instance(inst) => {
-                inst.fields.insert(field, val.to_value_ref(&self.heap, &self.native_refs));
+                inst.fields
+                    .insert(field, val.to_value_ref(&self.heap, &self.native_refs));
             }
             _ => {
                 return Err(VmError::Runtime(RuntimeError::TypeError {
@@ -1316,7 +1321,11 @@ impl Vm {
         let frame = self.frames.last().ok_or(VmError::StackUnderflow)?;
         let func = &self.functions[frame.func_idx];
         let self_slot = func.param_slots.first().copied().unwrap_or(0) as usize;
-        let self_val = frame.locals.get(self_slot).copied().ok_or(VmError::StackUnderflow)?;
+        let self_val = frame
+            .locals
+            .get(self_slot)
+            .copied()
+            .ok_or(VmError::StackUnderflow)?;
 
         let mut args = Vec::with_capacity(argc);
         for _ in 0..argc {

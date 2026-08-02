@@ -299,7 +299,10 @@ ndiff_fns![
 ];
 
 fn all_builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(flat, _, f)| (flat, f)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(flat, _, f)| (flat, f))
+        .collect()
 }
 
 pub fn namespace() -> Value {
@@ -407,10 +410,7 @@ mod tests {
 
     #[test]
     fn diff_reports_paths() {
-        let left = obj(&[
-            ("a", obj(&[("b", arr(vec![i(1), i(2)]))])),
-            ("c", s("x")),
-        ]);
+        let left = obj(&[("a", obj(&[("b", arr(vec![i(1), i(2)]))])), ("c", s("x"))]);
         let right = obj(&[
             ("a", obj(&[("b", arr(vec![i(1), i(9)]))])),
             ("c", s("y")),
@@ -420,7 +420,10 @@ mod tests {
         let borrowed = result.borrow();
         match &*borrowed {
             Value::Object(map) => {
-                assert!(matches!(&*map.get("equal").unwrap().borrow(), Value::Bool(false)));
+                assert!(matches!(
+                    &*map.get("equal").unwrap().borrow(),
+                    Value::Bool(false)
+                ));
                 match &*map.get("changes").unwrap().borrow() {
                     Value::Array(chs) => {
                         assert_eq!(chs.len(), 3);
@@ -483,7 +486,10 @@ mod tests {
         let borrowed = d.borrow();
         match &*borrowed {
             Value::Object(map) => {
-                assert!(matches!(&*map.get("equal").unwrap().borrow(), Value::Bool(true)));
+                assert!(matches!(
+                    &*map.get("equal").unwrap().borrow(),
+                    Value::Bool(true)
+                ));
                 match &*map.get("changes").unwrap().borrow() {
                     Value::Array(chs) => assert!(chs.is_empty()),
                     other => panic!("expected array, got {other:?}"),

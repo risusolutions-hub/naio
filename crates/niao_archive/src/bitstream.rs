@@ -35,11 +35,7 @@ impl<'a> BitReader<'a> {
 
     pub fn take_bits(&mut self, n: u8) -> Result<u32> {
         self.ensure_bits(n)?;
-        let mask = if n == 32 {
-            u32::MAX
-        } else {
-            (1u32 << n) - 1
-        };
+        let mask = if n == 32 { u32::MAX } else { (1u32 << n) - 1 };
         let v = self.bit_buf & mask;
         self.bit_buf >>= n;
         self.bit_count -= n;

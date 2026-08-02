@@ -40,7 +40,9 @@ where
         MinimizeMethod::CG => gradient_method(&mut f, jac, x0, &options, MethodKind::CG),
         MinimizeMethod::Bfgs => gradient_method(&mut f, jac, x0, &options, MethodKind::Bfgs),
         MinimizeMethod::LBfgs => gradient_method(&mut f, jac, x0, &options, MethodKind::LBfgs),
-        MinimizeMethod::NewtonCG => gradient_method(&mut f, jac, x0, &options, MethodKind::NewtonCG),
+        MinimizeMethod::NewtonCG => {
+            gradient_method(&mut f, jac, x0, &options, MethodKind::NewtonCG)
+        }
     }
 }
 
@@ -186,16 +188,7 @@ where
                 &mut grad_new,
             )
         } else {
-            let ls = armijo_backtracking(
-                f,
-                &x,
-                &grad,
-                &direction,
-                fval,
-                1e-4,
-                1.0,
-                &mut x_new,
-            );
+            let ls = armijo_backtracking(f, &x, &grad, &direction, fval, 1e-4, 1.0, &mut x_new);
             if let Some(ref mut j) = jac {
                 j(&x_new, &mut grad_new);
                 ngev += 1;
@@ -320,8 +313,7 @@ fn bfgs_update(h: &mut [f64], n: usize, s: &[f64], y: &[f64]) {
     let yhy = dot(y, &hy);
     for i in 0..n {
         for j in 0..n {
-            h[i * n + j] += rho * s[i] * s[j]
-                - rho * (s[i] * hy[j] + hy[i] * s[j])
+            h[i * n + j] += rho * s[i] * s[j] - rho * (s[i] * hy[j] + hy[i] * s[j])
                 + rho * (1.0 + rho * yhy) * hy[i] * hy[j];
         }
     }
@@ -392,13 +384,8 @@ fn newton_cg_direction<F>(
     scale(-1.0, direction);
 }
 
-fn hessian_vector_product<F>(
-    f: &mut F,
-    x: &[f64],
-    v: &[f64],
-    out: &mut [f64],
-    nfev: &mut usize,
-) where
+fn hessian_vector_product<F>(f: &mut F, x: &[f64], v: &[f64], out: &mut [f64], nfev: &mut usize)
+where
     F: FnMut(&[f64], &mut [f64]) -> f64,
 {
     let n = x.len();
@@ -429,13 +416,14 @@ where
     simplex.push(x0.to_vec());
     for i in 0..n {
         let mut v = x0.to_vec();
-        v[i] += if x0[i].abs() > 1e-6 { 0.05 * x0[i] } else { 0.00025 };
+        v[i] += if x0[i].abs() > 1e-6 {
+            0.05 * x0[i]
+        } else {
+            0.00025
+        };
         simplex.push(v);
     }
-    let mut fvals: Vec<f64> = simplex
-        .iter()
-        .map(|s| f(s, &mut vec![0.0; n]))
-        .collect();
+    let mut fvals: Vec<f64> = simplex.iter().map(|s| f(s, &mut vec![0.0; n])).collect();
     let mut nfev = simplex.len();
     let alpha = 1.0;
     let gamma = 2.0;
@@ -528,7 +516,9 @@ where
         }
     }
 
-    let best = (0..=n).min_by(|&a, &b| fvals[a].partial_cmp(&fvals[b]).unwrap()).unwrap();
+    let best = (0..=n)
+        .min_by(|&a, &b| fvals[a].partial_cmp(&fvals[b]).unwrap())
+        .unwrap();
     OptimizeResult::fail(
         simplex[best].clone(),
         fvals[best],
@@ -677,7 +667,14 @@ mod tests {
 
     fn check_result(res: &OptimizeResult, x_star: &[f64], tol: f64) {
         for (a, b) in res.x.iter().zip(x_star.iter()) {
-            assert!((a - b).abs() < tol, "x={:?} expected {:?} fun={} msg={}", res.x, x_star, res.fun, res.message);
+            assert!(
+                (a - b).abs() < tol,
+                "x={:?} expected {:?} fun={} msg={}",
+                res.x,
+                x_star,
+                res.fun,
+                res.message
+            );
         }
     }
 
@@ -795,7 +792,13 @@ mod tests {
             y[i] = g1[i] - g0[i];
         }
         let mut dir = vec![0.0; 2];
-        lbfgs_direction(&[s.clone()], &[y.clone()], &[1.0 / dot(&s, &y)], &g1, &mut dir);
+        lbfgs_direction(
+            &[s.clone()],
+            &[y.clone()],
+            &[1.0 / dot(&s, &y)],
+            &g1,
+            &mut dir,
+        );
         assert!(dot(&g1, &dir) < 0.0, "not descent: g·d={}", dot(&g1, &dir));
     }
 

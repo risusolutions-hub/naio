@@ -1,4 +1,4 @@
-﻿//! Native nsimd standard library — unrolled autovectorized f64/i64 kernels
+//! Native nsimd standard library — unrolled autovectorized f64/i64 kernels
 //! on packed `FloatArray` / `IntArray` (`chunks_exact(8)` hot loops).
 //!
 //! Import with `import "nsimd"` (or `import "std/nsimd"`).
@@ -66,7 +66,6 @@ fn float_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> NiaoResul
     }
 }
 
-
 fn paired_arrays<'a>(
     a: &'a Value,
     b: &'a Value,
@@ -77,11 +76,7 @@ fn paired_arrays<'a>(
         (Value::IntArray(x), Value::IntArray(y)) if x.len() == y.len() => Ok((x, y)),
         (Value::IntArray(x), Value::IntArray(y)) => Err(simd_err(
             span,
-            format!(
-                "{name}() length mismatch: {} vs {}",
-                x.len(),
-                y.len()
-            ),
+            format!("{name}() length mismatch: {} vs {}", x.len(), y.len()),
         )),
         _ => Err(simd_err(
             span,
@@ -100,11 +95,7 @@ fn paired_float_arrays<'a>(
         (Value::FloatArray(x), Value::FloatArray(y)) if x.len() == y.len() => Ok((x, y)),
         (Value::FloatArray(x), Value::FloatArray(y)) => Err(simd_err(
             span,
-            format!(
-                "{name}() length mismatch: {} vs {}",
-                x.len(),
-                y.len()
-            ),
+            format!("{name}() length mismatch: {} vs {}", x.len(), y.len()),
         )),
         _ => Err(simd_err(
             span,
@@ -186,12 +177,10 @@ fn dot_i64_kernel(a: &[i64], b: &[i64]) -> i64 {
     let a_rem = a_chunks.remainder();
     let b_rem = b_chunks.remainder();
     for (ac, bc) in a_chunks.zip(b_chunks) {
-        let [x0, x1, x2, x3, x4, x5, x6, x7] = [
-            ac[0], ac[1], ac[2], ac[3], ac[4], ac[5], ac[6], ac[7],
-        ];
-        let [y0, y1, y2, y3, y4, y5, y6, y7] = [
-            bc[0], bc[1], bc[2], bc[3], bc[4], bc[5], bc[6], bc[7],
-        ];
+        let [x0, x1, x2, x3, x4, x5, x6, x7] =
+            [ac[0], ac[1], ac[2], ac[3], ac[4], ac[5], ac[6], ac[7]];
+        let [y0, y1, y2, y3, y4, y5, y6, y7] =
+            [bc[0], bc[1], bc[2], bc[3], bc[4], bc[5], bc[6], bc[7]];
         a0 += x0 as i128 * y0 as i128 + x1 as i128 * y1 as i128;
         a1 += x2 as i128 * y2 as i128 + x3 as i128 * y3 as i128;
         a2 += x4 as i128 * y4 as i128 + x5 as i128 * y5 as i128;
@@ -219,12 +208,10 @@ fn dot_f64_kernel(a: &[f64], b: &[f64]) -> f64 {
     let a_rem = a_chunks.remainder();
     let b_rem = b_chunks.remainder();
     for (ac, bc) in a_chunks.zip(b_chunks) {
-        let [x0, x1, x2, x3, x4, x5, x6, x7] = [
-            ac[0], ac[1], ac[2], ac[3], ac[4], ac[5], ac[6], ac[7],
-        ];
-        let [y0, y1, y2, y3, y4, y5, y6, y7] = [
-            bc[0], bc[1], bc[2], bc[3], bc[4], bc[5], bc[6], bc[7],
-        ];
+        let [x0, x1, x2, x3, x4, x5, x6, x7] =
+            [ac[0], ac[1], ac[2], ac[3], ac[4], ac[5], ac[6], ac[7]];
+        let [y0, y1, y2, y3, y4, y5, y6, y7] =
+            [bc[0], bc[1], bc[2], bc[3], bc[4], bc[5], bc[6], bc[7]];
         a0 += x0 * y0 + x1 * y1;
         a1 += x2 * y2 + x3 * y3;
         a2 += x4 * y4 + x5 * y5;
@@ -335,12 +322,18 @@ fn max_i64_kernel(slice: &[i64]) -> Option<i64> {
 
 #[inline]
 fn min_f64_kernel(slice: &[f64]) -> Option<f64> {
-    slice.iter().copied().min_by(|a, b| a.partial_cmp(b).unwrap())
+    slice
+        .iter()
+        .copied()
+        .min_by(|a, b| a.partial_cmp(b).unwrap())
 }
 
 #[inline]
 fn max_f64_kernel(slice: &[f64]) -> Option<f64> {
-    slice.iter().copied().max_by(|a, b| a.partial_cmp(b).unwrap())
+    slice
+        .iter()
+        .copied()
+        .max_by(|a, b| a.partial_cmp(b).unwrap())
 }
 
 // ---------------------------------------------------------------------------
@@ -450,7 +443,9 @@ fn nsimd_scale(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
 fn nsimd_abs(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity(args, 1, "nsimd_abs", span)?;
     match &*args[0].borrow() {
-        Value::IntArray(v) => Ok(Value::IntArray(map_unary_i64(v, |x| x.saturating_abs())).ref_cell()),
+        Value::IntArray(v) => {
+            Ok(Value::IntArray(map_unary_i64(v, |x| x.saturating_abs())).ref_cell())
+        }
         Value::FloatArray(v) => Ok(Value::FloatArray(map_unary_f64(v, |x| x.abs())).ref_cell()),
         other => Err(type_err(
             span,
@@ -529,7 +524,10 @@ nsimd_fns![
 ];
 
 fn all_builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(flat, _, f)| (flat, f)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(flat, _, f)| (flat, f))
+        .collect()
 }
 
 pub fn namespace() -> Value {

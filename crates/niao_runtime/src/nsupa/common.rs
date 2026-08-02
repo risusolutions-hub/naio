@@ -2,7 +2,7 @@
 
 use crate::{json_parse, Value, ValueRef};
 use niao_ast::Span;
-use niao_http::{post, get, RequestBuilder};
+use niao_http::{get, post, RequestBuilder};
 
 // ---------------------------------------------------------------------------
 // Error type
@@ -23,14 +23,8 @@ impl std::fmt::Display for HttpError {
 
 /// Attach `Authorization` and `apikey` headers to any request builder.
 #[inline]
-pub fn apply_auth_headers(
-    builder: RequestBuilder,
-    bearer: &str,
-    api_key: &str,
-) -> RequestBuilder {
-    builder
-        .set("Authorization", bearer)
-        .set("apikey", api_key)
+pub fn apply_auth_headers(builder: RequestBuilder, bearer: &str, api_key: &str) -> RequestBuilder {
+    builder.set("Authorization", bearer).set("apikey", api_key)
 }
 
 // ---------------------------------------------------------------------------
@@ -74,8 +68,7 @@ pub fn http_get_json(
     auth_token: Option<&str>,
 ) -> Result<crate::ValueRef, HttpError> {
     let bearer = format!("Bearer {}", auth_token.unwrap_or(anon_key));
-    let builder = apply_auth_headers(get(url), &bearer, anon_key)
-        .set("Accept", "application/json");
+    let builder = apply_auth_headers(get(url), &bearer, anon_key).set("Accept", "application/json");
 
     let resp = builder.send().map_err(|e| HttpError(e.to_string()))?;
 

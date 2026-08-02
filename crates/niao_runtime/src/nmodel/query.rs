@@ -103,7 +103,10 @@ fn sqlite_query_rows(
             let val = row
                 .get::<_, rusqlite::types::Value>(i)
                 .unwrap_or(rusqlite::types::Value::Null);
-            map.insert(name.clone(), crate::nsqlite::types::sql_to_niao(val).ref_cell());
+            map.insert(
+                name.clone(),
+                crate::nsqlite::types::sql_to_niao(val).ref_cell(),
+            );
         }
         out.push(Value::Object(map).ref_cell());
     }
@@ -119,7 +122,9 @@ fn sqlite_exec(
     for (i, p) in params.iter().enumerate() {
         crate::nsqlite::types::bind_positional(&mut stmt, (i + 1) as i32, p)?;
     }
-    stmt.raw_execute().map(|n| n as i64).map_err(|e| e.to_string())
+    stmt.raw_execute()
+        .map(|n| n as i64)
+        .map_err(|e| e.to_string())
 }
 
 // ── CREATE ─────────────────────────────────────────────────────────────────
@@ -133,7 +138,10 @@ pub fn exec_create(
     span: Span,
 ) -> Result<Value, RuntimeError> {
     if data.is_empty() {
-        return Err(nmodel_err(span, "nmodel.create() data object must not be empty"));
+        return Err(nmodel_err(
+            span,
+            "nmodel.create() data object must not be empty",
+        ));
     }
     let mut cols: Vec<String> = Vec::new();
     let mut params: Vec<Value> = Vec::new();
@@ -143,9 +151,7 @@ pub fn exec_create(
         params.push((*val.borrow()).clone());
     }
 
-    let placeholders: Vec<String> = (1..=params.len())
-        .map(|i| dialect.placeholder(i))
-        .collect();
+    let placeholders: Vec<String> = (1..=params.len()).map(|i| dialect.placeholder(i)).collect();
 
     match dialect {
         Dialect::Sqlite => {
@@ -156,21 +162,23 @@ pub fn exec_create(
                 placeholders.join(", ")
             );
             let bound = values_to_sqlite_params(&params, span)?;
-            let row = crate::nsqlite::handles::with_conn_mut(db_handle, "nmodel_create", span, |conn| {
-                sqlite_exec(conn, &sql, &bound)?;
-                let id = conn.conn.last_insert_rowid();
-                let id_col = model.id_field().map(|f| f.name.as_str()).unwrap_or("id");
-                let sel = format!(
-                    "SELECT * FROM \"{}\" WHERE \"{}\" = ?1",
-                    model.name, id_col
-                );
-                let sel_params = [crate::nsqlite::types::BoundValue::Int(id)];
-                sqlite_query_rows(conn, &sel, &sel_params)
-            })
-            .map_err(|e| nmodel_err(span, e.to_string()))?;
+            let row =
+                crate::nsqlite::handles::with_conn_mut(db_handle, "nmodel_create", span, |conn| {
+                    sqlite_exec(conn, &sql, &bound)?;
+                    let id = conn.conn.last_insert_rowid();
+                    let id_col = model.id_field().map(|f| f.name.as_str()).unwrap_or("id");
+                    let sel = format!("SELECT * FROM \"{}\" WHERE \"{}\" = ?1", model.name, id_col);
+                    let sel_params = [crate::nsqlite::types::BoundValue::Int(id)];
+                    sqlite_query_rows(conn, &sel, &sel_params)
+                })
+                .map_err(|e| nmodel_err(span, e.to_string()))?;
 
             if let Value::Array(rows) = row {
-                Ok(rows.into_iter().next().map(|r| (*r.borrow()).clone()).unwrap_or(Value::Nil))
+                Ok(rows
+                    .into_iter()
+                    .next()
+                    .map(|r| (*r.borrow()).clone())
+                    .unwrap_or(Value::Nil))
             } else {
                 Ok(Value::Nil)
             }
@@ -228,7 +236,11 @@ pub fn parse_find_many_opts(
             }
         },
     };
-    Ok(FindManyOpts { where_obj, limit, order })
+    Ok(FindManyOpts {
+        where_obj,
+        limit,
+        order,
+    })
 }
 
 pub fn exec_find_many(
@@ -266,7 +278,12 @@ pub fn exec_find_many(
         Dialect::Pg => {
             let bound = values_to_pg_params(&params, span)?;
             crate::npg::handles::with_conn_mut(db_handle, "nmodel_find_many", span, |conn| {
-                crate::npg::query::query_on_conn(conn, &sql, &bound, crate::npg::query::RowFormat::Object)
+                crate::npg::query::query_on_conn(
+                    conn,
+                    &sql,
+                    &bound,
+                    crate::npg::query::RowFormat::Object,
+                )
             })
             .map_err(|e| nmodel_err(span, e.to_string()))
         }
@@ -330,7 +347,10 @@ pub fn exec_update(
     span: Span,
 ) -> Result<Value, RuntimeError> {
     if data.is_empty() {
-        return Err(nmodel_err(span, "nmodel.update() data object must not be empty"));
+        return Err(nmodel_err(
+            span,
+            "nmodel.update() data object must not be empty",
+        ));
     }
     let mut params: Vec<Value> = Vec::new();
     let mut set_parts: Vec<String> = Vec::new();
@@ -356,8 +376,8 @@ pub fn exec_update(
                 let mut sel_params: Vec<Value> = Vec::new();
                 let sel_where = build_where(&where_obj, &mut sel_params, Dialect::Sqlite);
                 let sel = format!("SELECT * FROM \"{}\" {} LIMIT 1", model.name, sel_where);
-                let sel_bound = values_to_sqlite_params(&sel_params, span)
-                    .map_err(|e| e.to_string())?;
+                let sel_bound =
+                    values_to_sqlite_params(&sel_params, span).map_err(|e| e.to_string())?;
                 let rows = sqlite_query_rows(conn, &sel, &sel_bound)?;
                 if let Value::Array(mut arr) = rows {
                     if arr.is_empty() {
@@ -411,8 +431,7 @@ pub fn exec_delete(
         Dialect::Pg => {
             let bound = values_to_pg_params(&params, span)?;
             crate::npg::handles::with_conn_mut(db_handle, "nmodel_delete", span, |conn| {
-                crate::npg::query::exec_on_conn(conn, &sql, &bound)
-                    .map(|n| n as i64)
+                crate::npg::query::exec_on_conn(conn, &sql, &bound).map(|n| n as i64)
             })
             .map_err(|e| nmodel_err(span, e.to_string()))
         }
@@ -456,8 +475,7 @@ pub fn exec_raw(
                         crate::npg::query::RowFormat::Object,
                     )
                 } else {
-                    crate::npg::query::exec_on_conn(conn, sql, &bound)
-                        .map(|n| Value::Int(n as i64))
+                    crate::npg::query::exec_on_conn(conn, sql, &bound).map(|n| Value::Int(n as i64))
                 }
             })
             .map_err(|e| nmodel_err(span, e.to_string()))
@@ -526,7 +544,10 @@ mod tests {
     #[test]
     fn build_where_pg_single() {
         let mut where_obj = HashMap::new();
-        where_obj.insert("email".to_string(), Value::String("a@b.com".into()).ref_cell());
+        where_obj.insert(
+            "email".to_string(),
+            Value::String("a@b.com".into()).ref_cell(),
+        );
         let mut params = Vec::new();
         let clause = build_where(&where_obj, &mut params, Dialect::Pg);
         assert!(clause.contains("$1"));

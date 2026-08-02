@@ -19,7 +19,12 @@ pub struct BinnedMatrix {
 }
 
 impl BinnedMatrix {
-    pub fn from_matrix(x: &[f64], n_rows: usize, n_features: usize, max_bins: usize) -> BoostResult<Self> {
+    pub fn from_matrix(
+        x: &[f64],
+        n_rows: usize,
+        n_features: usize,
+        max_bins: usize,
+    ) -> BoostResult<Self> {
         if x.len() != n_rows * n_features {
             return Err(BoostError::Shape(format!(
                 "X length {} != {} * {}",

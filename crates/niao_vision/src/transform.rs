@@ -131,7 +131,13 @@ fn cubic_weight(t: f32) -> f32 {
     }
 }
 
-pub fn crop(img: &Image, top: usize, left: usize, height: usize, width: usize) -> VisionResult<Image> {
+pub fn crop(
+    img: &Image,
+    top: usize,
+    left: usize,
+    height: usize,
+    width: usize,
+) -> VisionResult<Image> {
     if top + height > img.height || left + width > img.width {
         return Err(VisionError::Shape("crop out of bounds".into()));
     }
@@ -154,7 +160,14 @@ pub fn center_crop(img: &Image, height: usize, width: usize) -> VisionResult<Ima
     crop(img, top, left, height, width)
 }
 
-pub fn pad(img: &Image, top: usize, bottom: usize, left: usize, right: usize, value: u8) -> VisionResult<Image> {
+pub fn pad(
+    img: &Image,
+    top: usize,
+    bottom: usize,
+    left: usize,
+    right: usize,
+    value: u8,
+) -> VisionResult<Image> {
     let h = img.height + top + bottom;
     let w = img.width + left + right;
     let c = img.channels();
@@ -245,7 +258,12 @@ pub fn rotate(img: &Image, degrees: f32) -> VisionResult<Image> {
 }
 
 /// Affine warp: 2×3 matrix [[a,b,tx],[c,d,ty]] maps output→input.
-pub fn warp_affine(img: &Image, m: [[f32; 3]; 2], out_h: usize, out_w: usize) -> VisionResult<Image> {
+pub fn warp_affine(
+    img: &Image,
+    m: [[f32; 3]; 2],
+    out_h: usize,
+    out_w: usize,
+) -> VisionResult<Image> {
     let c = img.channels();
     let mut out = vec![0u8; out_h * out_w * c];
     for y in 0..out_h {
@@ -463,7 +481,13 @@ impl Transform for RandomResizedCrop {
         } else {
             0
         };
-        let cropped = crop(img, top, left, side.min(img.height - top), side.min(img.width - left))?;
+        let cropped = crop(
+            img,
+            top,
+            left,
+            side.min(img.height - top),
+            side.min(img.width - left),
+        )?;
         resize(&cropped, self.size, self.size, Interp::Bilinear)
     }
 }

@@ -1,4 +1,4 @@
-﻿//! Native nbench standard library — micro-benchmark harness:
+//! Native nbench standard library — micro-benchmark harness:
 //! `run(name, fn, opts?)` with warmup and mean/p50/p95/p99, plus compare.
 //!
 //! Import with `import "nbench"` (or `import "std/nbench"`).
@@ -46,12 +46,21 @@ fn arity(args: &[ValueRef], n: usize, name: &str, span: Span) -> NiaoResult<()> 
     Ok(())
 }
 
-fn arity_range(args: &[ValueRef], min: usize, max: usize, name: &str, span: Span) -> NiaoResult<()> {
+fn arity_range(
+    args: &[ValueRef],
+    min: usize,
+    max: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<()> {
     if args.len() < min || args.len() > max {
         return Err(RuntimeError::at(
             span,
             E3170_NBENCH_ARITY,
-            format!("{name}() expects {min}..={max} argument(s), got {}", args.len()),
+            format!(
+                "{name}() expects {min}..={max} argument(s), got {}",
+                args.len()
+            ),
         ));
     }
     Ok(())
@@ -164,15 +173,27 @@ fn stats_from_samples(samples_ns: &[i64]) -> HashMap<String, ValueRef> {
         "max".to_string(),
         Value::Int(*sorted.last().unwrap()).ref_cell(),
     );
-    out.insert("p50".to_string(), Value::Int(percentile(&sorted, 0.50)).ref_cell());
-    out.insert("p95".to_string(), Value::Int(percentile(&sorted, 0.95)).ref_cell());
-    out.insert("p99".to_string(), Value::Int(percentile(&sorted, 0.99)).ref_cell());
+    out.insert(
+        "p50".to_string(),
+        Value::Int(percentile(&sorted, 0.50)).ref_cell(),
+    );
+    out.insert(
+        "p95".to_string(),
+        Value::Int(percentile(&sorted, 0.95)).ref_cell(),
+    );
+    out.insert(
+        "p99".to_string(),
+        Value::Int(percentile(&sorted, 0.99)).ref_cell(),
+    );
     out
 }
 
 fn result_object(result: &BenchResult) -> HashMap<String, ValueRef> {
     let mut map = stats_from_samples(&result.samples_ns);
-    map.insert("name".to_string(), Value::String(result.name.clone()).ref_cell());
+    map.insert(
+        "name".to_string(),
+        Value::String(result.name.clone()).ref_cell(),
+    );
     map.insert("warmup".to_string(), Value::Int(result.warmup).ref_cell());
     map
 }
@@ -190,7 +211,12 @@ fn collect_ns_samples(
                     return Err(bench_err(span, "benchmark fn returned error during warmup"));
                 }
             }
-            Err(e) => return Err(bench_err(span, format!("benchmark fn failed during warmup: {e}"))),
+            Err(e) => {
+                return Err(bench_err(
+                    span,
+                    format!("benchmark fn failed during warmup: {e}"),
+                ))
+            }
         }
     }
     let mut samples = Vec::with_capacity(iterations as usize);
@@ -432,7 +458,10 @@ nbench_fns![
 ];
 
 fn all_builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(flat, _, f)| (flat, f)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(flat, _, f)| (flat, f))
+        .collect()
 }
 
 pub fn namespace() -> Value {
@@ -496,7 +525,9 @@ mod tests {
         match out_val {
             Value::Object(map) => {
                 assert!(matches!(&*map["faster"].borrow(), Value::String(s) if s == "a"));
-                assert!(matches!(&*map["ratio"].borrow(), Value::Float(r) if (*r - 2.0).abs() < 1e-9));
+                assert!(
+                    matches!(&*map["ratio"].borrow(), Value::Float(r) if (*r - 2.0).abs() < 1e-9)
+                );
             }
             other => panic!("expected object, got {other:?}"),
         }

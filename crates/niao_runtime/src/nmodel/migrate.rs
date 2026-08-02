@@ -5,9 +5,9 @@
 
 use super::dialect::Dialect;
 use super::schema::{create_table_sql, SchemaHandle};
+use crate::RuntimeError;
 use niao_ast::Span;
 use niao_errors::codes;
-use crate::RuntimeError;
 use std::collections::HashSet;
 
 pub const MIGRATIONS_TABLE: &str = "_nmodel_migrations";
@@ -81,7 +81,9 @@ pub fn pg_migrate(
             continue;
         }
         let ddl = create_table_sql(model_def, Dialect::Pg);
-        conn.client_mut().batch_execute(&ddl).map_err(|e| e.to_string())?;
+        conn.client_mut()
+            .batch_execute(&ddl)
+            .map_err(|e| e.to_string())?;
         // Inline model_name (safe: model names are user-controlled identifiers,
         // not arbitrary SQL).  No parameterised INSERT to avoid ToSql coupling.
         let safe_name = model_name.replace('\'', "''");
@@ -89,7 +91,9 @@ pub fn pg_migrate(
             "INSERT INTO \"{}\" (model_name) VALUES ('{}')",
             MIGRATIONS_TABLE, safe_name
         );
-        conn.client_mut().batch_execute(&ins).map_err(|e| e.to_string())?;
+        conn.client_mut()
+            .batch_execute(&ins)
+            .map_err(|e| e.to_string())?;
         count += 1;
     }
     Ok(count)
@@ -103,14 +107,17 @@ fn pg_ensure_table(conn: &mut crate::npg::handles::ConnHandle) -> Result<(), Str
         )",
         MIGRATIONS_TABLE
     );
-    conn.client_mut().batch_execute(&ddl).map_err(|e| e.to_string())
+    conn.client_mut()
+        .batch_execute(&ddl)
+        .map_err(|e| e.to_string())
 }
 
-fn pg_get_applied(
-    conn: &mut crate::npg::handles::ConnHandle,
-) -> Result<HashSet<String>, String> {
+fn pg_get_applied(conn: &mut crate::npg::handles::ConnHandle) -> Result<HashSet<String>, String> {
     let sql = format!("SELECT model_name FROM \"{}\"", MIGRATIONS_TABLE);
-    let rows = conn.client_mut().query(sql.as_str(), &[]).map_err(|e| e.to_string())?;
+    let rows = conn
+        .client_mut()
+        .query(sql.as_str(), &[])
+        .map_err(|e| e.to_string())?;
     Ok(rows.iter().map(|r| r.get::<_, String>(0)).collect())
 }
 

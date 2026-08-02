@@ -16,9 +16,7 @@ fn echo_client_server() {
     });
 
     let (mut client, _) = connect(&url).unwrap();
-    client
-        .send(Message::Text("hello echo".into()))
-        .unwrap();
+    client.send(Message::Text("hello echo".into())).unwrap();
     match client.read().unwrap() {
         Message::Text(s) => assert_eq!(s, "hello echo"),
         other => panic!("unexpected {other:?}"),

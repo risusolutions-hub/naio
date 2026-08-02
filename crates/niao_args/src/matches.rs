@@ -45,9 +45,7 @@ impl ArgMatches {
     }
 
     pub fn subcommand(&self) -> Option<(&str, &ArgMatches)> {
-        self.subcommand
-            .as_ref()
-            .map(|b| (b.0.as_str(), &b.1))
+        self.subcommand.as_ref().map(|b| (b.0.as_str(), &b.1))
     }
 
     pub fn subcommand_name(&self) -> Option<&str> {

@@ -27,7 +27,9 @@ pub fn load_sklearn_fixtures() -> BoostResult<SklearnFixtures> {
 
 fn parse_f64_field(text: &str, key: &str) -> BoostResult<f64> {
     let needle = format!("\"{key}\":");
-    let i = text.find(&needle).ok_or_else(|| BoostError::Error(format!("missing {key}")))?;
+    let i = text
+        .find(&needle)
+        .ok_or_else(|| BoostError::Error(format!("missing {key}")))?;
     let rest = &text[i + needle.len()..];
     let end = rest.find([',', '}']).unwrap_or(rest.len());
     rest[..end]
@@ -38,9 +40,13 @@ fn parse_f64_field(text: &str, key: &str) -> BoostResult<f64> {
 
 fn parse_f64_array(text: &str, key: &str) -> BoostResult<Vec<f64>> {
     let needle = format!("\"{key}\":");
-    let i = text.find(&needle).ok_or_else(|| BoostError::Error(format!("missing {key}")))?;
+    let i = text
+        .find(&needle)
+        .ok_or_else(|| BoostError::Error(format!("missing {key}")))?;
     let rest = &text[i + needle.len()..];
-    let start = rest.find('[').ok_or_else(|| BoostError::Error(format!("missing [{key}")))?;
+    let start = rest
+        .find('[')
+        .ok_or_else(|| BoostError::Error(format!("missing [{key}")))?;
     let end = rest[start..]
         .find(']')
         .ok_or_else(|| BoostError::Error(format!("missing ]{key}")))?;

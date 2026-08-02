@@ -311,9 +311,7 @@ impl AhiruConfig {
         let _ = niao_codec::load_dotenv();
         let mut config = Self::from_file(base_path)?;
         if let Ok(env) = std::env::var("AHIRU_ENV") {
-            let overlay = base_path.with_file_name(format!(
-                "ahiru.config.{env}.toml"
-            ));
+            let overlay = base_path.with_file_name(format!("ahiru.config.{env}.toml"));
             if overlay.exists() {
                 let overlay_cfg = Self::from_file(&overlay)?;
                 config = merge_config(config, overlay_cfg);
@@ -365,8 +363,16 @@ impl AhiruConfig {
             }
         }
         if !self.auth.mode.is_empty()
-            && !["none", "jwt", "session", "api_key", "rbac", "totp", "magic_link"]
-                .contains(&self.auth.mode.as_str())
+            && ![
+                "none",
+                "jwt",
+                "session",
+                "api_key",
+                "rbac",
+                "totp",
+                "magic_link",
+            ]
+            .contains(&self.auth.mode.as_str())
         {
             errors.push(ConfigError {
                 field: "auth.mode".into(),

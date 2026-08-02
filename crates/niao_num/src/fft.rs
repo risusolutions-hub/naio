@@ -66,10 +66,7 @@ pub fn ifft(spectrum: &[Complex]) -> NumResult<Vec<Complex>> {
     if n == 0 {
         return Ok(vec![]);
     }
-    let conj: Vec<Complex> = spectrum
-        .iter()
-        .map(|c| Complex::new(c.re, -c.im))
-        .collect();
+    let conj: Vec<Complex> = spectrum.iter().map(|c| Complex::new(c.re, -c.im)).collect();
     let mut out = if n.is_power_of_two() {
         fft_radix2(&conj)?
     } else {
@@ -121,7 +118,9 @@ pub fn fft2(a: &NdArray) -> NumResult<Vec<Vec<Complex>>> {
 fn fft_radix2(x: &[Complex]) -> NumResult<Vec<Complex>> {
     let n = x.len();
     if !n.is_power_of_two() {
-        return Err(NumError::ShapeMismatch("radix-2 fft requires power-of-2 length".into()));
+        return Err(NumError::ShapeMismatch(
+            "radix-2 fft requires power-of-2 length".into(),
+        ));
     }
     let mut a = x.to_vec();
     bit_reverse_permute(&mut a);

@@ -2,8 +2,8 @@
 
 use super::types::{bson_to_niao_cell, empty_document, inc_value_one_update, niao_to_bson};
 use crate::{RuntimeError, Value, ValueRef};
-use mongodb::bson::Document;
 use bson::raw::RawDocumentBuf;
+use mongodb::bson::Document;
 use niao_ast::Span;
 use niao_errors::codes;
 use std::collections::HashMap;
@@ -31,7 +31,10 @@ pub fn session_from_opts(
         other => Err(RuntimeError::at(
             span,
             codes::E1922_NMONGO_INVALID_HANDLE,
-            format!("opts.session must be session handle, got {}", other.type_name()),
+            format!(
+                "opts.session must be session handle, got {}",
+                other.type_name()
+            ),
         )),
     }
 }
@@ -168,7 +171,9 @@ pub fn result_object(map: HashMap<String, ValueRef>) -> ValueRef {
     Value::Object(map).ref_cell()
 }
 
-pub fn insert_result_to_niao(result: mongodb::results::InsertOneResult) -> HashMap<String, ValueRef> {
+pub fn insert_result_to_niao(
+    result: mongodb::results::InsertOneResult,
+) -> HashMap<String, ValueRef> {
     let mut map = HashMap::new();
     map.insert(
         "inserted_id".to_string(),
@@ -197,7 +202,10 @@ pub fn insert_many_result_to_niao(
             .collect();
         map.insert("inserted_ids".to_string(), Value::Array(ids).ref_cell());
     } else {
-        map.insert("inserted_ids".to_string(), Value::Array(Vec::new()).ref_cell());
+        map.insert(
+            "inserted_ids".to_string(),
+            Value::Array(Vec::new()).ref_cell(),
+        );
     }
     map
 }
@@ -275,7 +283,9 @@ impl FindOptionExt for mongodb::action::Find<'_, Document> {
     }
 }
 
-impl<'s> FindOptionExt for mongodb::action::Find<'_, Document, mongodb::action::ExplicitSession<'s>> {
+impl<'s> FindOptionExt
+    for mongodb::action::Find<'_, Document, mongodb::action::ExplicitSession<'s>>
+{
     fn limit(self, limit: i64) -> Self {
         self.limit(limit)
     }

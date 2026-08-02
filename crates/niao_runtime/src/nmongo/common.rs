@@ -34,13 +34,21 @@ pub fn arity_range(
         return Err(RuntimeError::at(
             span,
             codes::E1920_NMONGO_ARITY,
-            format!("{name}() expects {min}..={max} argument(s), got {}", args.len()),
+            format!(
+                "{name}() expects {min}..={max} argument(s), got {}",
+                args.len()
+            ),
         ));
     }
     Ok(())
 }
 
-pub fn string_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> Result<String, RuntimeError> {
+pub fn string_arg(
+    args: &[ValueRef],
+    idx: usize,
+    name: &str,
+    span: Span,
+) -> Result<String, RuntimeError> {
     match &*args[idx].borrow() {
         Value::String(s) => Ok(s.clone()),
         other => Err(type_err(
@@ -68,7 +76,12 @@ pub fn int_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> Result<
     }
 }
 
-pub fn client_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> Result<u64, RuntimeError> {
+pub fn client_arg(
+    args: &[ValueRef],
+    idx: usize,
+    name: &str,
+    span: Span,
+) -> Result<u64, RuntimeError> {
     match &*args[idx].borrow() {
         Value::Int(id) if *id > 0 => Ok(*id as u64),
         other => Err(RuntimeError::at(
@@ -83,7 +96,12 @@ pub fn client_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> Resu
     }
 }
 
-pub fn session_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> Result<u64, RuntimeError> {
+pub fn session_arg(
+    args: &[ValueRef],
+    idx: usize,
+    name: &str,
+    span: Span,
+) -> Result<u64, RuntimeError> {
     match &*args[idx].borrow() {
         Value::Int(id) if *id > 0 => Ok(*id as u64),
         other => Err(RuntimeError::at(
@@ -137,7 +155,12 @@ pub fn object_arg_ref(
     }
 }
 
-pub fn array_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> Result<Vec<ValueRef>, RuntimeError> {
+pub fn array_arg(
+    args: &[ValueRef],
+    idx: usize,
+    name: &str,
+    span: Span,
+) -> Result<Vec<ValueRef>, RuntimeError> {
     match &*args[idx].borrow() {
         Value::Array(items) => Ok(items.clone()),
         other => Err(type_err(
@@ -240,7 +263,10 @@ pub fn db_coll_args(
         return Err(RuntimeError::at(
             span,
             codes::E1920_NMONGO_ARITY,
-            format!("{name}() expects at least 3 argument(s), got {}", args.len()),
+            format!(
+                "{name}() expects at least 3 argument(s), got {}",
+                args.len()
+            ),
         ));
     }
     let client = client_arg(args, 0, name, span)?;

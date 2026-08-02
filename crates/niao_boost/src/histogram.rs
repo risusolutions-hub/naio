@@ -57,9 +57,7 @@ impl FeatureHistogram {
 pub fn split_gain(g_l: f64, h_l: f64, g_r: f64, h_r: f64, lambda: f64, gamma: f64) -> f64 {
     let g = g_l + g_r;
     let h = h_l + h_r;
-    0.5
-        * (g_l * g_l / (h_l + lambda) + g_r * g_r / (h_r + lambda) - g * g / (h + lambda))
-        - gamma
+    0.5 * (g_l * g_l / (h_l + lambda) + g_r * g_r / (h_r + lambda) - g * g / (h + lambda)) - gamma
 }
 
 /// Build histogram for one feature over `rows`.
@@ -151,7 +149,14 @@ pub fn best_split_on_histogram(
                 continue;
             }
 
-            let gain = split_gain(left_g, left_h, right_g, right_h, params.lambda_l2, params.gamma);
+            let gain = split_gain(
+                left_g,
+                left_h,
+                right_g,
+                right_h,
+                params.lambda_l2,
+                params.gamma,
+            );
             if gain <= 0.0 {
                 continue;
             }
@@ -242,7 +247,14 @@ pub fn exact_best_split(
                 continue;
             }
 
-            let gain = split_gain(left_g, left_h, right_g, right_h, params.lambda_l2, params.gamma);
+            let gain = split_gain(
+                left_g,
+                left_h,
+                right_g,
+                right_h,
+                params.lambda_l2,
+                params.gamma,
+            );
             if gain <= 0.0 {
                 continue;
             }

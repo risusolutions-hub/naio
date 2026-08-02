@@ -44,12 +44,21 @@ fn arity(args: &[ValueRef], n: usize, name: &str, span: Span) -> NiaoResult<()> 
     Ok(())
 }
 
-fn arity_range(args: &[ValueRef], min: usize, max: usize, name: &str, span: Span) -> NiaoResult<()> {
+fn arity_range(
+    args: &[ValueRef],
+    min: usize,
+    max: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<()> {
     if args.len() < min || args.len() > max {
         return Err(RuntimeError::at(
             span,
             E2910_NCRON_ARITY,
-            format!("{name}() expects {min}..={max} argument(s), got {}", args.len()),
+            format!(
+                "{name}() expects {min}..={max} argument(s), got {}",
+                args.len()
+            ),
         ));
     }
     Ok(())
@@ -161,7 +170,11 @@ struct CronExpr {
 }
 
 fn normalize_dow(v: u32) -> u32 {
-    if v == 7 { 0 } else { v }
+    if v == 7 {
+        0
+    } else {
+        v
+    }
 }
 
 fn parse_number(token: &str) -> Result<u32, String> {
@@ -173,7 +186,12 @@ fn parse_number(token: &str) -> Result<u32, String> {
         .map_err(|_| format!("invalid number '{token}'"))
 }
 
-fn expand_part(part: &str, min: u32, max: u32, normalize: fn(u32) -> u32) -> Result<Vec<u32>, String> {
+fn expand_part(
+    part: &str,
+    min: u32,
+    max: u32,
+    normalize: fn(u32) -> u32,
+) -> Result<Vec<u32>, String> {
     let (base, step) = if let Some((b, s)) = part.split_once('/') {
         let step = parse_number(s)?;
         if step == 0 {
@@ -218,7 +236,12 @@ fn expand_part(part: &str, min: u32, max: u32, normalize: fn(u32) -> u32) -> Res
     Ok(out)
 }
 
-fn parse_field(field: &str, min: u32, max: u32, normalize: fn(u32) -> u32) -> Result<FieldMatcher, String> {
+fn parse_field(
+    field: &str,
+    min: u32,
+    max: u32,
+    normalize: fn(u32) -> u32,
+) -> Result<FieldMatcher, String> {
     if field.trim().is_empty() {
         return Err("empty field".into());
     }
@@ -384,10 +407,22 @@ fn ncron_fields(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     match parse_cron(&expr) {
         Ok(cron) => {
             let mut out = HashMap::new();
-            out.insert("minute".to_string(), Value::String(cron.raw[0].clone()).ref_cell());
-            out.insert("hour".to_string(), Value::String(cron.raw[1].clone()).ref_cell());
-            out.insert("day".to_string(), Value::String(cron.raw[2].clone()).ref_cell());
-            out.insert("month".to_string(), Value::String(cron.raw[3].clone()).ref_cell());
+            out.insert(
+                "minute".to_string(),
+                Value::String(cron.raw[0].clone()).ref_cell(),
+            );
+            out.insert(
+                "hour".to_string(),
+                Value::String(cron.raw[1].clone()).ref_cell(),
+            );
+            out.insert(
+                "day".to_string(),
+                Value::String(cron.raw[2].clone()).ref_cell(),
+            );
+            out.insert(
+                "month".to_string(),
+                Value::String(cron.raw[3].clone()).ref_cell(),
+            );
             out.insert(
                 "weekday".to_string(),
                 Value::String(cron.raw[4].clone()).ref_cell(),
@@ -429,7 +464,10 @@ ncron_fns![
 ];
 
 fn all_builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(flat, _, f)| (flat, f)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(flat, _, f)| (flat, f))
+        .collect()
 }
 
 pub fn namespace() -> Value {

@@ -56,10 +56,10 @@ pub fn train_test_split(
             y_test.extend_from_slice(&yv[i * yd..(i + 1) * yd]);
         }
     }
-    let xt =
-        NdArray::from_vec(vec![train_idx.len(), d], x_train).map_err(|e| LearnError::Error(e.to_string()))?;
-    let xv =
-        NdArray::from_vec(vec![test_idx.len(), d], x_test).map_err(|e| LearnError::Error(e.to_string()))?;
+    let xt = NdArray::from_vec(vec![train_idx.len(), d], x_train)
+        .map_err(|e| LearnError::Error(e.to_string()))?;
+    let xv = NdArray::from_vec(vec![test_idx.len(), d], x_test)
+        .map_err(|e| LearnError::Error(e.to_string()))?;
     let yt = if y_is_1d {
         vector_from(y_train)?
     } else {

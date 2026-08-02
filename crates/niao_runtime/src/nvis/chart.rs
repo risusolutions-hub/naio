@@ -62,20 +62,39 @@ impl Chart {
 
     pub fn to_csv(&self) -> String {
         match self {
-            Chart::Line(c) => c.data.iter().map(|v| v.to_string()).collect::<Vec<_>>().join("\n"),
-            Chart::Hist(c) => {
-                let counts = bin_counts(&c.data, c.bins);
-                counts.iter().map(|v| v.to_string()).collect::<Vec<_>>().join("\n")
-            }
-            Chart::Scatter(c) => c
-                .x
+            Chart::Line(c) => c
+                .data
                 .iter()
-                .zip(c.y.iter())
-                .map(|(a, b)| format!("{a},{b}"))
+                .map(|v| v.to_string())
                 .collect::<Vec<_>>()
                 .join("\n"),
-            Chart::Heatmap(c) => c.data.iter().map(|v| v.to_string()).collect::<Vec<_>>().join("\n"),
-            Chart::Bar(c) => c.data.iter().map(|v| v.to_string()).collect::<Vec<_>>().join("\n"),
+            Chart::Hist(c) => {
+                let counts = bin_counts(&c.data, c.bins);
+                counts
+                    .iter()
+                    .map(|v| v.to_string())
+                    .collect::<Vec<_>>()
+                    .join("\n")
+            }
+            Chart::Scatter(c) => {
+                c.x.iter()
+                    .zip(c.y.iter())
+                    .map(|(a, b)| format!("{a},{b}"))
+                    .collect::<Vec<_>>()
+                    .join("\n")
+            }
+            Chart::Heatmap(c) => c
+                .data
+                .iter()
+                .map(|v| v.to_string())
+                .collect::<Vec<_>>()
+                .join("\n"),
+            Chart::Bar(c) => c
+                .data
+                .iter()
+                .map(|v| v.to_string())
+                .collect::<Vec<_>>()
+                .join("\n"),
         }
     }
 }
@@ -85,7 +104,10 @@ fn line_svg(c: &LineChart) -> String {
     let h = 200;
     let pad = 20.0;
     if c.data.is_empty() {
-        return format!("<svg width=\"{w}\" height=\"{h}\"><text x=\"10\" y=\"20\">{}</text></svg>", c.title);
+        return format!(
+            "<svg width=\"{w}\" height=\"{h}\"><text x=\"10\" y=\"20\">{}</text></svg>",
+            c.title
+        );
     }
     let min = c.data.iter().cloned().fold(f32::INFINITY, f32::min);
     let max = c.data.iter().cloned().fold(f32::NEG_INFINITY, f32::max);
@@ -189,16 +211,28 @@ fn scatter_svg(c: &ScatterChart) -> String {
         return format!("<svg width=\"{w}\" height=\"{h}\"></svg>");
     }
     let xmin = c.x.iter().take(n).cloned().fold(f32::INFINITY, f32::min);
-    let xmax = c.x.iter().take(n).cloned().fold(f32::NEG_INFINITY, f32::max);
+    let xmax =
+        c.x.iter()
+            .take(n)
+            .cloned()
+            .fold(f32::NEG_INFINITY, f32::max);
     let ymin = c.y.iter().take(n).cloned().fold(f32::INFINITY, f32::min);
-    let ymax = c.y.iter().take(n).cloned().fold(f32::NEG_INFINITY, f32::max);
+    let ymax =
+        c.y.iter()
+            .take(n)
+            .cloned()
+            .fold(f32::NEG_INFINITY, f32::max);
     let mut circles = String::new();
     for i in 0..n {
         let x = 20.0 + (c.x[i] - xmin) / (xmax - xmin).max(1e-6) * (w as f32 - 40.0);
         let y = h as f32 - 20.0 - (c.y[i] - ymin) / (ymax - ymin).max(1e-6) * (h as f32 - 40.0);
-        circles.push_str(&format!("<circle cx=\"{x:.1}\" cy=\"{y:.1}\" r=\"2\" fill=\"#ef4444\"/>"));
+        circles.push_str(&format!(
+            "<circle cx=\"{x:.1}\" cy=\"{y:.1}\" r=\"2\" fill=\"#ef4444\"/>"
+        ));
     }
-    format!("<svg width=\"{w}\" height=\"{h}\" xmlns=\"http://www.w3.org/2000/svg\">{circles}</svg>")
+    format!(
+        "<svg width=\"{w}\" height=\"{h}\" xmlns=\"http://www.w3.org/2000/svg\">{circles}</svg>"
+    )
 }
 
 fn heatmap_svg(c: &HeatmapChart) -> String {

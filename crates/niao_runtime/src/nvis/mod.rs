@@ -20,18 +20,32 @@ fn arity(args: &[ValueRef], n: usize, name: &str, span: Span) -> Result<(), Runt
     Ok(())
 }
 
-fn arity_range(args: &[ValueRef], min: usize, max: usize, name: &str, span: Span) -> Result<(), RuntimeError> {
+fn arity_range(
+    args: &[ValueRef],
+    min: usize,
+    max: usize,
+    name: &str,
+    span: Span,
+) -> Result<(), RuntimeError> {
     if args.len() < min || args.len() > max {
         return Err(RuntimeError::at(
             span,
             codes::E1970_NML_ARITY,
-            format!("{name}() expects {min}..={max} arguments, got {}", args.len()),
+            format!(
+                "{name}() expects {min}..={max} arguments, got {}",
+                args.len()
+            ),
         ));
     }
     Ok(())
 }
 
-fn float_array_from_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> Result<Vec<f32>, RuntimeError> {
+fn float_array_from_arg(
+    args: &[ValueRef],
+    idx: usize,
+    name: &str,
+    span: Span,
+) -> Result<Vec<f32>, RuntimeError> {
     match &*args[idx].borrow() {
         Value::FloatArray(a) => Ok(a.iter().map(|&x| x as f32).collect()),
         Value::Array(items) => {
@@ -120,11 +134,23 @@ fn nvis_heatmap(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let data = float_array_from_arg(args, 0, "nvis_heatmap", span)?;
     let rows = match &*args[1].borrow() {
         Value::Int(n) => *n as usize,
-        _ => return Err(RuntimeError::at(span, codes::E1974_NML_TYPE, "rows must be int")),
+        _ => {
+            return Err(RuntimeError::at(
+                span,
+                codes::E1974_NML_TYPE,
+                "rows must be int",
+            ))
+        }
     };
     let cols = match &*args[2].borrow() {
         Value::Int(n) => *n as usize,
-        _ => return Err(RuntimeError::at(span, codes::E1974_NML_TYPE, "cols must be int")),
+        _ => {
+            return Err(RuntimeError::at(
+                span,
+                codes::E1974_NML_TYPE,
+                "cols must be int",
+            ))
+        }
     };
     let id = alloc_chart(Chart::Heatmap(HeatmapChart { data, rows, cols }));
     Ok(Value::Int(id as i64).ref_cell())
@@ -159,13 +185,14 @@ fn nvis_save_svg(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
             ));
         }
     };
-    let svg = CHARTS.with(|m| {
-        m.borrow()
-            .get(&chart_id)
-            .map(|c| c.to_svg())
-            .ok_or_else(|| "invalid chart id".to_string())
-    })
-    .map_err(|e| RuntimeError::at(span, codes::E1971_NML_ERROR, e))?;
+    let svg = CHARTS
+        .with(|m| {
+            m.borrow()
+                .get(&chart_id)
+                .map(|c| c.to_svg())
+                .ok_or_else(|| "invalid chart id".to_string())
+        })
+        .map_err(|e| RuntimeError::at(span, codes::E1971_NML_ERROR, e))?;
     std::fs::write(&path, svg)
         .map_err(|e| RuntimeError::at(span, codes::E1971_NML_ERROR, e.to_string()))?;
     Ok(Value::Nil.ref_cell())
@@ -183,13 +210,14 @@ fn nvis_print_ascii(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
             ));
         }
     };
-    let ascii = CHARTS.with(|m| {
-        m.borrow()
-            .get(&chart_id)
-            .map(|c| c.to_ascii())
-            .ok_or_else(|| "invalid chart id".to_string())
-    })
-    .map_err(|e| RuntimeError::at(span, codes::E1971_NML_ERROR, e))?;
+    let ascii = CHARTS
+        .with(|m| {
+            m.borrow()
+                .get(&chart_id)
+                .map(|c| c.to_ascii())
+                .ok_or_else(|| "invalid chart id".to_string())
+        })
+        .map_err(|e| RuntimeError::at(span, codes::E1971_NML_ERROR, e))?;
     println!("{ascii}");
     Ok(Value::String(ascii).ref_cell())
 }
@@ -206,13 +234,14 @@ fn nvis_to_csv(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
             ));
         }
     };
-    let csv = CHARTS.with(|m| {
-        m.borrow()
-            .get(&chart_id)
-            .map(|c| c.to_csv())
-            .ok_or_else(|| "invalid chart id".to_string())
-    })
-    .map_err(|e| RuntimeError::at(span, codes::E1971_NML_ERROR, e))?;
+    let csv = CHARTS
+        .with(|m| {
+            m.borrow()
+                .get(&chart_id)
+                .map(|c| c.to_csv())
+                .ok_or_else(|| "invalid chart id".to_string())
+        })
+        .map_err(|e| RuntimeError::at(span, codes::E1971_NML_ERROR, e))?;
     Ok(Value::String(csv).ref_cell())
 }
 

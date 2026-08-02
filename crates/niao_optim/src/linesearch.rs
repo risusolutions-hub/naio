@@ -85,21 +85,8 @@ where
     for _ in 0..20 {
         if phi > phi0 + c1 * alpha * dphi0 || (alpha1 > alpha0 && phi >= phi1) {
             alpha = zoom(
-                f,
-                g,
-                x,
-                direction,
-                phi0,
-                dphi0,
-                alpha0,
-                alpha1,
-                c1,
-                c2,
-                x_new,
-                grad_new,
-                &mut buf,
-                &mut nfev,
-                &mut ngev,
+                f, g, x, direction, phi0, dphi0, alpha0, alpha1, c1, c2, x_new, grad_new, &mut buf,
+                &mut nfev, &mut ngev,
             );
             break;
         }
@@ -116,21 +103,8 @@ where
         }
         if dphi >= 0.0 {
             alpha = zoom(
-                f,
-                g,
-                x,
-                direction,
-                phi0,
-                dphi0,
-                alpha,
-                alpha0,
-                c1,
-                c2,
-                x_new,
-                grad_new,
-                &mut buf,
-                &mut nfev,
-                &mut ngev,
+                f, g, x, direction, phi0, dphi0, alpha, alpha0, c1, c2, x_new, grad_new, &mut buf,
+                &mut nfev, &mut ngev,
             );
             break;
         }

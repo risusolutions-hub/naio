@@ -269,15 +269,7 @@ fn refresh_leaf_candidate(
     if *depth >= params.max_depth || rows.len() < params.min_data_in_leaf * 2 {
         return;
     }
-    let split = find_best_split(
-        data,
-        grad,
-        hess,
-        rows,
-        params,
-        feature_subset,
-        hist_bufs,
-    );
+    let split = find_best_split(data, grad, hess, rows, params, feature_subset, hist_bufs);
     if let Some(ref sp) = split {
         if sp.gain > 0.0 {
             heap.push(ExpandCandidate {

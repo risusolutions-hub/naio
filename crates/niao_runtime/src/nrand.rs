@@ -178,12 +178,21 @@ fn arity(args: &[ValueRef], n: usize, name: &str, span: Span) -> NiaoResult<()> 
     Ok(())
 }
 
-fn arity_range(args: &[ValueRef], min: usize, max: usize, name: &str, span: Span) -> NiaoResult<()> {
+fn arity_range(
+    args: &[ValueRef],
+    min: usize,
+    max: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<()> {
     if args.len() < min || args.len() > max {
         return Err(RuntimeError::at(
             span,
             codes::E2620_NRAND_ARITY,
-            format!("{name}() expects {min}..={max} argument(s), got {}", args.len()),
+            format!(
+                "{name}() expects {min}..={max} argument(s), got {}",
+                args.len()
+            ),
         ));
     }
     Ok(())
@@ -409,7 +418,10 @@ fn nrand_string(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
         other => {
             return Err(type_err(
                 span,
-                format!("nrand_string() expects a charset string, got {}", other.type_name()),
+                format!(
+                    "nrand_string() expects a charset string, got {}",
+                    other.type_name()
+                ),
             ))
         }
     };
@@ -470,7 +482,10 @@ fn nrand_weighted(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
                     other => {
                         return Err(type_err(
                             span,
-                            format!("nrand_weighted() weights must be numbers, found {}", other.type_name()),
+                            format!(
+                                "nrand_weighted() weights must be numbers, found {}",
+                                other.type_name()
+                            ),
                         ))
                     }
                 }
@@ -482,7 +497,10 @@ fn nrand_weighted(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
         other => {
             return Err(type_err(
                 span,
-                format!("nrand_weighted() expects a weights array, got {}", other.type_name()),
+                format!(
+                    "nrand_weighted() expects a weights array, got {}",
+                    other.type_name()
+                ),
             ))
         }
     };
@@ -493,7 +511,10 @@ fn nrand_weighted(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
         ));
     }
     if weights.iter().any(|w| *w < 0.0 || !w.is_finite()) {
-        return Ok(nrand_err(span, "nrand_weighted() weights must be finite and >= 0"));
+        return Ok(nrand_err(
+            span,
+            "nrand_weighted() weights must be finite and >= 0",
+        ));
     }
     let total: f64 = weights.iter().sum();
     if total <= 0.0 {
@@ -537,7 +558,10 @@ fn nrand_shuffle(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
             other => {
                 let t = other.type_name();
                 drop(value);
-                return Err(type_err(span, format!("nrand_shuffle() expects an array, got {t}")));
+                return Err(type_err(
+                    span,
+                    format!("nrand_shuffle() expects an array, got {t}"),
+                ));
             }
         }
     }
@@ -594,12 +618,10 @@ fn nrand_exponential(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     if lambda <= 0.0 {
         return Ok(nrand_err(span, "nrand_exponential() lambda must be > 0"));
     }
-    let u = with_default(|g| {
-        loop {
-            let x = g.next_f64();
-            if x > 0.0 {
-                return x;
-            }
+    let u = with_default(|g| loop {
+        let x = g.next_f64();
+        if x > 0.0 {
+            return x;
         }
     });
     Ok(Value::Float(-u.ln() / lambda).ref_cell())
@@ -619,7 +641,8 @@ fn nrand_new_gen(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
         id
     });
     GENERATORS.with(|gens| {
-        gens.borrow_mut().insert(id, Xoshiro256::seeded(seed as u64));
+        gens.borrow_mut()
+            .insert(id, Xoshiro256::seeded(seed as u64));
     });
     Ok(Value::Int(id).ref_cell())
 }
@@ -725,7 +748,10 @@ nrand_fns![
 ];
 
 fn all_builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(flat, _, f)| (flat, f)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(flat, _, f)| (flat, f))
+        .collect()
 }
 
 pub fn namespace() -> Value {

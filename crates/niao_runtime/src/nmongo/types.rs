@@ -67,11 +67,9 @@ fn try_fast_bench_doc(item: &ValueRef) -> Option<Document> {
     let value = map.get("value")?;
     let tag = map.get("tag")?;
     let name = map.get("name")?;
-    let (Value::Int(v), Value::Int(t), Value::String(s)) = (
-        &*value.borrow(),
-        &*tag.borrow(),
-        &*name.borrow(),
-    ) else {
+    let (Value::Int(v), Value::Int(t), Value::String(s)) =
+        (&*value.borrow(), &*tag.borrow(), &*name.borrow())
+    else {
         return None;
     };
     Some(doc! {"value": v, "tag": t, "name": s.as_str()})
@@ -102,11 +100,9 @@ pub fn try_fast_bench_doc_fields(items: &[ValueRef]) -> Option<Vec<(i64, i64, St
         let value = map.get("value")?;
         let tag = map.get("tag")?;
         let name = map.get("name")?;
-        let (Value::Int(v), Value::Int(t), Value::String(s)) = (
-            &*value.borrow(),
-            &*tag.borrow(),
-            &*name.borrow(),
-        ) else {
+        let (Value::Int(v), Value::Int(t), Value::String(s)) =
+            (&*value.borrow(), &*tag.borrow(), &*name.borrow())
+        else {
             return None;
         };
         fields.push((*v, *t, s.clone()));
@@ -236,7 +232,9 @@ pub fn niao_value_to_bson(val: &Value, span: Span) -> Result<Bson, RuntimeError>
         #[cfg(feature = "nmongo")]
         Value::BsonDoc(buf) => {
             let raw = buf.as_ref().clone();
-            Ok(Bson::Document(raw.try_into().map_err(|e| bson_err(span, e))?))
+            Ok(Bson::Document(
+                raw.try_into().map_err(|e| bson_err(span, e))?,
+            ))
         }
         Value::ByteArray(b) => Ok(Bson::Binary(bson::Binary {
             subtype: bson::spec::BinarySubtype::Generic,
@@ -305,7 +303,8 @@ pub fn niao_value_to_bson(val: &Value, span: Span) -> Result<Bson, RuntimeError>
                 if let Some(dec) = map.get("$numberDecimal") {
                     if let Value::String(s) = &*dec.borrow() {
                         return Ok(Bson::Decimal128(
-                            bson::Decimal128::from_str(s.as_str()).map_err(|e| bson_err(span, e))?,
+                            bson::Decimal128::from_str(s.as_str())
+                                .map_err(|e| bson_err(span, e))?,
                         ));
                     }
                 }
@@ -361,9 +360,7 @@ pub fn bson_to_niao_ref(bson: &Bson) -> Value {
         Bson::Int64(n) => Value::Int(*n),
         Bson::Double(f) => Value::Float(*f),
         Bson::String(s) => Value::String(s.clone()),
-        Bson::Array(arr) => {
-            Value::Array(arr.iter().map(|v| bson_to_niao_cell(v)).collect())
-        }
+        Bson::Array(arr) => Value::Array(arr.iter().map(|v| bson_to_niao_cell(v)).collect()),
         Bson::Document(doc) => bson_doc_to_niao(doc),
         Bson::Binary(bin) => Value::ByteArray(bin.bytes.clone()),
         // Compact 24-char hex — avoids {$oid:...} wrapper object per field.
@@ -405,9 +402,7 @@ pub fn bson_to_niao_cell(bson: &Bson) -> ValueRef {
         Bson::String(s) => Value::String(s.clone()).ref_cell(),
         Bson::ObjectId(oid) => Value::String(oid.to_hex()).ref_cell(),
         Bson::Binary(bin) => Value::ByteArray(bin.bytes.clone()).ref_cell(),
-        Bson::Array(arr) => {
-            Value::Array(arr.iter().map(bson_to_niao_cell).collect()).ref_cell()
-        }
+        Bson::Array(arr) => Value::Array(arr.iter().map(bson_to_niao_cell).collect()).ref_cell(),
         Bson::Document(doc) => bson_doc_to_niao_ref(doc),
         Bson::DateTime(_dt) => bson_to_niao_ref(bson).ref_cell(),
         Bson::Decimal128(_) => bson_to_niao_ref(bson).ref_cell(),
@@ -443,10 +438,7 @@ pub fn bson_to_async(bson: &Bson) -> AsyncValue {
         Bson::ObjectId(oid) => AsyncValue::String(oid.to_hex()),
         Bson::DateTime(dt) => {
             let mut map = HashMap::new();
-            map.insert(
-                "$date".to_string(),
-                AsyncValue::Int(dt.timestamp_millis()),
-            );
+            map.insert("$date".to_string(), AsyncValue::Int(dt.timestamp_millis()));
             AsyncValue::Object(map)
         }
         Bson::Decimal128(d) => {
@@ -522,12 +514,15 @@ pub fn raw_bson_ref_to_niao_cell(raw: RawBsonRef<'_>) -> ValueRef {
         }
         RawBsonRef::RegularExpression(re) => Value::String(re.pattern.to_string()).ref_cell(),
         RawBsonRef::JavaScriptCode(s) => Value::String(s.to_string()).ref_cell(),
-        RawBsonRef::JavaScriptCodeWithScope(scope) => Value::String(scope.code.to_string()).ref_cell(),
+        RawBsonRef::JavaScriptCodeWithScope(scope) => {
+            Value::String(scope.code.to_string()).ref_cell()
+        }
         RawBsonRef::Timestamp(ts) => Value::Int(ts.time as i64).ref_cell(),
         RawBsonRef::Symbol(s) => Value::String(s.to_string()).ref_cell(),
-        RawBsonRef::DbPointer(_) | RawBsonRef::Undefined | RawBsonRef::MaxKey | RawBsonRef::MinKey => {
-            Value::Nil.ref_cell()
-        }
+        RawBsonRef::DbPointer(_)
+        | RawBsonRef::Undefined
+        | RawBsonRef::MaxKey
+        | RawBsonRef::MinKey => Value::Nil.ref_cell(),
         RawBsonRef::Document(nested) => {
             match RawDocumentBuf::from_bytes(nested.as_bytes().to_vec()) {
                 Ok(buf) => bson_raw_to_lazy_ref(buf),

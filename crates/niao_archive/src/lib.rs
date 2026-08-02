@@ -1,10 +1,10 @@
 //! Native archive formats: deflate, gzip, tar, zip.
 
-pub mod deflate;
-pub mod error;
 mod adler32;
 mod bitstream;
 mod crc32;
+pub mod deflate;
+pub mod error;
 pub mod gzip;
 pub mod tar;
 pub mod zip;

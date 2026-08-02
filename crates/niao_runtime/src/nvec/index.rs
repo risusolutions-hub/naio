@@ -7,8 +7,8 @@
 //!
 //! All operations are std-only and allocation-minimal on the hot path.
 
-use std::collections::{BinaryHeap, HashMap, HashSet};
 use std::cmp::Ordering;
+use std::collections::{BinaryHeap, HashMap, HashSet};
 use std::io::Write;
 
 // ---------------------------------------------------------------------------
@@ -100,34 +100,90 @@ pub fn dot_f32(a: &[f32], b: &[f32]) -> f32 {
         let b2 = i + DOT_UNROLL * 2;
         let b3 = i + DOT_UNROLL * 3;
         let [a0, a1, a2, a3, a4, a5, a6, a7] = [
-            a[b0], a[b0 + 1], a[b0 + 2], a[b0 + 3], a[b0 + 4], a[b0 + 5], a[b0 + 6], a[b0 + 7],
+            a[b0],
+            a[b0 + 1],
+            a[b0 + 2],
+            a[b0 + 3],
+            a[b0 + 4],
+            a[b0 + 5],
+            a[b0 + 6],
+            a[b0 + 7],
         ];
         let [c0, c1, c2, c3, c4, c5, c6, c7] = [
-            b[b0], b[b0 + 1], b[b0 + 2], b[b0 + 3], b[b0 + 4], b[b0 + 5], b[b0 + 6], b[b0 + 7],
+            b[b0],
+            b[b0 + 1],
+            b[b0 + 2],
+            b[b0 + 3],
+            b[b0 + 4],
+            b[b0 + 5],
+            b[b0 + 6],
+            b[b0 + 7],
         ];
         acc0 += a0 * c0 + a1 * c1 + a2 * c2 + a3 * c3 + a4 * c4 + a5 * c5 + a6 * c6 + a7 * c7;
 
         let [a0, a1, a2, a3, a4, a5, a6, a7] = [
-            a[b1], a[b1 + 1], a[b1 + 2], a[b1 + 3], a[b1 + 4], a[b1 + 5], a[b1 + 6], a[b1 + 7],
+            a[b1],
+            a[b1 + 1],
+            a[b1 + 2],
+            a[b1 + 3],
+            a[b1 + 4],
+            a[b1 + 5],
+            a[b1 + 6],
+            a[b1 + 7],
         ];
         let [c0, c1, c2, c3, c4, c5, c6, c7] = [
-            b[b1], b[b1 + 1], b[b1 + 2], b[b1 + 3], b[b1 + 4], b[b1 + 5], b[b1 + 6], b[b1 + 7],
+            b[b1],
+            b[b1 + 1],
+            b[b1 + 2],
+            b[b1 + 3],
+            b[b1 + 4],
+            b[b1 + 5],
+            b[b1 + 6],
+            b[b1 + 7],
         ];
         acc1 += a0 * c0 + a1 * c1 + a2 * c2 + a3 * c3 + a4 * c4 + a5 * c5 + a6 * c6 + a7 * c7;
 
         let [a0, a1, a2, a3, a4, a5, a6, a7] = [
-            a[b2], a[b2 + 1], a[b2 + 2], a[b2 + 3], a[b2 + 4], a[b2 + 5], a[b2 + 6], a[b2 + 7],
+            a[b2],
+            a[b2 + 1],
+            a[b2 + 2],
+            a[b2 + 3],
+            a[b2 + 4],
+            a[b2 + 5],
+            a[b2 + 6],
+            a[b2 + 7],
         ];
         let [c0, c1, c2, c3, c4, c5, c6, c7] = [
-            b[b2], b[b2 + 1], b[b2 + 2], b[b2 + 3], b[b2 + 4], b[b2 + 5], b[b2 + 6], b[b2 + 7],
+            b[b2],
+            b[b2 + 1],
+            b[b2 + 2],
+            b[b2 + 3],
+            b[b2 + 4],
+            b[b2 + 5],
+            b[b2 + 6],
+            b[b2 + 7],
         ];
         acc2 += a0 * c0 + a1 * c1 + a2 * c2 + a3 * c3 + a4 * c4 + a5 * c5 + a6 * c6 + a7 * c7;
 
         let [a0, a1, a2, a3, a4, a5, a6, a7] = [
-            a[b3], a[b3 + 1], a[b3 + 2], a[b3 + 3], a[b3 + 4], a[b3 + 5], a[b3 + 6], a[b3 + 7],
+            a[b3],
+            a[b3 + 1],
+            a[b3 + 2],
+            a[b3 + 3],
+            a[b3 + 4],
+            a[b3 + 5],
+            a[b3 + 6],
+            a[b3 + 7],
         ];
         let [c0, c1, c2, c3, c4, c5, c6, c7] = [
-            b[b3], b[b3 + 1], b[b3 + 2], b[b3 + 3], b[b3 + 4], b[b3 + 5], b[b3 + 6], b[b3 + 7],
+            b[b3],
+            b[b3 + 1],
+            b[b3 + 2],
+            b[b3 + 3],
+            b[b3 + 4],
+            b[b3 + 5],
+            b[b3 + 6],
+            b[b3 + 7],
         ];
         acc3 += a0 * c0 + a1 * c1 + a2 * c2 + a3 * c3 + a4 * c4 + a5 * c5 + a6 * c6 + a7 * c7;
 
@@ -135,10 +191,24 @@ pub fn dot_f32(a: &[f32], b: &[f32]) -> f32 {
     }
     while i + DOT_UNROLL <= len {
         let [a0, a1, a2, a3, a4, a5, a6, a7] = [
-            a[i], a[i + 1], a[i + 2], a[i + 3], a[i + 4], a[i + 5], a[i + 6], a[i + 7],
+            a[i],
+            a[i + 1],
+            a[i + 2],
+            a[i + 3],
+            a[i + 4],
+            a[i + 5],
+            a[i + 6],
+            a[i + 7],
         ];
         let [b0, b1, b2, b3, b4, b5, b6, b7] = [
-            b[i], b[i + 1], b[i + 2], b[i + 3], b[i + 4], b[i + 5], b[i + 6], b[i + 7],
+            b[i],
+            b[i + 1],
+            b[i + 2],
+            b[i + 3],
+            b[i + 4],
+            b[i + 5],
+            b[i + 6],
+            b[i + 7],
         ];
         acc0 += a0 * b0 + a1 * b1 + a2 * b2 + a3 * b3 + a4 * b4 + a5 * b5 + a6 * b6 + a7 * b7;
         i += DOT_UNROLL;
@@ -154,7 +224,11 @@ pub fn dot_f32(a: &[f32], b: &[f32]) -> f32 {
 fn compute_inv_norm(vector: &[f32]) -> f32 {
     let sum_sq = dot_f32(vector, vector);
     let norm = sum_sq.sqrt();
-    if norm < 1e-10 { 0.0 } else { 1.0 / norm }
+    if norm < 1e-10 {
+        0.0
+    } else {
+        1.0 / norm
+    }
 }
 
 /// Per-search query context: query inverse-norm computed once.
@@ -242,7 +316,10 @@ struct NswGraph {
 
 impl NswGraph {
     fn new() -> Self {
-        NswGraph { neighbors: Vec::new(), entry: None }
+        NswGraph {
+            neighbors: Vec::new(),
+            entry: None,
+        }
     }
 
     /// Called after a new entry is appended to `entries` at `node_idx`.
@@ -290,8 +367,14 @@ impl NswGraph {
         }
         let s_score = qctx.score(&entries[start]);
         visited.insert(start);
-        best.push(Candidate { score: OrdF32(s_score), idx: start });
-        frontier.push(std::cmp::Reverse(Candidate { score: OrdF32(s_score), idx: start }));
+        best.push(Candidate {
+            score: OrdF32(s_score),
+            idx: start,
+        });
+        frontier.push(std::cmp::Reverse(Candidate {
+            score: OrdF32(s_score),
+            idx: start,
+        }));
 
         while let Some(std::cmp::Reverse(curr)) = frontier.pop() {
             // If the worst of our best is already better than current, stop.
@@ -312,13 +395,22 @@ impl NswGraph {
                     continue;
                 }
                 let sc = qctx.score(&entries[nbr]);
-                let cand = Candidate { score: OrdF32(sc), idx: nbr };
+                let cand = Candidate {
+                    score: OrdF32(sc),
+                    idx: nbr,
+                };
                 if best.len() < ef {
-                    frontier.push(std::cmp::Reverse(Candidate { score: OrdF32(sc), idx: nbr }));
+                    frontier.push(std::cmp::Reverse(Candidate {
+                        score: OrdF32(sc),
+                        idx: nbr,
+                    }));
                     best.push(cand);
                 } else if let Some(worst) = best.peek() {
                     if OrdF32(sc) > worst.score {
-                        frontier.push(std::cmp::Reverse(Candidate { score: OrdF32(sc), idx: nbr }));
+                        frontier.push(std::cmp::Reverse(Candidate {
+                            score: OrdF32(sc),
+                            idx: nbr,
+                        }));
                         best.push(cand);
                         if best.len() > ef {
                             best.pop();
@@ -428,7 +520,12 @@ impl VecIndex {
         let idx = self.entries.len();
         let inv_norm = compute_inv_norm(&vector);
 
-        self.entries.push(VecEntry { id: id.clone(), vector, inv_norm, metadata });
+        self.entries.push(VecEntry {
+            id: id.clone(),
+            vector,
+            inv_norm,
+            metadata,
+        });
         self.id_to_pos.insert(id, idx);
         self.live_count += 1;
 
@@ -557,7 +654,11 @@ impl VecIndex {
         buf.write_all(MAGIC)?;
         buf.write_all(&[FORMAT_VERSION])?;
         buf.write_all(&(self.dim as u32).to_le_bytes())?;
-        let live: Vec<&VecEntry> = self.entries.iter().filter(|e| !e.vector.is_empty()).collect();
+        let live: Vec<&VecEntry> = self
+            .entries
+            .iter()
+            .filter(|e| !e.vector.is_empty())
+            .collect();
         buf.write_all(&(live.len() as u32).to_le_bytes())?;
         for entry in live {
             write_str(buf, &entry.id)?;
@@ -706,7 +807,10 @@ mod tests {
     use super::*;
 
     fn meta(pairs: &[(&str, MetaVal)]) -> HashMap<String, MetaVal> {
-        pairs.iter().map(|(k, v)| (k.to_string(), v.clone())).collect()
+        pairs
+            .iter()
+            .map(|(k, v)| (k.to_string(), v.clone()))
+            .collect()
     }
 
     #[test]
@@ -725,9 +829,12 @@ mod tests {
     #[test]
     fn insert_and_search_basic() {
         let mut idx = VecIndex::new(3);
-        idx.insert("a".into(), vec![1.0, 0.0, 0.0], HashMap::new()).unwrap();
-        idx.insert("b".into(), vec![0.0, 1.0, 0.0], HashMap::new()).unwrap();
-        idx.insert("c".into(), vec![0.9, 0.1, 0.0], HashMap::new()).unwrap();
+        idx.insert("a".into(), vec![1.0, 0.0, 0.0], HashMap::new())
+            .unwrap();
+        idx.insert("b".into(), vec![0.0, 1.0, 0.0], HashMap::new())
+            .unwrap();
+        idx.insert("c".into(), vec![0.9, 0.1, 0.0], HashMap::new())
+            .unwrap();
         let hits = idx.search(&[1.0, 0.0, 0.0], 2, 0.0).unwrap();
         assert_eq!(hits[0].id, "a");
         assert!(hits[0].score > 0.99);
@@ -737,15 +844,20 @@ mod tests {
     #[test]
     fn duplicate_insert_fails() {
         let mut idx = VecIndex::new(2);
-        idx.insert("x".into(), vec![1.0, 0.0], HashMap::new()).unwrap();
-        assert!(idx.insert("x".into(), vec![0.0, 1.0], HashMap::new()).is_err());
+        idx.insert("x".into(), vec![1.0, 0.0], HashMap::new())
+            .unwrap();
+        assert!(idx
+            .insert("x".into(), vec![0.0, 1.0], HashMap::new())
+            .is_err());
     }
 
     #[test]
     fn upsert_replaces() {
         let mut idx = VecIndex::new(2);
-        idx.upsert("x".into(), vec![1.0, 0.0], HashMap::new()).unwrap();
-        idx.upsert("x".into(), vec![0.0, 1.0], HashMap::new()).unwrap();
+        idx.upsert("x".into(), vec![1.0, 0.0], HashMap::new())
+            .unwrap();
+        idx.upsert("x".into(), vec![0.0, 1.0], HashMap::new())
+            .unwrap();
         assert_eq!(idx.count(), 1);
         let hits = idx.search(&[0.0, 1.0], 1, 0.0).unwrap();
         assert_eq!(hits[0].id, "x");
@@ -755,8 +867,10 @@ mod tests {
     #[test]
     fn delete_removes_entry() {
         let mut idx = VecIndex::new(2);
-        idx.insert("a".into(), vec![1.0, 0.0], HashMap::new()).unwrap();
-        idx.insert("b".into(), vec![0.0, 1.0], HashMap::new()).unwrap();
+        idx.insert("a".into(), vec![1.0, 0.0], HashMap::new())
+            .unwrap();
+        idx.insert("b".into(), vec![0.0, 1.0], HashMap::new())
+            .unwrap();
         assert!(idx.delete("a"));
         assert_eq!(idx.count(), 1);
         let hits = idx.search(&[1.0, 0.0], 5, 0.0).unwrap();
@@ -766,8 +880,10 @@ mod tests {
     #[test]
     fn threshold_filters() {
         let mut idx = VecIndex::new(2);
-        idx.insert("a".into(), vec![1.0, 0.0], HashMap::new()).unwrap();
-        idx.insert("b".into(), vec![0.0, 1.0], HashMap::new()).unwrap();
+        idx.insert("a".into(), vec![1.0, 0.0], HashMap::new())
+            .unwrap();
+        idx.insert("b".into(), vec![0.0, 1.0], HashMap::new())
+            .unwrap();
         let hits = idx.search(&[1.0, 0.0], 5, 0.9).unwrap();
         assert_eq!(hits.len(), 1);
         assert_eq!(hits[0].id, "a");
@@ -776,13 +892,16 @@ mod tests {
     #[test]
     fn dimension_mismatch_error() {
         let mut idx = VecIndex::new(3);
-        assert!(idx.insert("a".into(), vec![1.0, 0.0], HashMap::new()).is_err());
+        assert!(idx
+            .insert("a".into(), vec![1.0, 0.0], HashMap::new())
+            .is_err());
     }
 
     #[test]
     fn auto_detect_dimension() {
         let mut idx = VecIndex::new(0);
-        idx.insert("a".into(), vec![1.0, 2.0], HashMap::new()).unwrap();
+        idx.insert("a".into(), vec![1.0, 2.0], HashMap::new())
+            .unwrap();
         assert_eq!(idx.dim, 2);
     }
 
@@ -791,9 +910,17 @@ mod tests {
         let tmp = std::env::temp_dir().join("nvec_test_roundtrip.nvecd");
         let path = tmp.to_str().unwrap();
         let mut idx = VecIndex::new(3);
-        idx.insert("a".into(), vec![1.0, 2.0, 3.0],
-            meta(&[("tag", MetaVal::Str("hello".into())), ("n", MetaVal::Int(7))])).unwrap();
-        idx.insert("b".into(), vec![4.0, 5.0, 6.0], HashMap::new()).unwrap();
+        idx.insert(
+            "a".into(),
+            vec![1.0, 2.0, 3.0],
+            meta(&[
+                ("tag", MetaVal::Str("hello".into())),
+                ("n", MetaVal::Int(7)),
+            ]),
+        )
+        .unwrap();
+        idx.insert("b".into(), vec![4.0, 5.0, 6.0], HashMap::new())
+            .unwrap();
         idx.save_to_file(path).unwrap();
         let idx2 = VecIndex::load_from_file(path).unwrap();
         assert_eq!(idx2.count(), 2);
@@ -805,8 +932,15 @@ mod tests {
     #[test]
     fn metadata_preserved_in_hits() {
         let mut idx = VecIndex::new(2);
-        idx.insert("a".into(), vec![1.0, 0.0],
-            meta(&[("label", MetaVal::Str("cat".into())), ("score", MetaVal::Float(0.9))])).unwrap();
+        idx.insert(
+            "a".into(),
+            vec![1.0, 0.0],
+            meta(&[
+                ("label", MetaVal::Str("cat".into())),
+                ("score", MetaVal::Float(0.9)),
+            ]),
+        )
+        .unwrap();
         let hits = idx.search(&[1.0, 0.0], 1, 0.0).unwrap();
         assert_eq!(hits.len(), 1);
         match hits[0].metadata.get("label") {

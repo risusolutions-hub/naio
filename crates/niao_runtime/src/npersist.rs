@@ -1,4 +1,4 @@
-﻿//! Native npersist standard library — im-rc persistent Vector and HashMap with
+//! Native npersist standard library — im-rc persistent Vector and HashMap with
 //! structural sharing. Mutating operations return new handles; prior handles
 //! remain valid snapshots.
 //!
@@ -117,12 +117,21 @@ fn arity(args: &[ValueRef], n: usize, name: &str, span: Span) -> NiaoResult<()> 
     Ok(())
 }
 
-fn arity_range(args: &[ValueRef], min: usize, max: usize, name: &str, span: Span) -> NiaoResult<()> {
+fn arity_range(
+    args: &[ValueRef],
+    min: usize,
+    max: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<()> {
     if args.len() < min || args.len() > max {
         return Err(RuntimeError::at(
             span,
             E3400_NPERSIST_ARITY,
-            format!("{name}() expects {min}..={max} argument(s), got {}", args.len()),
+            format!(
+                "{name}() expects {min}..={max} argument(s), got {}",
+                args.len()
+            ),
         ));
     }
     Ok(())
@@ -169,9 +178,7 @@ fn array_to_vector(items: &[ValueRef]) -> ImVector<ValueRef> {
 }
 
 fn object_to_map(obj: &HashMap<String, ValueRef>) -> ImMap<String, ValueRef> {
-    obj.iter()
-        .map(|(k, v)| (k.clone(), Rc::clone(v)))
-        .collect()
+    obj.iter().map(|(k, v)| (k.clone(), Rc::clone(v))).collect()
 }
 
 // ---------------------------------------------------------------------------
@@ -205,15 +212,13 @@ fn npersist_vec_push(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity(args, 2, "npersist_vec_push", span)?;
     let id = int_arg(args, 0, "npersist_vec_push", span)?;
     let item = Rc::clone(&args[1]);
-    match with_store(id, span, |s| {
-        match expect_vec(s, span) {
-            Ok(v) => {
-                let mut next = v.clone();
-                next.push_back(item);
-                Ok(register(PersistKind::Vec(next)))
-            }
-            Err(e) => Err(e),
+    match with_store(id, span, |s| match expect_vec(s, span) {
+        Ok(v) => {
+            let mut next = v.clone();
+            next.push_back(item);
+            Ok(register(PersistKind::Vec(next)))
         }
+        Err(e) => Err(e),
     })? {
         Ok(Ok(new_id)) => Ok(Value::Int(new_id).ref_cell()),
         Ok(Err(e)) => Ok(e),
@@ -257,14 +262,12 @@ fn npersist_vec_get(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     }
     match with_store(id, span, |s| {
         let v = expect_vec(s, span)?;
-        v.get(index as usize)
-            .map(Rc::clone)
-            .ok_or_else(|| {
-                npersist_err(
-                    span,
-                    format!("index {index} out of range (len {})", v.len()),
-                )
-            })
+        v.get(index as usize).map(Rc::clone).ok_or_else(|| {
+            npersist_err(
+                span,
+                format!("index {index} out of range (len {})", v.len()),
+            )
+        })
     })? {
         Ok(Ok(v)) => Ok(v),
         Ok(Err(e)) => Ok(e),
@@ -333,7 +336,9 @@ fn npersist_map_get(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let key = string_arg(args, 1, "npersist_map_get", span)?;
     match with_store(id, span, |s| {
         let m = expect_map(s, span)?;
-        Ok(m.get(&key).map(Rc::clone).unwrap_or_else(|| Value::Nil.ref_cell()))
+        Ok(m.get(&key)
+            .map(Rc::clone)
+            .unwrap_or_else(|| Value::Nil.ref_cell()))
     })? {
         Ok(Ok(v)) => Ok(v),
         Ok(Err(e)) => Ok(e),
@@ -444,7 +449,10 @@ npersist_fns![
 ];
 
 fn all_builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(flat, _, f)| (flat, f)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(flat, _, f)| (flat, f))
+        .collect()
 }
 
 pub fn namespace() -> Value {
@@ -526,21 +534,15 @@ mod tests {
             span(),
         ));
         assert!(matches!(
-            &*npersist_map_get(
-                &[i(m0), Value::String("x".into()).ref_cell()],
-                span()
-            )
-            .unwrap()
-            .borrow(),
+            &*npersist_map_get(&[i(m0), Value::String("x".into()).ref_cell()], span())
+                .unwrap()
+                .borrow(),
             Value::Nil
         ));
         assert!(matches!(
-            &*npersist_map_get(
-                &[i(m2), Value::String("y".into()).ref_cell()],
-                span()
-            )
-            .unwrap()
-            .borrow(),
+            &*npersist_map_get(&[i(m2), Value::String("y".into()).ref_cell()], span())
+                .unwrap()
+                .borrow(),
             Value::Int(2)
         ));
         npersist_close(&[i(m0)], span()).unwrap();

@@ -1,4 +1,4 @@
-﻿//! Native nrepl standard library — subprocess expression evaluation sessions.
+//! Native nrepl standard library — subprocess expression evaluation sessions.
 //! A `--watch-expr` CLI flag for in-process eval is a roadmap item (see docs/NREPL.md).
 //!
 //! Import with `import "nrepl"` (or `import "std/nrepl"`).
@@ -128,9 +128,7 @@ fn find_niao_binary() -> Option<PathBuf> {
 }
 
 fn wrap_expr(expr: &str) -> String {
-    format!(
-        "// nrepl generated\nfn main() {{\n    print({expr})\n}}\n"
-    )
+    format!("// nrepl generated\nfn main() {{\n    print({expr})\n}}\n")
 }
 
 fn run_niao(
@@ -180,7 +178,10 @@ fn run_niao(
 
 fn eval_result_object(record: &EvalRecord) -> Value {
     let mut map = HashMap::new();
-    map.insert("expr".to_string(), Value::String(record.expr.clone()).ref_cell());
+    map.insert(
+        "expr".to_string(),
+        Value::String(record.expr.clone()).ref_cell(),
+    );
     map.insert(
         "stdout".to_string(),
         Value::String(record.stdout.clone()).ref_cell(),
@@ -213,12 +214,21 @@ fn arity(args: &[ValueRef], n: usize, name: &str, span: Span) -> NiaoResult<()> 
     Ok(())
 }
 
-fn arity_range(args: &[ValueRef], min: usize, max: usize, name: &str, span: Span) -> NiaoResult<()> {
+fn arity_range(
+    args: &[ValueRef],
+    min: usize,
+    max: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<()> {
     if args.len() < min || args.len() > max {
         return Err(RuntimeError::at(
             span,
             E3270_NREPL_ARITY,
-            format!("{name}() expects {min}..={max} argument(s), got {}", args.len()),
+            format!(
+                "{name}() expects {min}..={max} argument(s), got {}",
+                args.len()
+            ),
         ));
     }
     Ok(())
@@ -383,7 +393,8 @@ fn nrepl_eval(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
             session.history.len()
         ));
         let source = wrap_expr(&expr);
-        if let Err(e) = fs::File::create(&script_path).and_then(|mut f| f.write_all(source.as_bytes()))
+        if let Err(e) =
+            fs::File::create(&script_path).and_then(|mut f| f.write_all(source.as_bytes()))
         {
             return Err(repl_err(
                 span,
@@ -406,8 +417,12 @@ fn nrepl_eval(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
         };
         let _ = fs::remove_file(&script_path);
 
-        let stdout = String::from_utf8_lossy(&output.stdout).trim_end().to_string();
-        let stderr = String::from_utf8_lossy(&output.stderr).trim_end().to_string();
+        let stdout = String::from_utf8_lossy(&output.stdout)
+            .trim_end()
+            .to_string();
+        let stderr = String::from_utf8_lossy(&output.stderr)
+            .trim_end()
+            .to_string();
         let code = output.status.code().unwrap_or(-1) as i64;
         let ok = output.status.success();
         let record = EvalRecord {
@@ -610,7 +625,15 @@ mod tests {
     fn namespace_has_expected_methods() {
         match namespace() {
             Value::Object(map) => {
-                for key in ["start", "eval", "history", "cwd", "len", "close", "available"] {
+                for key in [
+                    "start",
+                    "eval",
+                    "history",
+                    "cwd",
+                    "len",
+                    "close",
+                    "available",
+                ] {
                     assert!(map.contains_key(key), "missing {key}");
                 }
             }

@@ -8,10 +8,10 @@
 //!   3. Anonymous (function auth level = anonymous)
 
 use super::{auth, AzureConfig};
-use crate::{Value, ValueRef};
 use crate::error_value;
-use niao_errors::codes;
+use crate::{Value, ValueRef};
 use niao_ast::Span;
+use niao_errors::codes;
 use std::collections::HashMap;
 
 fn fn_error(span: Span, msg: impl Into<String>) -> ValueRef {

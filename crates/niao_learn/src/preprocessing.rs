@@ -213,9 +213,7 @@ pub enum NormKind {
 
 impl Default for Normalizer {
     fn default() -> Self {
-        Self {
-            norm: NormKind::L2,
-        }
+        Self { norm: NormKind::L2 }
     }
 }
 
@@ -542,7 +540,13 @@ impl PolynomialFeatures {
 
     fn combos(d: usize, degree: usize) -> Vec<Vec<usize>> {
         let mut out = Vec::new();
-        fn rec(start: usize, d: usize, left: usize, cur: &mut Vec<usize>, out: &mut Vec<Vec<usize>>) {
+        fn rec(
+            start: usize,
+            d: usize,
+            left: usize,
+            cur: &mut Vec<usize>,
+            out: &mut Vec<Vec<usize>>,
+        ) {
             if left == 0 {
                 out.push(cur.clone());
                 return;

@@ -100,7 +100,12 @@ fn string_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> NiaoResu
     }
 }
 
-fn handle_ids_from_array(args: &[ValueRef], idx: usize, name: &str, span: Span) -> NiaoResult<Vec<i64>> {
+fn handle_ids_from_array(
+    args: &[ValueRef],
+    idx: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<Vec<i64>> {
     match &*args[idx].borrow() {
         Value::Array(items) => {
             let mut out = Vec::with_capacity(items.len());
@@ -360,7 +365,10 @@ nwhy_fns![
 ];
 
 fn all_builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(flat, _, f)| (flat, f)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(flat, _, f)| (flat, f))
+        .collect()
 }
 
 pub fn namespace() -> Value {

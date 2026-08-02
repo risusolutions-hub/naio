@@ -51,11 +51,7 @@ where
             )
         })?;
         f(client).map_err(|msg| {
-            crate::RuntimeError::at(
-                span,
-                codes::E2781_NREDIS_ERROR,
-                format!("{name}(): {msg}"),
-            )
+            crate::RuntimeError::at(span, codes::E2781_NREDIS_ERROR, format!("{name}(): {msg}"))
         })
     })
 }

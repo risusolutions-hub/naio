@@ -149,7 +149,10 @@ fn find_substring() {
 
 #[test]
 fn find_iter_multiple() {
-    let v: Vec<_> = re(r"\d+").find_iter("a1b22c333").map(|m| m.as_str().to_string()).collect();
+    let v: Vec<_> = re(r"\d+")
+        .find_iter("a1b22c333")
+        .map(|m| m.as_str().to_string())
+        .collect();
     assert_eq!(v, vec!["1", "22", "333"]);
 }
 

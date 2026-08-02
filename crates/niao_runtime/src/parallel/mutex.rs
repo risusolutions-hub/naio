@@ -1,8 +1,8 @@
 //! Mutex primitives for shared sendable state across threads.
 
 use super::common::{
-    arity, arity_range, sendable_arg_or_err, function_arg, handle_arg, ok_bool, ok_int, ok_nil,
-    parallel_error, sendable_result, ParallelResult,
+    arity, arity_range, function_arg, handle_arg, ok_bool, ok_int, ok_nil, parallel_error,
+    sendable_arg_or_err, sendable_result, ParallelResult,
 };
 use super::sendable::{sendable_to_value_ref, value_to_sendable, SendableValue};
 use crate::{Value, ValueRef};
@@ -64,13 +64,14 @@ where
 }
 
 fn lock_guard(id: u64, arc: Arc<Mutex<SendableValue>>, span: Span) -> Result<(), ValueRef> {
-  match arc.lock() {
+    match arc.lock() {
         Ok(guard) => {
             // SAFETY: guard is stored with its owning Arc in thread-local storage until unlock.
             let guard = unsafe {
-                std::mem::transmute::<MutexGuard<'_, SendableValue>, MutexGuard<'static, SendableValue>>(
-                    guard,
-                )
+                std::mem::transmute::<
+                    MutexGuard<'_, SendableValue>,
+                    MutexGuard<'static, SendableValue>,
+                >(guard)
             };
             MUTEX_GUARDS.with(|m| m.borrow_mut().insert(id, (Arc::clone(&arc), guard)));
             Ok(())
@@ -143,10 +144,7 @@ pub fn parallel_mutex_try_lock(args: &[ValueRef], span: Span) -> ParallelResult 
                         MutexGuard<'static, SendableValue>,
                     >(guard)
                 };
-                MUTEX_GUARDS.with(|m| {
-                    m.borrow_mut()
-                        .insert(id, (Arc::clone(&mutex.data), guard))
-                });
+                MUTEX_GUARDS.with(|m| m.borrow_mut().insert(id, (Arc::clone(&mutex.data), guard)));
                 Ok(ok_bool(true))
             }
             Err(TryLockError::WouldBlock) => Ok(ok_bool(false)),
@@ -166,11 +164,7 @@ pub fn parallel_mutex_get(args: &[ValueRef], span: Span) -> ParallelResult {
         return MUTEX_GUARDS.with(|m| {
             let guard = m.borrow();
             let (_, holder) = guard.get(&id).ok_or_else(|| {
-                crate::RuntimeError::at(
-                    span,
-                    codes::E1501_PARALLEL_LOCK,
-                    "mutex guard missing",
-                )
+                crate::RuntimeError::at(span, codes::E1501_PARALLEL_LOCK, "mutex guard missing")
             })?;
             Ok(sendable_result((*holder).clone()))
         });
@@ -195,11 +189,7 @@ pub fn parallel_mutex_set(args: &[ValueRef], span: Span) -> ParallelResult {
         return MUTEX_GUARDS.with(|m| {
             let mut guard = m.borrow_mut();
             let (_, holder) = guard.get_mut(&id).ok_or_else(|| {
-                crate::RuntimeError::at(
-                    span,
-                    codes::E1501_PARALLEL_LOCK,
-                    "mutex guard missing",
-                )
+                crate::RuntimeError::at(span, codes::E1501_PARALLEL_LOCK, "mutex guard missing")
             })?;
             **holder = val;
             Ok(ok_nil())

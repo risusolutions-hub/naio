@@ -478,7 +478,9 @@ impl<'a> Parser<'a> {
                         self.bump();
                         return Ok(Ast::Literal(val));
                     }
-                    let d = c.to_digit(16).ok_or_else(|| Error::new("invalid hex in \\u{}", self.pos))?;
+                    let d = c
+                        .to_digit(16)
+                        .ok_or_else(|| Error::new("invalid hex in \\u{}", self.pos))?;
                     val = val * 16 + d;
                     self.bump();
                 }
@@ -493,7 +495,9 @@ impl<'a> Parser<'a> {
     }
 
     fn hex_digit(&mut self) -> Result<u8> {
-        let c = self.bump().ok_or_else(|| Error::new("expected hex digit", self.pos))?;
+        let c = self
+            .bump()
+            .ok_or_else(|| Error::new("expected hex digit", self.pos))?;
         c.to_digit(16)
             .map(|d| d as u8)
             .ok_or_else(|| Error::new("expected hex digit", self.pos))
@@ -501,7 +505,10 @@ impl<'a> Parser<'a> {
 }
 
 fn is_special(c: char) -> bool {
-    matches!(c, '*' | '+' | '?' | '{' | '}' | '|' | '(' | ')' | '[' | ']' | '\\')
+    matches!(
+        c,
+        '*' | '+' | '?' | '{' | '}' | '|' | '(' | ')' | '[' | ']' | '\\'
+    )
 }
 
 fn expand_class_into(class: &mut Class, token: u32) {
@@ -574,7 +581,12 @@ pub fn normalize_ast(ast: Ast) -> Ast {
         }
         Ast::Concat(v) => Ast::Concat(v.into_iter().map(normalize_ast).collect()),
         Ast::Alt(v) => Ast::Alt(v.into_iter().map(normalize_ast).collect()),
-        Ast::Quant { inner, min, max, greedy } => Ast::Quant {
+        Ast::Quant {
+            inner,
+            min,
+            max,
+            greedy,
+        } => Ast::Quant {
             inner: Box::new(normalize_ast(*inner)),
             min,
             max,
@@ -590,7 +602,9 @@ pub fn normalize_ast(ast: Ast) -> Ast {
 }
 
 pub fn is_word_char(c: u32) -> bool {
-    char::from_u32(c).map(|ch| ch.is_alphanumeric() || ch == '_').unwrap_or(false)
+    char::from_u32(c)
+        .map(|ch| ch.is_alphanumeric() || ch == '_')
+        .unwrap_or(false)
 }
 
 #[cfg(test)]

@@ -7,8 +7,8 @@ mod ftp;
 mod handles;
 mod http_client;
 mod http_server;
-mod socket;
 mod smtp;
+mod socket;
 mod tls;
 mod url;
 pub(crate) mod websocket;
@@ -54,13 +54,21 @@ pub(crate) fn arity_range(
         return Err(RuntimeError::at(
             span,
             codes::E1400_NET_ARITY,
-            format!("{name}() expects {min}..={max} argument(s), got {}", args.len()),
+            format!(
+                "{name}() expects {min}..={max} argument(s), got {}",
+                args.len()
+            ),
         ));
     }
     Ok(())
 }
 
-pub(crate) fn string_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> NiaoResult<String> {
+pub(crate) fn string_arg(
+    args: &[ValueRef],
+    idx: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<String> {
     match &*args[idx].borrow() {
         Value::String(s) => Ok(s.clone()),
         other => Err(type_err(
@@ -107,7 +115,10 @@ pub(crate) fn size_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) ->
     if n < 0 {
         return Err(type_err(
             span,
-            format!("{name}() expects a non-negative int as argument {}", idx + 1),
+            format!(
+                "{name}() expects a non-negative int as argument {}",
+                idx + 1
+            ),
         ));
     }
     Ok(n as usize)
@@ -205,13 +216,21 @@ pub(crate) fn bytes_to_int_array(data: Vec<u8>) -> ValueRef {
     Value::IntArray(data.into_iter().map(|b| b as i64).collect()).ref_cell()
 }
 
-pub(crate) fn int_array_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> NiaoResult<Vec<u8>> {
+pub(crate) fn int_array_arg(
+    args: &[ValueRef],
+    idx: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<Vec<u8>> {
     match &*args[idx].borrow() {
         Value::IntArray(items) => {
             let mut out = Vec::with_capacity(items.len());
             for &n in items {
                 if !(0..=255).contains(&n) {
-                    return Err(type_err(span, format!("{name}() byte values must be 0..=255")));
+                    return Err(type_err(
+                        span,
+                        format!("{name}() byte values must be 0..=255"),
+                    ));
                 }
                 out.push(n as u8);
             }
@@ -247,7 +266,12 @@ pub(crate) fn int_array_arg(args: &[ValueRef], idx: usize, name: &str, span: Spa
     }
 }
 
-pub(crate) fn payload_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> NiaoResult<Vec<u8>> {
+pub(crate) fn payload_arg(
+    args: &[ValueRef],
+    idx: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<Vec<u8>> {
     int_array_arg(args, idx, name, span)
 }
 
@@ -394,8 +418,8 @@ fn net_async_http_get(args: &[ValueRef], span: Span) -> NetResult {
     } else {
         HttpOpts::default()
     };
-    let id = spawn_async(move || {
-        match http_client::http_request("GET", &url, opts, span) {
+    let id = spawn_async(
+        move || match http_client::http_request("GET", &url, opts, span) {
             Ok(v) => Ok(http_client::response_to_async(v)),
             Err(e) => {
                 let msg = match &*e.borrow() {
@@ -404,8 +428,8 @@ fn net_async_http_get(args: &[ValueRef], span: Span) -> NetResult {
                 };
                 Err(msg)
             }
-        }
-    });
+        },
+    );
     Ok(ok_int(id as i64))
 }
 
@@ -418,8 +442,8 @@ fn net_async_http_request(args: &[ValueRef], span: Span) -> NetResult {
     } else {
         HttpOpts::default()
     };
-    let id = spawn_async(move || {
-        match http_client::http_request(&method, &url, opts, span) {
+    let id = spawn_async(
+        move || match http_client::http_request(&method, &url, opts, span) {
             Ok(v) => Ok(http_client::response_to_async(v)),
             Err(e) => {
                 let msg = match &*e.borrow() {
@@ -428,8 +452,8 @@ fn net_async_http_request(args: &[ValueRef], span: Span) -> NetResult {
                 };
                 Err(msg)
             }
-        }
-    });
+        },
+    );
     Ok(ok_int(id as i64))
 }
 
@@ -437,15 +461,15 @@ fn net_async_tcp_connect(args: &[ValueRef], span: Span) -> NetResult {
     arity(args, 2, "net_async_tcp_connect", span)?;
     let host = string_arg(args, 0, "net_async_tcp_connect", span)?;
     let port = port_arg(args, 1, "net_async_tcp_connect", span)?;
-    let id = spawn_async(move || {
-        match std::net::TcpStream::connect(format!("{host}:{port}")) {
+    let id = spawn_async(
+        move || match std::net::TcpStream::connect(format!("{host}:{port}")) {
             Ok(stream) => {
                 let handle = handles::alloc_handle(socket::tcp_handle(stream));
                 Ok(AsyncValue::Int(handle as i64))
             }
             Err(e) => Err(e.to_string()),
-        }
-    });
+        },
+    );
     Ok(ok_int(id as i64))
 }
 
@@ -473,7 +497,14 @@ fn net_task_poll(args: &[ValueRef], span: Span) -> NetResult {
         codes::E1406_NET_TASK_NOT_FOUND,
         "async task cancelled",
         net_async_error,
-        |state| Ok(task_result_value(state, span, "async task cancelled", net_async_error)),
+        |state| {
+            Ok(task_result_value(
+                state,
+                span,
+                "async task cancelled",
+                net_async_error,
+            ))
+        },
     )
 }
 
@@ -488,7 +519,14 @@ fn net_task_wait(args: &[ValueRef], span: Span) -> NetResult {
         codes::E1406_NET_TASK_NOT_FOUND,
         "async task cancelled",
         net_async_error,
-        |state| Ok(task_result_value(state, span, "async task cancelled", net_async_error)),
+        |state| {
+            Ok(task_result_value(
+                state,
+                span,
+                "async task cancelled",
+                net_async_error,
+            ))
+        },
     )
 }
 
@@ -520,7 +558,10 @@ pub fn builtins() -> Vec<(&'static str, NativeFn)> {
         ("net_http_head", Rc::new(http_client::net_http_head)),
         ("net_http_request", Rc::new(http_client::net_http_request)),
         ("net_http_download", Rc::new(http_client::net_http_download)),
-        ("net_response_field", Rc::new(http_server::net_response_field)),
+        (
+            "net_response_field",
+            Rc::new(http_server::net_response_field),
+        ),
         // tcp/udp
         ("net_tcp_socket", Rc::new(socket::net_tcp_socket)),
         ("net_tcp_connect", Rc::new(socket::net_tcp_connect)),
@@ -542,10 +583,16 @@ pub fn builtins() -> Vec<(&'static str, NativeFn)> {
         // http server
         ("net_http_listen", Rc::new(http_server::net_http_listen)),
         ("net_http_route", Rc::new(http_server::net_http_route)),
-        ("net_http_on_request", Rc::new(http_server::net_http_on_request)),
+        (
+            "net_http_on_request",
+            Rc::new(http_server::net_http_on_request),
+        ),
         ("net_http_serve", Rc::new(http_server::net_http_serve)),
         ("net_http_poll", Rc::new(http_server::net_http_poll)),
-        ("net_http_serve_async", Rc::new(http_server::net_http_serve_async)),
+        (
+            "net_http_serve_async",
+            Rc::new(http_server::net_http_serve_async),
+        ),
         ("net_http_stop", Rc::new(http_server::net_http_stop)),
         ("net_http_response", Rc::new(net_http_response)),
         ("net_request_field", Rc::new(http_server::net_request_field)),

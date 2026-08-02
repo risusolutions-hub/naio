@@ -33,12 +33,21 @@ fn arity(args: &[ValueRef], n: usize, name: &str, span: Span) -> NiaoResult<()> 
     Ok(())
 }
 
-fn arity_range(args: &[ValueRef], min: usize, max: usize, name: &str, span: Span) -> NiaoResult<()> {
+fn arity_range(
+    args: &[ValueRef],
+    min: usize,
+    max: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<()> {
     if args.len() < min || args.len() > max {
         return Err(RuntimeError::at(
             span,
             codes::E2630_NFMT_ARITY,
-            format!("{name}() expects {min}..={max} argument(s), got {}", args.len()),
+            format!(
+                "{name}() expects {min}..={max} argument(s), got {}",
+                args.len()
+            ),
         ));
     }
     Ok(())
@@ -298,7 +307,13 @@ fn nfmt_currency(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     }
 }
 
-fn based(args: &[ValueRef], name: &str, span: Span, prefix: &str, f: impl Fn(i64) -> String) -> NiaoResult<ValueRef> {
+fn based(
+    args: &[ValueRef],
+    name: &str,
+    span: Span,
+    prefix: &str,
+    f: impl Fn(i64) -> String,
+) -> NiaoResult<ValueRef> {
     arity_range(args, 1, 2, name, span)?;
     let n = int_arg(args, 0, name, span)?;
     let width = optional_int(args, 1, 0);
@@ -364,14 +379,22 @@ fn humanize_scaled(value: f64, units: &[&str], step: f64) -> String {
 fn nfmt_bytes(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity(args, 1, "nfmt_bytes", span)?;
     let n = num_arg(args, 0, "nfmt_bytes", span)?;
-    str_val(humanize_scaled(n, &["B", "kB", "MB", "GB", "TB", "PB"], 1000.0))
+    str_val(humanize_scaled(
+        n,
+        &["B", "kB", "MB", "GB", "TB", "PB"],
+        1000.0,
+    ))
 }
 
 /// Binary bytes: 1 KiB = 1024 B.
 fn nfmt_bytes_bin(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity(args, 1, "nfmt_bytes_bin", span)?;
     let n = num_arg(args, 0, "nfmt_bytes_bin", span)?;
-    str_val(humanize_scaled(n, &["B", "KiB", "MiB", "GiB", "TiB", "PiB"], 1024.0))
+    str_val(humanize_scaled(
+        n,
+        &["B", "KiB", "MiB", "GiB", "TiB", "PiB"],
+        1024.0,
+    ))
 }
 
 /// Short counts: 1.2k, 3.4M, 5.6B.
@@ -398,7 +421,10 @@ fn nfmt_duration_ms(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity(args, 1, "nfmt_duration_ms", span)?;
     let ms = int_arg(args, 0, "nfmt_duration_ms", span)?;
     if ms < 0 {
-        return Ok(nfmt_error(span, "nfmt_duration_ms() expects a non-negative duration"));
+        return Ok(nfmt_error(
+            span,
+            "nfmt_duration_ms() expects a non-negative duration",
+        ));
     }
     if ms < 1000 {
         return str_val(format!("{ms}ms"));
@@ -454,7 +480,10 @@ nfmt_fns![
 ];
 
 fn all_builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(flat, _, f)| (flat, f)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(flat, _, f)| (flat, f))
+        .collect()
 }
 
 pub fn namespace() -> Value {
@@ -513,17 +542,29 @@ mod tests {
         let mut obj = HashMap::new();
         obj.insert("name".to_string(), Value::String("Niao".into()).ref_cell());
         assert_eq!(
-            expect_str(nfmt_fmt(&[s("hi {name}!"), Value::Object(obj).ref_cell()], span())),
+            expect_str(nfmt_fmt(
+                &[s("hi {name}!"), Value::Object(obj).ref_cell()],
+                span()
+            )),
             "hi Niao!"
         );
-        assert_eq!(expect_str(nfmt_fmt(&[s("{{literal}}")], span())), "{literal}");
+        assert_eq!(
+            expect_str(nfmt_fmt(&[s("{{literal}}")], span())),
+            "{literal}"
+        );
     }
 
     #[test]
     fn thousands_grouping() {
-        assert_eq!(expect_str(nfmt_number(&[i(1_234_567)], span())), "1,234,567");
+        assert_eq!(
+            expect_str(nfmt_number(&[i(1_234_567)], span())),
+            "1,234,567"
+        );
         assert_eq!(expect_str(nfmt_number(&[i(-1000)], span())), "-1,000");
-        assert_eq!(expect_str(nfmt_number(&[f(1234.5), i(2)], span())), "1,234.50");
+        assert_eq!(
+            expect_str(nfmt_number(&[f(1234.5), i(2)], span())),
+            "1,234.50"
+        );
         assert_eq!(expect_str(nfmt_number(&[i(42)], span())), "42");
     }
 
@@ -542,7 +583,10 @@ mod tests {
         assert_eq!(expect_str(nfmt_bytes(&[i(1_500_000)], span())), "1.5 MB");
         assert_eq!(expect_str(nfmt_bytes_bin(&[i(1536)], span())), "1.5 KiB");
         assert_eq!(expect_str(nfmt_count(&[i(1_200_000)], span())), "1.2M");
-        assert_eq!(expect_str(nfmt_duration_ms(&[i(93_784_000)], span())), "1d 2h");
+        assert_eq!(
+            expect_str(nfmt_duration_ms(&[i(93_784_000)], span())),
+            "1d 2h"
+        );
         assert_eq!(expect_str(nfmt_duration_ms(&[i(500)], span())), "500ms");
         assert_eq!(expect_str(nfmt_duration_ms(&[i(63_000)], span())), "1m 3s");
     }
@@ -550,6 +594,9 @@ mod tests {
     #[test]
     fn percent_and_currency() {
         assert_eq!(expect_str(nfmt_percent(&[f(0.425)], span())), "42.5%");
-        assert_eq!(expect_str(nfmt_currency(&[f(-1234.5), s("$")], span())), "-$1,234.50");
+        assert_eq!(
+            expect_str(nfmt_currency(&[f(-1234.5), s("$")], span())),
+            "-$1,234.50"
+        );
     }
 }

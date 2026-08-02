@@ -7,14 +7,21 @@ use rand_distr::{Distribution, Normal};
 
 #[derive(Debug, Clone)]
 pub enum LayerKind {
-    Linear { in_features: usize, out_features: usize },
+    Linear {
+        in_features: usize,
+        out_features: usize,
+    },
     ReLU,
     Sigmoid,
     Tanh,
     Softmax,
     Flatten,
-    Reshape { shape: Vec<usize> },
-    Dropout { rate: f32 },
+    Reshape {
+        shape: Vec<usize>,
+    },
+    Dropout {
+        rate: f32,
+    },
     Conv2d {
         in_channels: usize,
         out_channels: usize,
@@ -22,7 +29,9 @@ pub enum LayerKind {
         stride: usize,
         padding: usize,
     },
-    BatchNorm2d { channels: usize },
+    BatchNorm2d {
+        channels: usize,
+    },
 }
 
 /// Forward-pass cache for backprop.
@@ -215,7 +224,11 @@ impl Layer {
                 let x = input.reshape(&[input.len() / in_features, *in_features])?;
                 let w_cpu = w.to_cpu()?;
                 let wt = transpose_rows_cols(&w_cpu, *out_features, *in_features);
-                let y = x.matmul(&Tensor::from_cpu_data(&[*in_features, *out_features], wt, input.device)?)?;
+                let y = x.matmul(&Tensor::from_cpu_data(
+                    &[*in_features, *out_features],
+                    wt,
+                    input.device,
+                )?)?;
                 let y_data = y.to_cpu()?;
                 let b_data = b.to_cpu()?;
                 let rows = y.shape[0];
@@ -317,7 +330,11 @@ impl Layer {
                     .map(|&v| {
                         let kept = rng.gen::<f32>() < keep;
                         mask.push(if kept { 1 } else { 0 });
-                        if kept { v * scale } else { 0.0 }
+                        if kept {
+                            v * scale
+                        } else {
+                            0.0
+                        }
                     })
                     .collect();
                 let result = Tensor::from_cpu_data(&input.shape, out, input.device)?;
@@ -342,8 +359,12 @@ impl Layer {
                         "conv2d expects NCHW 4D input".into(),
                     ));
                 }
-                let (batch, in_c, in_h, in_w) =
-                    (input.shape[0], input.shape[1], input.shape[2], input.shape[3]);
+                let (batch, in_c, in_h, in_w) = (
+                    input.shape[0],
+                    input.shape[1],
+                    input.shape[2],
+                    input.shape[3],
+                );
                 let x = input.to_cpu()?;
                 let w = self.weight.as_ref().unwrap().to_cpu()?;
                 let b = self.bias.as_ref().map(|t| t.to_cpu().unwrap());
@@ -387,15 +408,8 @@ impl Layer {
                 let x = input.to_cpu()?;
                 let gamma = self.gamma.as_ref().unwrap().to_cpu()?;
                 let beta = self.beta.as_ref().unwrap().to_cpu()?;
-                let (out, mean, var) = cpu::batch_norm2d_forward(
-                    &x,
-                    &gamma,
-                    &beta,
-                    batch,
-                    *channels,
-                    spatial,
-                    1e-5,
-                );
+                let (out, mean, var) =
+                    cpu::batch_norm2d_forward(&x, &gamma, &beta, batch, *channels, spatial, 1e-5);
                 let result = Tensor::from_cpu_data(&input.shape, out, input.device)?;
                 if record {
                     self.cache = Some(LayerCache {

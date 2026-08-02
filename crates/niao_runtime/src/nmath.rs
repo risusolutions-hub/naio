@@ -33,12 +33,21 @@ fn arity(args: &[ValueRef], n: usize, name: &str, span: Span) -> NiaoResult<()> 
     Ok(())
 }
 
-fn arity_range(args: &[ValueRef], min: usize, max: usize, name: &str, span: Span) -> NiaoResult<()> {
+fn arity_range(
+    args: &[ValueRef],
+    min: usize,
+    max: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<()> {
     if args.len() < min || args.len() > max {
         return Err(RuntimeError::at(
             span,
             codes::E2610_NMATH_ARITY,
-            format!("{name}() expects {min}..={max} argument(s), got {}", args.len()),
+            format!(
+                "{name}() expects {min}..={max} argument(s), got {}",
+                args.len()
+            ),
         ));
     }
     Ok(())
@@ -105,7 +114,9 @@ fn numbers_from(value: &Value, name: &str, span: Span) -> NiaoResult<Vec<f64>> {
                 match &*item.borrow() {
                     Value::Int(n) => out.push(*n as f64),
                     Value::Float(f) => out.push(*f),
-                    Value::BigInt(b) => out.push(b.to_string().parse::<f64>().unwrap_or(f64::INFINITY)),
+                    Value::BigInt(b) => {
+                        out.push(b.to_string().parse::<f64>().unwrap_or(f64::INFINITY))
+                    }
                     other => {
                         return Err(type_err(
                             span,
@@ -120,7 +131,10 @@ fn numbers_from(value: &Value, name: &str, span: Span) -> NiaoResult<Vec<f64>> {
         Value::FloatArray(v) => Ok(v.clone()),
         other => Err(type_err(
             span,
-            format!("{name}() expects an array of numbers, got {}", other.type_name()),
+            format!(
+                "{name}() expects an array of numbers, got {}",
+                other.type_name()
+            ),
         )),
     }
 }
@@ -245,7 +259,10 @@ fn nmath_round_to(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let x = num_arg(args, 0, "nmath_round_to", span)?;
     let decimals = int_arg(args, 1, "nmath_round_to", span)?;
     if !(-15..=15).contains(&decimals) {
-        return Err(type_err(span, "nmath_round_to() decimals must be in -15..=15"));
+        return Err(type_err(
+            span,
+            "nmath_round_to() decimals must be in -15..=15",
+        ));
     }
     let factor = 10f64.powi(decimals as i32);
     float_val((x * factor).round() / factor)
@@ -354,7 +371,10 @@ fn nmath_factorial(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
         return Ok(domain_err(span, "nmath_factorial() of negative number"));
     }
     if n > 20 {
-        return Ok(domain_err(span, "nmath_factorial() overflows int for n > 20"));
+        return Ok(domain_err(
+            span,
+            "nmath_factorial() overflows int for n > 20",
+        ));
     }
     let mut acc: i64 = 1;
     for k in 2..=n {
@@ -448,9 +468,7 @@ fn min_max_impl(args: &[ValueRef], name: &str, span: Span, want_max: bool) -> Ni
     let (values, all_ints) = if is_array_input {
         let all_ints = matches!(&*args[0].borrow(), Value::IntArray(_))
             || match &*args[0].borrow() {
-                Value::Array(items) => items
-                    .iter()
-                    .all(|v| matches!(&*v.borrow(), Value::Int(_))),
+                Value::Array(items) => items.iter().all(|v| matches!(&*v.borrow(), Value::Int(_))),
                 _ => false,
             };
         (numbers_from(&args[0].borrow(), name, span)?, all_ints)
@@ -575,7 +593,10 @@ fn variance_impl(args: &[ValueRef], name: &str, span: Span) -> NiaoResult<Result
     if (population && n == 0) || (!population && n < 2) {
         return Ok(Err(domain_err(
             span,
-            format!("{name}() needs at least {} value(s)", if population { 1 } else { 2 }),
+            format!(
+                "{name}() needs at least {} value(s)",
+                if population { 1 } else { 2 }
+            ),
         )));
     }
     let mean = values.iter().sum::<f64>() / n as f64;
@@ -685,7 +706,10 @@ nmath_fns![
 ];
 
 fn all_builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(flat, _, f)| (flat, f)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(flat, _, f)| (flat, f))
+        .collect()
 }
 
 pub fn namespace() -> Value {
@@ -694,9 +718,18 @@ pub fn namespace() -> Value {
         map.insert(short.to_string(), Value::NativeFunction(f).ref_cell());
     }
     // Constants
-    map.insert("pi".to_string(), Value::Float(std::f64::consts::PI).ref_cell());
-    map.insert("e".to_string(), Value::Float(std::f64::consts::E).ref_cell());
-    map.insert("tau".to_string(), Value::Float(std::f64::consts::TAU).ref_cell());
+    map.insert(
+        "pi".to_string(),
+        Value::Float(std::f64::consts::PI).ref_cell(),
+    );
+    map.insert(
+        "e".to_string(),
+        Value::Float(std::f64::consts::E).ref_cell(),
+    );
+    map.insert(
+        "tau".to_string(),
+        Value::Float(std::f64::consts::TAU).ref_cell(),
+    );
     map.insert("inf".to_string(), Value::Float(f64::INFINITY).ref_cell());
     map.insert("nan".to_string(), Value::Float(f64::NAN).ref_cell());
     Value::Object(map)

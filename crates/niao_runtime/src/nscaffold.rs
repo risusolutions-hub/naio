@@ -1,4 +1,4 @@
-﻿//! Native nscaffold standard library — generate CRUD routes, nmodel schema,
+//! Native nscaffold standard library — generate CRUD routes, nmodel schema,
 //! SQL migration, and ntest stubs from a struct spec object.
 //!
 //! Import with `import "nscaffold"` (or `import "std/nscaffold"`).
@@ -93,14 +93,13 @@ struct ScaffoldSpec {
 }
 
 fn parse_spec(map: &HashMap<String, ValueRef>, span: Span) -> Result<ScaffoldSpec, ValueRef> {
-    let name = spec_str(map, "name").ok_or_else(|| {
-        scaffold_err(span, "spec missing 'name' (struct/model name)")
-    })?;
+    let name = spec_str(map, "name")
+        .ok_or_else(|| scaffold_err(span, "spec missing 'name' (struct/model name)"))?;
     let table = spec_str(map, "table").unwrap_or_else(|| pluralize(&snake_case(&name)));
     let path = spec_str(map, "path").unwrap_or_else(|| format!("/{}", table));
-    let fields_ref = map.get("fields").ok_or_else(|| {
-        scaffold_err(span, "spec missing 'fields' object")
-    })?;
+    let fields_ref = map
+        .get("fields")
+        .ok_or_else(|| scaffold_err(span, "spec missing 'fields' object"))?;
     let fields_borrow = fields_ref.borrow();
     let fields_obj = match &*fields_borrow {
         Value::Object(f) => f.clone(),
@@ -120,7 +119,10 @@ fn parse_spec(map: &HashMap<String, ValueRef>, span: Span) -> Result<ScaffoldSpe
             other => {
                 return Err(scaffold_err(
                     span,
-                    format!("field '{k}' spec must be a string, got {}", other.type_name()),
+                    format!(
+                        "field '{k}' spec must be a string, got {}",
+                        other.type_name()
+                    ),
                 ));
             }
         }
@@ -349,13 +351,28 @@ fn nscaffold_crud(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
         Err(e) => return Ok(e),
     };
     let mut out = HashMap::new();
-    out.insert("name".to_string(), Value::String(spec.name.clone()).ref_cell());
-    out.insert("table".to_string(), Value::String(spec.table.clone()).ref_cell());
-    out.insert("path".to_string(), Value::String(spec.path.clone()).ref_cell());
-    out.insert("routes".to_string(), Value::String(gen_routes(&spec)).ref_cell());
+    out.insert(
+        "name".to_string(),
+        Value::String(spec.name.clone()).ref_cell(),
+    );
+    out.insert(
+        "table".to_string(),
+        Value::String(spec.table.clone()).ref_cell(),
+    );
+    out.insert(
+        "path".to_string(),
+        Value::String(spec.path.clone()).ref_cell(),
+    );
+    out.insert(
+        "routes".to_string(),
+        Value::String(gen_routes(&spec)).ref_cell(),
+    );
     out.insert("model".to_string(), model_schema_object(&spec));
     out.insert("migration".to_string(), Value::String(migration).ref_cell());
-    out.insert("tests".to_string(), Value::String(gen_tests(&spec)).ref_cell());
+    out.insert(
+        "tests".to_string(),
+        Value::String(gen_tests(&spec)).ref_cell(),
+    );
     Ok(Value::Object(out).ref_cell())
 }
 
@@ -380,7 +397,10 @@ nscaffold_fns![
 ];
 
 fn all_builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(flat, _, f)| (flat, f)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(flat, _, f)| (flat, f))
+        .collect()
 }
 
 pub fn namespace() -> Value {
@@ -409,8 +429,14 @@ mod tests {
     fn user_spec() -> ValueRef {
         let mut fields = HashMap::new();
         fields.insert("id".to_string(), Value::String("int@id".into()).ref_cell());
-        fields.insert("name".to_string(), Value::String("string@required".into()).ref_cell());
-        fields.insert("email".to_string(), Value::String("string@unique@required".into()).ref_cell());
+        fields.insert(
+            "name".to_string(),
+            Value::String("string@required".into()).ref_cell(),
+        );
+        fields.insert(
+            "email".to_string(),
+            Value::String("string@unique@required".into()).ref_cell(),
+        );
         let mut spec = HashMap::new();
         spec.insert("name".to_string(), Value::String("User".into()).ref_cell());
         spec.insert("fields".to_string(), Value::Object(fields).ref_cell());

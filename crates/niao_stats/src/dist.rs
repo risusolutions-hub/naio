@@ -1,7 +1,7 @@
 //! Probability distributions.
 
 use crate::error::{StatsError, StatsResult};
-use crate::special::{betainc, gammainc, norm_cdf, norm_pdf, norm_ppf, ppf_from_cdf, beta, gamma};
+use crate::special::{beta, betainc, gamma, gammainc, norm_cdf, norm_pdf, norm_ppf, ppf_from_cdf};
 use niao_rand::{Rng, SeedableRng, Xoshiro256StarStar};
 
 const SQRT_2PI: f64 = 2.5066282746310005;
@@ -55,7 +55,10 @@ impl Normal {
     }
 
     pub fn standard() -> Self {
-        Self { mu: 0.0, sigma: 1.0 }
+        Self {
+            mu: 0.0,
+            sigma: 1.0,
+        }
     }
 
     #[inline]
@@ -121,7 +124,8 @@ impl StudentT {
 
     pub fn pdf(&self, x: f64) -> f64 {
         let v = self.df;
-        let coef = gamma((v + 1.0) / 2.0).unwrap() / (gamma(v / 2.0).unwrap() * (v * std::f64::consts::PI).sqrt());
+        let coef = gamma((v + 1.0) / 2.0).unwrap()
+            / (gamma(v / 2.0).unwrap() * (v * std::f64::consts::PI).sqrt());
         (1.0 + x * x / v).powf(-(v + 1.0) / 2.0) * coef
     }
 
@@ -407,7 +411,12 @@ impl Gamma {
 
     pub fn ppf(&self, p: f64) -> StatsResult<f64> {
         check_prob("p", p)?;
-        ppf_from_cdf(|x| self.cdf(x), p, 0.0, self.shape * self.scale * 50.0 + 100.0)
+        ppf_from_cdf(
+            |x| self.cdf(x),
+            p,
+            0.0,
+            self.shape * self.scale * 50.0 + 100.0,
+        )
     }
 
     pub fn mean(&self) -> f64 {

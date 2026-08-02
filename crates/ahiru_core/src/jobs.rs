@@ -23,7 +23,11 @@ impl JobQueue {
         }
     }
 
-    pub fn enqueue(&self, name: impl Into<String>, payload: impl Into<String>) -> Result<(), String> {
+    pub fn enqueue(
+        &self,
+        name: impl Into<String>,
+        payload: impl Into<String>,
+    ) -> Result<(), String> {
         self.pending.lock().unwrap().push_back(Job {
             name: name.into(),
             payload: payload.into(),

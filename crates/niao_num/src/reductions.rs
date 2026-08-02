@@ -138,7 +138,14 @@ fn argext(a: &NdArray, axis: Option<usize>, is_min: bool) -> NumResult<NdArray> 
             }
             let out_n: usize = out_shape.iter().product();
             let mut out = vec![0.0; out_n];
-            let mut best = vec![if is_min { f64::INFINITY } else { f64::NEG_INFINITY }; out_n];
+            let mut best = vec![
+                if is_min {
+                    f64::INFINITY
+                } else {
+                    f64::NEG_INFINITY
+                };
+                out_n
+            ];
             let data = a.to_vec();
             let mut idx = vec![0usize; a.ndim()];
             for _ in 0..data.len() {
@@ -150,7 +157,11 @@ fn argext(a: &NdArray, axis: Option<usize>, is_min: bool) -> NumResult<NdArray> 
                     stride *= dim;
                 }
                 let val = data[linear_index(&a.shape, &idx)];
-                let better = if is_min { val < best[out_idx] } else { val > best[out_idx] };
+                let better = if is_min {
+                    val < best[out_idx]
+                } else {
+                    val > best[out_idx]
+                };
                 if better {
                     best[out_idx] = val;
                     out[out_idx] = idx[ax] as f64;

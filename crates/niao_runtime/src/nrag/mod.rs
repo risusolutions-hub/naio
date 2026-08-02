@@ -20,7 +20,10 @@ pub const EMBED_DIM: usize = DEFAULT_DIM;
 fn hit_to_object(ch: &Chunk, score: f32) -> ValueRef {
     let mut m = HashMap::new();
     m.insert("chunk_id".into(), Value::String(ch.id.clone()).ref_cell());
-    m.insert("content".into(), Value::String(ch.content.clone()).ref_cell());
+    m.insert(
+        "content".into(),
+        Value::String(ch.content.clone()).ref_cell(),
+    );
     m.insert("source".into(), Value::String(ch.source.clone()).ref_cell());
     m.insert(
         "chapter".into(),
@@ -43,7 +46,12 @@ fn hit_to_object(ch: &Chunk, score: f32) -> ValueRef {
     Value::Object(m).ref_cell()
 }
 
-fn float_array_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> Result<Vec<f32>, RuntimeError> {
+fn float_array_arg(
+    args: &[ValueRef],
+    idx: usize,
+    name: &str,
+    span: Span,
+) -> Result<Vec<f32>, RuntimeError> {
     match &*args[idx].borrow() {
         Value::FloatArray(v) => Ok(v.iter().map(|&f| f as f32).collect()),
         other => Err(type_err(
@@ -57,7 +65,11 @@ fn float_array_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> Res
     }
 }
 
-fn parse_search_params(args: &[ValueRef], name: &str, span: Span) -> Result<(usize, f32), RuntimeError> {
+fn parse_search_params(
+    args: &[ValueRef],
+    name: &str,
+    span: Span,
+) -> Result<(usize, f32), RuntimeError> {
     let top_k = if args.len() >= 3 {
         int_arg(args, 2, name, span)? as usize
     } else {
@@ -159,10 +171,7 @@ fn search_text_npu_batch(
     with_index(id, "nrag_search_vec", span, |idx| {
         let rows: Vec<ValueRef> = merged
             .iter()
-            .filter_map(|(ci, score)| {
-                idx.get_chunk(*ci)
-                    .map(|ch| hit_to_object(ch, *score))
-            })
+            .filter_map(|(ci, score)| idx.get_chunk(*ci).map(|ch| hit_to_object(ch, *score)))
             .collect();
         Ok(Value::Array(rows).ref_cell())
     })
@@ -170,10 +179,7 @@ fn search_text_npu_batch(
 
 /// VM fast path: whether embedder is initialized.
 pub fn embedder_ready() -> bool {
-    EMBEDDER
-        .lock()
-        .map(|g| g.is_some())
-        .unwrap_or(false)
+    EMBEDDER.lock().map(|g| g.is_some()).unwrap_or(false)
 }
 
 pub fn embedder_device_label() -> &'static str {
@@ -214,7 +220,10 @@ pub fn search_vec_handles(
         let hits = idx.search(&query, top_k, threshold);
         let rows: Vec<ValueRef> = hits
             .iter()
-            .filter_map(|hit| idx.get_chunk(hit.chunk_index).map(|ch| hit_to_object(ch, hit.score)))
+            .filter_map(|hit| {
+                idx.get_chunk(hit.chunk_index)
+                    .map(|ch| hit_to_object(ch, hit.score))
+            })
             .collect();
         Ok(Value::Array(rows).ref_cell())
     })
@@ -232,10 +241,7 @@ fn nrag_init(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
 
 fn nrag_ready(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity(args, 0, "nrag_ready", span)?;
-    let ok = EMBEDDER
-        .lock()
-        .map(|g| g.is_some())
-        .unwrap_or(false);
+    let ok = EMBEDDER.lock().map(|g| g.is_some()).unwrap_or(false);
     Ok(Value::Bool(ok).ref_cell())
 }
 
@@ -271,7 +277,10 @@ fn nrag_embed_batch(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
                     other => {
                         return Err(type_err(
                             span,
-                            format!("nrag_embed_batch() expects string[], got {}", other.type_name()),
+                            format!(
+                                "nrag_embed_batch() expects string[], got {}",
+                                other.type_name()
+                            ),
                         ))
                     }
                 }
@@ -281,7 +290,10 @@ fn nrag_embed_batch(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
         other => {
             return Err(type_err(
                 span,
-                format!("nrag_embed_batch() expects array, got {}", other.type_name()),
+                format!(
+                    "nrag_embed_batch() expects array, got {}",
+                    other.type_name()
+                ),
             ))
         }
     };
@@ -382,7 +394,10 @@ fn nrag_build_chunks(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
                     other => {
                         return Err(type_err(
                             span,
-                            format!("nrag_build_chunks() expects object[], got {}", other.type_name()),
+                            format!(
+                                "nrag_build_chunks() expects object[], got {}",
+                                other.type_name()
+                            ),
                         ))
                     }
                 };
@@ -428,7 +443,10 @@ fn nrag_build_chunks(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
         other => {
             return Err(type_err(
                 span,
-                format!("nrag_build_chunks() expects array, got {}", other.type_name()),
+                format!(
+                    "nrag_build_chunks() expects array, got {}",
+                    other.type_name()
+                ),
             ))
         }
     };

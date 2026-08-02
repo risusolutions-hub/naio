@@ -48,8 +48,8 @@ pub fn connect_tls(host: &str, port: u16) -> Result<WsStream, WsError> {
     let addr = format!("{host}:{port}");
     let tcp = TcpStream::connect(&addr).map_err(|e| WsError::Io(e.to_string()))?;
     let cfg = tls_config()?;
-    let sni = ServerName::try_from(host.to_string())
-        .map_err(|_| WsError::Tls("invalid sni".into()))?;
+    let sni =
+        ServerName::try_from(host.to_string()).map_err(|_| WsError::Tls("invalid sni".into()))?;
     let conn =
         ClientConnection::new(Arc::new(cfg), sni).map_err(|e| WsError::Tls(e.to_string()))?;
     let mut tls = StreamOwned::new(conn, tcp);

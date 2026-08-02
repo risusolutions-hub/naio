@@ -74,10 +74,7 @@ impl Default for StackData {
 
 #[derive(Clone)]
 pub enum SetData {
-    Int {
-        set: IntHashSet,
-        order: Vec<i64>,
-    },
+    Int { set: IntHashSet, order: Vec<i64> },
     Any(AnySet),
 }
 
@@ -655,10 +652,13 @@ impl MapData {
                         return;
                     }
                 }
-                let old = std::mem::replace(self, MapData::IntInt {
-                    map: IntHashMap::new(),
-                    keys: Vec::new(),
-                });
+                let old = std::mem::replace(
+                    self,
+                    MapData::IntInt {
+                        map: IntHashMap::new(),
+                        keys: Vec::new(),
+                    },
+                );
                 if let MapData::Dense(vals) = old {
                     let mut map = IntHashMap::with_capacity(vals.len() + 1);
                     let mut keys = Vec::with_capacity(vals.len() + 1);

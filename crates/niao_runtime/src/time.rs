@@ -8,8 +8,8 @@ use crate::{error_value, NativeFn, NiaoResult, RuntimeError, Value, ValueRef};
 use niao_ast::Span;
 use niao_errors::codes;
 use niao_time::{
-    days_from_civil, days_in_month, format_datetime, is_leap_year, is_valid_date, list_timezones,
-    parse_datetime, to_rfc3339, weekday_from_days, civil_to_ms, ms_to_civil, CivilDateTime,
+    civil_to_ms, days_from_civil, days_in_month, format_datetime, is_leap_year, is_valid_date,
+    list_timezones, ms_to_civil, parse_datetime, to_rfc3339, weekday_from_days, CivilDateTime,
     DateTime, Timezone, WEEKDAY_NAMES,
 };
 use std::collections::HashMap;
@@ -46,12 +46,21 @@ fn arity(args: &[ValueRef], n: usize, name: &str, span: Span) -> NiaoResult<()> 
     Ok(())
 }
 
-fn arity_range(args: &[ValueRef], min: usize, max: usize, name: &str, span: Span) -> NiaoResult<()> {
+fn arity_range(
+    args: &[ValueRef],
+    min: usize,
+    max: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<()> {
     if args.len() < min || args.len() > max {
         return Err(RuntimeError::at(
             span,
             codes::E1600_TIME_ARITY,
-            format!("{name}() expects {min}..={max} argument(s), got {}", args.len()),
+            format!(
+                "{name}() expects {min}..={max} argument(s), got {}",
+                args.len()
+            ),
         ));
     }
     Ok(())
@@ -164,7 +173,11 @@ fn datetime_object(fields: &DateTimeFields, unix_ms: i64, utc_offset_ms: i64) ->
     insert(&mut map, "hour", Value::Int(fields.hour as i64));
     insert(&mut map, "minute", Value::Int(fields.minute as i64));
     insert(&mut map, "second", Value::Int(fields.second as i64));
-    insert(&mut map, "millisecond", Value::Int(fields.millisecond as i64));
+    insert(
+        &mut map,
+        "millisecond",
+        Value::Int(fields.millisecond as i64),
+    );
     insert(&mut map, "weekday", Value::Int(weekday));
     insert(
         &mut map,
@@ -172,11 +185,7 @@ fn datetime_object(fields: &DateTimeFields, unix_ms: i64, utc_offset_ms: i64) ->
         Value::String(WEEKDAY_NAMES[fields.weekday].to_string()),
     );
     insert(&mut map, "unix_ms", Value::Int(unix_ms));
-    insert(
-        &mut map,
-        "timezone",
-        Value::String(fields.timezone.clone()),
-    );
+    insert(&mut map, "timezone", Value::String(fields.timezone.clone()));
     insert(&mut map, "utc_offset_ms", Value::Int(utc_offset_ms));
     Value::Object(map)
 }
@@ -485,7 +494,8 @@ fn time_start_of_day(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity_range(args, 1, 2, "time_start_of_day", span)?;
     let ms = int_arg(args, 0, "time_start_of_day", span)?;
     let tz = if args.len() == 2 {
-        resolve_tz(&string_arg(args, 1, "time_start_of_day", span)?).map_err(|e| type_err(span, e))?
+        resolve_tz(&string_arg(args, 1, "time_start_of_day", span)?)
+            .map_err(|e| type_err(span, e))?
     } else {
         Timezone::local()
     };
@@ -615,7 +625,8 @@ fn time_weekday_name(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity_range(args, 1, 2, "time_weekday_name", span)?;
     let ms = int_arg(args, 0, "time_weekday_name", span)?;
     let tz = if args.len() == 2 {
-        resolve_tz(&string_arg(args, 1, "time_weekday_name", span)?).map_err(|e| type_err(span, e))?
+        resolve_tz(&string_arg(args, 1, "time_weekday_name", span)?)
+            .map_err(|e| type_err(span, e))?
     } else {
         Timezone::local()
     };
@@ -734,7 +745,8 @@ mod tests {
 
     #[test]
     fn from_parts_utc() {
-        let ms = parse_with_tz("2026-07-03 12:00:00", "%Y-%m-%d %H:%M:%S", &Timezone::utc()).unwrap();
+        let ms =
+            parse_with_tz("2026-07-03 12:00:00", "%Y-%m-%d %H:%M:%S", &Timezone::utc()).unwrap();
         let args = [
             Value::Int(2026).ref_cell(),
             Value::Int(7).ref_cell(),

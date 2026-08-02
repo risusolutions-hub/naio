@@ -5,10 +5,28 @@ use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
 pub enum OptimizerKind {
-    Sgd { lr: f32, momentum: f32 },
-    Adam { lr: f32, beta1: f32, beta2: f32, eps: f32 },
-    AdamW { lr: f32, beta1: f32, beta2: f32, eps: f32, weight_decay: f32 },
-    Rmsprop { lr: f32, alpha: f32, eps: f32 },
+    Sgd {
+        lr: f32,
+        momentum: f32,
+    },
+    Adam {
+        lr: f32,
+        beta1: f32,
+        beta2: f32,
+        eps: f32,
+    },
+    AdamW {
+        lr: f32,
+        beta1: f32,
+        beta2: f32,
+        eps: f32,
+        weight_decay: f32,
+    },
+    Rmsprop {
+        lr: f32,
+        alpha: f32,
+        eps: f32,
+    },
 }
 
 impl OptimizerKind {
@@ -77,9 +95,27 @@ pub fn step(
                 data[i] -= lr * vel[i];
             }
         }
-        OptimizerKind::Adam { lr, beta1, beta2, eps } | OptimizerKind::AdamW { lr, beta1, beta2, eps, weight_decay: _ } => {
-            let m = state.m.entry(param_id).or_insert_with(|| vec![0.0; data.len()]);
-            let v = state.v.entry(param_id).or_insert_with(|| vec![0.0; data.len()]);
+        OptimizerKind::Adam {
+            lr,
+            beta1,
+            beta2,
+            eps,
+        }
+        | OptimizerKind::AdamW {
+            lr,
+            beta1,
+            beta2,
+            eps,
+            weight_decay: _,
+        } => {
+            let m = state
+                .m
+                .entry(param_id)
+                .or_insert_with(|| vec![0.0; data.len()]);
+            let v = state
+                .v
+                .entry(param_id)
+                .or_insert_with(|| vec![0.0; data.len()]);
             let t = state.step as f32;
             for i in 0..data.len() {
                 m[i] = beta1 * m[i] + (1.0 - beta1) * grad[i];
@@ -95,14 +131,16 @@ pub fn step(
             }
         }
         OptimizerKind::Rmsprop { lr, alpha, eps } => {
-            let v = state.v.entry(param_id).or_insert_with(|| vec![0.0; data.len()]);
+            let v = state
+                .v
+                .entry(param_id)
+                .or_insert_with(|| vec![0.0; data.len()]);
             for i in 0..data.len() {
                 v[i] = alpha * v[i] + (1.0 - alpha) * grad[i] * grad[i];
                 data[i] -= lr * grad[i] / (v[i].sqrt() + eps);
             }
         }
     }
-    *param = Tensor::from_cpu_data(&param.shape, data, param.device)
-        .map_err(|e| e.to_string())?;
+    *param = Tensor::from_cpu_data(&param.shape, data, param.device).map_err(|e| e.to_string())?;
     Ok(())
 }

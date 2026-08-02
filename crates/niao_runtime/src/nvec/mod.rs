@@ -98,12 +98,21 @@ fn arity(args: &[ValueRef], n: usize, name: &str, span: Span) -> NiaoResult<()> 
     Ok(())
 }
 
-fn arity_range(args: &[ValueRef], min: usize, max: usize, name: &str, span: Span) -> NiaoResult<()> {
+fn arity_range(
+    args: &[ValueRef],
+    min: usize,
+    max: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<()> {
     if args.len() < min || args.len() > max {
         return Err(RuntimeError::at(
             span,
             codes::E2790_NVEC_ARITY,
-            format!("{name}() expects {min}..={max} argument(s), got {}", args.len()),
+            format!(
+                "{name}() expects {min}..={max} argument(s), got {}",
+                args.len()
+            ),
         ));
     }
     Ok(())
@@ -177,7 +186,10 @@ fn extract_vector(v: &ValueRef, name: &str, span: Span) -> NiaoResult<Vec<f32>> 
                         return Err(RuntimeError::at(
                             span,
                             codes::E2792_NVEC_TYPE,
-                            format!("{name}() vector elements must be numbers, got {}", other.type_name()),
+                            format!(
+                                "{name}() vector elements must be numbers, got {}",
+                                other.type_name()
+                            ),
                         ))
                     }
                 }
@@ -187,7 +199,10 @@ fn extract_vector(v: &ValueRef, name: &str, span: Span) -> NiaoResult<Vec<f32>> 
         other => Err(RuntimeError::at(
             span,
             codes::E2792_NVEC_TYPE,
-            format!("{name}() vector must be an array, got {}", other.type_name()),
+            format!(
+                "{name}() vector must be an array, got {}",
+                other.type_name()
+            ),
         )),
     }
 }
@@ -259,7 +274,10 @@ fn nvec_open(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
             other => {
                 return Ok(nvec_err(
                     span,
-                    format!("nvec.open() unexpected argument type: {}", other.type_name()),
+                    format!(
+                        "nvec.open() unexpected argument type: {}",
+                        other.type_name()
+                    ),
                 ))
             }
         }
@@ -280,7 +298,13 @@ fn nvec_open(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
 
     let id = new_handle();
     HANDLES.with(|h| {
-        h.borrow_mut().insert(id, Backend::Memory { index, save_path: path });
+        h.borrow_mut().insert(
+            id,
+            Backend::Memory {
+                index,
+                save_path: path,
+            },
+        );
     });
     Ok(Value::Int(id).ref_cell())
 }
@@ -312,9 +336,7 @@ fn nvec_insert(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let metadata = extract_metadata(&args[3]);
 
     match with_backend(handle_id, span, |b| match b {
-        Backend::Memory { index, .. } => {
-            index.insert(vec_id.clone(), vector, metadata)
-        }
+        Backend::Memory { index, .. } => index.insert(vec_id.clone(), vector, metadata),
         Backend::Qdrant(q) => q.upsert(&vec_id, &vector, &metadata).and_then(|_| {
             Err("nvec.insert on Qdrant is semantically upsert; use nvec.upsert".to_string())
         }),
@@ -351,7 +373,9 @@ fn nvec_search(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity_range(args, 2, 4, "nvec.search", span)?;
     let handle_id = int_arg(args, 0, "nvec.search", span)?;
     let query = extract_vector(&args[1], "nvec.search", span)?;
-    let top_k = opt_int_arg(args, 2).map(|n| n.max(1) as usize).unwrap_or(10);
+    let top_k = opt_int_arg(args, 2)
+        .map(|n| n.max(1) as usize)
+        .unwrap_or(10);
     let threshold = opt_float_arg(args, 3).unwrap_or(0.0) as f32;
 
     match with_backend(handle_id, span, |b| match b {
@@ -437,7 +461,10 @@ fn nvec_load(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
             HANDLES.with(|h| {
                 h.borrow_mut().insert(
                     id,
-                    Backend::Memory { index, save_path: Some(path) },
+                    Backend::Memory {
+                        index,
+                        save_path: Some(path),
+                    },
                 );
             });
             Ok(Value::Int(id).ref_cell())
@@ -467,20 +494,23 @@ macro_rules! nvec_fns {
 }
 
 nvec_fns![
-    ("nvec_open",    "open",    nvec_open),
+    ("nvec_open", "open", nvec_open),
     ("nvec_connect", "connect", nvec_connect),
-    ("nvec_insert",  "insert",  nvec_insert),
-    ("nvec_upsert",  "upsert",  nvec_upsert),
-    ("nvec_search",  "search",  nvec_search),
-    ("nvec_delete",  "delete",  nvec_delete),
-    ("nvec_count",   "count",   nvec_count),
-    ("nvec_save",    "save",    nvec_save),
-    ("nvec_load",    "load",    nvec_load),
-    ("nvec_close",   "close",   nvec_close),
+    ("nvec_insert", "insert", nvec_insert),
+    ("nvec_upsert", "upsert", nvec_upsert),
+    ("nvec_search", "search", nvec_search),
+    ("nvec_delete", "delete", nvec_delete),
+    ("nvec_count", "count", nvec_count),
+    ("nvec_save", "save", nvec_save),
+    ("nvec_load", "load", nvec_load),
+    ("nvec_close", "close", nvec_close),
 ];
 
 pub fn builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(flat, _, f)| (flat, f)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(flat, _, f)| (flat, f))
+        .collect()
 }
 
 pub fn namespace() -> Value {
@@ -502,11 +532,19 @@ pub const MODULE_PATHS: &[&str] = &["nvec", "std/nvec"];
 mod tests {
     use super::*;
 
-    fn span() -> Span { Span::dummy() }
+    fn span() -> Span {
+        Span::dummy()
+    }
 
-    fn i(n: i64) -> ValueRef { Value::Int(n).ref_cell() }
-    fn s(v: &str) -> ValueRef { Value::String(v.to_string()).ref_cell() }
-    fn f(v: f64) -> ValueRef { Value::Float(v).ref_cell() }
+    fn i(n: i64) -> ValueRef {
+        Value::Int(n).ref_cell()
+    }
+    fn s(v: &str) -> ValueRef {
+        Value::String(v.to_string()).ref_cell()
+    }
+    fn f(v: f64) -> ValueRef {
+        Value::Float(v).ref_cell()
+    }
 
     fn vec_val(floats: &[f64]) -> ValueRef {
         Value::Array(floats.iter().map(|&x| f(x)).collect()).ref_cell()
@@ -545,9 +583,21 @@ mod tests {
     #[test]
     fn insert_search_basic() {
         let h = open_handle();
-        nvec_upsert(&[h.clone(), s("a"), vec_val(&[1.0, 0.0, 0.0]), meta_obj(&[])], span()).unwrap();
-        nvec_upsert(&[h.clone(), s("b"), vec_val(&[0.0, 1.0, 0.0]), meta_obj(&[])], span()).unwrap();
-        nvec_upsert(&[h.clone(), s("c"), vec_val(&[0.9, 0.1, 0.0]), meta_obj(&[])], span()).unwrap();
+        nvec_upsert(
+            &[h.clone(), s("a"), vec_val(&[1.0, 0.0, 0.0]), meta_obj(&[])],
+            span(),
+        )
+        .unwrap();
+        nvec_upsert(
+            &[h.clone(), s("b"), vec_val(&[0.0, 1.0, 0.0]), meta_obj(&[])],
+            span(),
+        )
+        .unwrap();
+        nvec_upsert(
+            &[h.clone(), s("c"), vec_val(&[0.9, 0.1, 0.0]), meta_obj(&[])],
+            span(),
+        )
+        .unwrap();
         let hits = nvec_search(&[h.clone(), vec_val(&[1.0, 0.0, 0.0]), i(3)], span()).unwrap();
         let arr = match &*hits.borrow() {
             Value::Array(a) => a.clone(),
@@ -568,8 +618,16 @@ mod tests {
     #[test]
     fn count_reflects_insertions_and_deletions() {
         let h = open_handle();
-        nvec_upsert(&[h.clone(), s("x"), vec_val(&[1.0, 0.0]), meta_obj(&[])], span()).unwrap();
-        nvec_upsert(&[h.clone(), s("y"), vec_val(&[0.0, 1.0]), meta_obj(&[])], span()).unwrap();
+        nvec_upsert(
+            &[h.clone(), s("x"), vec_val(&[1.0, 0.0]), meta_obj(&[])],
+            span(),
+        )
+        .unwrap();
+        nvec_upsert(
+            &[h.clone(), s("y"), vec_val(&[0.0, 1.0]), meta_obj(&[])],
+            span(),
+        )
+        .unwrap();
         let n = nvec_count(&[h.clone()], span()).unwrap();
         assert!(matches!(&*n.borrow(), Value::Int(2)));
         nvec_delete(&[h.clone(), s("x")], span()).unwrap();
@@ -587,13 +645,18 @@ mod tests {
     #[test]
     fn search_threshold_filtering() {
         let h = open_handle();
-        nvec_upsert(&[h.clone(), s("a"), vec_val(&[1.0, 0.0]), meta_obj(&[])], span()).unwrap();
-        nvec_upsert(&[h.clone(), s("b"), vec_val(&[0.0, 1.0]), meta_obj(&[])], span()).unwrap();
-        // Threshold 0.9 — only "a" should pass.
-        let hits = nvec_search(
-            &[h.clone(), vec_val(&[1.0, 0.0]), i(5), f(0.9)],
+        nvec_upsert(
+            &[h.clone(), s("a"), vec_val(&[1.0, 0.0]), meta_obj(&[])],
             span(),
-        ).unwrap();
+        )
+        .unwrap();
+        nvec_upsert(
+            &[h.clone(), s("b"), vec_val(&[0.0, 1.0]), meta_obj(&[])],
+            span(),
+        )
+        .unwrap();
+        // Threshold 0.9 — only "a" should pass.
+        let hits = nvec_search(&[h.clone(), vec_val(&[1.0, 0.0]), i(5), f(0.9)], span()).unwrap();
         let arr = match &*hits.borrow() {
             Value::Array(a) => a.clone(),
             _ => panic!(),
@@ -621,8 +684,13 @@ mod tests {
             Value::Object(m) => m.clone(),
             _ => panic!(),
         };
-        assert!(matches!(&*meta_map.get("category").unwrap().borrow(), Value::String(s) if s == "fruit"));
-        assert!(matches!(&*meta_map.get("priority").unwrap().borrow(), Value::Int(3)));
+        assert!(
+            matches!(&*meta_map.get("category").unwrap().borrow(), Value::String(s) if s == "fruit")
+        );
+        assert!(matches!(
+            &*meta_map.get("priority").unwrap().borrow(),
+            Value::Int(3)
+        ));
         nvec_close(&[h], span()).unwrap();
     }
 
@@ -632,8 +700,16 @@ mod tests {
         let path = tmp.to_str().unwrap().to_string();
 
         let h = open_handle();
-        nvec_upsert(&[h.clone(), s("v1"), vec_val(&[1.0, 0.0, 0.0]), meta_obj(&[])], span()).unwrap();
-        nvec_upsert(&[h.clone(), s("v2"), vec_val(&[0.0, 1.0, 0.0]), meta_obj(&[])], span()).unwrap();
+        nvec_upsert(
+            &[h.clone(), s("v1"), vec_val(&[1.0, 0.0, 0.0]), meta_obj(&[])],
+            span(),
+        )
+        .unwrap();
+        nvec_upsert(
+            &[h.clone(), s("v2"), vec_val(&[0.0, 1.0, 0.0]), meta_obj(&[])],
+            span(),
+        )
+        .unwrap();
         let save_ok = nvec_save(&[h.clone(), s(&path)], span()).unwrap();
         assert!(matches!(&*save_ok.borrow(), Value::Bool(true)));
         nvec_close(&[h], span()).unwrap();
@@ -653,7 +729,11 @@ mod tests {
 
         // First: create and save.
         let h = open_handle();
-        nvec_upsert(&[h.clone(), s("doc"), vec_val(&[0.5, 0.5]), meta_obj(&[])], span()).unwrap();
+        nvec_upsert(
+            &[h.clone(), s("doc"), vec_val(&[0.5, 0.5]), meta_obj(&[])],
+            span(),
+        )
+        .unwrap();
         nvec_save(&[h.clone(), s(&path)], span()).unwrap();
         nvec_close(&[h], span()).unwrap();
 
@@ -668,8 +748,26 @@ mod tests {
     #[test]
     fn upsert_overwrites_existing() {
         let h = open_handle();
-        nvec_upsert(&[h.clone(), s("k"), vec_val(&[1.0, 0.0]), meta_obj(&[("v", i(1))])], span()).unwrap();
-        nvec_upsert(&[h.clone(), s("k"), vec_val(&[0.0, 1.0]), meta_obj(&[("v", i(2))])], span()).unwrap();
+        nvec_upsert(
+            &[
+                h.clone(),
+                s("k"),
+                vec_val(&[1.0, 0.0]),
+                meta_obj(&[("v", i(1))]),
+            ],
+            span(),
+        )
+        .unwrap();
+        nvec_upsert(
+            &[
+                h.clone(),
+                s("k"),
+                vec_val(&[0.0, 1.0]),
+                meta_obj(&[("v", i(2))]),
+            ],
+            span(),
+        )
+        .unwrap();
         let n = nvec_count(&[h.clone()], span()).unwrap();
         assert!(matches!(&*n.borrow(), Value::Int(1)));
         let hits = nvec_search(&[h.clone(), vec_val(&[0.0, 1.0])], span()).unwrap();

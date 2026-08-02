@@ -34,8 +34,5 @@ fn main() {
         let _ = s.read(&mut buf).unwrap();
     }
     let secs = start.elapsed().as_secs_f64();
-    println!(
-        "http_hello_{REQUESTS}: {:.0} req/s",
-        REQUESTS as f64 / secs
-    );
+    println!("http_hello_{REQUESTS}: {:.0} req/s", REQUESTS as f64 / secs);
 }

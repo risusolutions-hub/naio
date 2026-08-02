@@ -7,7 +7,9 @@ const SIZE: usize = 1024 * 1024;
 const ITERS: u32 = 32;
 
 fn payload() -> Vec<u8> {
-    (0..SIZE).map(|i| ((i * 17 + i / 256) % 251) as u8).collect()
+    (0..SIZE)
+        .map(|i| ((i * 17 + i / 256) % 251) as u8)
+        .collect()
 }
 
 fn bench<F: Fn()>(name: &str, f: F) -> f64 {

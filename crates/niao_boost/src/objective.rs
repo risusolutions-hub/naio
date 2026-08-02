@@ -13,7 +13,13 @@ pub trait Objective {
     fn kind(&self) -> TaskKind;
     fn num_output_trees(&self) -> usize;
     fn init_predictions(&self, labels: &[f64], n_rows: usize, out: &mut [f64]) -> BoostResult<()>;
-    fn gradients(&self, labels: &[f64], preds: &[f64], grad: &mut [f64], hess: &mut [f64]) -> BoostResult<()>;
+    fn gradients(
+        &self,
+        labels: &[f64],
+        preds: &[f64],
+        grad: &mut [f64],
+        hess: &mut [f64],
+    ) -> BoostResult<()>;
 }
 
 /// Squared error (L2) regression.
@@ -248,7 +254,9 @@ mod tests {
         let preds = vec![0.5, 2.5, 2.0];
         let mut g = vec![0.0; 3];
         let mut h = vec![0.0; 3];
-        SquaredError.gradients(&labels, &preds, &mut g, &mut h).unwrap();
+        SquaredError
+            .gradients(&labels, &preds, &mut g, &mut h)
+            .unwrap();
         assert!((g[0] - (-0.5)).abs() < 1e-12);
         assert!((g[1] - 0.5).abs() < 1e-12);
         assert!((g[2] - (-1.0)).abs() < 1e-12);

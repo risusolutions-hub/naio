@@ -34,13 +34,7 @@ pub fn alloc_conn(conn: Connection, path: String) -> u64 {
         id
     });
     CONNS.with(|m| {
-        m.borrow_mut().insert(
-            id,
-            ConnHandle {
-                conn,
-                path,
-            },
-        );
+        m.borrow_mut().insert(id, ConnHandle { conn, path });
     });
     id
 }
@@ -119,7 +113,12 @@ where
     })
 }
 
-pub fn with_stmt_and_conn<F, R>(stmt_id: u64, name: &str, span: Span, f: F) -> Result<R, crate::RuntimeError>
+pub fn with_stmt_and_conn<F, R>(
+    stmt_id: u64,
+    name: &str,
+    span: Span,
+    f: F,
+) -> Result<R, crate::RuntimeError>
 where
     F: FnOnce(&mut StmtHandle, &mut ConnHandle) -> Result<R, String>,
 {
@@ -143,7 +142,11 @@ where
                 )
             })?;
             f(stmt, conn).map_err(|msg| {
-                crate::RuntimeError::at(span, codes::E1701_NSQLITE_ERROR, format!("{name}(): {msg}"))
+                crate::RuntimeError::at(
+                    span,
+                    codes::E1701_NSQLITE_ERROR,
+                    format!("{name}(): {msg}"),
+                )
             })
         })
     })
@@ -155,9 +158,7 @@ pub fn resolve_db_path(path: &str, use_cwd: bool) -> Result<PathBuf, String> {
     }
     let p = PathBuf::from(path);
     if use_cwd && !p.is_absolute() {
-        Ok(std::env::current_dir()
-            .map_err(|e| e.to_string())?
-            .join(p))
+        Ok(std::env::current_dir().map_err(|e| e.to_string())?.join(p))
     } else {
         Ok(p)
     }

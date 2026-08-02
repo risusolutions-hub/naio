@@ -135,7 +135,8 @@ fn attr_code(name: &str) -> Option<u8> {
 }
 
 fn check_rgb(v: i64, name: &str, span: Span) -> NiaoResult<u8> {
-    u8::try_from(v).map_err(|_| color_err(span, format!("{name}() RGB components must be in 0..=255")))
+    u8::try_from(v)
+        .map_err(|_| color_err(span, format!("{name}() RGB components must be in 0..=255")))
 }
 
 // ---------------------------------------------------------------------------
@@ -216,9 +217,21 @@ fn ncolor_rgb(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
 fn ncolor_on_rgb(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity(args, 4, "ncolor_on_rgb", span)?;
     let s = string_arg(args, 0, "ncolor_on_rgb", span)?;
-    let r = check_rgb(int_arg(args, 1, "ncolor_on_rgb", span)?, "ncolor_on_rgb", span)?;
-    let g = check_rgb(int_arg(args, 2, "ncolor_on_rgb", span)?, "ncolor_on_rgb", span)?;
-    let b = check_rgb(int_arg(args, 3, "ncolor_on_rgb", span)?, "ncolor_on_rgb", span)?;
+    let r = check_rgb(
+        int_arg(args, 1, "ncolor_on_rgb", span)?,
+        "ncolor_on_rgb",
+        span,
+    )?;
+    let g = check_rgb(
+        int_arg(args, 2, "ncolor_on_rgb", span)?,
+        "ncolor_on_rgb",
+        span,
+    )?;
+    let b = check_rgb(
+        int_arg(args, 3, "ncolor_on_rgb", span)?,
+        "ncolor_on_rgb",
+        span,
+    )?;
     if !colors_on() {
         return str_val(s);
     }
@@ -230,8 +243,8 @@ fn ncolor_c256(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity(args, 2, "ncolor_c256", span)?;
     let s = string_arg(args, 0, "ncolor_c256", span)?;
     let idx = int_arg(args, 1, "ncolor_c256", span)?;
-    let idx = u8::try_from(idx)
-        .map_err(|_| color_err(span, "ncolor_c256() index must be in 0..=255"))?;
+    let idx =
+        u8::try_from(idx).map_err(|_| color_err(span, "ncolor_c256() index must be in 0..=255"))?;
     if !colors_on() {
         return str_val(s);
     }
@@ -248,7 +261,10 @@ fn ncolor_style(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
         other => {
             return Err(type_err(
                 span,
-                format!("ncolor_style() expects an options object, got {}", other.type_name()),
+                format!(
+                    "ncolor_style() expects an options object, got {}",
+                    other.type_name()
+                ),
             ))
         }
     };
@@ -278,8 +294,9 @@ fn ncolor_style(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
                 parts.push((code + base).to_string());
             }
             Value::Int(idx) => {
-                let idx = u8::try_from(*idx)
-                    .map_err(|_| color_err(span, "ncolor_style() palette index must be in 0..=255"))?;
+                let idx = u8::try_from(*idx).map_err(|_| {
+                    color_err(span, "ncolor_style() palette index must be in 0..=255")
+                })?;
                 let selector = if base == 0 { 38 } else { 48 };
                 parts.push(format!("{selector};5;{idx}"));
             }
@@ -293,7 +310,10 @@ fn ncolor_style(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
                         other => {
                             return Err(type_err(
                                 span,
-                                format!("ncolor_style() RGB must be ints, found {}", other.type_name()),
+                                format!(
+                                    "ncolor_style() RGB must be ints, found {}",
+                                    other.type_name()
+                                ),
                             ))
                         }
                     }
@@ -350,7 +370,10 @@ fn ncolor_set_enabled(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
         other => {
             return Err(type_err(
                 span,
-                format!("ncolor_set_enabled() expects a bool, got {}", other.type_name()),
+                format!(
+                    "ncolor_set_enabled() expects a bool, got {}",
+                    other.type_name()
+                ),
             ))
         }
     };
@@ -403,7 +426,10 @@ ncolor_fns![
 ];
 
 fn all_builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(flat, _, f)| (flat, f)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(flat, _, f)| (flat, f))
+        .collect()
 }
 
 pub fn namespace() -> Value {
@@ -448,7 +474,10 @@ mod tests {
     fn red_wraps_when_enabled() {
         let _guard = TEST_LOCK.lock().unwrap();
         enabled_flag().store(true, Ordering::Relaxed);
-        assert_eq!(expect_str(ncolor_red(&[s("hi")], span())), "\x1b[31mhi\x1b[0m");
+        assert_eq!(
+            expect_str(ncolor_red(&[s("hi")], span())),
+            "\x1b[31mhi\x1b[0m"
+        );
     }
 
     #[test]
@@ -463,7 +492,15 @@ mod tests {
     fn strip_removes_codes() {
         let _guard = TEST_LOCK.lock().unwrap();
         enabled_flag().store(true, Ordering::Relaxed);
-        let colored = expect_str(ncolor_rgb(&[s("x"), Value::Int(1).ref_cell(), Value::Int(2).ref_cell(), Value::Int(3).ref_cell()], span()));
+        let colored = expect_str(ncolor_rgb(
+            &[
+                s("x"),
+                Value::Int(1).ref_cell(),
+                Value::Int(2).ref_cell(),
+                Value::Int(3).ref_cell(),
+            ],
+            span(),
+        ));
         assert_eq!(strip_ansi(&colored), "x");
         assert_eq!(strip_ansi("plain"), "plain");
     }
@@ -475,7 +512,10 @@ mod tests {
         let mut opts = HashMap::new();
         opts.insert("bold".to_string(), Value::Bool(true).ref_cell());
         opts.insert("fg".to_string(), Value::String("red".into()).ref_cell());
-        let out = expect_str(ncolor_style(&[s("t"), Value::Object(opts).ref_cell()], span()));
+        let out = expect_str(ncolor_style(
+            &[s("t"), Value::Object(opts).ref_cell()],
+            span(),
+        ));
         assert_eq!(out, "\x1b[1;31mt\x1b[0m");
     }
 }

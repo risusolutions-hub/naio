@@ -17,7 +17,12 @@ pub struct Dataset {
 }
 
 impl Dataset {
-    pub fn from_matrix(x: &[f64], n_rows: usize, n_features: usize, max_bins: usize) -> BoostResult<Self> {
+    pub fn from_matrix(
+        x: &[f64],
+        n_rows: usize,
+        n_features: usize,
+        max_bins: usize,
+    ) -> BoostResult<Self> {
         if x.len() != n_rows * n_features {
             return Err(BoostError::Shape(format!(
                 "X length {} != {} * {}",
@@ -184,8 +189,8 @@ impl Booster {
                 TaskKind::Multiclass => {
                     for (ci, tree) in round_trees.iter().enumerate() {
                         for r in 0..n_rows {
-                            preds[r * self.num_class + ci] += self.params.learning_rate
-                                * tree.predict_one(&train.binned, r);
+                            preds[r * self.num_class + ci] +=
+                                self.params.learning_rate * tree.predict_one(&train.binned, r);
                         }
                     }
                 }
@@ -218,7 +223,8 @@ impl Booster {
                 if let Some(patience) = self.params.early_stopping_rounds {
                     if rounds_without_improve >= patience {
                         self.best_iteration = best_iter;
-                        self.trees.truncate((best_iter + 1) * objective.num_output_trees());
+                        self.trees
+                            .truncate((best_iter + 1) * objective.num_output_trees());
                         self.fitted = true;
                         return Ok(());
                     }
@@ -242,8 +248,7 @@ impl Booster {
         if data.n_features != self.binned_template.n_features {
             return Err(BoostError::Shape(format!(
                 "X features {} != model features {}",
-                data.n_features,
-                self.binned_template.n_features
+                data.n_features, self.binned_template.n_features
             )));
         }
 

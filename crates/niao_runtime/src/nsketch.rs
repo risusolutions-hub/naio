@@ -318,12 +318,21 @@ fn arity(args: &[ValueRef], n: usize, name: &str, span: Span) -> NiaoResult<()> 
     Ok(())
 }
 
-fn arity_range(args: &[ValueRef], min: usize, max: usize, name: &str, span: Span) -> NiaoResult<()> {
+fn arity_range(
+    args: &[ValueRef],
+    min: usize,
+    max: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<()> {
     if args.len() < min || args.len() > max {
         return Err(RuntimeError::at(
             span,
             E3000_NSKETCH_ARITY,
-            format!("{name}() expects {min}..={max} argument(s), got {}", args.len()),
+            format!(
+                "{name}() expects {min}..={max} argument(s), got {}",
+                args.len()
+            ),
         ));
     }
     Ok(())
@@ -596,7 +605,11 @@ macro_rules! nsketch_fns {
 nsketch_fns![
     ("nsketch_bloom_new", "bloom_new", nsketch_bloom_new),
     ("nsketch_bloom_add", "bloom_add", nsketch_bloom_add),
-    ("nsketch_bloom_may_contain", "bloom_may_contain", nsketch_bloom_may_contain),
+    (
+        "nsketch_bloom_may_contain",
+        "bloom_may_contain",
+        nsketch_bloom_may_contain
+    ),
     ("nsketch_bloom_clear", "bloom_clear", nsketch_bloom_clear),
     ("nsketch_hll_new", "hll_new", nsketch_hll_new),
     ("nsketch_hll_add", "hll_add", nsketch_hll_add),
@@ -721,10 +734,7 @@ mod tests {
             nsketch_hll_add(&[h.clone(), s(&format!("item-{i}"))], span()).unwrap();
         }
         let large = as_number(&nsketch_hll_count(&[h.clone()], span()).unwrap());
-        assert!(
-            large > mid,
-            "HLL should grow: mid={mid} large={large}"
-        );
+        assert!(large > mid, "HLL should grow: mid={mid} large={large}");
         // Rough ballpark for 200 distinct with m=64
         assert!(
             large > 80.0 && large < 500.0,

@@ -317,7 +317,9 @@ impl<'a> Reader<'a> {
             0 => Some(BytecodeConst::Int(self.read_i64()?)),
             1 => {
                 let bytes = self.read_bytes(8)?;
-                Some(BytecodeConst::Float(f64::from_le_bytes(bytes.try_into().ok()?)))
+                Some(BytecodeConst::Float(f64::from_le_bytes(
+                    bytes.try_into().ok()?,
+                )))
             }
             2 => Some(BytecodeConst::String(self.read_string()?)),
             3 => Some(BytecodeConst::Bool(self.read_bool()?)),

@@ -9,7 +9,7 @@ use niao_ml::dataloader::DataLoader;
 use niao_ml::loss::LossKind;
 use niao_ml::optimizer::OptimizerKind;
 use niao_ml::trainer::Trainer;
-use niao_ml::tuning::{EarlyStopping, GridSearch, RandomSearch, SearchResult, trainer_from_params};
+use niao_ml::tuning::{trainer_from_params, EarlyStopping, GridSearch, RandomSearch, SearchResult};
 use std::collections::HashMap;
 use std::rc::Rc;
 
@@ -22,29 +22,29 @@ fn parse_loss(s: &str) -> LossKind {
 }
 
 fn parse_batch_opts(args: &[ValueRef], _span: Span) -> Result<(usize, bool), RuntimeError> {
-  let mut batch = 32usize;
-  let mut shuffle = true;
-  if args.len() >= 4 {
-    match &*args[3].borrow() {
-      Value::Object(map) => {
-        if let Some(bs) = map.get("batch_size") {
-          batch = match &*bs.borrow() {
-            Value::Int(n) => *n as usize,
-            _ => batch,
-          };
+    let mut batch = 32usize;
+    let mut shuffle = true;
+    if args.len() >= 4 {
+        match &*args[3].borrow() {
+            Value::Object(map) => {
+                if let Some(bs) = map.get("batch_size") {
+                    batch = match &*bs.borrow() {
+                        Value::Int(n) => *n as usize,
+                        _ => batch,
+                    };
+                }
+                if let Some(sh) = map.get("shuffle") {
+                    shuffle = match &*sh.borrow() {
+                        Value::Bool(b) => *b,
+                        _ => shuffle,
+                    };
+                }
+            }
+            _ => {}
         }
-        if let Some(sh) = map.get("shuffle") {
-          shuffle = match &*sh.borrow() {
-            Value::Bool(b) => *b,
-            _ => shuffle,
-          };
-        }
-      }
-      _ => {}
     }
-  }
-  let _ = shuffle;
-  Ok((batch, shuffle))
+    let _ = shuffle;
+    Ok((batch, shuffle))
 }
 
 pub fn nml_trainer(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
@@ -109,7 +109,9 @@ pub fn nml_train_epoch(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
                 Ok(l.clone())
             })
             .map_err(|e| e.to_string())?;
-            let metrics = trainer.train_epoch(&mut loader).map_err(|e| e.to_string())?;
+            let metrics = trainer
+                .train_epoch(&mut loader)
+                .map_err(|e| e.to_string())?;
             Ok(metrics.loss)
         })
         .map(|loss| ok_float(loss));
@@ -123,7 +125,9 @@ pub fn nml_train_epoch(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
         };
         let (x, y) = extract_xy(x_id, y_id, span)?;
         let mut loader = DataLoader::new(x, y, batch).map_err(|e| e.to_string())?;
-        let metrics = trainer.train_epoch(&mut loader).map_err(|e| e.to_string())?;
+        let metrics = trainer
+            .train_epoch(&mut loader)
+            .map_err(|e| e.to_string())?;
         Ok(metrics.loss)
     })
     .map(|loss| ok_float(loss))
@@ -138,7 +142,8 @@ pub fn nml_plot_training(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> 
         };
         Ok(t.loss_history.clone())
     })?;
-    let chart_args = vec![Value::FloatArray(history.iter().map(|&x| x as f64).collect()).ref_cell()];
+    let chart_args =
+        vec![Value::FloatArray(history.iter().map(|&x| x as f64).collect()).ref_cell()];
     crate::nvis::builtins()
         .into_iter()
         .find(|(n, _)| *n == "nvis_line")
@@ -191,11 +196,9 @@ pub fn nml_save(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
 pub fn nml_load(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity(args, 1, "nml_load", span)?;
     let path = string_arg(args, 0, "nml_load", span)?;
-    let model = niao_ml::checkpoint::load_model(
-        std::path::Path::new(&path),
-        niao_tensor::global_device(),
-    )
-    .map_err(|e| RuntimeError::at(span, codes::E1971_NML_ERROR, e.to_string()))?;
+    let model =
+        niao_ml::checkpoint::load_model(std::path::Path::new(&path), niao_tensor::global_device())
+            .map_err(|e| RuntimeError::at(span, codes::E1971_NML_ERROR, e.to_string()))?;
     Ok(ok_handle(alloc_handle(NmlHandle::Model(model))))
 }
 
@@ -205,9 +208,8 @@ pub fn nml_grid_search(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let x_id = nml_handle_arg(args, 1, "nml_grid_search", span)?;
     let y_id = nml_handle_arg(args, 2, "nml_grid_search", span)?;
     let epochs = int_arg(args, 3, "nml_grid_search", span)? as usize;
-    let (x, y) = extract_xy(x_id, y_id, span).map_err(|e| {
-        RuntimeError::at(span, codes::E1971_NML_ERROR, e)
-    })?;
+    let (x, y) = extract_xy(x_id, y_id, span)
+        .map_err(|e| RuntimeError::at(span, codes::E1971_NML_ERROR, e))?;
     let base_model = with_handle(model_id, "nml_grid_search", span, |h| {
         let NmlHandle::Model(m) = h else {
             return Err("expected model".into());
@@ -218,12 +220,10 @@ pub fn nml_grid_search(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     grid.insert("lr".to_string(), vec![0.01, 0.001, 0.0001]);
     let search = GridSearch::new(grid);
     let device = base_model.device;
-    let loader = DataLoader::new(x.clone(), y.clone(), 32).map_err(|e| {
-        RuntimeError::at(span, codes::E1971_NML_ERROR, e.to_string())
-    })?;
-    let val_loader = DataLoader::new(x, y, 64).map_err(|e| {
-        RuntimeError::at(span, codes::E1971_NML_ERROR, e.to_string())
-    })?;
+    let loader = DataLoader::new(x.clone(), y.clone(), 32)
+        .map_err(|e| RuntimeError::at(span, codes::E1971_NML_ERROR, e.to_string()))?;
+    let val_loader = DataLoader::new(x, y, 64)
+        .map_err(|e| RuntimeError::at(span, codes::E1971_NML_ERROR, e.to_string()))?;
     let results = search.run(
         |params| trainer_from_params(base_model.clone(), params, LossKind::Mse, device),
         loader,
@@ -253,9 +253,8 @@ pub fn nml_random_search(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> 
     let x_id = nml_handle_arg(args, 1, "nml_random_search", span)?;
     let y_id = nml_handle_arg(args, 2, "nml_random_search", span)?;
     let epochs = int_arg(args, 3, "nml_random_search", span)? as usize;
-    let (x, y) = extract_xy(x_id, y_id, span).map_err(|e| {
-        RuntimeError::at(span, codes::E1971_NML_ERROR, e)
-    })?;
+    let (x, y) = extract_xy(x_id, y_id, span)
+        .map_err(|e| RuntimeError::at(span, codes::E1971_NML_ERROR, e))?;
     let base_model = with_handle(model_id, "nml_random_search", span, |h| {
         let NmlHandle::Model(m) = h else {
             return Err("expected model".into());
@@ -266,12 +265,10 @@ pub fn nml_random_search(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> 
     space.insert("lr".to_string(), (0.0001, 0.01));
     let search = RandomSearch::new(space, 5);
     let device = base_model.device;
-    let loader = DataLoader::new(x.clone(), y.clone(), 32).map_err(|e| {
-        RuntimeError::at(span, codes::E1971_NML_ERROR, e.to_string())
-    })?;
-    let val_loader = DataLoader::new(x, y, 64).map_err(|e| {
-        RuntimeError::at(span, codes::E1971_NML_ERROR, e.to_string())
-    })?;
+    let loader = DataLoader::new(x.clone(), y.clone(), 32)
+        .map_err(|e| RuntimeError::at(span, codes::E1971_NML_ERROR, e.to_string()))?;
+    let val_loader = DataLoader::new(x, y, 64)
+        .map_err(|e| RuntimeError::at(span, codes::E1971_NML_ERROR, e.to_string()))?;
     let results = search.run(
         |params| trainer_from_params(base_model.clone(), params, LossKind::Mse, device),
         loader,

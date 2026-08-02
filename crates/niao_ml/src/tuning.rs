@@ -1,10 +1,10 @@
 //! Hyperparameter search and early stopping.
 
-use crate::trainer::{Trainer, TrainMetrics, ValMetrics};
 use crate::dataloader::DataLoader;
 use crate::loss::LossKind;
 use crate::model::Sequential;
 use crate::optimizer::OptimizerKind;
+use crate::trainer::{TrainMetrics, Trainer, ValMetrics};
 use niao_tensor::Device;
 use rand::Rng;
 use std::collections::HashMap;

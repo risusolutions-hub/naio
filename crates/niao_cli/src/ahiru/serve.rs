@@ -1,12 +1,12 @@
 use ahiru_core::{reset_shutdown, trigger_shutdown, ServeRuntimeOptions};
-use niao_interpreter::Interpreter;
 use niao_ast::TopLevel;
+use niao_interpreter::Interpreter;
 use niao_parser::parse;
 use niao_runtime::ahiru::{
     self, clear_vm_pool, clear_vm_serve, finalize_vm_handlers, install_vm_pool, response_from_niao,
     set_vm_serve_active, VmPoolDispatchFn,
 };
-use niao_runtime::{quiet_output, set_ahiru_serve_options, set_quiet_output, apply_ahiru_cli_port};
+use niao_runtime::{apply_ahiru_cli_port, quiet_output, set_ahiru_serve_options, set_quiet_output};
 use niao_vm::ahiru_pool::VmHandlerPool;
 use niao_vm::call_bridge::{clear_thread_vm_hook, run_with_handler_hook};
 use niao_vm::Vm;
@@ -108,11 +108,7 @@ pub fn run_serve(
     Ok(())
 }
 
-fn run_interp_serve(
-    entry: &Path,
-    base: &Path,
-    _project: &Path,
-) -> Result<(), String> {
+fn run_interp_serve(entry: &Path, base: &Path, _project: &Path) -> Result<(), String> {
     let mut interp = Interpreter::new().with_base_dir(base.to_path_buf());
     if let Some(stdlib) = locate_stdlib_from(entry) {
         interp = interp.with_stdlib_dir(stdlib);
@@ -239,9 +235,7 @@ fn spawn_dev_watcher(project: PathBuf) -> std::thread::JoinHandle<()> {
                 if modified.is_some() && modified != prev {
                     eprintln!(
                         "\n  [dev] change detected: {} — stopping server…",
-                        path.strip_prefix(&project)
-                            .unwrap_or(path)
-                            .display()
+                        path.strip_prefix(&project).unwrap_or(path).display()
                     );
                     trigger_shutdown();
                     return;
@@ -329,7 +323,10 @@ pub fn run_routes(project: &Path) -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-fn resolve_entry(project: &Path, file: Option<&Path>) -> Result<PathBuf, Box<dyn std::error::Error>> {
+fn resolve_entry(
+    project: &Path,
+    file: Option<&Path>,
+) -> Result<PathBuf, Box<dyn std::error::Error>> {
     if let Some(f) = file {
         return Ok(f.to_path_buf());
     }

@@ -114,9 +114,13 @@ pub fn encode_addr(addr: &SocketAddr) -> (Vec<u8>, u32) {
                 sin_addr: v4.ip().octets(),
                 sin_zero: [0; 8],
             };
-            let bytes =
-                unsafe { std::slice::from_raw_parts(&sa as *const _ as *const u8, mem::size_of::<SockAddrIn>()) }
-                    .to_vec();
+            let bytes = unsafe {
+                std::slice::from_raw_parts(
+                    &sa as *const _ as *const u8,
+                    mem::size_of::<SockAddrIn>(),
+                )
+            }
+            .to_vec();
             (bytes, mem::size_of::<SockAddrIn>() as u32)
         }
         SocketAddr::V6(v6) => {
@@ -128,7 +132,10 @@ pub fn encode_addr(addr: &SocketAddr) -> (Vec<u8>, u32) {
                 sin6_scope_id: v6.scope_id(),
             };
             let bytes = unsafe {
-                std::slice::from_raw_parts(&sa as *const _ as *const u8, mem::size_of::<SockAddrIn6>())
+                std::slice::from_raw_parts(
+                    &sa as *const _ as *const u8,
+                    mem::size_of::<SockAddrIn6>(),
+                )
             }
             .to_vec();
             (bytes, mem::size_of::<SockAddrIn6>() as u32)

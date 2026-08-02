@@ -61,7 +61,10 @@ mod tests {
         let back = parse_csv(&text, CsvOptions::with_header()).unwrap();
         assert_eq!(back.nrows(), 5);
         assert_eq!(back.ncols(), 3);
-        assert_eq!(back.get("k").unwrap().as_i64_slice().unwrap(), &[1, 1, 2, 2, 3]);
+        assert_eq!(
+            back.get("k").unwrap().as_i64_slice().unwrap(),
+            &[1, 1, 2, 2, 3]
+        );
         let v = back.get("v").unwrap().to_f64_vec().unwrap();
         for (a, b) in v.iter().zip([10.0, 20.0, 30.0, 40.0, 50.0]) {
             assert_close(*a, b, 1e-12);
@@ -246,10 +249,7 @@ mod tests {
         let sel = df.select(&["k", "v"]).unwrap();
         assert_eq!(sel.ncols(), 2);
         let sorted = df.sort(&[("v", true)]).unwrap();
-        assert_eq!(
-            sorted.get("v").unwrap().to_f64_vec().unwrap()[0],
-            50.0
-        );
+        assert_eq!(sorted.get("v").unwrap().to_f64_vec().unwrap()[0], 50.0);
         let filt = df.filter_eq("k", &FilterValue::I64(1)).unwrap();
         assert_eq!(filt.nrows(), 2);
         let arr = to_nnum(&df, Some(&["v"])).unwrap();

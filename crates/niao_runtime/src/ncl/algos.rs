@@ -55,12 +55,18 @@ pub fn max_i64(slice: &[i64]) -> Option<i64> {
 
 #[inline]
 pub fn min_f64(slice: &[f64]) -> Option<f64> {
-    slice.iter().copied().min_by(|a, b| a.partial_cmp(b).unwrap())
+    slice
+        .iter()
+        .copied()
+        .min_by(|a, b| a.partial_cmp(b).unwrap())
 }
 
 #[inline]
 pub fn max_f64(slice: &[f64]) -> Option<f64> {
-    slice.iter().copied().max_by(|a, b| a.partial_cmp(b).unwrap())
+    slice
+        .iter()
+        .copied()
+        .max_by(|a, b| a.partial_cmp(b).unwrap())
 }
 
 pub fn add_i64(a: &[i64], b: &[i64]) -> Vec<i64> {
@@ -117,7 +123,9 @@ pub fn exp_f64(a: &[f64]) -> Vec<f64> {
 }
 
 pub fn log_f64(a: &[f64]) -> Vec<f64> {
-    a.iter().map(|&x| if x > 0.0 { x.ln() } else { f64::NAN }).collect()
+    a.iter()
+        .map(|&x| if x > 0.0 { x.ln() } else { f64::NAN })
+        .collect()
 }
 
 pub fn sin_f64(a: &[f64]) -> Vec<f64> {
@@ -200,7 +208,13 @@ pub fn rolling_sum_f64(slice: &[f64], window: usize) -> Vec<f64> {
 pub fn rolling_mean_f64(slice: &[f64], window: usize) -> Vec<f64> {
     rolling_sum_f64(slice, window)
         .into_iter()
-        .map(|s| if s.is_nan() { f64::NAN } else { s / window as f64 })
+        .map(|s| {
+            if s.is_nan() {
+                f64::NAN
+            } else {
+                s / window as f64
+            }
+        })
         .collect()
 }
 

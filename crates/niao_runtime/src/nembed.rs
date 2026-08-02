@@ -1,4 +1,4 @@
-﻿//! Native nembed standard library — content-hash embedding cache with a local
+//! Native nembed standard library — content-hash embedding cache with a local
 //! deterministic embedder (SHA-256 seeded, L2-normalized float vectors).
 //!
 //! Import with `import "nembed"` (or `import "std/nembed"`).
@@ -200,12 +200,21 @@ fn arity(args: &[ValueRef], n: usize, name: &str, span: Span) -> NiaoResult<()> 
     Ok(())
 }
 
-fn arity_range(args: &[ValueRef], min: usize, max: usize, name: &str, span: Span) -> NiaoResult<()> {
+fn arity_range(
+    args: &[ValueRef],
+    min: usize,
+    max: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<()> {
     if args.len() < min || args.len() > max {
         return Err(RuntimeError::at(
             span,
             E3310_NEMBED_ARITY,
-            format!("{name}() expects {min}..={max} argument(s), got {}", args.len()),
+            format!(
+                "{name}() expects {min}..={max} argument(s), got {}",
+                args.len()
+            ),
         ));
     }
     Ok(())
@@ -239,7 +248,12 @@ fn string_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> NiaoResu
     }
 }
 
-fn string_array_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> NiaoResult<Vec<String>> {
+fn string_array_arg(
+    args: &[ValueRef],
+    idx: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<Vec<String>> {
     match &*args[idx].borrow() {
         Value::StringArray(sa) => Ok(sa.dense_vec()),
         Value::Array(items) => {
@@ -449,7 +463,10 @@ fn nembed_cosine(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
         ));
     }
     if a.is_empty() {
-        return Ok(nembed_err(span, "nembed_cosine() vectors must not be empty"));
+        return Ok(nembed_err(
+            span,
+            "nembed_cosine() vectors must not be empty",
+        ));
     }
     let mut dot = 0.0;
     let mut na = 0.0;
@@ -493,7 +510,10 @@ nembed_fns![
 ];
 
 fn all_builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(flat, _, f)| (flat, f)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(flat, _, f)| (flat, f))
+        .collect()
 }
 
 pub fn namespace() -> Value {
@@ -556,7 +576,10 @@ mod tests {
         match &*stats.borrow() {
             Value::Object(map) => {
                 assert!(matches!(&*map.get("hits").unwrap().borrow(), Value::Int(1)));
-                assert!(matches!(&*map.get("misses").unwrap().borrow(), Value::Int(2)));
+                assert!(matches!(
+                    &*map.get("misses").unwrap().borrow(),
+                    Value::Int(2)
+                ));
                 assert!(matches!(&*map.get("len").unwrap().borrow(), Value::Int(1)));
             }
             other => panic!("expected object, got {other:?}"),

@@ -13,11 +13,11 @@ use crate::async_tasks::{
 use crate::{error_value, NiaoResult, RuntimeError, Value, ValueRef};
 use futures::StreamExt;
 use mongodb::bson::{doc, Document};
+use niao_ast::Span;
+use niao_errors::codes;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 use std::thread;
-use niao_ast::Span;
-use niao_errors::codes;
 
 fn nmongo_async_error(span: Span, msg: impl Into<String>) -> ValueRef {
     error_value(codes::E1921_NMONGO_ERROR, "nmongo_error", msg.into(), span)
@@ -119,25 +119,23 @@ pub fn nmongo_parallel_count_documents(args: &[ValueRef], span: Span) -> NiaoRes
             let next = Arc::clone(&next);
             let results = Arc::clone(&results);
             let err = Arc::clone(&err);
-            scope.spawn(move || {
-                loop {
-                    let i = next.fetch_add(1, Ordering::Relaxed);
-                    if i >= rounds_usize {
+            scope.spawn(move || loop {
+                let i = next.fetch_add(1, Ordering::Relaxed);
+                if i >= rounds_usize {
+                    break;
+                }
+                let tag = (i % 100) as i32;
+                match block_on(async {
+                    client
+                        .database(&db)
+                        .collection::<Document>(&coll)
+                        .count_documents(doc! {"tag": tag})
+                        .await
+                }) {
+                    Ok(n) => results.lock().unwrap()[i] = n,
+                    Err(e) => {
+                        *err.lock().unwrap() = Some(e.to_string());
                         break;
-                    }
-                    let tag = (i % 100) as i32;
-                    match block_on(async {
-                        client
-                            .database(&db)
-                            .collection::<Document>(&coll)
-                            .count_documents(doc! {"tag": tag})
-                            .await
-                    }) {
-                        Ok(n) => results.lock().unwrap()[i] = n,
-                        Err(e) => {
-                            *err.lock().unwrap() = Some(e.to_string());
-                            break;
-                        }
                     }
                 }
             });
@@ -262,7 +260,12 @@ pub fn nmongo_task_wait_all(args: &[ValueRef], span: Span) -> NiaoResult<ValueRe
     let ids_arr = array_arg(args, 0, "nmongo_task_wait_all", span)?;
     let mut ids = Vec::with_capacity(ids_arr.len());
     for id_ref in &ids_arr {
-        ids.push(task_arg(std::slice::from_ref(id_ref), 0, "nmongo_task_wait_all", span)?);
+        ids.push(task_arg(
+            std::slice::from_ref(id_ref),
+            0,
+            "nmongo_task_wait_all",
+            span,
+        )?);
     }
     task_wait_all(&ids);
     Ok(Value::Nil.ref_cell())

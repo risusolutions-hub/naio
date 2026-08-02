@@ -154,7 +154,10 @@ fn read_request(mut stream: TcpStream, remote_addr: SocketAddr) -> io::Result<In
             }
         }
         if buf.len() > 1024 * 1024 {
-            return Err(io::Error::new(io::ErrorKind::InvalidData, "request too large"));
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "request too large",
+            ));
         }
     }
     let (head, off) = parse_request(&buf).map_err(map_parse)?;

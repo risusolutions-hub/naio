@@ -1,7 +1,7 @@
 //! Packed column storage with optional validity bitmap.
 
-use crate::{StringArray, Value, ValueRef};
 use super::dtypes::Dtype;
+use crate::{StringArray, Value, ValueRef};
 
 #[derive(Clone)]
 pub struct Validity {

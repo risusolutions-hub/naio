@@ -21,7 +21,11 @@ pub fn run_add(project: &Path, feature: &str) -> Result<(), Box<dyn std::error::
     Ok(())
 }
 
-fn write_snippet(project: &Path, rel: &str, content: &str) -> Result<(), Box<dyn std::error::Error>> {
+fn write_snippet(
+    project: &Path,
+    rel: &str,
+    content: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
     let path = project.join(rel);
     if path.exists() {
         println!("skip (exists): {}", path.display());
@@ -41,7 +45,8 @@ fn mount_auth(app) {
 }
 "#;
 
-const DB_MIGRATION: &str = "CREATE TABLE IF NOT EXISTS items (id INTEGER PRIMARY KEY, name TEXT);\n";
+const DB_MIGRATION: &str =
+    "CREATE TABLE IF NOT EXISTS items (id INTEGER PRIMARY KEY, name TEXT);\n";
 
 const DB_SNIPPET: &str = r#"fn mount_db_routes(app) {
     ahiru_app_get(app, "/items", list_items)

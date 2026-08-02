@@ -74,39 +74,37 @@ fn spawn_pool_workers(pool: &ParallelPool, span: Span) {
     };
     for _ in 0..worker_count {
         let arc = Arc::clone(&arc);
-        handles.push(thread::spawn(move || {
-            loop {
-                let job = {
-                    let (lock, cv) = &*arc;
-                    let mut guard = lock.lock().unwrap();
-                    while guard.queue.is_empty() && !guard.shutdown {
-                        guard = cv.wait(guard).unwrap();
-                    }
-                    if guard.shutdown && guard.queue.is_empty() {
-                        break;
-                    }
-                    let job = guard.queue.pop_front();
-                    if job.is_some() {
-                        guard.active += 1;
-                    }
-                    job
-                };
-                let Some(job) = job else {
-                    continue;
-                };
-                let job_id = job.id;
-                {
-                    let (lock, _) = &*arc;
-                    let mut guard = lock.lock().unwrap();
-                    guard.tasks.insert(job_id, PoolTaskState::Running);
-                }
-                let result = run_pool_job(job, span);
+        handles.push(thread::spawn(move || loop {
+            let job = {
                 let (lock, cv) = &*arc;
                 let mut guard = lock.lock().unwrap();
-                guard.tasks.insert(job_id, PoolTaskState::Done(result));
-                guard.active = guard.active.saturating_sub(1);
-                cv.notify_all();
+                while guard.queue.is_empty() && !guard.shutdown {
+                    guard = cv.wait(guard).unwrap();
+                }
+                if guard.shutdown && guard.queue.is_empty() {
+                    break;
+                }
+                let job = guard.queue.pop_front();
+                if job.is_some() {
+                    guard.active += 1;
+                }
+                job
+            };
+            let Some(job) = job else {
+                continue;
+            };
+            let job_id = job.id;
+            {
+                let (lock, _) = &*arc;
+                let mut guard = lock.lock().unwrap();
+                guard.tasks.insert(job_id, PoolTaskState::Running);
             }
+            let result = run_pool_job(job, span);
+            let (lock, cv) = &*arc;
+            let mut guard = lock.lock().unwrap();
+            guard.tasks.insert(job_id, PoolTaskState::Done(result));
+            guard.active = guard.active.saturating_sub(1);
+            cv.notify_all();
         }));
     }
     *pool.worker_handles.lock().unwrap() = handles;
@@ -129,7 +127,11 @@ where
             if let Value::Error(e) = &*v.borrow() {
                 crate::RuntimeError::at(span, e.code, e.message.clone())
             } else {
-                crate::RuntimeError::at(span, codes::E1505_PARALLEL_NOT_FOUND, "pool operation failed")
+                crate::RuntimeError::at(
+                    span,
+                    codes::E1505_PARALLEL_NOT_FOUND,
+                    "pool operation failed",
+                )
             }
         })
     })
@@ -209,11 +211,9 @@ pub fn parallel_pool_wait(args: &[ValueRef], span: Span) -> ParallelResult {
     if should_use_poll_mode() || !POOLS.with(|m| m.borrow().contains_key(&pool_id)) {
         return match wait_poll_job(task_id) {
             PollJobResult::Done(Ok(v)) => Ok(sendable_result(v)),
-            PollJobResult::Done(Err(msg)) => Ok(parallel_error(
-                span,
-                codes::E1505_PARALLEL_NOT_FOUND,
-                msg,
-            )),
+            PollJobResult::Done(Err(msg)) => {
+                Ok(parallel_error(span, codes::E1505_PARALLEL_NOT_FOUND, msg))
+            }
             PollJobResult::Pending => Ok(parallel_error(
                 span,
                 codes::E1505_PARALLEL_NOT_FOUND,
@@ -222,11 +222,7 @@ pub fn parallel_pool_wait(args: &[ValueRef], span: Span) -> ParallelResult {
         };
     }
 
-    let pool = POOLS.with(|m| {
-        m.borrow()
-            .get(&pool_id)
-            .map(|p| Arc::clone(&p.inner))
-    });
+    let pool = POOLS.with(|m| m.borrow().get(&pool_id).map(|p| Arc::clone(&p.inner)));
     let Some(arc) = pool else {
         return Err(crate::RuntimeError::at(
             span,
@@ -286,7 +282,12 @@ pub fn parallel_pool_shutdown(args: &[ValueRef], span: Span) -> ParallelResult {
         cv.notify_all();
     }
 
-    let handles = pool.worker_handles.lock().unwrap().drain(..).collect::<Vec<_>>();
+    let handles = pool
+        .worker_handles
+        .lock()
+        .unwrap()
+        .drain(..)
+        .collect::<Vec<_>>();
     for h in handles {
         let _ = h.join();
     }

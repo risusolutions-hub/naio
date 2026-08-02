@@ -205,7 +205,10 @@ impl Series {
     }
 
     pub fn from_str(name: impl Into<String>, v: &[impl AsRef<str>]) -> Self {
-        Self::new(name, ColumnData::Str(StringColumn::from_iter(v.iter().map(|s| s.as_ref()))))
+        Self::new(
+            name,
+            ColumnData::Str(StringColumn::from_iter(v.iter().map(|s| s.as_ref()))),
+        )
     }
 
     pub fn from_date(name: impl Into<String>, days: Vec<i64>) -> Self {
@@ -270,9 +273,7 @@ impl Series {
     pub fn to_f64_vec(&self) -> FrameResult<Vec<f64>> {
         match &self.data {
             ColumnData::F64(v) => Ok(v.clone()),
-            ColumnData::I64(v) | ColumnData::Date(v) => {
-                Ok(v.iter().map(|&x| x as f64).collect())
-            }
+            ColumnData::I64(v) | ColumnData::Date(v) => Ok(v.iter().map(|&x| x as f64).collect()),
             ColumnData::Bool(v) => Ok(v.iter().map(|&b| if b { 1.0 } else { 0.0 }).collect()),
             ColumnData::Str(_) => Err(FrameError::Dtype(
                 "cannot convert string series to f64".into(),

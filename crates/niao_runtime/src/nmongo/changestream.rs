@@ -138,7 +138,10 @@ pub fn nmongo_watch_next(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> 
             return Err(RuntimeError::at(
                 span,
                 codes::E1922_NMONGO_INVALID_HANDLE,
-                format!("nmongo_watch_next() expects watch id, got {}", other.type_name()),
+                format!(
+                    "nmongo_watch_next() expects watch id, got {}",
+                    other.type_name()
+                ),
             ));
         }
     };
@@ -183,7 +186,10 @@ pub fn nmongo_watch_close(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef>
             return Err(RuntimeError::at(
                 span,
                 codes::E1922_NMONGO_INVALID_HANDLE,
-                format!("nmongo_watch_close() expects watch id, got {}", other.type_name()),
+                format!(
+                    "nmongo_watch_close() expects watch id, got {}",
+                    other.type_name()
+                ),
             ));
         }
     };

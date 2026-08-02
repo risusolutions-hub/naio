@@ -34,7 +34,11 @@ impl BigInt {
 
     pub fn abs(&self) -> Self {
         Self {
-            sign: if self.is_zero() { Sign::NoSign } else { Sign::Plus },
+            sign: if self.is_zero() {
+                Sign::NoSign
+            } else {
+                Sign::Plus
+            },
             magnitude: self.magnitude.clone(),
         }
     }
@@ -325,22 +329,30 @@ impl std::ops::Add for &BigInt {
         match (self.sign(), other.sign()) {
             (Sign::NoSign, _) => other.clone(),
             (_, Sign::NoSign) => self.clone(),
-            (Sign::Plus, Sign::Plus) => BigInt::from_mag(Sign::Plus, &self.magnitude + &other.magnitude),
-            (Sign::Minus, Sign::Minus) => BigInt::from_mag(Sign::Minus, &self.magnitude + &other.magnitude),
-            (Sign::Plus, Sign::Minus) => {
-                match self.magnitude.cmp_mag(&other.magnitude) {
-                    Ordering::Greater => BigInt::from_mag(Sign::Plus, self.magnitude.sub_mag(&other.magnitude)),
-                    Ordering::Less => BigInt::from_mag(Sign::Minus, other.magnitude.sub_mag(&self.magnitude)),
-                    Ordering::Equal => BigInt::zero(),
-                }
+            (Sign::Plus, Sign::Plus) => {
+                BigInt::from_mag(Sign::Plus, &self.magnitude + &other.magnitude)
             }
-            (Sign::Minus, Sign::Plus) => {
-                match self.magnitude.cmp_mag(&other.magnitude) {
-                    Ordering::Greater => BigInt::from_mag(Sign::Minus, self.magnitude.sub_mag(&other.magnitude)),
-                    Ordering::Less => BigInt::from_mag(Sign::Plus, other.magnitude.sub_mag(&self.magnitude)),
-                    Ordering::Equal => BigInt::zero(),
-                }
+            (Sign::Minus, Sign::Minus) => {
+                BigInt::from_mag(Sign::Minus, &self.magnitude + &other.magnitude)
             }
+            (Sign::Plus, Sign::Minus) => match self.magnitude.cmp_mag(&other.magnitude) {
+                Ordering::Greater => {
+                    BigInt::from_mag(Sign::Plus, self.magnitude.sub_mag(&other.magnitude))
+                }
+                Ordering::Less => {
+                    BigInt::from_mag(Sign::Minus, other.magnitude.sub_mag(&self.magnitude))
+                }
+                Ordering::Equal => BigInt::zero(),
+            },
+            (Sign::Minus, Sign::Plus) => match self.magnitude.cmp_mag(&other.magnitude) {
+                Ordering::Greater => {
+                    BigInt::from_mag(Sign::Minus, self.magnitude.sub_mag(&other.magnitude))
+                }
+                Ordering::Less => {
+                    BigInt::from_mag(Sign::Plus, other.magnitude.sub_mag(&self.magnitude))
+                }
+                Ordering::Equal => BigInt::zero(),
+            },
         }
     }
 }

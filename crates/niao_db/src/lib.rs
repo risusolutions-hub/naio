@@ -5,4 +5,4 @@ pub mod postgres;
 pub mod redis;
 pub mod resp;
 
-pub use pool::{ManageConnection, Pool, PooledConnection, PoolError, PoolState};
+pub use pool::{ManageConnection, Pool, PoolError, PoolState, PooledConnection};

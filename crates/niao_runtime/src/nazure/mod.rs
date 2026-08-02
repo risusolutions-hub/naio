@@ -56,11 +56,7 @@ fn alloc_id() -> i64 {
     })
 }
 
-fn with_config<T>(
-    id: i64,
-    span: Span,
-    f: impl FnOnce(&AzureConfig) -> T,
-) -> Result<T, ValueRef> {
+fn with_config<T>(id: i64, span: Span, f: impl FnOnce(&AzureConfig) -> T) -> Result<T, ValueRef> {
     CONFIGS.with(|cs| {
         let cs = cs.borrow();
         match cs.get(&id) {
@@ -98,12 +94,21 @@ fn arity(args: &[ValueRef], n: usize, name: &str, span: Span) -> NiaoResult<()> 
     Ok(())
 }
 
-fn arity_range(args: &[ValueRef], min: usize, max: usize, name: &str, span: Span) -> NiaoResult<()> {
+fn arity_range(
+    args: &[ValueRef],
+    min: usize,
+    max: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<()> {
     if args.len() < min || args.len() > max {
         return Err(RuntimeError::at(
             span,
             codes::E2810_NAZURE_ARITY,
-            format!("{name}() expects {min}..={max} argument(s), got {}", args.len()),
+            format!(
+                "{name}() expects {min}..={max} argument(s), got {}",
+                args.len()
+            ),
         ));
     }
     Ok(())
@@ -171,7 +176,10 @@ fn nazure_config(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
         other => {
             return Ok(type_val_err(
                 span,
-                format!("nazure_config() expects an object, got {}", other.type_name()),
+                format!(
+                    "nazure_config() expects an object, got {}",
+                    other.type_name()
+                ),
             ))
         }
     };
@@ -260,7 +268,9 @@ fn nazure_blob_get(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let id = int_arg(args, 0, "nazure_blob_get", span)?;
     let container = string_arg(args, 1, "nazure_blob_get", span)?;
     let blob_name = string_arg(args, 2, "nazure_blob_get", span)?;
-    match with_config(id, span, |cfg| blob::blob_get(cfg, &container, &blob_name, span)) {
+    match with_config(id, span, |cfg| {
+        blob::blob_get(cfg, &container, &blob_name, span)
+    }) {
         Ok(v) => Ok(v),
         Err(e) => Ok(e),
     }
@@ -272,7 +282,9 @@ fn nazure_blob_delete(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let id = int_arg(args, 0, "nazure_blob_delete", span)?;
     let container = string_arg(args, 1, "nazure_blob_delete", span)?;
     let blob_name = string_arg(args, 2, "nazure_blob_delete", span)?;
-    match with_config(id, span, |cfg| blob::blob_delete(cfg, &container, &blob_name, span)) {
+    match with_config(id, span, |cfg| {
+        blob::blob_delete(cfg, &container, &blob_name, span)
+    }) {
         Ok(v) => Ok(v),
         Err(e) => Ok(e),
     }
@@ -423,7 +435,10 @@ fn value_to_json_string(v: &Value, span: Span) -> NiaoResult<String> {
         other => Err(RuntimeError::at(
             span,
             codes::E2812_NAZURE_TYPE,
-            format!("nazure: cannot JSON-serialise value of type {}", other.type_name()),
+            format!(
+                "nazure: cannot JSON-serialise value of type {}",
+                other.type_name()
+            ),
         )),
     }
 }
@@ -461,15 +476,19 @@ macro_rules! nazure_fns {
 }
 
 nazure_fns![
-    ("nazure_config",          "config",          nazure_config),
-    ("nazure_blob_put",        "blob_put",        nazure_blob_put),
-    ("nazure_blob_get",        "blob_get",        nazure_blob_get),
-    ("nazure_blob_delete",     "blob_delete",     nazure_blob_delete),
-    ("nazure_blob_list",       "blob_list",       nazure_blob_list),
-    ("nazure_table_insert",    "table_insert",    nazure_table_insert),
-    ("nazure_table_query",     "table_query",     nazure_table_query),
-    ("nazure_table_delete",    "table_delete",    nazure_table_delete),
-    ("nazure_function_invoke", "function_invoke", nazure_function_invoke),
+    ("nazure_config", "config", nazure_config),
+    ("nazure_blob_put", "blob_put", nazure_blob_put),
+    ("nazure_blob_get", "blob_get", nazure_blob_get),
+    ("nazure_blob_delete", "blob_delete", nazure_blob_delete),
+    ("nazure_blob_list", "blob_list", nazure_blob_list),
+    ("nazure_table_insert", "table_insert", nazure_table_insert),
+    ("nazure_table_query", "table_query", nazure_table_query),
+    ("nazure_table_delete", "table_delete", nazure_table_delete),
+    (
+        "nazure_function_invoke",
+        "function_invoke",
+        nazure_function_invoke
+    ),
 ];
 
 pub fn namespace() -> Value {
@@ -484,7 +503,10 @@ pub const MODULE_NAME: &str = "nazure";
 pub const MODULE_PATHS: &[&str] = &["nazure", "std/nazure"];
 
 pub fn builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(flat, _, f)| (flat, f)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(flat, _, f)| (flat, f))
+        .collect()
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -538,18 +560,13 @@ mod tests {
     fn config_valid_with_key_returns_int_handle() {
         // A valid base64 string that decodes to 32 bytes.
         let key_b64 = niao_codec::base64::encode_standard(&[0u8; 32]);
-        let v = nazure_config(
-            &[obj(&[("account", "acct"), ("key", &key_b64)])],
-            span(),
-        )
-        .unwrap();
+        let v = nazure_config(&[obj(&[("account", "acct"), ("key", &key_b64)])], span()).unwrap();
         assert!(matches!(&*v.borrow(), Value::Int(_)));
     }
 
     #[test]
     fn invalid_handle_blob_get_returns_error() {
-        let v = nazure_blob_get(&[Value::Int(999_999).ref_cell(), s("c"), s("b")], span())
-            .unwrap();
+        let v = nazure_blob_get(&[Value::Int(999_999).ref_cell(), s("c"), s("b")], span()).unwrap();
         assert!(matches!(&*v.borrow(), Value::Error(_)));
     }
 
@@ -557,8 +574,7 @@ mod tests {
     fn invalid_handle_table_insert_returns_error() {
         let entity = obj(&[("PartitionKey", "pk"), ("RowKey", "rk")]);
         let v =
-            nazure_table_insert(&[Value::Int(888_888).ref_cell(), s("T"), entity], span())
-                .unwrap();
+            nazure_table_insert(&[Value::Int(888_888).ref_cell(), s("T"), entity], span()).unwrap();
         assert!(matches!(&*v.borrow(), Value::Error(_)));
     }
 
@@ -580,7 +596,10 @@ mod tests {
     #[test]
     fn value_to_json_primitives() {
         assert_eq!(value_to_json_string(&Value::Nil, span()).unwrap(), "null");
-        assert_eq!(value_to_json_string(&Value::Bool(true), span()).unwrap(), "true");
+        assert_eq!(
+            value_to_json_string(&Value::Bool(true), span()).unwrap(),
+            "true"
+        );
         assert_eq!(value_to_json_string(&Value::Int(42), span()).unwrap(), "42");
         assert_eq!(
             value_to_json_string(&Value::String("hello".into()), span()).unwrap(),

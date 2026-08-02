@@ -88,13 +88,15 @@ impl FtpClient {
 
     pub fn get(&mut self, remote: &str) -> Result<Vec<u8>> {
         self.ensure_binary()?;
-        let mut xfer = DataTransfer::new(&mut self.control, self.options.mode, self.options.timeout);
+        let mut xfer =
+            DataTransfer::new(&mut self.control, self.options.mode, self.options.timeout);
         xfer.download(&format!("RETR {remote}"))
     }
 
     pub fn put(&mut self, remote: &str, data: &[u8]) -> Result<()> {
         self.ensure_binary()?;
-        let mut xfer = DataTransfer::new(&mut self.control, self.options.mode, self.options.timeout);
+        let mut xfer =
+            DataTransfer::new(&mut self.control, self.options.mode, self.options.timeout);
         xfer.upload(&format!("STOR {remote}"), data)
     }
 
@@ -104,7 +106,8 @@ impl FtpClient {
             Some(p) => format!("LIST {p}"),
             None => "LIST".to_string(),
         };
-        let mut xfer = DataTransfer::new(&mut self.control, self.options.mode, self.options.timeout);
+        let mut xfer =
+            DataTransfer::new(&mut self.control, self.options.mode, self.options.timeout);
         let raw = xfer.download(&cmd)?;
         let text = String::from_utf8_lossy(&raw);
         Ok(text
@@ -159,8 +162,7 @@ mod tests {
     #[test]
     fn mock_sends_banner() {
         let server = MockFtpServer::start();
-        let mut s =
-            std::net::TcpStream::connect(format!("127.0.0.1:{}", server.port())).unwrap();
+        let mut s = std::net::TcpStream::connect(format!("127.0.0.1:{}", server.port())).unwrap();
         let mut buf = [0u8; 128];
         let n = s.read(&mut buf).unwrap();
         let banner = String::from_utf8_lossy(&buf[..n]);

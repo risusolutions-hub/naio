@@ -1,6 +1,13 @@
-use crate::civil::{CivilDateTime, MONTH_ABBR, MONTH_NAMES, WEEKDAY_ABBR, WEEKDAY_NAMES, weekday_from_days, days_from_civil};
+use crate::civil::{
+    days_from_civil, weekday_from_days, CivilDateTime, MONTH_ABBR, MONTH_NAMES, WEEKDAY_ABBR,
+    WEEKDAY_NAMES,
+};
 
-pub fn format_datetime(civil: &CivilDateTime, fmt: &str, offset_secs: i32) -> Result<String, String> {
+pub fn format_datetime(
+    civil: &CivilDateTime,
+    fmt: &str,
+    offset_secs: i32,
+) -> Result<String, String> {
     let mut out = String::with_capacity(fmt.len() + 16);
     let bytes = fmt.as_bytes();
     let mut i = 0;

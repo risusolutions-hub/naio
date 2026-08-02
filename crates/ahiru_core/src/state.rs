@@ -37,6 +37,9 @@ impl AppStateStore {
     }
 
     pub fn snapshot(&self) -> HashMap<String, String> {
-        self.values.iter().map(|e| (e.key().clone(), e.value().clone())).collect()
+        self.values
+            .iter()
+            .map(|e| (e.key().clone(), e.value().clone()))
+            .collect()
     }
 }

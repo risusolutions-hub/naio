@@ -3,8 +3,8 @@
 pub mod autograd;
 pub mod backward;
 pub mod checkpoint;
-pub mod dataloader;
 pub mod columnar;
+pub mod dataloader;
 pub mod explain;
 pub mod gnn;
 pub mod layer;
@@ -21,22 +21,27 @@ pub use dataloader::DataLoader;
 pub use explain::feature_importance;
 pub use gnn::{GcnLayer, GnnModel, GraphSageLayer};
 pub use layer::{Layer, LayerCache, LayerKind};
-pub use loss::{LossKind, cross_entropy_grad, bce_grad, loss_grad};
+pub use loss::{bce_grad, cross_entropy_grad, loss_grad, LossKind};
 pub use model::Sequential;
 pub use optimizer::OptimizerKind;
-pub use trainer::{Trainer, TrainMetrics, ValMetrics};
+pub use trainer::{TrainMetrics, Trainer, ValMetrics};
 pub use tuning::{EarlyStopping, GridSearch, RandomSearch, SearchResult};
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use niao_tensor::Device;
     use crate::loss;
     use crate::optimizer::{self, OptimizerState};
+    use niao_tensor::Device;
 
     #[test]
     fn single_layer_forward() {
-        let x = niao_tensor::Tensor::from_cpu_data(&[4, 2], vec![0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0], Device::Cpu).unwrap();
+        let x = niao_tensor::Tensor::from_cpu_data(
+            &[4, 2],
+            vec![0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0],
+            Device::Cpu,
+        )
+        .unwrap();
         let mut layer = Layer::linear(2, 1, Device::Cpu).unwrap();
         let y = layer.forward(&x).unwrap();
         assert_eq!(y.shape, vec![4, 1]);
@@ -55,7 +60,8 @@ mod tests {
     fn single_layer_backward() {
         let x = niao_tensor::Tensor::from_cpu_data(&[2, 1], vec![0.0, 1.0], Device::Cpu).unwrap();
         let y = niao_tensor::Tensor::from_cpu_data(&[2, 1], vec![1.0, 3.0], Device::Cpu).unwrap();
-        let mut model = Sequential::new(vec![Layer::linear(1, 1, Device::Cpu).unwrap()], Device::Cpu);
+        let mut model =
+            Sequential::new(vec![Layer::linear(1, 1, Device::Cpu).unwrap()], Device::Cpu);
         let pred = model.forward(&x).unwrap();
         let grad = loss::loss_grad(LossKind::Mse, &pred, &y).unwrap();
         assert_eq!(grad.len(), 2);
@@ -64,7 +70,8 @@ mod tests {
 
     #[test]
     fn optimizer_step_two_params() {
-        let mut w = niao_tensor::Tensor::from_cpu_data(&[1, 2], vec![0.5, 0.5], Device::Cpu).unwrap();
+        let mut w =
+            niao_tensor::Tensor::from_cpu_data(&[1, 2], vec![0.5, 0.5], Device::Cpu).unwrap();
         let grad = vec![0.1, 0.2];
         let mut state = OptimizerState::default();
         optimizer::step(&OptimizerKind::sgd(0.1), &mut state, 0, &mut w, &grad).unwrap();
@@ -94,5 +101,4 @@ mod tests {
         assert!(metrics.loss.is_finite());
         assert_eq!(metrics.batches, 8);
     }
-
 }

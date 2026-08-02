@@ -131,12 +131,21 @@ fn arity(args: &[ValueRef], n: usize, name: &str, span: Span) -> NiaoResult<()> 
     Ok(())
 }
 
-fn arity_range(args: &[ValueRef], min: usize, max: usize, name: &str, span: Span) -> NiaoResult<()> {
+fn arity_range(
+    args: &[ValueRef],
+    min: usize,
+    max: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<()> {
     if args.len() < min || args.len() > max {
         return Err(RuntimeError::at(
             span,
             E3090_NQUOTA_ARITY,
-            format!("{name}() expects {min}..={max} argument(s), got {}", args.len()),
+            format!(
+                "{name}() expects {min}..={max} argument(s), got {}",
+                args.len()
+            ),
         ));
     }
     Ok(())
@@ -228,7 +237,10 @@ fn nquota_take(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let n = if args.len() > 1 {
         let v = num_arg(args, 1, "nquota_take", span)?;
         if !(v.is_finite() && v > 0.0) {
-            return Ok(nquota_err(span, "nquota_take() n must be a finite number > 0"));
+            return Ok(nquota_err(
+                span,
+                "nquota_take() n must be a finite number > 0",
+            ));
         }
         v
     } else {
@@ -319,7 +331,10 @@ nquota_fns![
 ];
 
 fn all_builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(flat, _, f)| (flat, f)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(flat, _, f)| (flat, f))
+        .collect()
 }
 
 pub fn namespace() -> Value {
@@ -410,8 +425,12 @@ mod tests {
                     other => panic!("expected float tokens, got {other:?}"),
                 };
                 assert!((tokens - 5.0).abs() < 1e-6);
-                assert!(matches!(&*map.get("rate").unwrap().borrow(), Value::Float(r) if (*r - 100.0).abs() < 1e-9));
-                assert!(matches!(&*map.get("burst").unwrap().borrow(), Value::Float(b) if (*b - 5.0).abs() < 1e-9));
+                assert!(
+                    matches!(&*map.get("rate").unwrap().borrow(), Value::Float(r) if (*r - 100.0).abs() < 1e-9)
+                );
+                assert!(
+                    matches!(&*map.get("burst").unwrap().borrow(), Value::Float(b) if (*b - 5.0).abs() < 1e-9)
+                );
             }
             other => panic!("expected object, got {other:?}"),
         }
@@ -448,7 +467,9 @@ mod tests {
         let stats = nquota_stats(&[h.clone()], span()).unwrap();
         match &*stats.borrow() {
             Value::Object(map) => {
-                assert!(matches!(&*map.get("burst").unwrap().borrow(), Value::Float(b) if (*b - 3.0).abs() < 1e-9));
+                assert!(
+                    matches!(&*map.get("burst").unwrap().borrow(), Value::Float(b) if (*b - 3.0).abs() < 1e-9)
+                );
             }
             other => panic!("expected object, got {other:?}"),
         }

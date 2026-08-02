@@ -17,6 +17,7 @@ mod transactions;
 mod types;
 pub(crate) use types::{bson_field_from_raw, raw_bson_ref_to_niao_cell};
 
+use self::types::{from_extended_json, is_object_id_hex, object_id_to_bson, to_extended_json};
 use crate::{NativeFn, NiaoResult, Value, ValueRef};
 use aggregate::nmongo_aggregate;
 use bg::{
@@ -45,10 +46,9 @@ use niao_ast::Span;
 use std::collections::HashMap;
 use std::rc::Rc;
 use transactions::{
-    nmongo_abort_transaction, nmongo_commit_transaction, nmongo_end_session,
-    nmongo_start_session, nmongo_start_transaction,
+    nmongo_abort_transaction, nmongo_commit_transaction, nmongo_end_session, nmongo_start_session,
+    nmongo_start_transaction,
 };
-use self::types::{from_extended_json, is_object_id_hex, object_id_to_bson, to_extended_json};
 
 fn nmongo_object_id(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity(args, 1, "nmongo_object_id", span)?;
@@ -81,13 +81,19 @@ fn all_builtins() -> Vec<(&'static str, NativeFn)> {
         ("nmongo_connect_uri", Rc::new(nmongo_connect_uri)),
         ("nmongo_close", Rc::new(nmongo_close)),
         ("nmongo_ping", Rc::new(nmongo_ping)),
-        ("nmongo_warm_parallel_pool", Rc::new(nmongo_warm_parallel_pool)),
+        (
+            "nmongo_warm_parallel_pool",
+            Rc::new(nmongo_warm_parallel_pool),
+        ),
         ("nmongo_list_databases", Rc::new(nmongo_list_databases)),
         ("nmongo_find", Rc::new(nmongo_find)),
         ("nmongo_find_one", Rc::new(nmongo_find_one)),
         ("nmongo_insert_one", Rc::new(nmongo_insert_one)),
         ("nmongo_insert_many", Rc::new(nmongo_insert_many)),
-        ("nmongo_insert_many_chunks", Rc::new(nmongo_insert_many_chunks)),
+        (
+            "nmongo_insert_many_chunks",
+            Rc::new(nmongo_insert_many_chunks),
+        ),
         ("nmongo_update_one", Rc::new(nmongo_update_one)),
         ("nmongo_update_many", Rc::new(nmongo_update_many)),
         ("nmongo_replace_one", Rc::new(nmongo_replace_one)),
@@ -103,9 +109,18 @@ fn all_builtins() -> Vec<(&'static str, NativeFn)> {
         ("nmongo_drop_collection", Rc::new(nmongo_drop_collection)),
         ("nmongo_bulk_write", Rc::new(nmongo_bulk_write)),
         ("nmongo_start_session", Rc::new(nmongo_start_session)),
-        ("nmongo_start_transaction", Rc::new(nmongo_start_transaction)),
-        ("nmongo_commit_transaction", Rc::new(nmongo_commit_transaction)),
-        ("nmongo_abort_transaction", Rc::new(nmongo_abort_transaction)),
+        (
+            "nmongo_start_transaction",
+            Rc::new(nmongo_start_transaction),
+        ),
+        (
+            "nmongo_commit_transaction",
+            Rc::new(nmongo_commit_transaction),
+        ),
+        (
+            "nmongo_abort_transaction",
+            Rc::new(nmongo_abort_transaction),
+        ),
         ("nmongo_end_session", Rc::new(nmongo_end_session)),
         ("nmongo_gridfs_upload", Rc::new(nmongo_gridfs_upload)),
         ("nmongo_gridfs_download", Rc::new(nmongo_gridfs_download)),
@@ -117,10 +132,19 @@ fn all_builtins() -> Vec<(&'static str, NativeFn)> {
         ("nmongo_object_id", Rc::new(nmongo_object_id)),
         ("nmongo_is_object_id", Rc::new(nmongo_is_object_id)),
         ("nmongo_to_extended_json", Rc::new(nmongo_to_extended_json)),
-        ("nmongo_from_extended_json", Rc::new(nmongo_from_extended_json)),
+        (
+            "nmongo_from_extended_json",
+            Rc::new(nmongo_from_extended_json),
+        ),
         ("nmongo_async_find", Rc::new(nmongo_async_find)),
-        ("nmongo_async_count_documents", Rc::new(nmongo_async_count_documents)),
-        ("nmongo_parallel_count_documents", Rc::new(nmongo_parallel_count_documents)),
+        (
+            "nmongo_async_count_documents",
+            Rc::new(nmongo_async_count_documents),
+        ),
+        (
+            "nmongo_parallel_count_documents",
+            Rc::new(nmongo_parallel_count_documents),
+        ),
         ("nmongo_async_bulk_write", Rc::new(nmongo_async_bulk_write)),
         ("nmongo_task_done", Rc::new(nmongo_task_done)),
         ("nmongo_task_wait", Rc::new(nmongo_task_wait)),
@@ -140,13 +164,21 @@ pub fn namespace() -> Value {
     bind(&mut map, "connect_uri", Rc::new(nmongo_connect_uri));
     bind(&mut map, "close", Rc::new(nmongo_close));
     bind(&mut map, "ping", Rc::new(nmongo_ping));
-    bind(&mut map, "warm_parallel_pool", Rc::new(nmongo_warm_parallel_pool));
+    bind(
+        &mut map,
+        "warm_parallel_pool",
+        Rc::new(nmongo_warm_parallel_pool),
+    );
     bind(&mut map, "list_databases", Rc::new(nmongo_list_databases));
     bind(&mut map, "find", Rc::new(nmongo_find));
     bind(&mut map, "find_one", Rc::new(nmongo_find_one));
     bind(&mut map, "insert_one", Rc::new(nmongo_insert_one));
     bind(&mut map, "insert_many", Rc::new(nmongo_insert_many));
-    bind(&mut map, "insert_many_chunks", Rc::new(nmongo_insert_many_chunks));
+    bind(
+        &mut map,
+        "insert_many_chunks",
+        Rc::new(nmongo_insert_many_chunks),
+    );
     bind(&mut map, "update_one", Rc::new(nmongo_update_one));
     bind(&mut map, "update_many", Rc::new(nmongo_update_many));
     bind(&mut map, "replace_one", Rc::new(nmongo_replace_one));
@@ -158,13 +190,29 @@ pub fn namespace() -> Value {
     bind(&mut map, "create_index", Rc::new(nmongo_create_index));
     bind(&mut map, "list_indexes", Rc::new(nmongo_list_indexes));
     bind(&mut map, "drop_index", Rc::new(nmongo_drop_index));
-    bind(&mut map, "list_collections", Rc::new(nmongo_list_collections));
+    bind(
+        &mut map,
+        "list_collections",
+        Rc::new(nmongo_list_collections),
+    );
     bind(&mut map, "drop_collection", Rc::new(nmongo_drop_collection));
     bind(&mut map, "bulk_write", Rc::new(nmongo_bulk_write));
     bind(&mut map, "start_session", Rc::new(nmongo_start_session));
-    bind(&mut map, "start_transaction", Rc::new(nmongo_start_transaction));
-    bind(&mut map, "commit_transaction", Rc::new(nmongo_commit_transaction));
-    bind(&mut map, "abort_transaction", Rc::new(nmongo_abort_transaction));
+    bind(
+        &mut map,
+        "start_transaction",
+        Rc::new(nmongo_start_transaction),
+    );
+    bind(
+        &mut map,
+        "commit_transaction",
+        Rc::new(nmongo_commit_transaction),
+    );
+    bind(
+        &mut map,
+        "abort_transaction",
+        Rc::new(nmongo_abort_transaction),
+    );
     bind(&mut map, "end_session", Rc::new(nmongo_end_session));
     bind(&mut map, "gridfs_upload", Rc::new(nmongo_gridfs_upload));
     bind(&mut map, "gridfs_download", Rc::new(nmongo_gridfs_download));
@@ -175,8 +223,16 @@ pub fn namespace() -> Value {
     bind(&mut map, "watch_close", Rc::new(nmongo_watch_close));
     bind(&mut map, "object_id", Rc::new(nmongo_object_id));
     bind(&mut map, "is_object_id", Rc::new(nmongo_is_object_id));
-    bind(&mut map, "to_extended_json", Rc::new(nmongo_to_extended_json));
-    bind(&mut map, "from_extended_json", Rc::new(nmongo_from_extended_json));
+    bind(
+        &mut map,
+        "to_extended_json",
+        Rc::new(nmongo_to_extended_json),
+    );
+    bind(
+        &mut map,
+        "from_extended_json",
+        Rc::new(nmongo_from_extended_json),
+    );
     bind(&mut map, "async_find", Rc::new(nmongo_async_find));
     bind(
         &mut map,
@@ -188,7 +244,11 @@ pub fn namespace() -> Value {
         "parallel_count_documents",
         Rc::new(nmongo_parallel_count_documents),
     );
-    bind(&mut map, "async_bulk_write", Rc::new(nmongo_async_bulk_write));
+    bind(
+        &mut map,
+        "async_bulk_write",
+        Rc::new(nmongo_async_bulk_write),
+    );
     bind(&mut map, "task_done", Rc::new(nmongo_task_done));
     bind(&mut map, "task_wait", Rc::new(nmongo_task_wait));
     bind(&mut map, "task_wait_all", Rc::new(nmongo_task_wait_all));

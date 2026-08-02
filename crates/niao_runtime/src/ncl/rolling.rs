@@ -69,7 +69,11 @@ fn rolling_extrema(series: &Series, window: usize, min: bool) -> Result<Series, 
                 }
             }
             Ok(Series::new(
-                format!("{}_rolling_{}", series.name, if min { "min" } else { "max" }),
+                format!(
+                    "{}_rolling_{}",
+                    series.name,
+                    if min { "min" } else { "max" }
+                ),
                 Column::Int(out),
             ))
         }
@@ -81,14 +85,26 @@ fn rolling_extrema(series: &Series, window: usize, min: bool) -> Result<Series, 
                 } else {
                     let slice = &v[i + 1 - window..=i];
                     out.push(if min {
-                        slice.iter().copied().min_by(|a, b| a.partial_cmp(b).unwrap()).unwrap()
+                        slice
+                            .iter()
+                            .copied()
+                            .min_by(|a, b| a.partial_cmp(b).unwrap())
+                            .unwrap()
                     } else {
-                        slice.iter().copied().max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap()
+                        slice
+                            .iter()
+                            .copied()
+                            .max_by(|a, b| a.partial_cmp(b).unwrap())
+                            .unwrap()
                     });
                 }
             }
             Ok(Series::new(
-                format!("{}_rolling_{}", series.name, if min { "min" } else { "max" }),
+                format!(
+                    "{}_rolling_{}",
+                    series.name,
+                    if min { "min" } else { "max" }
+                ),
                 Column::Float(out),
             ))
         }

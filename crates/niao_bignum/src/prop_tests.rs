@@ -20,8 +20,14 @@ fn prop_add_sub_mul() {
         ("1", "1"),
         ("9223372036854775807", "9223372036854775807"),
         ("-9223372036854775808", "3"),
-        ("999999999999999999999999999999", "123456789012345678901234567890"),
-        ("-123456789012345678901234567890", "-987654321098765432109876543210"),
+        (
+            "999999999999999999999999999999",
+            "123456789012345678901234567890",
+        ),
+        (
+            "-123456789012345678901234567890",
+            "-987654321098765432109876543210",
+        ),
     ];
     for (a, b) in cases {
         let na = BigInt::from_str(a).unwrap();
@@ -29,8 +35,14 @@ fn prop_add_sub_mul() {
         let ref_a = to_num(&na);
         let ref_b = to_num(&nb);
 
-        assert_eq!((&na + &nb).to_string(), (ref_a.clone() + ref_b.clone()).to_string());
-        assert_eq!((&na - &nb).to_string(), (ref_a.clone() - ref_b.clone()).to_string());
+        assert_eq!(
+            (&na + &nb).to_string(),
+            (ref_a.clone() + ref_b.clone()).to_string()
+        );
+        assert_eq!(
+            (&na - &nb).to_string(),
+            (ref_a.clone() - ref_b.clone()).to_string()
+        );
         assert_eq!((&na * &nb).to_string(), (ref_a * ref_b).to_string());
     }
 }
@@ -42,8 +54,14 @@ fn prop_div_mod() {
         ("-100", "7"),
         ("100", "-7"),
         ("-100", "-7"),
-        ("999999999999999999999999999999", "123456789012345678901234567890"),
-        ("-999999999999999999999999999999", "123456789012345678901234567890"),
+        (
+            "999999999999999999999999999999",
+            "123456789012345678901234567890",
+        ),
+        (
+            "-999999999999999999999999999999",
+            "123456789012345678901234567890",
+        ),
     ];
     for (a, b) in cases {
         let na = BigInt::from_str(a).unwrap();
@@ -51,7 +69,10 @@ fn prop_div_mod() {
         let ref_a = to_num(&na);
         let ref_b = to_num(&nb);
 
-        assert_eq!((&na / &nb).to_string(), (ref_a.clone() / ref_b.clone()).to_string());
+        assert_eq!(
+            (&na / &nb).to_string(),
+            (ref_a.clone() / ref_b.clone()).to_string()
+        );
         assert_eq!((&na % &nb).to_string(), (ref_a % ref_b).to_string());
     }
 }

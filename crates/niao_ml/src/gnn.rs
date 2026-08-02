@@ -3,8 +3,8 @@
 use niao_graph::{sparse_matmul, SparseAdj};
 use niao_tensor::cpu;
 use niao_tensor::{Device, Tensor, TensorResult};
-use rand::SeedableRng;
 use rand::rngs::StdRng;
+use rand::SeedableRng;
 use rand_distr::{Distribution, Normal};
 
 #[derive(Debug, Clone)]

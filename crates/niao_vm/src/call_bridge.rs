@@ -1,9 +1,11 @@
 //! Bridge for invoking Niao user functions from native HTTP handlers while the VM runs.
 
-use crate::{fast_val::HeapMut, fast_val::value_to_fast, fast_val::FastVal, Vm, VmError};
-use niao_ast::Span;
+use crate::{fast_val::value_to_fast, fast_val::FastVal, fast_val::HeapMut, Vm, VmError};
+use niao_ast::{Block, FnDef, Span};
 use niao_bytecode::BytecodeModule;
-use niao_runtime::{NiaoResult, RuntimeError as RtError, Value, ValueRef};
+use niao_runtime::{
+    Environment, FunctionValue, NiaoResult, RuntimeError as RtError, Value, ValueRef,
+};
 use std::cell::RefCell;
 use std::path::Path;
 use std::sync::Arc;
@@ -25,14 +27,46 @@ pub fn run_with_handler_hook(
     result
 }
 
-/// Install thread-local VM hook so `call_niao_function` dispatches on this thread.
+fn stub_function_value(name: &str) -> ValueRef {
+    Value::Function(FunctionValue {
+        def: FnDef {
+            name: name.to_string(),
+            params: vec![],
+            return_type: None,
+            body: Block {
+                stmts: vec![],
+                span: Span::dummy(),
+            },
+            span: Span::dummy(),
+        },
+        closure: Environment::new(),
+    })
+    .ref_cell()
+}
+
+/// Install thread-local VM hook so `call_niao_function` / name resolution work on this thread.
 pub fn install_thread_vm_hook(vm: &mut Vm) {
     let vm_ptr = vm as *mut Vm;
     ACTIVE_VM.with(|slot| *slot.borrow_mut() = Some(vm_ptr));
+    niao_runtime::set_niao_fn_resolver(Some(Arc::new(|name| {
+        ACTIVE_VM.with(|slot| {
+            let ptr = *slot.borrow().as_ref()?;
+            // SAFETY: resolver is only used on the thread that set ACTIVE_VM.
+            let vm = unsafe { &*ptr };
+            if vm.function_index(name).is_none() {
+                return None;
+            }
+            Some(stub_function_value(name))
+        })
+    })));
     niao_runtime::set_niao_vm_call_hook(Some(Arc::new(|callee, args, span| {
         ACTIVE_VM.with(|slot| {
             let ptr = slot.borrow().ok_or_else(|| {
-                RtError::at(span, niao_errors::codes::E1404_NET_HTTP, "VM call hook not active")
+                RtError::at(
+                    span,
+                    niao_errors::codes::E1404_NET_HTTP,
+                    "VM call hook not active",
+                )
             })?;
             // SAFETY: hook is only used on the thread that set ACTIVE_VM.
             unsafe { (*ptr).invoke_handler(callee, args, span) }
@@ -43,6 +77,7 @@ pub fn install_thread_vm_hook(vm: &mut Vm) {
 /// Clear thread-local VM hook (call after serve startup on the primary thread).
 pub fn clear_thread_vm_hook() {
     niao_runtime::set_niao_vm_call_hook(None);
+    niao_runtime::set_niao_fn_resolver(None);
     ACTIVE_VM.with(|slot| *slot.borrow_mut() = None);
 }
 
@@ -53,6 +88,9 @@ impl Vm {
     }
 
     /// Invoke a handler by bytecode index (skips name lookup).
+    ///
+    /// Runs only until the nested call returns — does not continue the caller's
+    /// remaining bytecode (important when invoked re-entrantly from a native).
     pub fn call_at_index(
         &mut self,
         idx: usize,
@@ -62,6 +100,7 @@ impl Vm {
         if idx >= self.functions.len() {
             return Err(VmError::UnknownFunction(format!("index {idx}")));
         }
+        let depth_before = self.frames.len();
         CALL_ARG_SCRATCH.with(|cell| {
             let mut scratch = cell.borrow_mut();
             scratch.clear();
@@ -73,7 +112,7 @@ impl Vm {
             self.stack.extend_from_slice(&scratch);
         });
         self.enter_frame(idx, args.len())?;
-        self.dispatch()?;
+        self.run_nested_until(depth_before)?;
         let ret = self.stack.pop().ok_or(VmError::StackUnderflow)?;
         Ok(ret.to_value_ref(&self.heap, &self.native_refs))
     }
@@ -104,7 +143,11 @@ impl Vm {
         })?;
         self.call_at_index(idx, args, span).map_err(|e| match e {
             VmError::Runtime(r) => r,
-            other => RtError::at(span, niao_errors::codes::E2003_TYPE_ERROR, other.to_string()),
+            other => RtError::at(
+                span,
+                niao_errors::codes::E2003_TYPE_ERROR,
+                other.to_string(),
+            ),
         })
     }
 }

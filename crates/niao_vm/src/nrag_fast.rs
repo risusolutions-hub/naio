@@ -3,7 +3,8 @@
 use crate::fast_val::{FastVal, HeapAlloc};
 use niao_ast::Span;
 use niao_runtime::nrag::{
-    count_handles, embed_handles, embedder_ready, init_embedder, search_text_handles, search_vec_handles, EMBED_DIM,
+    count_handles, embed_handles, embedder_ready, init_embedder, search_text_handles,
+    search_vec_handles, EMBED_DIM,
 };
 use niao_runtime::{Value, ValueRef};
 use std::rc::Rc;
@@ -115,7 +116,9 @@ fn value_to_fast(result: &ValueRef, heap: &mut impl HeapAlloc) -> FastVal {
         Value::Bool(v) => FastVal::Bool(*v),
         Value::Nil => FastVal::Nil,
         Value::String(s) => FastVal::Heap(heap.push_heap(Value::String(s.clone()).ref_cell())),
-        Value::FloatArray(v) => FastVal::Heap(heap.push_heap(Value::FloatArray(v.clone()).ref_cell())),
+        Value::FloatArray(v) => {
+            FastVal::Heap(heap.push_heap(Value::FloatArray(v.clone()).ref_cell()))
+        }
         _ => FastVal::Heap(heap.push_heap(Rc::clone(result))),
     }
 }

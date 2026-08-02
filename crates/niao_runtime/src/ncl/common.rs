@@ -1,9 +1,9 @@
 //! Shared argument helpers for NCL builtins.
 
+use super::handles::is_ncl_handle;
 use crate::{RuntimeError, Value, ValueRef};
 use niao_ast::Span;
 use niao_errors::codes;
-use super::handles::is_ncl_handle;
 
 pub fn type_err(span: Span, msg: impl Into<String>) -> RuntimeError {
     RuntimeError::TypeError {
@@ -35,13 +35,21 @@ pub fn arity_range(
         return Err(RuntimeError::at(
             span,
             codes::E1960_NCL_ARITY,
-            format!("{name}() expects {min}..={max} argument(s), got {}", args.len()),
+            format!(
+                "{name}() expects {min}..={max} argument(s), got {}",
+                args.len()
+            ),
         ));
     }
     Ok(())
 }
 
-pub fn string_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> Result<String, RuntimeError> {
+pub fn string_arg(
+    args: &[ValueRef],
+    idx: usize,
+    name: &str,
+    span: Span,
+) -> Result<String, RuntimeError> {
     match &*args[idx].borrow() {
         Value::String(s) => Ok(s.clone()),
         other => Err(type_err(
@@ -69,7 +77,12 @@ pub fn int_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> Result<
     }
 }
 
-pub fn float_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> Result<f64, RuntimeError> {
+pub fn float_arg(
+    args: &[ValueRef],
+    idx: usize,
+    name: &str,
+    span: Span,
+) -> Result<f64, RuntimeError> {
     match &*args[idx].borrow() {
         Value::Float(f) => Ok(*f),
         Value::Int(n) => Ok(*n as f64),
@@ -84,7 +97,12 @@ pub fn float_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> Resul
     }
 }
 
-pub fn bool_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> Result<bool, RuntimeError> {
+pub fn bool_arg(
+    args: &[ValueRef],
+    idx: usize,
+    name: &str,
+    span: Span,
+) -> Result<bool, RuntimeError> {
     match &*args[idx].borrow() {
         Value::Bool(b) => Ok(*b),
         other => Err(type_err(
@@ -98,7 +116,12 @@ pub fn bool_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> Result
     }
 }
 
-pub fn ncl_handle_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> Result<u64, RuntimeError> {
+pub fn ncl_handle_arg(
+    args: &[ValueRef],
+    idx: usize,
+    name: &str,
+    span: Span,
+) -> Result<u64, RuntimeError> {
     match is_ncl_handle(&*args[idx].borrow()) {
         Some(id) => Ok(id),
         None => Err(RuntimeError::at(
@@ -120,7 +143,9 @@ pub fn array_arg(
     span: Span,
 ) -> Result<Value, RuntimeError> {
     match &*args[idx].borrow() {
-        v @ (Value::IntArray(_) | Value::FloatArray(_) | Value::BoolArray(_) | Value::Array(_)) => Ok(v.clone()),
+        v @ (Value::IntArray(_) | Value::FloatArray(_) | Value::BoolArray(_) | Value::Array(_)) => {
+            Ok(v.clone())
+        }
         other => Err(type_err(
             span,
             format!(

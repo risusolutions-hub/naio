@@ -25,7 +25,12 @@ pub fn from_edge_list(edges: &[(u32, u32, f32)], n: usize) -> SparseAdj {
         cols.push(c);
         vals.push(v);
     }
-    SparseAdj { rows, cols, vals, n }
+    SparseAdj {
+        rows,
+        cols,
+        vals,
+        n,
+    }
 }
 
 pub fn add_self_loops(adj: &SparseAdj) -> SparseAdj {
@@ -74,7 +79,12 @@ pub fn normalize_adj(adj: &SparseAdj) -> SparseAdj {
         cols.push(c as u32);
         vals.push(adj.vals[i] / (d_r * d_c));
     }
-    SparseAdj { rows, cols, vals, n }
+    SparseAdj {
+        rows,
+        cols,
+        vals,
+        n,
+    }
 }
 
 /// COO sparse × dense feature matrix: [n, f].
@@ -149,7 +159,13 @@ pub fn adj_to_dense(adj: &SparseAdj) -> TensorResult<Tensor> {
 }
 
 /// DeepWalk-lite: random-walk structural embeddings.
-pub fn structural_embed(adj: &SparseAdj, dim: usize, walks: usize, walk_len: usize, seed: u64) -> TensorResult<Tensor> {
+pub fn structural_embed(
+    adj: &SparseAdj,
+    dim: usize,
+    walks: usize,
+    walk_len: usize,
+    seed: u64,
+) -> TensorResult<Tensor> {
     use rand::prelude::*;
     let mut rng = StdRng::seed_from_u64(seed);
     let n = adj.n;

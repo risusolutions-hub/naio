@@ -32,7 +32,9 @@ impl PlotError {
 impl fmt::Display for PlotError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Arity { expected, got } => write!(f, "expected {expected} argument(s), got {got}"),
+            Self::Arity { expected, got } => {
+                write!(f, "expected {expected} argument(s), got {got}")
+            }
             Self::Empty(msg)
             | Self::LengthMismatch(msg)
             | Self::InvalidHandle(msg)

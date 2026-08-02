@@ -1,6 +1,6 @@
 use niao_ast::{BinOp, Span, UnaryOp};
-use niao_runtime::{apply_binop, apply_unaryop, RuntimeError, Value, ValueRef};
 use niao_bignum::BigInt;
+use niao_runtime::{apply_binop, apply_unaryop, RuntimeError, Value, ValueRef};
 use std::rc::Rc;
 
 /// Arena allocation hook used by the VM heap GC.
@@ -159,7 +159,10 @@ impl FastVal {
                 BinOp::And => FastVal::Bool(a != 0.0 && b != 0.0),
                 BinOp::Or => FastVal::Bool(a != 0.0 || b != 0.0),
             }),
-            (FastVal::Native(_), _) | (_, FastVal::Native(_)) | (FastVal::Heap(_), _) | (_, FastVal::Heap(_)) => {
+            (FastVal::Native(_), _)
+            | (_, FastVal::Native(_))
+            | (FastVal::Heap(_), _)
+            | (_, FastVal::Heap(_)) => {
                 let l = self.to_value_ref(heap.heap(), native_refs);
                 let r = rhs.to_value_ref(heap.heap(), native_refs);
                 let out = apply_binop(op, &l.borrow(), &r.borrow(), Span::dummy())?;

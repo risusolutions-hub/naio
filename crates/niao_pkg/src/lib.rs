@@ -28,11 +28,11 @@ pub use paths::{
     niao_libs_dir, project_venv_dir, venv_catalog_path, venv_install_state_path, venv_libs_dir,
     InstallMode,
 };
-pub use source::{find_source_root, list_source_lib_names, release_tool_binary};
 pub use registry::{
     fetch_catalog, is_remote_lib, latest_lib_version, load_lib_from_registry, registry_cache_dir,
     registry_url, DEFAULT_REGISTRY_URL,
 };
+pub use source::{find_source_root, list_source_lib_names, release_tool_binary};
+pub use state::{InstallState, InstalledLib, LibsCatalog};
 pub use toolchain_update::{update_toolchain, ToolchainUpdateOptions};
-pub use state::{InstalledLib, InstallState, LibsCatalog};
 pub use uninstall::{load_catalog_optional, uninstall_libs, UninstallReport};

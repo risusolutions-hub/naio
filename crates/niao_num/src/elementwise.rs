@@ -64,10 +64,8 @@ pub fn minimum(a: &NdArray, b: &NdArray) -> NumResult<NdArray> {
 }
 
 pub fn where_array(cond: &NdArray, x: &NdArray, y: &NdArray) -> NumResult<NdArray> {
-    let shape = NdArray::broadcast_shapes(
-        &NdArray::broadcast_shapes(&cond.shape, &x.shape)?,
-        &y.shape,
-    )?;
+    let shape =
+        NdArray::broadcast_shapes(&NdArray::broadcast_shapes(&cond.shape, &x.shape)?, &y.shape)?;
     let c = cond.broadcast_to(&shape)?;
     let a = x.broadcast_to(&shape)?;
     let b = y.broadcast_to(&shape)?;

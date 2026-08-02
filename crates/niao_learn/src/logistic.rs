@@ -272,17 +272,16 @@ impl Estimator for LogisticRegression {
         if classes.len() == 2 {
             let y01: Vec<f64> = yv
                 .iter()
-                .map(|&v| if (v - classes[1]).abs() < 1e-12 { 1.0 } else { 0.0 })
+                .map(|&v| {
+                    if (v - classes[1]).abs() < 1e-12 {
+                        1.0
+                    } else {
+                        0.0
+                    }
+                })
                 .collect();
-            let (coef, intercept) = fit_binary(
-                &xv,
-                &y01,
-                n,
-                d,
-                self.fit_intercept,
-                self.C,
-                self.max_iter,
-            )?;
+            let (coef, intercept) =
+                fit_binary(&xv, &y01, n, d, self.fit_intercept, self.C, self.max_iter)?;
             self.classes = Some(classes);
             self.coef = Some(coef);
             self.intercept = Some(vec![intercept]);

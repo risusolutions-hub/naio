@@ -1,4 +1,4 @@
-﻿//! Native ncrash standard library — structured JSON crash reports,
+//! Native ncrash standard library — structured JSON crash reports,
 //! `wrap(fn)` guard, and stable fingerprints.
 //!
 //! Import with `import "ncrash"` (or `import "std/ncrash"`).
@@ -40,12 +40,21 @@ fn arity(args: &[ValueRef], n: usize, name: &str, span: Span) -> NiaoResult<()> 
     Ok(())
 }
 
-fn arity_range(args: &[ValueRef], min: usize, max: usize, name: &str, span: Span) -> NiaoResult<()> {
+fn arity_range(
+    args: &[ValueRef],
+    min: usize,
+    max: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<()> {
     if args.len() < min || args.len() > max {
         return Err(RuntimeError::at(
             span,
             E3190_NCRASH_ARITY,
-            format!("{name}() expects {min}..={max} argument(s), got {}", args.len()),
+            format!(
+                "{name}() expects {min}..={max} argument(s), got {}",
+                args.len()
+            ),
         ));
     }
     Ok(())
@@ -127,7 +136,11 @@ fn fingerprint_from_parts(kind: &str, code: u32, message: &str) -> String {
     format!("{:08x}", fnv1a64(material.as_bytes()))
 }
 
-fn build_report_from_error(val: &Value, context: &HashMap<String, ValueRef>, span: Span) -> HashMap<String, ValueRef> {
+fn build_report_from_error(
+    val: &Value,
+    context: &HashMap<String, ValueRef>,
+    span: Span,
+) -> HashMap<String, ValueRef> {
     let (kind, code, message): (String, u32, String) = if let Some(err) = value_to_error(val) {
         ("error".into(), err.code, err.message.clone())
     } else {
@@ -143,25 +156,38 @@ fn build_report_from_error(val: &Value, context: &HashMap<String, ValueRef>, spa
     map.insert("line".to_string(), Value::Int(span.line as i64).ref_cell());
     map.insert("col".to_string(), Value::Int(span.col as i64).ref_cell());
     if !context.is_empty() {
-        map.insert("context".to_string(), Value::Object(clone_object(context)).ref_cell());
+        map.insert(
+            "context".to_string(),
+            Value::Object(clone_object(context)).ref_cell(),
+        );
     }
     map
 }
 
-fn build_report_from_runtime(err: &RuntimeError, context: &HashMap<String, ValueRef>, span: Span) -> HashMap<String, ValueRef> {
+fn build_report_from_runtime(
+    err: &RuntimeError,
+    context: &HashMap<String, ValueRef>,
+    span: Span,
+) -> HashMap<String, ValueRef> {
     let code = err.code();
     let message = err.to_string();
     let fp = fingerprint_from_parts("runtime", code, &message);
     let mut map = HashMap::new();
     map.insert("fingerprint".to_string(), Value::String(fp).ref_cell());
-    map.insert("kind".to_string(), Value::String("runtime".into()).ref_cell());
+    map.insert(
+        "kind".to_string(),
+        Value::String("runtime".into()).ref_cell(),
+    );
     map.insert("code".to_string(), Value::Int(code as i64).ref_cell());
     map.insert("message".to_string(), Value::String(message).ref_cell());
     map.insert("ts_ms".to_string(), Value::Int(wall_now_ms()).ref_cell());
     map.insert("line".to_string(), Value::Int(span.line as i64).ref_cell());
     map.insert("col".to_string(), Value::Int(span.col as i64).ref_cell());
     if !context.is_empty() {
-        map.insert("context".to_string(), Value::Object(clone_object(context)).ref_cell());
+        map.insert(
+            "context".to_string(),
+            Value::Object(clone_object(context)).ref_cell(),
+        );
     }
     map
 }
@@ -171,7 +197,8 @@ fn store_last(report: &HashMap<String, ValueRef>) {
 }
 
 fn report_to_json(report: &HashMap<String, ValueRef>) -> String {
-    serde_json::to_string(&value_to_json(&Value::Object(clone_object(report)))).unwrap_or_else(|_| "{}".into())
+    serde_json::to_string(&value_to_json(&Value::Object(clone_object(report))))
+        .unwrap_or_else(|_| "{}".into())
 }
 
 fn value_to_json(v: &Value) -> serde_json::Value {
@@ -340,7 +367,10 @@ ncrash_fns![
 ];
 
 fn all_builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(flat, _, f)| (flat, f)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(flat, _, f)| (flat, f))
+        .collect()
 }
 
 pub fn namespace() -> Value {

@@ -103,7 +103,10 @@ pub fn to_axum_path(path: &str) -> String {
     }
 }
 
-pub fn extract_path_params(template: &str, actual: &str) -> std::collections::HashMap<String, String> {
+pub fn extract_path_params(
+    template: &str,
+    actual: &str,
+) -> std::collections::HashMap<String, String> {
     let mut params = std::collections::HashMap::new();
     let t_parts: Vec<&str> = template.split('/').filter(|s| !s.is_empty()).collect();
     let a_parts: Vec<&str> = actual.split('/').filter(|s| !s.is_empty()).collect();
@@ -127,10 +130,7 @@ pub fn parse_query(query: &str) -> std::collections::HashMap<String, String> {
         let mut it = pair.splitn(2, '=');
         if let Some(k) = it.next() {
             let v = it.next().unwrap_or("");
-            map.insert(
-                urlencoding_decode(k),
-                urlencoding_decode(v),
-            );
+            map.insert(urlencoding_decode(k), urlencoding_decode(v));
         }
     }
     map
@@ -147,10 +147,9 @@ fn percent_decode(s: &str) -> String {
     let mut i = 0;
     while i < bytes.len() {
         if bytes[i] == b'%' && i + 2 < bytes.len() {
-            if let Ok(v) = u8::from_str_radix(
-                std::str::from_utf8(&bytes[i + 1..i + 3]).unwrap_or(""),
-                16,
-            ) {
+            if let Ok(v) =
+                u8::from_str_radix(std::str::from_utf8(&bytes[i + 1..i + 3]).unwrap_or(""), 16)
+            {
                 out.push(v);
                 i += 3;
                 continue;

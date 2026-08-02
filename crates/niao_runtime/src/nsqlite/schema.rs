@@ -24,7 +24,9 @@ pub fn current_version(conn: &mut ConnHandle) -> Result<i64, String> {
     ensure_migrations_table(conn)?;
     let mut stmt = conn
         .conn
-        .prepare(&format!("SELECT version FROM {MIGRATIONS_TABLE} ORDER BY version DESC LIMIT 1"))
+        .prepare(&format!(
+            "SELECT version FROM {MIGRATIONS_TABLE} ORDER BY version DESC LIMIT 1"
+        ))
         .map_err(|e| e.to_string())?;
     let mut rows = stmt.query([]).map_err(|e| e.to_string())?;
     if let Some(row) = rows.next().map_err(|e| e.to_string())? {
@@ -47,7 +49,8 @@ pub fn table_exists(conn: &mut ConnHandle, name: &str) -> Result<bool, String> {
         .conn
         .prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?1 LIMIT 1")
         .map_err(|e| e.to_string())?;
-    stmt.raw_bind_parameter(1, name).map_err(|e| e.to_string())?;
+    stmt.raw_bind_parameter(1, name)
+        .map_err(|e| e.to_string())?;
     let mut rows = stmt.query([]).map_err(|e| e.to_string())?;
     Ok(rows.next().map_err(|e| e.to_string())?.is_some())
 }
@@ -76,7 +79,10 @@ pub fn table_info(conn: &mut ConnHandle, table: &str) -> Result<Vec<ValueRef>, S
     let mut out = Vec::new();
     while let Some(row) = rows.next().map_err(|e| e.to_string())? {
         let mut map = HashMap::new();
-        map.insert("cid".to_string(), Value::Int(row.get(0).unwrap_or(0)).ref_cell());
+        map.insert(
+            "cid".to_string(),
+            Value::Int(row.get(0).unwrap_or(0)).ref_cell(),
+        );
         map.insert(
             "name".to_string(),
             Value::String(row.get::<_, String>(1).unwrap_or_default()).ref_cell(),
@@ -85,7 +91,10 @@ pub fn table_info(conn: &mut ConnHandle, table: &str) -> Result<Vec<ValueRef>, S
             "type".to_string(),
             Value::String(row.get::<_, String>(2).unwrap_or_default()).ref_cell(),
         );
-        map.insert("notnull".to_string(), Value::Int(row.get(3).unwrap_or(0)).ref_cell());
+        map.insert(
+            "notnull".to_string(),
+            Value::Int(row.get(3).unwrap_or(0)).ref_cell(),
+        );
         map.insert(
             "default".to_string(),
             match row.get::<_, Option<String>>(4) {
@@ -93,7 +102,10 @@ pub fn table_info(conn: &mut ConnHandle, table: &str) -> Result<Vec<ValueRef>, S
                 _ => Value::Nil.ref_cell(),
             },
         );
-        map.insert("pk".to_string(), Value::Int(row.get(5).unwrap_or(0)).ref_cell());
+        map.insert(
+            "pk".to_string(),
+            Value::Int(row.get(5).unwrap_or(0)).ref_cell(),
+        );
         out.push(Value::Object(map).ref_cell());
     }
     Ok(out)
@@ -146,7 +158,10 @@ pub struct Migration {
     pub sql: String,
 }
 
-pub fn parse_migrations(migrations_ref: &ValueRef, span: Span) -> Result<Vec<Migration>, crate::RuntimeError> {
+pub fn parse_migrations(
+    migrations_ref: &ValueRef,
+    span: Span,
+) -> Result<Vec<Migration>, crate::RuntimeError> {
     let migrations_val = &*migrations_ref.borrow();
     let items = match migrations_val {
         Value::Array(items) => items,

@@ -197,9 +197,7 @@ impl Socket {
                 SocketOption::ReuseAddress(sys::get_reuse_addr(self.raw())?)
             }
             SocketOptionKind::Nodelay => SocketOption::Nodelay(sys::get_nodelay(self.raw())?),
-            SocketOptionKind::Keepalive => {
-                SocketOption::Keepalive(sys::get_keepalive(self.raw())?)
-            }
+            SocketOptionKind::Keepalive => SocketOption::Keepalive(sys::get_keepalive(self.raw())?),
             SocketOptionKind::ReadTimeout => {
                 SocketOption::ReadTimeout(sys::get_read_timeout(self.raw())?)
             }
@@ -355,9 +353,7 @@ mod tests {
     #[test]
     fn bind_connect_loopback() {
         let listener_sock = tcp_socket();
-        listener_sock
-            .set_reuse_address(true)
-            .expect("reuseaddr");
+        listener_sock.set_reuse_address(true).expect("reuseaddr");
         let addr: SocketAddr = "127.0.0.1:0".parse().unwrap();
         listener_sock.bind(&addr.into()).expect("bind");
         listener_sock.listen(8).expect("listen");
@@ -396,6 +392,7 @@ mod tests {
 
         let b = tcp_socket();
         b.set_reuse_address(true).unwrap();
-        b.bind(&bound.into()).expect("second bind with SO_REUSEADDR");
+        b.bind(&bound.into())
+            .expect("second bind with SO_REUSEADDR");
     }
 }

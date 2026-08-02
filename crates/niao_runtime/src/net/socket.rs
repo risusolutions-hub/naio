@@ -89,12 +89,7 @@ pub fn net_tcp_socket(args: &[crate::ValueRef], span: Span) -> NetResult {
     super::arity(args, 0, "net_tcp_socket", span)?;
     match create_tcp_socket() {
         Ok(stream) => Ok(ok_int(alloc_handle(tcp_handle(stream)) as i64)),
-        Err(e) => Ok(net_error(
-            span,
-            codes::E1401_NET_ERROR,
-            "net_error",
-            e,
-        )),
+        Err(e) => Ok(net_error(span, codes::E1401_NET_ERROR, "net_error", e)),
     }
 }
 
@@ -120,12 +115,10 @@ pub fn net_tcp_bind(args: &[crate::ValueRef], span: Span) -> NetResult {
     let port = super::port_arg(args, 1, "net_tcp_bind", span)?;
     let addr = format!("{host}:{port}");
     match TcpListener::bind(&addr) {
-        Ok(listener) => Ok(ok_int(
-            alloc_handle(NetHandle::TcpListener {
-                listener,
-                timeout_ms: None,
-            }) as i64,
-        )),
+        Ok(listener) => Ok(ok_int(alloc_handle(NetHandle::TcpListener {
+            listener,
+            timeout_ms: None,
+        }) as i64)),
         Err(e) => Ok(net_error(
             span,
             codes::E1401_NET_ERROR,
@@ -205,12 +198,10 @@ pub fn net_tcp_close(args: &[crate::ValueRef], span: Span) -> NetResult {
 pub fn net_udp_socket(args: &[crate::ValueRef], span: Span) -> NetResult {
     super::arity(args, 0, "net_udp_socket", span)?;
     match UdpSocket::bind("0.0.0.0:0") {
-        Ok(socket) => Ok(ok_int(
-            alloc_handle(NetHandle::Udp {
-                socket,
-                timeout_ms: None,
-            }) as i64,
-        )),
+        Ok(socket) => Ok(ok_int(alloc_handle(NetHandle::Udp {
+            socket,
+            timeout_ms: None,
+        }) as i64)),
         Err(e) => Ok(net_error(
             span,
             codes::E1401_NET_ERROR,
@@ -226,12 +217,10 @@ pub fn net_udp_bind(args: &[crate::ValueRef], span: Span) -> NetResult {
     let port = super::port_arg(args, 1, "net_udp_bind", span)?;
     let addr = format!("{host}:{port}");
     match UdpSocket::bind(&addr) {
-        Ok(socket) => Ok(ok_int(
-            alloc_handle(NetHandle::Udp {
-                socket,
-                timeout_ms: None,
-            }) as i64,
-        )),
+        Ok(socket) => Ok(ok_int(alloc_handle(NetHandle::Udp {
+            socket,
+            timeout_ms: None,
+        }) as i64)),
         Err(e) => Ok(net_error(
             span,
             codes::E1401_NET_ERROR,
@@ -247,11 +236,12 @@ pub fn net_udp_send(args: &[crate::ValueRef], span: Span) -> NetResult {
     let host = string_arg(args, 1, "net_udp_send", span)?;
     let port = super::port_arg(args, 2, "net_udp_send", span)?;
     let data = super::payload_arg(args, 3, "net_udp_send", span)?;
-    let target: SocketAddr = format!("{host}:{port}")
-        .parse()
-        .map_err(|e: std::net::AddrParseError| {
-            super::RuntimeError::at(span, codes::E1401_NET_ERROR, e.to_string())
-        })?;
+    let target: SocketAddr =
+        format!("{host}:{port}")
+            .parse()
+            .map_err(|e: std::net::AddrParseError| {
+                super::RuntimeError::at(span, codes::E1401_NET_ERROR, e.to_string())
+            })?;
     with_handle_mut(id, "net_udp_send", span, |handle| match handle {
         NetHandle::Udp { socket, .. } => {
             let n = socket.send_to(&data, target).map_err(|e| e.to_string())?;

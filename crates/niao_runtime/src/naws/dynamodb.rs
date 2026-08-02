@@ -154,8 +154,11 @@ fn ddb_request(
     builder = builder.set("X-Amz-Target", target);
 
     builder.send_string(body_str).map_err(|e| {
-        crate::RuntimeError::at(span, codes::E2801_NAWS_ERROR,
-            format!("DynamoDB request failed: {e}"))
+        crate::RuntimeError::at(
+            span,
+            codes::E2801_NAWS_ERROR,
+            format!("DynamoDB request failed: {e}"),
+        )
     })
 }
 
@@ -186,7 +189,12 @@ pub fn dynamodb_put(args: &[ValueRef], span: Span) -> AwsResult {
         Ok(resp) => {
             if resp.status >= 400 {
                 let msg = String::from_utf8_lossy(&resp.body).into_owned();
-                return Ok(aws_error(codes::E2801_NAWS_ERROR, "naws_dynamodb_error", msg, span));
+                return Ok(aws_error(
+                    codes::E2801_NAWS_ERROR,
+                    "naws_dynamodb_error",
+                    msg,
+                    span,
+                ));
             }
             Ok(ok_bool(true))
         }
@@ -219,7 +227,12 @@ pub fn dynamodb_get(args: &[ValueRef], span: Span) -> AwsResult {
         Ok(resp) => {
             if resp.status >= 400 {
                 let msg = String::from_utf8_lossy(&resp.body).into_owned();
-                return Ok(aws_error(codes::E2801_NAWS_ERROR, "naws_dynamodb_error", msg, span));
+                return Ok(aws_error(
+                    codes::E2801_NAWS_ERROR,
+                    "naws_dynamodb_error",
+                    msg,
+                    span,
+                ));
             }
             let body_str = String::from_utf8_lossy(&resp.body).into_owned();
             match serde_json::from_str::<serde_json::Value>(&body_str) {
@@ -230,8 +243,12 @@ pub fn dynamodb_get(args: &[ValueRef], span: Span) -> AwsResult {
                         Ok(Value::Nil.ref_cell())
                     }
                 }
-                Err(e) => Ok(aws_error(codes::E2801_NAWS_ERROR, "naws_dynamodb_error",
-                    format!("JSON parse error: {e}"), span)),
+                Err(e) => Ok(aws_error(
+                    codes::E2801_NAWS_ERROR,
+                    "naws_dynamodb_error",
+                    format!("JSON parse error: {e}"),
+                    span,
+                )),
             }
         }
         Err(e) => Err(e),
@@ -263,7 +280,12 @@ pub fn dynamodb_delete(args: &[ValueRef], span: Span) -> AwsResult {
         Ok(resp) => {
             if resp.status >= 400 {
                 let msg = String::from_utf8_lossy(&resp.body).into_owned();
-                return Ok(aws_error(codes::E2801_NAWS_ERROR, "naws_dynamodb_error", msg, span));
+                return Ok(aws_error(
+                    codes::E2801_NAWS_ERROR,
+                    "naws_dynamodb_error",
+                    msg,
+                    span,
+                ));
             }
             Ok(ok_bool(true))
         }
@@ -334,18 +356,22 @@ pub fn dynamodb_query(args: &[ValueRef], span: Span) -> AwsResult {
                     format!("\"{}\":{}", json_escape(k), val)
                 })
                 .collect();
-            body_map.insert("ExpressionAttributeNames", format!("{{{}}}", inner.join(",")));
+            body_map.insert(
+                "ExpressionAttributeNames",
+                format!("{{{}}}", inner.join(",")),
+            );
         }
     }
     if let Some(values) = opts.get("values") {
         if let Value::Object(vm) = &*values.borrow() {
             let inner: Vec<String> = vm
                 .iter()
-                .map(|(k, v)| {
-                    format!("\"{}\":{}", json_escape(k), to_attr(&v.borrow()))
-                })
+                .map(|(k, v)| format!("\"{}\":{}", json_escape(k), to_attr(&v.borrow())))
                 .collect();
-            body_map.insert("ExpressionAttributeValues", format!("{{{}}}", inner.join(",")));
+            body_map.insert(
+                "ExpressionAttributeValues",
+                format!("{{{}}}", inner.join(",")),
+            );
         }
     }
 
@@ -359,7 +385,12 @@ pub fn dynamodb_query(args: &[ValueRef], span: Span) -> AwsResult {
         Ok(resp) => {
             if resp.status >= 400 {
                 let msg = String::from_utf8_lossy(&resp.body).into_owned();
-                return Ok(aws_error(codes::E2801_NAWS_ERROR, "naws_dynamodb_error", msg, span));
+                return Ok(aws_error(
+                    codes::E2801_NAWS_ERROR,
+                    "naws_dynamodb_error",
+                    msg,
+                    span,
+                ));
             }
             let body_str = String::from_utf8_lossy(&resp.body).into_owned();
             match serde_json::from_str::<serde_json::Value>(&body_str) {
@@ -367,12 +398,20 @@ pub fn dynamodb_query(args: &[ValueRef], span: Span) -> AwsResult {
                     let items = json
                         .get("Items")
                         .and_then(|v| v.as_array())
-                        .map(|arr| arr.iter().map(|item| from_ddb_item(item)).collect::<Vec<_>>())
+                        .map(|arr| {
+                            arr.iter()
+                                .map(|item| from_ddb_item(item))
+                                .collect::<Vec<_>>()
+                        })
                         .unwrap_or_default();
                     Ok(Value::Array(items).ref_cell())
                 }
-                Err(e) => Ok(aws_error(codes::E2801_NAWS_ERROR, "naws_dynamodb_error",
-                    format!("JSON parse error: {e}"), span)),
+                Err(e) => Ok(aws_error(
+                    codes::E2801_NAWS_ERROR,
+                    "naws_dynamodb_error",
+                    format!("JSON parse error: {e}"),
+                    span,
+                )),
             }
         }
         Err(e) => Err(e),

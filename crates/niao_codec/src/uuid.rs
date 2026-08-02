@@ -220,7 +220,10 @@ mod tests {
             let s = u.to_string();
             assert_eq!(s.len(), 36);
             assert_eq!(&s[14..15], "4");
-            assert!(matches!(s.as_bytes()[19], b'8' | b'9' | b'a' | b'b' | b'A' | b'B'));
+            assert!(matches!(
+                s.as_bytes()[19],
+                b'8' | b'9' | b'a' | b'b' | b'A' | b'B'
+            ));
             assert!(seen.insert(s));
         }
     }

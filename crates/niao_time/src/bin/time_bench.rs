@@ -24,12 +24,6 @@ fn main() {
     }
     let parse_secs = start.elapsed().as_secs_f64();
 
-    println!(
-        "time_format_{ITERS}: {:.0} ops/s",
-        ITERS as f64 / fmt_secs
-    );
-    println!(
-        "time_parse_{ITERS}: {:.0} ops/s",
-        ITERS as f64 / parse_secs
-    );
+    println!("time_format_{ITERS}: {:.0} ops/s", ITERS as f64 / fmt_secs);
+    println!("time_parse_{ITERS}: {:.0} ops/s", ITERS as f64 / parse_secs);
 }

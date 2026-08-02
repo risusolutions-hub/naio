@@ -19,12 +19,7 @@ pub fn set_vm_arena_reader(reader: Option<Rc<dyn Fn() -> (usize, usize)>>) {
 }
 
 fn vm_arena_stats() -> (usize, usize) {
-    VM_ARENA_READER.with(|slot| {
-        slot.borrow()
-            .as_ref()
-            .map(|f| f())
-            .unwrap_or((0, 0))
-    })
+    VM_ARENA_READER.with(|slot| slot.borrow().as_ref().map(|f| f()).unwrap_or((0, 0)))
 }
 
 #[cfg(windows)]
@@ -68,11 +63,7 @@ pub fn process_rss_bytes() -> usize {
             pagefile_usage: 0,
             peak_pagefile_usage: 0,
         };
-        let ok = GetProcessMemoryInfo(
-            GetCurrentProcess(),
-            &mut counters,
-            counters.cb,
-        );
+        let ok = GetProcessMemoryInfo(GetCurrentProcess(), &mut counters, counters.cb);
         if ok != 0 {
             counters.working_set
         } else {
@@ -153,8 +144,14 @@ impl MemSnapshot {
             "vm_native_slots".into(),
             Value::Int(self.vm_native_slots).ref_cell(),
         );
-        map.insert("nml_handles".into(), Value::Int(self.nml_handles).ref_cell());
-        map.insert("ncl_handles".into(), Value::Int(self.ncl_handles).ref_cell());
+        map.insert(
+            "nml_handles".into(),
+            Value::Int(self.nml_handles).ref_cell(),
+        );
+        map.insert(
+            "ncl_handles".into(),
+            Value::Int(self.ncl_handles).ref_cell(),
+        );
         map.insert(
             "tensor_budget_bytes".into(),
             Value::Int(self.tensor_budget_bytes).ref_cell(),
@@ -167,11 +164,7 @@ impl MemSnapshot {
     }
 }
 
-fn int_field(
-    map: &HashMap<String, ValueRef>,
-    key: &str,
-    span: Span,
-) -> Result<i64, RuntimeError> {
+fn int_field(map: &HashMap<String, ValueRef>, key: &str, span: Span) -> Result<i64, RuntimeError> {
     let Some(val) = map.get(key) else {
         return Ok(-1);
     };
@@ -180,7 +173,10 @@ fn int_field(
         other => Err(RuntimeError::at(
             span,
             codes::E1974_NML_TYPE,
-            format!("niao_mem_* expected int field '{key}', got {}", other.type_name()),
+            format!(
+                "niao_mem_* expected int field '{key}', got {}",
+                other.type_name()
+            ),
         )),
     }
 }

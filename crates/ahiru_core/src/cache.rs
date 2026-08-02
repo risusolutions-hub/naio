@@ -115,7 +115,9 @@ impl CacheManager {
             CacheDriver::Redis => {
                 if let Some(conn) = &self.redis {
                     let mut c = conn.lock().unwrap();
-                    c.ping().map(|s| s.eq_ignore_ascii_case("PONG")).unwrap_or(false)
+                    c.ping()
+                        .map(|s| s.eq_ignore_ascii_case("PONG"))
+                        .unwrap_or(false)
                 } else {
                     false
                 }

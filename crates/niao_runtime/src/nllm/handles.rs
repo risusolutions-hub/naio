@@ -3,7 +3,7 @@
 use crate::RuntimeError;
 use niao_ast::Span;
 use niao_errors::codes;
-use niao_llm::{ChatMessage, GenerateOptions, LoadOptions, LlmSession};
+use niao_llm::{ChatMessage, GenerateOptions, LlmSession, LoadOptions};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::mpsc::{self, Sender};
@@ -64,7 +64,10 @@ impl InferenceWorker {
             .name("nllm-inference".into())
             .spawn(move || inference_loop(rx))
             .expect("nllm inference thread");
-        Self { tx, _thread: thread }
+        Self {
+            tx,
+            _thread: thread,
+        }
     }
 
     fn request<R, F>(&self, build: F) -> Result<R, String>
@@ -213,9 +216,15 @@ pub fn chat_session(
     opts: GenerateOptions,
     span: Span,
 ) -> Result<String, RuntimeError> {
-    let result: Result<String, String> =
-        with_worker(|w| w.request(|reply| InferenceRequest::Chat { id, messages, opts, reply }))
-            .map_err(|e| RuntimeError::at(span, codes::E1986_NLLM_ERROR, format!("nllm_chat(): {e}")))?;
+    let result: Result<String, String> = with_worker(|w| {
+        w.request(|reply| InferenceRequest::Chat {
+            id,
+            messages,
+            opts,
+            reply,
+        })
+    })
+    .map_err(|e| RuntimeError::at(span, codes::E1986_NLLM_ERROR, format!("nllm_chat(): {e}")))?;
     result.map_err(|e| RuntimeError::at(span, codes::E1986_NLLM_ERROR, format!("nllm_chat(): {e}")))
 }
 
@@ -235,28 +244,66 @@ pub fn chat_stream_session(
             reply,
         })
     })
-    .map_err(|e| RuntimeError::at(span, codes::E1986_NLLM_ERROR, format!("nllm_chat_stream(): {e}")))?;
-    result.map_err(|e| RuntimeError::at(span, codes::E1986_NLLM_ERROR, format!("nllm_chat_stream(): {e}")))
+    .map_err(|e| {
+        RuntimeError::at(
+            span,
+            codes::E1986_NLLM_ERROR,
+            format!("nllm_chat_stream(): {e}"),
+        )
+    })?;
+    result.map_err(|e| {
+        RuntimeError::at(
+            span,
+            codes::E1986_NLLM_ERROR,
+            format!("nllm_chat_stream(): {e}"),
+        )
+    })
 }
 
 pub fn count_tokens_session(id: u64, text: String, span: Span) -> Result<i64, RuntimeError> {
-    let result: Result<i64, String> = with_worker(|w| {
-        w.request(|reply| InferenceRequest::CountTokens { id, text, reply })
+    let result: Result<i64, String> =
+        with_worker(|w| w.request(|reply| InferenceRequest::CountTokens { id, text, reply }))
+            .map_err(|e| {
+                RuntimeError::at(
+                    span,
+                    codes::E1986_NLLM_ERROR,
+                    format!("nllm_count_tokens(): {e}"),
+                )
+            })?;
+    result.map_err(|e| {
+        RuntimeError::at(
+            span,
+            codes::E1986_NLLM_ERROR,
+            format!("nllm_count_tokens(): {e}"),
+        )
     })
-    .map_err(|e| RuntimeError::at(span, codes::E1986_NLLM_ERROR, format!("nllm_count_tokens(): {e}")))?;
-    result.map_err(|e| RuntimeError::at(span, codes::E1986_NLLM_ERROR, format!("nllm_count_tokens(): {e}")))
 }
 
 pub fn backend_session(id: u64, span: Span) -> Result<String, RuntimeError> {
     let result: Result<String, String> =
-        with_worker(|w| w.request(|reply| InferenceRequest::Backend { id, reply }))
-            .map_err(|e| RuntimeError::at(span, codes::E1986_NLLM_ERROR, format!("nllm_backend(): {e}")))?;
-    result.map_err(|e| RuntimeError::at(span, codes::E1986_NLLM_ERROR, format!("nllm_backend(): {e}")))
+        with_worker(|w| w.request(|reply| InferenceRequest::Backend { id, reply })).map_err(
+            |e| {
+                RuntimeError::at(
+                    span,
+                    codes::E1986_NLLM_ERROR,
+                    format!("nllm_backend(): {e}"),
+                )
+            },
+        )?;
+    result.map_err(|e| {
+        RuntimeError::at(
+            span,
+            codes::E1986_NLLM_ERROR,
+            format!("nllm_backend(): {e}"),
+        )
+    })
 }
 
 pub fn reset_session(id: u64, span: Span) -> Result<(), RuntimeError> {
-    let result: Result<(), String> =
-        with_worker(|w| w.request(|reply| InferenceRequest::Reset { id, reply }))
-            .map_err(|e| RuntimeError::at(span, codes::E1986_NLLM_ERROR, format!("nllm_reset(): {e}")))?;
-    result.map_err(|e| RuntimeError::at(span, codes::E1986_NLLM_ERROR, format!("nllm_reset(): {e}")))
+    let result: Result<(), String> = with_worker(|w| {
+        w.request(|reply| InferenceRequest::Reset { id, reply })
+    })
+    .map_err(|e| RuntimeError::at(span, codes::E1986_NLLM_ERROR, format!("nllm_reset(): {e}")))?;
+    result
+        .map_err(|e| RuntimeError::at(span, codes::E1986_NLLM_ERROR, format!("nllm_reset(): {e}")))
 }

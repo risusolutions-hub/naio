@@ -49,9 +49,10 @@ impl<'a> Reader<'a> {
                     .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))
             }
             b'$' => {
-                let len: i64 = self.read_line()?.parse().map_err(|e| {
-                    io::Error::new(io::ErrorKind::InvalidData, e)
-                })?;
+                let len: i64 = self
+                    .read_line()?
+                    .parse()
+                    .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
                 if len < 0 {
                     return Ok(Value::BulkString(None));
                 }
@@ -64,9 +65,10 @@ impl<'a> Reader<'a> {
                 Ok(Value::BulkString(Some(data)))
             }
             b'*' => {
-                let count: i64 = self.read_line()?.parse().map_err(|e| {
-                    io::Error::new(io::ErrorKind::InvalidData, e)
-                })?;
+                let count: i64 = self
+                    .read_line()?
+                    .parse()
+                    .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
                 if count < 0 {
                     return Ok(Value::Null);
                 }
@@ -110,10 +112,7 @@ mod tests {
     #[test]
     fn parse_simple_and_bulk() {
         let mut r = Reader::new(b"+OK\r\n$-1\r\n");
-        assert_eq!(
-            r.parse_one().unwrap(),
-            Value::SimpleString("OK".into())
-        );
+        assert_eq!(r.parse_one().unwrap(), Value::SimpleString("OK".into()));
         assert_eq!(r.parse_one().unwrap(), Value::BulkString(None));
     }
 

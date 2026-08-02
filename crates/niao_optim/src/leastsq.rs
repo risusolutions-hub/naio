@@ -226,9 +226,7 @@ fn solve_spd(n: usize, a: &[f64], b: &[f64]) -> Vec<f64> {
     }
     let a_arr = from_slice(&[n, n], &a_reg).expect("matrix");
     let b_arr = from_slice(&[n, 1], b).expect("rhs");
-    solve(&a_arr, &b_arr)
-        .expect("solve")
-        .to_vec()
+    solve(&a_arr, &b_arr).expect("solve").to_vec()
 }
 
 #[cfg(test)]

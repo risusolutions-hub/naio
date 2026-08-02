@@ -1,6 +1,6 @@
 use clap::{Parser, Subcommand};
-mod cache;
 mod ahiru;
+mod cache;
 #[cfg(windows)]
 mod uninstall_win;
 
@@ -38,8 +38,21 @@ struct Cli {
 }
 
 const SUBCOMMANDS: &[&str] = &[
-    "run", "version", "new", "test", "format", "lint", "docs", "build", "serve", "bench", "clean",
-    "update", "uninstall", "ahiru", "help",
+    "run",
+    "version",
+    "new",
+    "test",
+    "format",
+    "lint",
+    "docs",
+    "build",
+    "serve",
+    "bench",
+    "clean",
+    "update",
+    "uninstall",
+    "ahiru",
+    "help",
 ];
 
 /// Append `.niao` when the path has no extension and the `.niao` variant exists.
@@ -297,9 +310,12 @@ enum AhiruGenerateCommands {
 fn main() -> Result {
     let cli = Cli::parse_from(normalize_args(std::env::args().collect()));
     match cli.command {
-        Commands::Run { file, args, mode, time } => {
-            run_file(&resolve_niao_path(file), &args, &mode, time)?
-        }
+        Commands::Run {
+            file,
+            args,
+            mode,
+            time,
+        } => run_file(&resolve_niao_path(file), &args, &mode, time)?,
         Commands::Version => println!("niao {VERSION}"),
         Commands::New { name } => new_project(&name)?,
         Commands::Test { dir } => run_tests(&dir)?,
@@ -309,7 +325,11 @@ fn main() -> Result {
         Commands::Build { file, output } => build_file(&resolve_niao_path(file), &output)?,
         Commands::Serve { file, port } => serve_file(&resolve_niao_path(file), port)?,
         Commands::Bench { file, runs } => bench_file(&resolve_niao_path(file), runs)?,
-        Commands::Clean { cache_dir, keep, all } => clean_caches(&cache_dir, keep, all)?,
+        Commands::Clean {
+            cache_dir,
+            keep,
+            all,
+        } => clean_caches(&cache_dir, keep, all)?,
         Commands::Uninstall => {
             #[cfg(windows)]
             {
@@ -322,11 +342,8 @@ fn main() -> Result {
         }
         Commands::Update { version, force } => {
             use niao_pkg::{update_toolchain, ToolchainUpdateOptions};
-            update_toolchain(
-                version.as_deref(),
-                &ToolchainUpdateOptions { force },
-            )
-            .map_err(|e| err(e))?;
+            update_toolchain(version.as_deref(), &ToolchainUpdateOptions { force })
+                .map_err(|e| err(e))?;
         }
         Commands::Ahiru { command } => match command {
             AhiruCommands::Create { name, yes } => ahiru::run_create(&name, yes)?,
@@ -377,8 +394,9 @@ fn main() -> Result {
     Ok(())
 }
 
-/// True when the program imports another .niao file. The bytecode VM has no
-/// module loader, so those programs must run on the interpreter.
+/// True when the source looks like an Ahiru app (legacy helper; VM always
+/// installs the handler hook now).
+#[allow(dead_code)]
 fn uses_ahiru_server(file: &Path) -> bool {
     let Ok(source) = fs::read_to_string(file) else {
         return false;
@@ -395,9 +413,7 @@ fn has_file_imports(file: &Path) -> bool {
         return false;
     };
     program.items.iter().any(|item| match item {
-        niao_ast::TopLevel::Import(imp) => {
-            !native.contains(&imp.path.trim_matches('"'))
-        }
+        niao_ast::TopLevel::Import(imp) => !native.contains(&imp.path.trim_matches('"')),
         _ => false,
     })
 }
@@ -406,9 +422,8 @@ fn run_file(file: &Path, script_args: &[String], mode: &str, show_time: bool) ->
     niao_runtime::set_program_args(script_args.to_vec());
     if mode == "interp" || has_file_imports(file) {
         let start = std::time::Instant::now();
-        let mut interp = Interpreter::new().with_base_dir(
-            file.parent().unwrap_or(Path::new(".")).to_path_buf(),
-        );
+        let mut interp =
+            Interpreter::new().with_base_dir(file.parent().unwrap_or(Path::new(".")).to_path_buf());
         if let Some(stdlib) = locate_stdlib() {
             interp = interp.with_stdlib_dir(stdlib);
         }
@@ -425,12 +440,11 @@ fn run_file(file: &Path, script_args: &[String], mode: &str, show_time: bool) ->
     let run_start = std::time::Instant::now();
     if let Some(path) = bytecode.fast_path {
         niao_vm::execute_fast_path(path);
-    } else if uses_ahiru_server(file) && mode == "vm" {
+    } else {
+        // Always install the VM call/fn-resolver hook so native modules
+        // (nrpc, ahiru, ncrash, …) can invoke user handlers by name.
         let mut vm = Vm::new();
         niao_vm::call_bridge::run_with_handler_hook(&mut vm, &bytecode, base_dir).map_err(err)?;
-    } else {
-        let mut vm = Vm::new();
-        vm.run(&bytecode, base_dir).map_err(err)?;
     }
     if show_time {
         let compile_ms = compile_time.as_secs_f64() * 1000.0;
@@ -490,7 +504,9 @@ fn locate_stdlib() -> Option<PathBuf> {
     }
     candidates.push(PathBuf::from("stdlib"));
     candidates.push(PathBuf::from("../../stdlib"));
-    candidates.into_iter().find(|p| p.join("core").is_dir() || p.join("ahiru").is_dir())
+    candidates
+        .into_iter()
+        .find(|p| p.join("core").is_dir() || p.join("ahiru").is_dir())
 }
 
 fn file_has_imports(file: &Path) -> bool {

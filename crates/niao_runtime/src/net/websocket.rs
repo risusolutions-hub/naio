@@ -15,9 +15,9 @@ pub fn net_ws_connect(args: &[crate::ValueRef], span: Span) -> NetResult {
     super::arity_range(args, 1, 2, "net_ws_connect", span)?;
     let url = string_arg(args, 0, "net_ws_connect", span)?;
     match connect(&url) {
-        Ok((socket, _resp)) => Ok(crate::Value::Int(
-            alloc_handle(NetHandle::WebSocket(WsConnection { socket })) as i64,
-        )
+        Ok((socket, _resp)) => Ok(crate::Value::Int(alloc_handle(NetHandle::WebSocket(
+            WsConnection { socket },
+        )) as i64)
         .ref_cell()),
         Err(e) => Ok(net_error(
             span,

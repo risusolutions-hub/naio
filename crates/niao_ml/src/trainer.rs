@@ -1,7 +1,7 @@
 //! Training loop.
 
-use crate::dataloader::DataLoader;
 use crate::backward::ParamGrad;
+use crate::dataloader::DataLoader;
 use crate::loss::{self, LossKind};
 use crate::model::Sequential;
 use crate::optimizer::{self, OptimizerKind, OptimizerState};
@@ -68,10 +68,7 @@ impl Trainer {
             0.0
         };
         self.loss_history.push(avg);
-        Ok(TrainMetrics {
-            loss: avg,
-            batches,
-        })
+        Ok(TrainMetrics { loss: avg, batches })
     }
 
     pub fn train_batch(&mut self, x: &Tensor, y: &Tensor) -> TensorResult<f32> {
@@ -194,14 +191,8 @@ impl Trainer {
                         w.len()
                     )));
                 }
-                optimizer::step(
-                    &self.optimizer,
-                    &mut self.opt_state,
-                    param_idx,
-                    w,
-                    g,
-                )
-                .map_err(|e| niao_tensor::TensorError::Op(e))?;
+                optimizer::step(&self.optimizer, &mut self.opt_state, param_idx, w, g)
+                    .map_err(|e| niao_tensor::TensorError::Op(e))?;
                 param_idx += 1;
             }
             if let (Some(b), Some(g)) = (&mut layer.bias, &pg.bias) {
@@ -212,14 +203,8 @@ impl Trainer {
                         b.len()
                     )));
                 }
-                optimizer::step(
-                    &self.optimizer,
-                    &mut self.opt_state,
-                    param_idx,
-                    b,
-                    g,
-                )
-                .map_err(|e| niao_tensor::TensorError::Op(e))?;
+                optimizer::step(&self.optimizer, &mut self.opt_state, param_idx, b, g)
+                    .map_err(|e| niao_tensor::TensorError::Op(e))?;
                 param_idx += 1;
             }
             if let (Some(gamma), Some(g)) = (&mut layer.gamma, &pg.gamma) {
@@ -230,14 +215,8 @@ impl Trainer {
                         gamma.len()
                     )));
                 }
-                optimizer::step(
-                    &self.optimizer,
-                    &mut self.opt_state,
-                    param_idx,
-                    gamma,
-                    g,
-                )
-                .map_err(|e| niao_tensor::TensorError::Op(e))?;
+                optimizer::step(&self.optimizer, &mut self.opt_state, param_idx, gamma, g)
+                    .map_err(|e| niao_tensor::TensorError::Op(e))?;
                 param_idx += 1;
             }
             if let (Some(beta), Some(g)) = (&mut layer.beta, &pg.beta) {
@@ -248,14 +227,8 @@ impl Trainer {
                         beta.len()
                     )));
                 }
-                optimizer::step(
-                    &self.optimizer,
-                    &mut self.opt_state,
-                    param_idx,
-                    beta,
-                    g,
-                )
-                .map_err(|e| niao_tensor::TensorError::Op(e))?;
+                optimizer::step(&self.optimizer, &mut self.opt_state, param_idx, beta, g)
+                    .map_err(|e| niao_tensor::TensorError::Op(e))?;
                 param_idx += 1;
             }
         }

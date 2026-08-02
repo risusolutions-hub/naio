@@ -29,9 +29,7 @@ pub fn melt(df: &DataFrame, id_vars: &[String]) -> Result<DataFrame, String> {
     let mut cols = Vec::new();
     for name in id_vars {
         let base = id_cols.get(name).unwrap();
-        let expanded: Vec<String> = (0..var_col.len())
-            .map(|i| base[i % n].clone())
-            .collect();
+        let expanded: Vec<String> = (0..var_col.len()).map(|i| base[i % n].clone()).collect();
         cols.push(Series::new(
             name.clone(),
             Column::String(crate::StringArray::dense(expanded)),
@@ -48,7 +46,12 @@ pub fn melt(df: &DataFrame, id_vars: &[String]) -> Result<DataFrame, String> {
     DataFrame::new(cols)
 }
 
-pub fn pivot(df: &DataFrame, index: &str, columns: &str, values: &str) -> Result<DataFrame, String> {
+pub fn pivot(
+    df: &DataFrame,
+    index: &str,
+    columns: &str,
+    values: &str,
+) -> Result<DataFrame, String> {
     let idx_col = df
         .get_column(index)
         .ok_or_else(|| format!("index column '{index}' not found"))?;
@@ -84,7 +87,13 @@ pub fn pivot(df: &DataFrame, index: &str, columns: &str, values: &str) -> Result
     for ck in &col_keys {
         let vals: Vec<f64> = row_keys
             .iter()
-            .map(|rk| pivot_cols.get(rk).and_then(|m| m.get(ck)).copied().unwrap_or(f64::NAN))
+            .map(|rk| {
+                pivot_cols
+                    .get(rk)
+                    .and_then(|m| m.get(ck))
+                    .copied()
+                    .unwrap_or(f64::NAN)
+            })
             .collect();
         out_cols.push(Series::from_float_array(ck.clone(), vals));
     }

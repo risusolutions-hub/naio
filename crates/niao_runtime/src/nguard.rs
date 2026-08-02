@@ -1,4 +1,4 @@
-﻿//! Native nguard standard library — PII scan/redact (email, phone, SSN,
+//! Native nguard standard library — PII scan/redact (email, phone, SSN,
 //! credit card with Luhn, IP, API keys) and denylist middleware hooks.
 //!
 //! Import with `import "nguard"` (or `import "std/nguard"`).
@@ -39,12 +39,21 @@ fn arity(args: &[ValueRef], n: usize, name: &str, span: Span) -> NiaoResult<()> 
     Ok(())
 }
 
-fn arity_range(args: &[ValueRef], min: usize, max: usize, name: &str, span: Span) -> NiaoResult<()> {
+fn arity_range(
+    args: &[ValueRef],
+    min: usize,
+    max: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<()> {
     if args.len() < min || args.len() > max {
         return Err(RuntimeError::at(
             span,
             E3320_NGUARD_ARITY,
-            format!("{name}() expects {min}..={max} argument(s), got {}", args.len()),
+            format!(
+                "{name}() expects {min}..={max} argument(s), got {}",
+                args.len()
+            ),
         ));
     }
     Ok(())
@@ -195,14 +204,22 @@ fn is_email(s: &str) -> bool {
         && domain.contains('.')
         && !domain.starts_with('.')
         && !domain.ends_with('.')
-        && s.chars().all(|c| c.is_ascii_alphanumeric() || ".@_+-".contains(c))
+        && s.chars()
+            .all(|c| c.is_ascii_alphanumeric() || ".@_+-".contains(c))
 }
 
 fn scan_emails(text: &str) -> Vec<Finding> {
     let mut out = Vec::new();
     for word in text.split_whitespace() {
         let trimmed: String = word
-            .trim_matches(|c: char| !c.is_ascii_alphanumeric() && c != '@' && c != '.' && c != '_' && c != '+' && c != '-')
+            .trim_matches(|c: char| {
+                !c.is_ascii_alphanumeric()
+                    && c != '@'
+                    && c != '.'
+                    && c != '_'
+                    && c != '+'
+                    && c != '-'
+            })
             .to_string();
         if is_email(&trimmed) {
             if let Some(pos) = text.find(&trimmed) {
@@ -293,7 +310,9 @@ fn scan_cards(text: &str) -> Vec<Finding> {
         if bytes[i].is_ascii_digit() {
             let start = i;
             let mut digits = String::new();
-            while i < bytes.len() && (bytes[i].is_ascii_digit() || bytes[i] == b' ' || bytes[i] == b'-') {
+            while i < bytes.len()
+                && (bytes[i].is_ascii_digit() || bytes[i] == b' ' || bytes[i] == b'-')
+            {
                 if bytes[i].is_ascii_digit() {
                     digits.push(bytes[i] as char);
                 }
@@ -330,7 +349,9 @@ fn is_ipv6(s: &str) -> bool {
     if parts.len() < 3 || parts.len() > 8 {
         return false;
     }
-    parts.iter().all(|p| p.is_empty() || p.chars().all(|c| c.is_ascii_hexdigit()))
+    parts
+        .iter()
+        .all(|p| p.is_empty() || p.chars().all(|c| c.is_ascii_hexdigit()))
 }
 
 fn scan_ips(text: &str) -> Vec<Finding> {
@@ -353,7 +374,9 @@ fn scan_ips(text: &str) -> Vec<Finding> {
 
 fn scan_api_keys(text: &str) -> Vec<Finding> {
     let mut out = Vec::new();
-    let prefixes = ["sk-", "sk_live_", "sk_test_", "api_key=", "apikey=", "Bearer ", "AKIA"];
+    let prefixes = [
+        "sk-", "sk_live_", "sk_test_", "api_key=", "apikey=", "Bearer ", "AKIA",
+    ];
     for prefix in prefixes {
         let mut start = 0;
         while let Some(pos) = text[start..].find(prefix) {
@@ -434,7 +457,10 @@ fn finding_object(f: &Finding) -> ValueRef {
     map.insert("type".to_string(), Value::String(f.kind.clone()).ref_cell());
     map.insert("start".to_string(), Value::Int(f.start as i64).ref_cell());
     map.insert("end".to_string(), Value::Int(f.end as i64).ref_cell());
-    map.insert("match".to_string(), Value::String(f.matched.clone()).ref_cell());
+    map.insert(
+        "match".to_string(),
+        Value::String(f.matched.clone()).ref_cell(),
+    );
     Value::Object(map).ref_cell()
 }
 
@@ -470,11 +496,18 @@ fn parse_types_arg(
 fn nguard_scan(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity_range(args, 1, 2, "nguard_scan", span)?;
     let text = string_arg(args, 0, "nguard_scan", span)?;
-    let types = parse_types_arg(optional_string_array_arg(args, 1, "nguard_scan", span)?, span, "nguard_scan")?;
+    let types = parse_types_arg(
+        optional_string_array_arg(args, 1, "nguard_scan", span)?,
+        span,
+        "nguard_scan",
+    )?;
     let findings = scan_text(&text, &types);
     let items: Vec<ValueRef> = findings.iter().map(finding_object).collect();
     let mut map = HashMap::new();
-    map.insert("count".to_string(), Value::Int(findings.len() as i64).ref_cell());
+    map.insert(
+        "count".to_string(),
+        Value::Int(findings.len() as i64).ref_cell(),
+    );
     map.insert("findings".to_string(), Value::Array(items).ref_cell());
     Ok(Value::Object(map).ref_cell())
 }
@@ -498,7 +531,11 @@ fn nguard_redact(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
 fn nguard_has_pii(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity_range(args, 1, 2, "nguard_has_pii", span)?;
     let text = string_arg(args, 0, "nguard_has_pii", span)?;
-    let types = parse_types_arg(optional_string_array_arg(args, 1, "nguard_has_pii", span)?, span, "nguard_has_pii")?;
+    let types = parse_types_arg(
+        optional_string_array_arg(args, 1, "nguard_has_pii", span)?,
+        span,
+        "nguard_has_pii",
+    )?;
     Ok(Value::Bool(!scan_text(&text, &types).is_empty()).ref_cell())
 }
 
@@ -506,7 +543,10 @@ fn nguard_denylist_add(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity(args, 1, "nguard_denylist_add", span)?;
     let pattern = string_arg(args, 0, "nguard_denylist_add", span)?;
     if pattern.is_empty() {
-        return Ok(nguard_err(span, "nguard_denylist_add() pattern must not be empty"));
+        return Ok(nguard_err(
+            span,
+            "nguard_denylist_add() pattern must not be empty",
+        ));
     }
     DENYLIST.with(|list| {
         let mut list = list.borrow_mut();
@@ -547,8 +587,14 @@ fn nguard_denylist_check(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> 
             .collect()
     });
     let mut map = HashMap::new();
-    map.insert("blocked".to_string(), Value::Bool(!matches.is_empty()).ref_cell());
-    map.insert("matches".to_string(), Value::StringArray(StringArray::dense(matches)).ref_cell());
+    map.insert(
+        "blocked".to_string(),
+        Value::Bool(!matches.is_empty()).ref_cell(),
+    );
+    map.insert(
+        "matches".to_string(),
+        Value::StringArray(StringArray::dense(matches)).ref_cell(),
+    );
     Ok(Value::Object(map).ref_cell())
 }
 
@@ -593,14 +639,29 @@ nguard_fns![
     ("nguard_redact", "redact", nguard_redact),
     ("nguard_has_pii", "has_pii", nguard_has_pii),
     ("nguard_denylist_add", "denylist_add", nguard_denylist_add),
-    ("nguard_denylist_remove", "denylist_remove", nguard_denylist_remove),
-    ("nguard_denylist_clear", "denylist_clear", nguard_denylist_clear),
-    ("nguard_denylist_check", "denylist_check", nguard_denylist_check),
+    (
+        "nguard_denylist_remove",
+        "denylist_remove",
+        nguard_denylist_remove
+    ),
+    (
+        "nguard_denylist_clear",
+        "denylist_clear",
+        nguard_denylist_clear
+    ),
+    (
+        "nguard_denylist_check",
+        "denylist_check",
+        nguard_denylist_check
+    ),
     ("nguard_filter", "filter", nguard_filter),
 ];
 
 fn all_builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(flat, _, f)| (flat, f)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(flat, _, f)| (flat, f))
+        .collect()
 }
 
 pub fn namespace() -> Value {

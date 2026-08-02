@@ -83,9 +83,7 @@ fn add_slices(a_lo: &[u64], a_hi: &[u64], out: &mut Vec<u64>) {
     out.resize(n + 1, 0);
     let mut carry = 0u128;
     for i in 0..n {
-        let sum = *a_lo.get(i).unwrap_or(&0) as u128
-            + *a_hi.get(i).unwrap_or(&0) as u128
-            + carry;
+        let sum = *a_lo.get(i).unwrap_or(&0) as u128 + *a_hi.get(i).unwrap_or(&0) as u128 + carry;
         out[i] = sum as u64;
         carry = sum >> 64;
     }
@@ -157,7 +155,9 @@ impl BigUint {
         if hi == 0 {
             Self { limbs: vec![lo] }
         } else {
-            Self { limbs: vec![lo, hi] }
+            Self {
+                limbs: vec![lo, hi],
+            }
         }
     }
 
@@ -305,10 +305,7 @@ impl BigUint {
             q.push(digit as u64);
         }
         q.reverse();
-        (
-            Self { limbs: q }.normalized(),
-            Self::from_u64(rem as u64),
-        )
+        (Self { limbs: q }.normalized(), Self::from_u64(rem as u64))
     }
 
     fn shl_limbs(&self, bits: u32) -> Self {

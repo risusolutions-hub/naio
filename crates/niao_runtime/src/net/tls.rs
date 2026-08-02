@@ -91,18 +91,11 @@ pub fn net_tls_connect(args: &[crate::ValueRef], span: Span) -> NetResult {
         }
     };
     match tls_wrap_stream(tcp, &sni) {
-        Ok(stream) => Ok(ok_int(
-            alloc_handle(NetHandle::Tls {
-                stream: Box::new(stream),
-                timeout_ms: None,
-            }) as i64,
-        )),
-        Err(e) => Ok(net_error(
-            span,
-            codes::E1405_NET_TLS,
-            "net_tls_error",
-            e,
-        )),
+        Ok(stream) => Ok(ok_int(alloc_handle(NetHandle::Tls {
+            stream: Box::new(stream),
+            timeout_ms: None,
+        }) as i64)),
+        Err(e) => Ok(net_error(span, codes::E1405_NET_TLS, "net_tls_error", e)),
     }
 }
 

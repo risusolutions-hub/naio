@@ -26,7 +26,8 @@ impl LogController {
         if std::env::var("AHIRU_QUIET").ok().as_deref() == Some("1") {
             skip_paths.insert("*".into());
         }
-        let access_log = config.access_log && std::env::var("AHIRU_QUIET").ok().as_deref() != Some("1");
+        let access_log =
+            config.access_log && std::env::var("AHIRU_QUIET").ok().as_deref() != Some("1");
         Self {
             inner: Arc::new(RwLock::new(LogState {
                 access_log,

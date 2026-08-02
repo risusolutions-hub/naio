@@ -11,10 +11,7 @@ pub fn run_migrations(config: &AhiruConfig, project_dir: &Path) -> Result<Migrat
     let mut skipped = 0;
 
     for db in &config.databases {
-        let dir = db
-            .migrations_dir
-            .as_deref()
-            .unwrap_or("migrations");
+        let dir = db.migrations_dir.as_deref().unwrap_or("migrations");
         let mig_path = project_dir.join(dir);
         if !mig_path.exists() {
             continue;
@@ -23,10 +20,7 @@ pub fn run_migrations(config: &AhiruConfig, project_dir: &Path) -> Result<Migrat
         if driver != "sqlite" {
             // SQLx/pg/mysql migrations tracked separately; run raw SQL files for now
         }
-        let db_path = db
-            .url
-            .strip_prefix("sqlite://")
-            .unwrap_or(&db.url);
+        let db_path = db.url.strip_prefix("sqlite://").unwrap_or(&db.url);
         let db_file = project_dir.join(db_path);
         if let Some(parent) = db_file.parent() {
             std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
@@ -62,12 +56,10 @@ pub fn run_migrations(config: &AhiruConfig, project_dir: &Path) -> Result<Migrat
                 continue;
             }
             let sql = std::fs::read_to_string(entry.path()).map_err(|e| e.to_string())?;
-            conn.execute_batch(&sql).map_err(|e| format!("{name}: {e}"))?;
-            conn.execute(
-                "INSERT INTO _ahiru_migrations (name) VALUES (?1)",
-                [&name],
-            )
-            .map_err(|e| e.to_string())?;
+            conn.execute_batch(&sql)
+                .map_err(|e| format!("{name}: {e}"))?;
+            conn.execute("INSERT INTO _ahiru_migrations (name) VALUES (?1)", [&name])
+                .map_err(|e| e.to_string())?;
             applied.push(format!("{}:{}", db.name, name));
         }
     }
@@ -80,7 +72,10 @@ pub struct MigrationStatus {
     pub pending: Vec<String>,
 }
 
-pub fn migration_status(config: &AhiruConfig, project_dir: &Path) -> Result<Vec<MigrationStatus>, String> {
+pub fn migration_status(
+    config: &AhiruConfig,
+    project_dir: &Path,
+) -> Result<Vec<MigrationStatus>, String> {
     let mut out = Vec::new();
     for db in &config.databases {
         let dir = db.migrations_dir.as_deref().unwrap_or("migrations");

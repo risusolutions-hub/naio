@@ -1,9 +1,9 @@
 //! Cross-platform readiness poller (WSAPoll / epoll / kqueue).
 
-#[cfg(windows)]
-mod windows;
 #[cfg(unix)]
 mod unix;
+#[cfg(windows)]
+mod windows;
 
 use std::net::TcpStream;
 

@@ -16,7 +16,7 @@ use crate::native::native_health_handler;
 use crate::port::{bind_listener, PortBindError, PortBindPolicy};
 use crate::response::{AhiruResponse, ResponseBody};
 use crate::router::{
-    extract_path_params, HttpMethod, RouteEntry, RouteInfo, RouteMeta, to_axum_path,
+    extract_path_params, to_axum_path, HttpMethod, RouteEntry, RouteInfo, RouteMeta,
 };
 use crate::shutdown::{shutdown_receiver, wait_for_shutdown};
 use crate::state::AppStateStore;
@@ -29,8 +29,9 @@ use axum::http::{HeaderValue, StatusCode};
 use axum::response::{IntoResponse, Response};
 use axum::routing::{delete, get, patch, post, put};
 use axum::Router;
-use futures_util::Future;
 use futures_util::stream;
+use futures_util::Future;
+use niao_codec::uuid::Uuid;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -40,7 +41,6 @@ use tower_http::cors::{Any, CorsLayer};
 use tower_http::limit::RequestBodyLimitLayer;
 use tower_http::services::ServeDir;
 use tower_http::set_header::SetResponseHeaderLayer;
-use niao_codec::uuid::Uuid;
 
 #[derive(Debug)]
 pub enum ServeError {
@@ -260,10 +260,7 @@ impl AhiruApp {
             axum_path,
             handler: http_handler,
             ws_handler: Some(handler),
-            meta: RouteMeta {
-                ws: true,
-                ..meta
-            },
+            meta: RouteMeta { ws: true, ..meta },
         });
         self
     }
@@ -359,9 +356,7 @@ impl AhiruApp {
             let p = path.clone();
             router = router.route(
                 &p,
-                get(|| async move {
-                    metrics::prometheus_text().into_response()
-                }),
+                get(|| async move { metrics::prometheus_text().into_response() }),
             );
         }
 
@@ -501,11 +496,7 @@ impl AhiruApp {
 
         let router = self.build_router();
         let shutdown_rx = shutdown_receiver();
-        let drain = self
-            .config
-            .server
-            .shutdown_drain_secs
-            .unwrap_or(30);
+        let drain = self.config.server.shutdown_drain_secs.unwrap_or(30);
         axum::serve(listener, router)
             .with_graceful_shutdown(wait_for_shutdown(shutdown_rx, drain))
             .await?;
@@ -517,7 +508,10 @@ pub fn mount_health_live() -> HandlerFn {
     native_health_handler()
 }
 
-pub fn mount_health_ready(db: Option<SharedDbManager>, cache: Option<SharedCacheManager>) -> HandlerFn {
+pub fn mount_health_ready(
+    db: Option<SharedDbManager>,
+    cache: Option<SharedCacheManager>,
+) -> HandlerFn {
     Arc::new(move |ctx| {
         let db = db.clone();
         let cache = cache.clone();
@@ -736,8 +730,8 @@ fn finish_response(
     middleware: &[MiddlewareEntry],
     ctx: &RequestContext,
 ) -> Response {
-    let add_request_id = log_ctrl.request_id_header_enabled()
-        || request_id_enabled_in_chain(middleware);
+    let add_request_id =
+        log_ctrl.request_id_header_enabled() || request_id_enabled_in_chain(middleware);
     if add_request_id {
         resp.headers
             .insert("x-request-id".into(), request_id.to_string());
@@ -757,8 +751,7 @@ fn finish_response(
         if let Some(p) = &opts.path {
             cookie.push_str(&format!("; Path={p}"));
         }
-        resp.headers
-            .insert("set-cookie".into(), cookie);
+        resp.headers.insert("set-cookie".into(), cookie);
     }
 
     let status = resp.status;
@@ -801,36 +794,30 @@ impl AhiruResponse {
         }
 
         match self.body {
-            ResponseBody::Buffered(bytes) => builder
-                .body(Body::from(bytes))
-                .unwrap_or_else(|_| {
-                    Response::builder()
-                        .status(StatusCode::INTERNAL_SERVER_ERROR)
-                        .body(Body::from("response build error"))
-                        .unwrap()
-                }),
+            ResponseBody::Buffered(bytes) => builder.body(Body::from(bytes)).unwrap_or_else(|_| {
+                Response::builder()
+                    .status(StatusCode::INTERNAL_SERVER_ERROR)
+                    .body(Body::from("response build error"))
+                    .unwrap()
+            }),
             ResponseBody::Stream(sender) => {
                 let (tx, mut rx) = tokio::sync::mpsc::channel::<Vec<u8>>(64);
                 if let Ok(mut guard) = sender.lock() {
                     *guard = Some(tx);
                 }
-                let stream = stream::poll_fn(move |cx| {
-                    match std::pin::pin!(rx.recv()).poll(cx) {
-                        std::task::Poll::Ready(Some(chunk)) => {
-                            std::task::Poll::Ready(Some(Ok::<_, std::convert::Infallible>(chunk)))
-                        }
-                        std::task::Poll::Ready(None) => std::task::Poll::Ready(None),
-                        std::task::Poll::Pending => std::task::Poll::Pending,
+                let stream = stream::poll_fn(move |cx| match std::pin::pin!(rx.recv()).poll(cx) {
+                    std::task::Poll::Ready(Some(chunk)) => {
+                        std::task::Poll::Ready(Some(Ok::<_, std::convert::Infallible>(chunk)))
                     }
+                    std::task::Poll::Ready(None) => std::task::Poll::Ready(None),
+                    std::task::Poll::Pending => std::task::Poll::Pending,
                 });
-                builder
-                    .body(Body::from_stream(stream))
-                    .unwrap_or_else(|_| {
-                        Response::builder()
-                            .status(StatusCode::INTERNAL_SERVER_ERROR)
-                            .body(Body::from("stream error"))
-                            .unwrap()
-                    })
+                builder.body(Body::from_stream(stream)).unwrap_or_else(|_| {
+                    Response::builder()
+                        .status(StatusCode::INTERNAL_SERVER_ERROR)
+                        .body(Body::from("stream error"))
+                        .unwrap()
+                })
             }
         }
     }

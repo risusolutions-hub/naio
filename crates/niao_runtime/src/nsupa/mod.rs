@@ -31,9 +31,7 @@ mod common;
 mod query;
 mod storage;
 
-use crate::{
-    error_value, json_stringify, NativeFn, NiaoResult, RuntimeError, Value, ValueRef,
-};
+use crate::{error_value, json_stringify, NativeFn, NiaoResult, RuntimeError, Value, ValueRef};
 use client::SupaClient;
 use common::{http_delete_json, http_get_json, http_patch_json, http_post_json};
 use niao_ast::Span;
@@ -63,7 +61,12 @@ fn supa_type_err(span: Span, msg: impl Into<String>) -> RuntimeError {
 }
 
 fn supa_auth_err(span: Span, msg: impl Into<String>) -> ValueRef {
-    error_value(codes::E2823_NSUPA_AUTH, "nsupa_auth_error", msg.into(), span)
+    error_value(
+        codes::E2823_NSUPA_AUTH,
+        "nsupa_auth_error",
+        msg.into(),
+        span,
+    )
 }
 
 // ---------------------------------------------------------------------------
@@ -107,7 +110,10 @@ fn string_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> NiaoResu
         Value::String(s) => Ok(s.clone()),
         other => Err(supa_type_err(
             span,
-            format!("{name}: arg {idx} must be a string, got {}", other.type_name()),
+            format!(
+                "{name}: arg {idx} must be a string, got {}",
+                other.type_name()
+            ),
         )),
     }
 }
@@ -118,7 +124,10 @@ fn int_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> NiaoResult<
         Value::Int(n) => Ok(*n),
         other => Err(supa_type_err(
             span,
-            format!("{name}: arg {idx} must be an int, got {}", other.type_name()),
+            format!(
+                "{name}: arg {idx} must be an int, got {}",
+                other.type_name()
+            ),
         )),
     }
 }
@@ -129,7 +138,10 @@ fn obj_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> NiaoResult<
         Value::Object(_) => Ok(args[idx].clone()),
         other => Err(supa_type_err(
             span,
-            format!("{name}: arg {idx} must be an object, got {}", other.type_name()),
+            format!(
+                "{name}: arg {idx} must be an object, got {}",
+                other.type_name()
+            ),
         )),
     }
 }
@@ -219,10 +231,10 @@ macro_rules! filter_fn {
     };
 }
 
-filter_fn!(nsupa_eq,  "nsupa_eq",  "eq");
+filter_fn!(nsupa_eq, "nsupa_eq", "eq");
 filter_fn!(nsupa_neq, "nsupa_neq", "neq");
-filter_fn!(nsupa_gt,  "nsupa_gt",  "gt");
-filter_fn!(nsupa_lt,  "nsupa_lt",  "lt");
+filter_fn!(nsupa_gt, "nsupa_gt", "gt");
+filter_fn!(nsupa_lt, "nsupa_lt", "lt");
 filter_fn!(nsupa_gte, "nsupa_gte", "gte");
 filter_fn!(nsupa_lte, "nsupa_lte", "lte");
 
@@ -467,8 +479,7 @@ fn nsupa_storage_upload(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let body = string_arg(args, 3, "nsupa_storage_upload", span)?;
 
     let result = client::with_client(cid, "nsupa_storage_upload", span, |cl| {
-        storage::upload(&cl.url, &cl.bearer(), cl.api_key(), &bucket, &path, &body)
-            .map_err(|e| e.0)
+        storage::upload(&cl.url, &cl.bearer(), cl.api_key(), &bucket, &path, &body).map_err(|e| e.0)
     });
 
     match result {
@@ -484,8 +495,7 @@ fn nsupa_storage_download(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef>
     let path = string_arg(args, 2, "nsupa_storage_download", span)?;
 
     let result = client::with_client(cid, "nsupa_storage_download", span, |cl| {
-        storage::download(&cl.url, &cl.bearer(), cl.api_key(), &bucket, &path)
-            .map_err(|e| e.0)
+        storage::download(&cl.url, &cl.bearer(), cl.api_key(), &bucket, &path).map_err(|e| e.0)
     });
 
     match result {
@@ -552,29 +562,29 @@ fn value_to_filter_str(v: &ValueRef) -> String {
 
 fn all_builtins() -> Vec<(&'static str, NativeFn)> {
     vec![
-        ("nsupa_connect",          Rc::new(nsupa_connect)),
-        ("nsupa_close",            Rc::new(nsupa_close)),
-        ("nsupa_from",             Rc::new(nsupa_from)),
-        ("nsupa_select",           Rc::new(nsupa_select)),
-        ("nsupa_insert",           Rc::new(nsupa_insert)),
-        ("nsupa_update",           Rc::new(nsupa_update)),
-        ("nsupa_delete",           Rc::new(nsupa_delete)),
-        ("nsupa_eq",               Rc::new(nsupa_eq)),
-        ("nsupa_neq",              Rc::new(nsupa_neq)),
-        ("nsupa_gt",               Rc::new(nsupa_gt)),
-        ("nsupa_lt",               Rc::new(nsupa_lt)),
-        ("nsupa_gte",              Rc::new(nsupa_gte)),
-        ("nsupa_lte",              Rc::new(nsupa_lte)),
-        ("nsupa_order",            Rc::new(nsupa_order)),
-        ("nsupa_limit",            Rc::new(nsupa_limit)),
-        ("nsupa_offset",           Rc::new(nsupa_offset)),
-        ("nsupa_drop_query",       Rc::new(nsupa_drop_query)),
-        ("nsupa_auth_sign_up",     Rc::new(nsupa_auth_sign_up)),
-        ("nsupa_auth_sign_in",     Rc::new(nsupa_auth_sign_in)),
-        ("nsupa_auth_sign_out",    Rc::new(nsupa_auth_sign_out)),
-        ("nsupa_storage_upload",   Rc::new(nsupa_storage_upload)),
+        ("nsupa_connect", Rc::new(nsupa_connect)),
+        ("nsupa_close", Rc::new(nsupa_close)),
+        ("nsupa_from", Rc::new(nsupa_from)),
+        ("nsupa_select", Rc::new(nsupa_select)),
+        ("nsupa_insert", Rc::new(nsupa_insert)),
+        ("nsupa_update", Rc::new(nsupa_update)),
+        ("nsupa_delete", Rc::new(nsupa_delete)),
+        ("nsupa_eq", Rc::new(nsupa_eq)),
+        ("nsupa_neq", Rc::new(nsupa_neq)),
+        ("nsupa_gt", Rc::new(nsupa_gt)),
+        ("nsupa_lt", Rc::new(nsupa_lt)),
+        ("nsupa_gte", Rc::new(nsupa_gte)),
+        ("nsupa_lte", Rc::new(nsupa_lte)),
+        ("nsupa_order", Rc::new(nsupa_order)),
+        ("nsupa_limit", Rc::new(nsupa_limit)),
+        ("nsupa_offset", Rc::new(nsupa_offset)),
+        ("nsupa_drop_query", Rc::new(nsupa_drop_query)),
+        ("nsupa_auth_sign_up", Rc::new(nsupa_auth_sign_up)),
+        ("nsupa_auth_sign_in", Rc::new(nsupa_auth_sign_in)),
+        ("nsupa_auth_sign_out", Rc::new(nsupa_auth_sign_out)),
+        ("nsupa_storage_upload", Rc::new(nsupa_storage_upload)),
         ("nsupa_storage_download", Rc::new(nsupa_storage_download)),
-        ("nsupa_rpc",              Rc::new(nsupa_rpc)),
+        ("nsupa_rpc", Rc::new(nsupa_rpc)),
     ]
 }
 
@@ -590,28 +600,32 @@ pub fn namespace() -> Value {
     let bind = |map: &mut HashMap<String, ValueRef>, name: &str, f: NativeFn| {
         map.insert(name.to_string(), Value::NativeFunction(f).ref_cell());
     };
-    bind(&mut map, "connect",          Rc::new(nsupa_connect));
-    bind(&mut map, "close",            Rc::new(nsupa_close));
-    bind(&mut map, "from",             Rc::new(nsupa_from));
-    bind(&mut map, "select",           Rc::new(nsupa_select));
-    bind(&mut map, "insert",           Rc::new(nsupa_insert));
-    bind(&mut map, "update",           Rc::new(nsupa_update));
-    bind(&mut map, "delete",           Rc::new(nsupa_delete));
-    bind(&mut map, "eq",               Rc::new(nsupa_eq));
-    bind(&mut map, "neq",              Rc::new(nsupa_neq));
-    bind(&mut map, "gt",               Rc::new(nsupa_gt));
-    bind(&mut map, "lt",               Rc::new(nsupa_lt));
-    bind(&mut map, "gte",              Rc::new(nsupa_gte));
-    bind(&mut map, "lte",              Rc::new(nsupa_lte));
-    bind(&mut map, "order",            Rc::new(nsupa_order));
-    bind(&mut map, "limit",            Rc::new(nsupa_limit));
-    bind(&mut map, "offset",           Rc::new(nsupa_offset));
-    bind(&mut map, "drop_query",       Rc::new(nsupa_drop_query));
-    bind(&mut map, "auth_sign_up",     Rc::new(nsupa_auth_sign_up));
-    bind(&mut map, "auth_sign_in",     Rc::new(nsupa_auth_sign_in));
-    bind(&mut map, "auth_sign_out",    Rc::new(nsupa_auth_sign_out));
-    bind(&mut map, "storage_upload",   Rc::new(nsupa_storage_upload));
-    bind(&mut map, "storage_download", Rc::new(nsupa_storage_download));
-    bind(&mut map, "rpc",              Rc::new(nsupa_rpc));
+    bind(&mut map, "connect", Rc::new(nsupa_connect));
+    bind(&mut map, "close", Rc::new(nsupa_close));
+    bind(&mut map, "from", Rc::new(nsupa_from));
+    bind(&mut map, "select", Rc::new(nsupa_select));
+    bind(&mut map, "insert", Rc::new(nsupa_insert));
+    bind(&mut map, "update", Rc::new(nsupa_update));
+    bind(&mut map, "delete", Rc::new(nsupa_delete));
+    bind(&mut map, "eq", Rc::new(nsupa_eq));
+    bind(&mut map, "neq", Rc::new(nsupa_neq));
+    bind(&mut map, "gt", Rc::new(nsupa_gt));
+    bind(&mut map, "lt", Rc::new(nsupa_lt));
+    bind(&mut map, "gte", Rc::new(nsupa_gte));
+    bind(&mut map, "lte", Rc::new(nsupa_lte));
+    bind(&mut map, "order", Rc::new(nsupa_order));
+    bind(&mut map, "limit", Rc::new(nsupa_limit));
+    bind(&mut map, "offset", Rc::new(nsupa_offset));
+    bind(&mut map, "drop_query", Rc::new(nsupa_drop_query));
+    bind(&mut map, "auth_sign_up", Rc::new(nsupa_auth_sign_up));
+    bind(&mut map, "auth_sign_in", Rc::new(nsupa_auth_sign_in));
+    bind(&mut map, "auth_sign_out", Rc::new(nsupa_auth_sign_out));
+    bind(&mut map, "storage_upload", Rc::new(nsupa_storage_upload));
+    bind(
+        &mut map,
+        "storage_download",
+        Rc::new(nsupa_storage_download),
+    );
+    bind(&mut map, "rpc", Rc::new(nsupa_rpc));
     Value::Object(map)
 }

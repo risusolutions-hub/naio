@@ -1,6 +1,6 @@
 //! Simple PostgreSQL round-trip latency benchmark.
 
-use niao_db::postgres::{Client, Config, tls::NoTls};
+use niao_db::postgres::{tls::NoTls, Client, Config};
 use std::time::Instant;
 
 fn main() {

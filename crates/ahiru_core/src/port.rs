@@ -101,14 +101,18 @@ fn prompt_port_busy(host: &str, port: u16) -> Result<PortChoice, PortBindError> 
     eprint!("Choice [Y/c/n]: ");
     io::stderr().flush().map_err(PortBindError::Io)?;
     let mut line = String::new();
-    io::stdin().read_line(&mut line).map_err(PortBindError::Io)?;
+    io::stdin()
+        .read_line(&mut line)
+        .map_err(PortBindError::Io)?;
     match line.trim().to_lowercase().as_str() {
         "" | "y" | "yes" => Ok(PortChoice::Use(next)),
         "c" | "custom" => {
             eprint!("  Port: ");
             io::stderr().flush().map_err(PortBindError::Io)?;
             line.clear();
-            io::stdin().read_line(&mut line).map_err(PortBindError::Io)?;
+            io::stdin()
+                .read_line(&mut line)
+                .map_err(PortBindError::Io)?;
             let custom: u16 = line.trim().parse().map_err(|_| {
                 PortBindError::Io(io::Error::new(
                     io::ErrorKind::InvalidInput,

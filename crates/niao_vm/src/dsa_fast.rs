@@ -29,7 +29,8 @@ impl DsaFastPath {
 
         let out = match self.0 {
             0 if argc == 2 => {
-                let (Some(ds), Some(n)) = (native_idx(args[0], heap, native_ds), arg_int(args[1])) else {
+                let (Some(ds), Some(n)) = (native_idx(args[0], heap, native_ds), arg_int(args[1]))
+                else {
                     return None;
                 };
                 if !fast::queue_push_int(&native_ds[ds], n) {
@@ -46,7 +47,8 @@ impl DsaFastPath {
                 FastVal::Bool(fast::queue_is_empty(&native_ds[ds])?)
             }
             3 if argc == 2 => {
-                let (Some(ds), Some(n)) = (native_idx(args[0], heap, native_ds), arg_int(args[1])) else {
+                let (Some(ds), Some(n)) = (native_idx(args[0], heap, native_ds), arg_int(args[1]))
+                else {
                     return None;
                 };
                 if !fast::stack_push_int(&native_ds[ds], n) {
@@ -63,7 +65,8 @@ impl DsaFastPath {
                 FastVal::Bool(fast::stack_is_empty(&native_ds[ds])?)
             }
             6 if argc == 2 => {
-                let (Some(ds), Some(n)) = (native_idx(args[0], heap, native_ds), arg_int(args[1])) else {
+                let (Some(ds), Some(n)) = (native_idx(args[0], heap, native_ds), arg_int(args[1]))
+                else {
                     return None;
                 };
                 if !fast::deque_push_back_int(&native_ds[ds], n) {
@@ -72,7 +75,8 @@ impl DsaFastPath {
                 FastVal::Nil
             }
             7 if argc == 2 => {
-                let (Some(ds), Some(n)) = (native_idx(args[0], heap, native_ds), arg_int(args[1])) else {
+                let (Some(ds), Some(n)) = (native_idx(args[0], heap, native_ds), arg_int(args[1]))
+                else {
                     return None;
                 };
                 if !fast::deque_push_front_int(&native_ds[ds], n) {
@@ -93,7 +97,8 @@ impl DsaFastPath {
                 FastVal::Bool(fast::deque_is_empty(&native_ds[ds])?)
             }
             11 if argc == 2 => {
-                let (Some(ds), Some(n)) = (native_idx(args[0], heap, native_ds), arg_int(args[1])) else {
+                let (Some(ds), Some(n)) = (native_idx(args[0], heap, native_ds), arg_int(args[1]))
+                else {
                     return None;
                 };
                 if !fast::list_push_back_int(&native_ds[ds], n) {
@@ -102,7 +107,8 @@ impl DsaFastPath {
                 FastVal::Nil
             }
             12 if argc == 2 => {
-                let (Some(ds), Some(n)) = (native_idx(args[0], heap, native_ds), arg_int(args[1])) else {
+                let (Some(ds), Some(n)) = (native_idx(args[0], heap, native_ds), arg_int(args[1]))
+                else {
                     return None;
                 };
                 if !fast::list_push_front_int(&native_ds[ds], n) {
@@ -123,7 +129,8 @@ impl DsaFastPath {
                 FastVal::Bool(fast::list_is_empty(&native_ds[ds])?)
             }
             16 if argc == 2 => {
-                let (Some(ds), Some(n)) = (native_idx(args[0], heap, native_ds), arg_int(args[1])) else {
+                let (Some(ds), Some(n)) = (native_idx(args[0], heap, native_ds), arg_int(args[1]))
+                else {
                     return None;
                 };
                 if !fast::heap_push_int(&native_ds[ds], n) {
@@ -140,13 +147,15 @@ impl DsaFastPath {
                 FastVal::Bool(fast::heap_is_empty(&native_ds[ds])?)
             }
             19 if argc == 2 => {
-                let (Some(ds), Some(n)) = (native_idx(args[0], heap, native_ds), arg_int(args[1])) else {
+                let (Some(ds), Some(n)) = (native_idx(args[0], heap, native_ds), arg_int(args[1]))
+                else {
                     return None;
                 };
                 FastVal::Bool(fast::set_add_int(&native_ds[ds], n)?)
             }
             20 if argc == 2 => {
-                let (Some(ds), Some(n)) = (native_idx(args[0], heap, native_ds), arg_int(args[1])) else {
+                let (Some(ds), Some(n)) = (native_idx(args[0], heap, native_ds), arg_int(args[1]))
+                else {
                     return None;
                 };
                 FastVal::Bool(fast::set_contains_int(&native_ds[ds], n)?)
@@ -163,7 +172,8 @@ impl DsaFastPath {
                 FastVal::Nil
             }
             22 if argc == 2 => {
-                let (Some(ds), Some(k)) = (native_idx(args[0], heap, native_ds), arg_int(args[1])) else {
+                let (Some(ds), Some(k)) = (native_idx(args[0], heap, native_ds), arg_int(args[1]))
+                else {
                     return None;
                 };
                 match fast::map_get_int(&native_ds[ds], k)? {
@@ -172,7 +182,8 @@ impl DsaFastPath {
                 }
             }
             23 if argc == 2 => {
-                let (Some(ds), Some(k)) = (native_idx(args[0], heap, native_ds), arg_int(args[1])) else {
+                let (Some(ds), Some(k)) = (native_idx(args[0], heap, native_ds), arg_int(args[1]))
+                else {
                     return None;
                 };
                 FastVal::Bool(fast::map_has_int(&native_ds[ds], k)?)

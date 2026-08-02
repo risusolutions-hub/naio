@@ -68,12 +68,7 @@ fn build_request_object(req: &IncomingRequest) -> crate::ValueRef {
     let body_bytes = req.body.clone();
     let body = String::from_utf8_lossy(&body_bytes).into_owned();
     let path = req.url().to_string();
-    let query = req
-        .url()
-        .split('?')
-        .nth(1)
-        .unwrap_or("")
-        .to_string();
+    let query = req.url().split('?').nth(1).unwrap_or("").to_string();
     let path_only = path.split('?').next().unwrap_or(&path).to_string();
 
     let mut map = HashMap::new();
@@ -125,7 +120,8 @@ fn dispatch(state: &HttpServerState, request: IncomingRequest, span: Span) {
 
     for route in &state.routes {
         if route.method.eq_ignore_ascii_case(&method) && route.path == path {
-            if let Ok(resp_val) = call_niao_function(route.handler.clone(), &[req_obj.clone()], span)
+            if let Ok(resp_val) =
+                call_niao_function(route.handler.clone(), &[req_obj.clone()], span)
             {
                 if let Ok(resp) = response_from_value(&resp_val.borrow()) {
                     response = resp;
@@ -193,7 +189,10 @@ pub fn net_http_route(args: &[crate::ValueRef], span: Span) -> NetResult {
     let path = string_arg(args, 2, "net_http_route", span)?;
     let handler = args[3].clone();
     if !matches!(&*handler.borrow(), crate::Value::Function(_)) {
-        return Err(super::type_err(span, "net_http_route() handler must be a function"));
+        return Err(super::type_err(
+            span,
+            "net_http_route() handler must be a function",
+        ));
     }
     with_server_mut(id, "net_http_route", span, |state| {
         state.routes.push(RouteEntry {
@@ -296,12 +295,7 @@ pub fn net_http_serve(args: &[crate::ValueRef], span: Span) -> NetResult {
     super::arity(args, 1, "net_http_serve", span)?;
     let id = super::int_arg(args, 0, "net_http_serve", span)? as u64;
     if let Err(e) = serve_loop(id, span) {
-        return Ok(net_error(
-            span,
-            codes::E1404_NET_HTTP,
-            "net_http_error",
-            e,
-        ));
+        return Ok(net_error(span, codes::E1404_NET_HTTP, "net_http_error", e));
     }
     Ok(ok_nil())
 }

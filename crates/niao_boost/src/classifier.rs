@@ -36,7 +36,13 @@ impl GBClassifier {
         })
     }
 
-    pub fn fit(&mut self, x: &[f64], n_rows: usize, n_features: usize, y: &[f64]) -> BoostResult<()> {
+    pub fn fit(
+        &mut self,
+        x: &[f64],
+        n_rows: usize,
+        n_features: usize,
+        y: &[f64],
+    ) -> BoostResult<()> {
         self.fit_with_eval(x, n_rows, n_features, y, None)
     }
 
@@ -63,13 +69,21 @@ impl GBClassifier {
 
         if self.num_class == 2 {
             let objective = Logistic;
-            self.booster
-                .fit(&objective, &train, y, eval_set.as_ref().map(|(d, y)| (d, *y)))
+            self.booster.fit(
+                &objective,
+                &train,
+                y,
+                eval_set.as_ref().map(|(d, y)| (d, *y)),
+            )
         } else {
             let objective = SoftmaxMulticlass::new(self.num_class)?;
             self.booster.num_class = self.num_class;
-            self.booster
-                .fit(&objective, &train, y, eval_set.as_ref().map(|(d, y)| (d, *y)))
+            self.booster.fit(
+                &objective,
+                &train,
+                y,
+                eval_set.as_ref().map(|(d, y)| (d, *y)),
+            )
         }
     }
 
@@ -78,7 +92,13 @@ impl GBClassifier {
             let logits = self.predict_logits(x, n_rows, n_features)?;
             Ok(logits
                 .into_iter()
-                .map(|l| if crate::booster::sigmoid_pub(l) > 0.5 { 1.0 } else { 0.0 })
+                .map(|l| {
+                    if crate::booster::sigmoid_pub(l) > 0.5 {
+                        1.0
+                    } else {
+                        0.0
+                    }
+                })
                 .collect())
         } else {
             let proba = self.predict_proba(x, n_rows, n_features)?;
@@ -98,17 +118,33 @@ impl GBClassifier {
         }
     }
 
-    pub fn predict_logits(&self, x: &[f64], n_rows: usize, n_features: usize) -> BoostResult<Vec<f64>> {
+    pub fn predict_logits(
+        &self,
+        x: &[f64],
+        n_rows: usize,
+        n_features: usize,
+    ) -> BoostResult<Vec<f64>> {
         let data = Dataset::from_matrix(x, n_rows, n_features, self.params.max_bins)?;
         self.booster.predict(&data)
     }
 
-    pub fn predict_proba(&self, x: &[f64], n_rows: usize, n_features: usize) -> BoostResult<Vec<f64>> {
+    pub fn predict_proba(
+        &self,
+        x: &[f64],
+        n_rows: usize,
+        n_features: usize,
+    ) -> BoostResult<Vec<f64>> {
         let data = Dataset::from_matrix(x, n_rows, n_features, self.params.max_bins)?;
         self.booster.predict_proba(&data)
     }
 
-    pub fn score(&self, x: &[f64], n_rows: usize, n_features: usize, y: &[f64]) -> BoostResult<f64> {
+    pub fn score(
+        &self,
+        x: &[f64],
+        n_rows: usize,
+        n_features: usize,
+        y: &[f64],
+    ) -> BoostResult<f64> {
         if self.num_class == 2 {
             let logits = self.predict_logits(x, n_rows, n_features)?;
             Ok(auc_binary(&logits, y))

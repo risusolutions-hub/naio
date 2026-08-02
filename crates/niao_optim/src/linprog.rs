@@ -191,7 +191,9 @@ fn solve_basis_transpose(b: &[f64], rhs: &[f64]) -> OptimResult<Vec<f64>> {
     let m = rhs.len();
     use niao_num::{from_slice, solve};
     let b_arr = from_slice(&[m, m], b).map_err(|e| OptimError::Error(e.to_string()))?;
-    let bt = b_arr.transpose().map_err(|e| OptimError::Error(e.to_string()))?;
+    let bt = b_arr
+        .transpose()
+        .map_err(|e| OptimError::Error(e.to_string()))?;
     let rhs_arr = from_slice(&[m, 1], rhs).map_err(|e| OptimError::Error(e.to_string()))?;
     solve(&bt, &rhs_arr)
         .map(|x| x.to_vec())

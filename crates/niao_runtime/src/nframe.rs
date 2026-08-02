@@ -24,6 +24,16 @@ fn alloc_frame(df: DataFrame) -> u64 {
     id
 }
 
+/// Store a DataFrame and return a handle (used by `nparquet` interop).
+pub fn store_frame(df: DataFrame) -> u64 {
+    alloc_frame(df)
+}
+
+/// Clone a stored DataFrame by handle (used by `nparquet` interop).
+pub fn clone_frame(id: u64) -> Option<DataFrame> {
+    FRAMES.with(|h| h.borrow().get(&id).cloned())
+}
+
 fn arity(args: &[ValueRef], n: usize, name: &str, span: Span) -> NiaoResult<()> {
     if args.len() != n {
         return Err(RuntimeError::at(
@@ -112,7 +122,10 @@ pub const MODULE_NAME: &str = "nframe";
 pub const MODULE_PATHS: &[&str] = &["nframe", "std/nframe"];
 
 pub fn builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(f, _, fn_)| (f, fn_)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(f, _, fn_)| (f, fn_))
+        .collect()
 }
 
 pub fn namespace() -> Value {

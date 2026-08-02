@@ -57,9 +57,7 @@ pub fn levenshtein(a: &str, b: &str) -> usize {
         cur[0] = i;
         for j in 1..=m {
             let cost = if a[i - 1] == b[j - 1] { 0 } else { 1 };
-            cur[j] = (prev[j] + 1)
-                .min(cur[j - 1] + 1)
-                .min(prev[j - 1] + cost);
+            cur[j] = (prev[j] + 1).min(cur[j - 1] + 1).min(prev[j - 1] + cost);
         }
         std::mem::swap(&mut prev, &mut cur);
     }
@@ -239,7 +237,13 @@ mod tests {
         let docs = vec![
             vec!["the".into(), "cat".into(), "sat".into()],
             vec!["the".into(), "dog".into(), "ran".into()],
-            vec!["a".into(), "cat".into(), "chased".into(), "the".into(), "dog".into()],
+            vec![
+                "a".into(),
+                "cat".into(),
+                "chased".into(),
+                "the".into(),
+                "dog".into(),
+            ],
         ];
         let bm = Bm25::fit(&docs, 1.5, 0.75);
         let q = vec!["cat".into()];

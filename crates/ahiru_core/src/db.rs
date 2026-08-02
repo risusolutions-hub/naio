@@ -1,5 +1,5 @@
 use crate::config::DatabaseConfig;
-use niao_db::postgres::{Client, Config, tls::NoTls};
+use niao_db::postgres::{tls::NoTls, Client, Config};
 use niao_db::{ManageConnection, Pool, PoolError};
 use sqlx::mysql::MySqlPoolOptions;
 use sqlx::postgres::PgPoolOptions;
@@ -106,7 +106,10 @@ impl DbManager {
     }
 
     pub fn exec_sqlite(&self, name: &str, sql: &str) -> Result<u64, String> {
-        let pool = self.pools.get(name).ok_or_else(|| format!("db '{name}' not found"))?;
+        let pool = self
+            .pools
+            .get(name)
+            .ok_or_else(|| format!("db '{name}' not found"))?;
         match pool {
             DbPool::Sqlite(p) => {
                 let conn = p.get().map_err(|e: PoolError| e.to_string())?;
@@ -117,17 +120,20 @@ impl DbManager {
         }
     }
 
-    pub fn query_sqlite(&self, name: &str, sql: &str) -> Result<Vec<HashMap<String, String>>, String> {
-        let pool = self.pools.get(name).ok_or_else(|| format!("db '{name}' not found"))?;
+    pub fn query_sqlite(
+        &self,
+        name: &str,
+        sql: &str,
+    ) -> Result<Vec<HashMap<String, String>>, String> {
+        let pool = self
+            .pools
+            .get(name)
+            .ok_or_else(|| format!("db '{name}' not found"))?;
         match pool {
             DbPool::Sqlite(p) => {
                 let conn = p.get().map_err(|e: PoolError| e.to_string())?;
                 let mut stmt = conn.prepare(sql).map_err(|e| e.to_string())?;
-                let cols: Vec<String> = stmt
-                    .column_names()
-                    .iter()
-                    .map(|s| s.to_string())
-                    .collect();
+                let cols: Vec<String> = stmt.column_names().iter().map(|s| s.to_string()).collect();
                 let mut rows = Vec::new();
                 let mut query = stmt.query([]).map_err(|e| e.to_string())?;
                 while let Some(row) = query.next().map_err(|e| e.to_string())? {
@@ -145,7 +151,10 @@ impl DbManager {
     }
 
     pub async fn exec_sqlx(&self, name: &str, sql: &str) -> Result<u64, String> {
-        let pool = self.pools.get(name).ok_or_else(|| format!("db '{name}' not found"))?;
+        let pool = self
+            .pools
+            .get(name)
+            .ok_or_else(|| format!("db '{name}' not found"))?;
         match pool {
             DbPool::SqlxPostgres(p) => {
                 let r = sqlx::query(sql)

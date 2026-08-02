@@ -6,7 +6,5 @@
 pub mod hasher;
 pub mod indexmap;
 
-pub use hasher::{
-    hash_bytes, AHasher, HashMap, HashMapExt, HashSet, HashSetExt, RandomState,
-};
+pub use hasher::{hash_bytes, AHasher, HashMap, HashMapExt, HashSet, HashSetExt, RandomState};
 pub use indexmap::{IndexMap, IndexSet};

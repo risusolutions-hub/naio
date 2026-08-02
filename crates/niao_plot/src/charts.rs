@@ -1,11 +1,11 @@
 //! Chart types and series rendering.
 
+use crate::axis::Transform;
 use crate::axis::{autoscale, Limits};
 use crate::color::{categorical, sequential, Rgba};
 use crate::error::{require_non_empty, require_same_len, PlotError, PlotResult};
 use crate::figure::Axes;
 use crate::scene::{Element, TextAnchor};
-use crate::axis::Transform;
 
 pub const MAX_PLOT_POINTS: usize = 50_000;
 
@@ -26,27 +26,61 @@ pub struct BoxStats {
 
 #[derive(Clone, Debug)]
 pub enum SeriesKind {
-    Line { x: Vec<f64>, y: Vec<f64> },
-    Scatter { x: Vec<f64>, y: Vec<f64> },
+    Line {
+        x: Vec<f64>,
+        y: Vec<f64>,
+    },
+    Scatter {
+        x: Vec<f64>,
+        y: Vec<f64>,
+    },
     Bar {
         cats: Vec<String>,
         vals: Vec<f64>,
         mode: BarMode,
     },
-    HBar { cats: Vec<String>, vals: Vec<f64> },
-    Hist { counts: Vec<f64>, edges: Vec<f64> },
-    Box { groups: Vec<(String, BoxStats)> },
-    Heatmap { data: Vec<f64>, rows: usize, cols: usize },
+    HBar {
+        cats: Vec<String>,
+        vals: Vec<f64>,
+    },
+    Hist {
+        counts: Vec<f64>,
+        edges: Vec<f64>,
+    },
+    Box {
+        groups: Vec<(String, BoxStats)>,
+    },
+    Heatmap {
+        data: Vec<f64>,
+        rows: usize,
+        cols: usize,
+    },
     ConfusionMatrix {
         cm: Vec<f64>,
         n: usize,
         labels: Vec<String>,
     },
-    Roc { fpr: Vec<f64>, tpr: Vec<f64> },
-    ErrorBar { x: Vec<f64>, y: Vec<f64>, yerr: Vec<f64> },
-    Step { x: Vec<f64>, y: Vec<f64> },
-    Area { x: Vec<f64>, y: Vec<f64> },
-    Pie { labels: Vec<String>, vals: Vec<f64> },
+    Roc {
+        fpr: Vec<f64>,
+        tpr: Vec<f64>,
+    },
+    ErrorBar {
+        x: Vec<f64>,
+        y: Vec<f64>,
+        yerr: Vec<f64>,
+    },
+    Step {
+        x: Vec<f64>,
+        y: Vec<f64>,
+    },
+    Area {
+        x: Vec<f64>,
+        y: Vec<f64>,
+    },
+    Pie {
+        labels: Vec<String>,
+        vals: Vec<f64>,
+    },
 }
 
 #[derive(Clone, Debug)]
@@ -59,13 +93,23 @@ impl Series {
     pub fn data_bounds(&self) -> (Limits, Limits) {
         match &self.kind {
             SeriesKind::Line { x, y } | SeriesKind::Scatter { x, y } => bounds_xy(x, y),
-            SeriesKind::Bar { cats: _, vals, mode: _ } => {
+            SeriesKind::Bar {
+                cats: _,
+                vals,
+                mode: _,
+            } => {
                 let ymax = vals.iter().cloned().fold(0.0f64, f64::max);
-                (Limits::new(0.0, vals.len() as f64), Limits::new(0.0, ymax * 1.1))
+                (
+                    Limits::new(0.0, vals.len() as f64),
+                    Limits::new(0.0, ymax * 1.1),
+                )
             }
             SeriesKind::HBar { cats, vals } => {
                 let xmax = vals.iter().cloned().fold(0.0f64, f64::max);
-                (Limits::new(0.0, xmax * 1.1), Limits::new(0.0, cats.len() as f64))
+                (
+                    Limits::new(0.0, xmax * 1.1),
+                    Limits::new(0.0, cats.len() as f64),
+                )
             }
             SeriesKind::Hist { counts, edges } => {
                 let ymax = counts.iter().cloned().fold(0.0f64, f64::max);
@@ -83,13 +127,17 @@ impl Series {
                 }
                 (Limits::new(0.0, n), Limits::new(ymin, ymax))
             }
-            SeriesKind::Heatmap { data: _, rows, cols } => {
-                (
-                    Limits::new(0.0, *cols as f64),
-                    Limits::new(0.0, *rows as f64),
-                )
+            SeriesKind::Heatmap {
+                data: _,
+                rows,
+                cols,
+            } => (
+                Limits::new(0.0, *cols as f64),
+                Limits::new(0.0, *rows as f64),
+            ),
+            SeriesKind::ConfusionMatrix { n, .. } => {
+                (Limits::new(0.0, *n as f64), Limits::new(0.0, *n as f64))
             }
-            SeriesKind::ConfusionMatrix { n, .. } => (Limits::new(0.0, *n as f64), Limits::new(0.0, *n as f64)),
             SeriesKind::Roc { fpr: _, tpr: _ } => (Limits::new(0.0, 1.0), Limits::new(0.0, 1.0)),
             SeriesKind::ErrorBar { x, y, yerr } => {
                 let mut yl = bounds_xy(x, y).1;
@@ -104,20 +152,36 @@ impl Series {
         }
     }
 
-    pub fn render(&self, scene: &mut crate::scene::Scene, xtr: &Transform, ytr: &Transform, color: Rgba) {
+    pub fn render(
+        &self,
+        scene: &mut crate::scene::Scene,
+        xtr: &Transform,
+        ytr: &Transform,
+        color: Rgba,
+    ) {
         match &self.kind {
             SeriesKind::Line { x, y } => render_line(scene, x, y, xtr, ytr, color, false),
             SeriesKind::Scatter { x, y } => render_scatter(scene, x, y, xtr, ytr, color),
-            SeriesKind::Bar { cats: _, vals, mode } => render_bar(scene, vals, xtr, ytr, color, *mode),
+            SeriesKind::Bar {
+                cats: _,
+                vals,
+                mode,
+            } => render_bar(scene, vals, xtr, ytr, color, *mode),
             SeriesKind::HBar { cats: _, vals } => render_hbar(scene, vals, xtr, ytr, color),
-            SeriesKind::Hist { counts, edges } => render_hist(scene, counts, edges, xtr, ytr, color),
+            SeriesKind::Hist { counts, edges } => {
+                render_hist(scene, counts, edges, xtr, ytr, color)
+            }
             SeriesKind::Box { groups } => render_box(scene, groups, xtr, ytr, color),
-            SeriesKind::Heatmap { data, rows, cols } => render_heatmap(scene, data, *rows, *cols, xtr, ytr),
+            SeriesKind::Heatmap { data, rows, cols } => {
+                render_heatmap(scene, data, *rows, *cols, xtr, ytr)
+            }
             SeriesKind::ConfusionMatrix { cm, n, labels } => {
                 render_confusion(scene, cm, *n, labels, xtr, ytr)
             }
             SeriesKind::Roc { fpr, tpr } => render_line(scene, fpr, tpr, xtr, ytr, color, false),
-            SeriesKind::ErrorBar { x, y, yerr } => render_errorbar(scene, x, y, yerr, xtr, ytr, color),
+            SeriesKind::ErrorBar { x, y, yerr } => {
+                render_errorbar(scene, x, y, yerr, xtr, ytr, color)
+            }
             SeriesKind::Step { x, y } => render_line(scene, x, y, xtr, ytr, color, true),
             SeriesKind::Area { x, y } => render_area(scene, x, y, xtr, ytr, color),
             SeriesKind::Pie { labels, vals } => render_pie(scene, labels, vals, xtr, ytr),
@@ -205,7 +269,12 @@ pub fn draw_bar(
     Ok(())
 }
 
-pub fn draw_hbar(ax: &mut Axes, cats: &[String], vals: &[f64], label: Option<&str>) -> PlotResult<()> {
+pub fn draw_hbar(
+    ax: &mut Axes,
+    cats: &[String],
+    vals: &[f64],
+    label: Option<&str>,
+) -> PlotResult<()> {
     require_non_empty(vals, "hbar")?;
     if cats.len() != vals.len() {
         return Err(PlotError::LengthMismatch(format!(
@@ -747,13 +816,13 @@ fn render_area(
     let mut d = String::with_capacity(n * 24);
     d.push_str(&format!("M {} {}", xtr.data_to_px_x(x[0]), y0));
     for i in 0..n {
-        d.push_str(&format!(" L {} {}", xtr.data_to_px_x(x[i]), ytr.data_to_px_y(y[i])));
+        d.push_str(&format!(
+            " L {} {}",
+            xtr.data_to_px_x(x[i]),
+            ytr.data_to_px_y(y[i])
+        ));
     }
-    d.push_str(&format!(
-        " L {} {} Z",
-        xtr.data_to_px_x(x[n - 1]),
-        y0
-    ));
+    d.push_str(&format!(" L {} {} Z", xtr.data_to_px_x(x[n - 1]), y0));
     scene.push(Element::Path {
         d,
         fill: Some(color.with_alpha(0.35)),
@@ -785,9 +854,7 @@ fn render_pie(
         let x2 = cx + r * angle.cos();
         let y2 = cy + r * angle.sin();
         let large = if sweep > std::f64::consts::PI { 1 } else { 0 };
-        let d = format!(
-            "M {cx} {cy} L {x1:.4} {y1:.4} A {r} {r} 0 {large} 1 {x2:.4} {y2:.4} Z"
-        );
+        let d = format!("M {cx} {cy} L {x1:.4} {y1:.4} A {r} {r} 0 {large} 1 {x2:.4} {y2:.4} Z");
         scene.push(Element::Path {
             d,
             fill: Some(categorical(i)),

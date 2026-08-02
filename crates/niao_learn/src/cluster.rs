@@ -114,8 +114,7 @@ fn lloyd(
             if counts[c] == 0 {
                 // reseed empty cluster
                 let idx = rng.gen_range_usize(0, n);
-                new_centers[c * d..(c + 1) * d]
-                    .copy_from_slice(&data[idx * d..(idx + 1) * d]);
+                new_centers[c * d..(c + 1) * d].copy_from_slice(&data[idx * d..(idx + 1) * d]);
             } else {
                 for j in 0..d {
                     new_centers[c * d + j] /= counts[c] as f64;
@@ -155,8 +154,7 @@ impl Estimator for KMeans {
         let mut best_centers = Vec::new();
         let mut best_labels = Vec::new();
         for init in 0..self.n_init.max(1) {
-            let mut rng =
-                StdRng::seed_from_u64(self.random_state.wrapping_add(init as u64 * 7919));
+            let mut rng = StdRng::seed_from_u64(self.random_state.wrapping_add(init as u64 * 7919));
             let centers = kmeans_pp_init(&data, n, d, self.n_clusters, &mut rng);
             let (c, labels, inertia) = lloyd(
                 &data,

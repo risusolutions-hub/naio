@@ -34,10 +34,19 @@ fn num_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> NiaoResult<
 fn noptim_sqrt2_root(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity(args, 0, "noptim_sqrt2_root", span)?;
     let f = |x: f64| x * x - 2.0;
-    let r = root_scalar(f, (0.0, 2.0), RootScalarMethod::Brent, None::<fn(f64) -> f64>, None);
+    let r = root_scalar(
+        f,
+        (0.0, 2.0),
+        RootScalarMethod::Brent,
+        None::<fn(f64) -> f64>,
+        None,
+    );
     let mut m = HashMap::new();
     m.insert("x".to_string(), Value::Float(r.x[0]).ref_cell());
-    m.insert("iterations".to_string(), Value::Int(r.nfev as i64).ref_cell());
+    m.insert(
+        "iterations".to_string(),
+        Value::Int(r.nfev as i64).ref_cell(),
+    );
     Ok(Value::Object(m).ref_cell())
 }
 
@@ -60,14 +69,21 @@ macro_rules! noptim_fns {
 
 noptim_fns![
     ("noptim_sqrt2_root", "sqrt2_root", noptim_sqrt2_root),
-    ("noptim_minimize_scalar", "minimize_scalar", noptim_minimize_scalar),
+    (
+        "noptim_minimize_scalar",
+        "minimize_scalar",
+        noptim_minimize_scalar
+    ),
 ];
 
 pub const MODULE_NAME: &str = "noptim";
 pub const MODULE_PATHS: &[&str] = &["noptim", "std/noptim"];
 
 pub fn builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(f, _, fn_)| (f, fn_)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(f, _, fn_)| (f, fn_))
+        .collect()
 }
 
 pub fn namespace() -> Value {

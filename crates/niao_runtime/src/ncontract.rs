@@ -22,12 +22,21 @@ fn contract_err(span: Span, msg: impl Into<String>) -> RuntimeError {
     RuntimeError::at(span, codes::E3081_NCONTRACT_ERROR, msg.into())
 }
 
-fn arity_range(args: &[ValueRef], min: usize, max: usize, name: &str, span: Span) -> NiaoResult<()> {
+fn arity_range(
+    args: &[ValueRef],
+    min: usize,
+    max: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<()> {
     if args.len() < min || args.len() > max {
         return Err(RuntimeError::at(
             span,
             codes::E3080_NCONTRACT_ARITY,
-            format!("{name}() expects {min}..={max} argument(s), got {}", args.len()),
+            format!(
+                "{name}() expects {min}..={max} argument(s), got {}",
+                args.len()
+            ),
         ));
     }
     Ok(())
@@ -311,12 +320,19 @@ ncontract_fns![
     ("ncontract_require", "require", ncontract_require),
     ("ncontract_ensure", "ensure", ncontract_ensure),
     ("ncontract_check", "check", ncontract_check),
-    ("ncontract_assert_type", "assert_type", ncontract_assert_type),
+    (
+        "ncontract_assert_type",
+        "assert_type",
+        ncontract_assert_type
+    ),
     ("ncontract_invariant", "invariant", ncontract_invariant),
 ];
 
 fn all_builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(flat, _, f)| (flat, f)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(flat, _, f)| (flat, f))
+        .collect()
 }
 
 pub fn namespace() -> Value {
@@ -401,11 +417,9 @@ mod tests {
     #[test]
     fn assert_type_int_and_mismatch() {
         let v = Value::Int(42).ref_cell();
-        let got = ncontract_assert_type(
-            &[v.clone(), Value::String("int".into()).ref_cell()],
-            span(),
-        )
-        .unwrap();
+        let got =
+            ncontract_assert_type(&[v.clone(), Value::String("int".into()).ref_cell()], span())
+                .unwrap();
         assert!(matches!(&*got.borrow(), Value::Int(42)));
 
         let err = ncontract_assert_type(
@@ -450,8 +464,7 @@ mod tests {
         rules.insert("name".to_string(), Value::Object(name_rule).ref_cell());
         rules.insert("age".to_string(), Value::Object(age_rule).ref_cell());
 
-        let result =
-            ncontract_invariant(&[obj, Value::Object(rules).ref_cell()], span()).unwrap();
+        let result = ncontract_invariant(&[obj, Value::Object(rules).ref_cell()], span()).unwrap();
         let result_ref = result.borrow();
         let (ok, err_len) = match &*result_ref {
             Value::Object(map) => {
@@ -480,15 +493,17 @@ mod tests {
 
         let mut name_rule = HashMap::new();
         name_rule.insert("required".to_string(), Value::Bool(true).ref_cell());
-        name_rule.insert("type".to_string(), Value::String("string".into()).ref_cell());
+        name_rule.insert(
+            "type".to_string(),
+            Value::String("string".into()).ref_cell(),
+        );
         let mut age_rule = HashMap::new();
         age_rule.insert("type".to_string(), Value::String("int".into()).ref_cell());
         let mut rules = HashMap::new();
         rules.insert("name".to_string(), Value::Object(name_rule).ref_cell());
         rules.insert("age".to_string(), Value::Object(age_rule).ref_cell());
 
-        let result =
-            ncontract_invariant(&[obj, Value::Object(rules).ref_cell()], span()).unwrap();
+        let result = ncontract_invariant(&[obj, Value::Object(rules).ref_cell()], span()).unwrap();
         let result_ref = result.borrow();
         let (ok, err_len) = match &*result_ref {
             Value::Object(map) => {

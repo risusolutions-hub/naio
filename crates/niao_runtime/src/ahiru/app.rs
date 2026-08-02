@@ -5,9 +5,14 @@ use super::ctx_bridge;
 use super::options::serve_options;
 use super::pool::{clear_pool, global_pool, install_pool, HandlerWorkerPool};
 use super::vm_pool::{clear_vm_pool, vm_pool_active, vm_pool_dispatch};
-use crate::{call_niao_function, quiet_output, resolve_niao_function_by_name, set_quiet_output, Value, ValueRef};
-use ahiru_core::{native_health_handler, native_ping_handler, AhiruApp, AhiruResponse, HandlerFn, HttpMethod,
-    RequestContext, ResponseBody, RouteMeta, SharedDbManager, WsHandlerFn};
+use crate::{
+    call_niao_function, quiet_output, resolve_niao_function_by_name, set_quiet_output, Value,
+    ValueRef,
+};
+use ahiru_core::{
+    native_health_handler, native_ping_handler, AhiruApp, AhiruResponse, HandlerFn, HttpMethod,
+    RequestContext, ResponseBody, RouteMeta, SharedDbManager, WsHandlerFn,
+};
 use niao_ast::Span;
 use niao_errors::codes;
 use std::cell::RefCell;
@@ -72,9 +77,7 @@ impl HandlerRegistry {
     }
 
     fn get(&self, id: u64) -> Option<(ValueRef, Span)> {
-        self.handlers
-            .get(&id)
-            .map(|e| (e.handler.clone(), e.span))
+        self.handlers.get(&id).map(|e| (e.handler.clone(), e.span))
     }
 
     fn vm_index(&self, id: u64) -> Option<u32> {
@@ -151,7 +154,12 @@ pub fn take_app(id: AppHandle) -> Option<AppState> {
     APPS.with(|m| m.borrow_mut().remove(&id))
 }
 
-pub fn with_app_mut<F, R>(id: AppHandle, name: &str, span: Span, f: F) -> Result<R, crate::RuntimeError>
+pub fn with_app_mut<F, R>(
+    id: AppHandle,
+    name: &str,
+    span: Span,
+    f: F,
+) -> Result<R, crate::RuntimeError>
 where
     F: FnOnce(&mut AppState) -> Result<R, String>,
 {
@@ -220,7 +228,11 @@ pub fn response_from_niao(val: &Value) -> Result<AhiruResponse, String> {
     niao_to_response(val)
 }
 
-pub fn mount_native_health(app_id: AppHandle, path: &str, span: Span) -> Result<(), crate::RuntimeError> {
+pub fn mount_native_health(
+    app_id: AppHandle,
+    path: &str,
+    span: Span,
+) -> Result<(), crate::RuntimeError> {
     with_app_mut(app_id, "ahiru_native_mount_health", span, |state| {
         state.app.route(
             HttpMethod::Get,
@@ -235,7 +247,11 @@ pub fn mount_native_health(app_id: AppHandle, path: &str, span: Span) -> Result<
     })
 }
 
-pub fn mount_native_ping(app_id: AppHandle, path: &str, span: Span) -> Result<(), crate::RuntimeError> {
+pub fn mount_native_ping(
+    app_id: AppHandle,
+    path: &str,
+    span: Span,
+) -> Result<(), crate::RuntimeError> {
     with_app_mut(app_id, "ahiru_native_mount_ping", span, |state| {
         state.app.route(
             HttpMethod::Get,
@@ -250,7 +266,11 @@ pub fn mount_native_ping(app_id: AppHandle, path: &str, span: Span) -> Result<()
     })
 }
 
-fn invoke_sync(handler_id: u64, mut ctx: RequestContext, quiet: bool) -> Result<AhiruResponse, String> {
+fn invoke_sync(
+    handler_id: u64,
+    mut ctx: RequestContext,
+    quiet: bool,
+) -> Result<AhiruResponse, String> {
     let (handler, span) = resolve_handler(handler_id)?;
     let prev_quiet = quiet_output();
     if quiet {
@@ -268,7 +288,11 @@ fn invoke_sync(handler_id: u64, mut ctx: RequestContext, quiet: bool) -> Result<
     result
 }
 
-fn invoke_by_id(handler_id: u64, ctx: RequestContext, quiet: bool) -> Result<AhiruResponse, String> {
+fn invoke_by_id(
+    handler_id: u64,
+    ctx: RequestContext,
+    quiet: bool,
+) -> Result<AhiruResponse, String> {
     if vm_pool_active() {
         let vm_index = with_handlers(|r| r.vm_index(handler_id));
         let fields = ctx_bridge::ctx_to_fields(&ctx);
@@ -287,7 +311,11 @@ pub fn make_niao_handler(handler: ValueRef, span: Span) -> HandlerFn {
     let handler_id = with_handlers_mut(|r| r.register(handler, span));
     Arc::new(move |ctx| {
         let handler_id = handler_id;
-        let quiet = ctx.extra.get("quiet_handlers").map(|s| s == "1").unwrap_or(false);
+        let quiet = ctx
+            .extra
+            .get("quiet_handlers")
+            .map(|s| s == "1")
+            .unwrap_or(false);
         if vm_pool_active() {
             let vm_index = with_handlers(|r| r.vm_index(handler_id));
             return Box::pin(async move {
@@ -435,9 +463,7 @@ pub fn ahiru_serve_blocking(id: AppHandle, span: Span) -> Result<(), crate::Runt
     }
     .map_err(|e| runtime_err(span, &e.to_string()))?;
 
-    let result = rt.block_on(async move {
-        state.app.serve(opts).await.map_err(|e| e.to_string())
-    });
+    let result = rt.block_on(async move { state.app.serve(opts).await.map_err(|e| e.to_string()) });
 
     clear_pool();
     clear_vm_pool();

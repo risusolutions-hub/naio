@@ -20,7 +20,9 @@ pub fn mean_value(v: &Value) -> Result<Value, String> {
             if x.is_empty() {
                 return Ok(Value::Float(f64::NAN));
             }
-            Ok(Value::Float(x.iter().map(|&n| n as f64).sum::<f64>() / x.len() as f64))
+            Ok(Value::Float(
+                x.iter().map(|&n| n as f64).sum::<f64>() / x.len() as f64,
+            ))
         }
         Value::FloatArray(x) => Ok(Value::Float(mean_f64(x))),
         _ => Err("mean requires array".into()),
@@ -29,16 +31,24 @@ pub fn mean_value(v: &Value) -> Result<Value, String> {
 
 pub fn min_value(v: &Value) -> Result<Value, String> {
     match v {
-        Value::IntArray(x) => min_i64(x).map(Value::Int).ok_or_else(|| "empty array".into()),
-        Value::FloatArray(x) => min_f64(x).map(Value::Float).ok_or_else(|| "empty array".into()),
+        Value::IntArray(x) => min_i64(x)
+            .map(Value::Int)
+            .ok_or_else(|| "empty array".into()),
+        Value::FloatArray(x) => min_f64(x)
+            .map(Value::Float)
+            .ok_or_else(|| "empty array".into()),
         _ => Err("min requires array".into()),
     }
 }
 
 pub fn max_value(v: &Value) -> Result<Value, String> {
     match v {
-        Value::IntArray(x) => max_i64(x).map(Value::Int).ok_or_else(|| "empty array".into()),
-        Value::FloatArray(x) => max_f64(x).map(Value::Float).ok_or_else(|| "empty array".into()),
+        Value::IntArray(x) => max_i64(x)
+            .map(Value::Int)
+            .ok_or_else(|| "empty array".into()),
+        Value::FloatArray(x) => max_f64(x)
+            .map(Value::Float)
+            .ok_or_else(|| "empty array".into()),
         _ => Err("max requires array".into()),
     }
 }

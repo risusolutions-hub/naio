@@ -1,4 +1,4 @@
-﻿//! Native nerrgen standard library — parse E-code spec files and generate
+//! Native nerrgen standard library — parse E-code spec files and generate
 //! Rust / Niao / Markdown artifacts.
 //!
 //! Import with `import "nerrgen"` (or `import "std/nerrgen"`).
@@ -27,12 +27,21 @@ fn arity(args: &[ValueRef], n: usize, name: &str, span: Span) -> NiaoResult<()> 
     Ok(())
 }
 
-fn arity_range(args: &[ValueRef], min: usize, max: usize, name: &str, span: Span) -> NiaoResult<()> {
+fn arity_range(
+    args: &[ValueRef],
+    min: usize,
+    max: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<()> {
     if args.len() < min || args.len() > max {
         return Err(RuntimeError::at(
             span,
             E3240_NERRGEN_ARITY,
-            format!("{name}() expects {min}..={max} argument(s), got {}", args.len()),
+            format!(
+                "{name}() expects {min}..={max} argument(s), got {}",
+                args.len()
+            ),
         ));
     }
     Ok(())
@@ -137,7 +146,10 @@ fn entry_obj(e: &ErrEntry) -> ValueRef {
     let mut m = HashMap::new();
     m.insert("code".to_string(), Value::Int(e.code as i64).ref_cell());
     m.insert("name".to_string(), Value::String(e.name.clone()).ref_cell());
-    m.insert("message".to_string(), Value::String(e.message.clone()).ref_cell());
+    m.insert(
+        "message".to_string(),
+        Value::String(e.message.clone()).ref_cell(),
+    );
     m.insert("kind".to_string(), Value::String(e.kind.clone()).ref_cell());
     m.insert("line".to_string(), Value::Int(e.line as i64).ref_cell());
     Value::Object(m).ref_cell()
@@ -150,11 +162,7 @@ fn rust_const_name(entry: &ErrEntry) -> String {
 fn gen_rust(entries: &[ErrEntry]) -> String {
     let mut out = String::from("//! Generated error codes — do not edit by hand.\n\n");
     for e in entries {
-        out.push_str(&format!(
-            "/// {} — {}\n",
-            e.message,
-            e.kind
-        ));
+        out.push_str(&format!("/// {} — {}\n", e.message, e.kind));
         out.push_str(&format!(
             "pub const {}: u32 = {};\n\n",
             rust_const_name(e),
@@ -165,10 +173,7 @@ fn gen_rust(entries: &[ErrEntry]) -> String {
     out.push_str("pub fn generated_kind(code: u32) -> Option<&'static str> {\n");
     out.push_str("    match code {\n");
     for e in entries {
-        out.push_str(&format!(
-            "        {} => Some(\"{}\"),\n",
-            e.code, e.kind
-        ));
+        out.push_str(&format!("        {} => Some(\"{}\"),\n", e.code, e.kind));
     }
     out.push_str("        _ => None,\n");
     out.push_str("    }\n");
@@ -303,7 +308,12 @@ fn nerrgen_gen(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
         "rust" => gen_rust(&entries),
         "niao" => gen_niao(&entries),
         "markdown" | "md" => gen_markdown(&entries, "Error codes"),
-        other => return Ok(gen_err(span, format!("unknown format '{other}' (use rust, niao, markdown)"))),
+        other => {
+            return Ok(gen_err(
+                span,
+                format!("unknown format '{other}' (use rust, niao, markdown)"),
+            ))
+        }
     };
     Ok(Value::String(text).ref_cell())
 }
@@ -317,8 +327,14 @@ fn nerrgen_all(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
         "Error codes".into()
     };
     let mut m = HashMap::new();
-    m.insert("rust".to_string(), Value::String(gen_rust(&entries)).ref_cell());
-    m.insert("niao".to_string(), Value::String(gen_niao(&entries)).ref_cell());
+    m.insert(
+        "rust".to_string(),
+        Value::String(gen_rust(&entries)).ref_cell(),
+    );
+    m.insert(
+        "niao".to_string(),
+        Value::String(gen_niao(&entries)).ref_cell(),
+    );
     m.insert(
         "markdown".to_string(),
         Value::String(gen_markdown(&entries, &title)).ref_cell(),
@@ -345,7 +361,10 @@ nerrgen_fns![
 ];
 
 fn all_builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(flat, _, f)| (flat, f)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(flat, _, f)| (flat, f))
+        .collect()
 }
 
 pub fn namespace() -> Value {

@@ -270,7 +270,9 @@ pub fn to_string_pretty(v: &Value, indent: usize) -> String {
 }
 
 pub fn write_value(v: &Value, buf: &mut Vec<u8>) {
-    let mut w = Writer { buf: std::mem::take(buf) };
+    let mut w = Writer {
+        buf: std::mem::take(buf),
+    };
     w.write_value(v);
     *buf = w.buf;
 }

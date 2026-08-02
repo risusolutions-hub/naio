@@ -76,10 +76,18 @@ impl Word2Vec {
         let mut rng = Xoshiro256StarStar::seed_from_u64(self.opts.seed);
 
         self.vectors = (0..n)
-            .map(|_| (0..dim).map(|_| (rng.gen_f64() - 0.5) / dim as f64).collect())
+            .map(|_| {
+                (0..dim)
+                    .map(|_| (rng.gen_f64() - 0.5) / dim as f64)
+                    .collect()
+            })
             .collect();
         self.context_vectors = (0..n)
-            .map(|_| (0..dim).map(|_| (rng.gen_f64() - 0.5) / dim as f64).collect())
+            .map(|_| {
+                (0..dim)
+                    .map(|_| (rng.gen_f64() - 0.5) / dim as f64)
+                    .collect()
+            })
             .collect();
 
         let neg_table = build_negative_table(&self.word_freq, 1_000_000, &mut rng);
@@ -109,10 +117,12 @@ impl Word2Vec {
                         };
                         match self.opts.mode {
                             W2vMode::SkipGram => {
-                                epoch_loss += self.train_pair(center, context, &neg_table, &mut rng);
+                                epoch_loss +=
+                                    self.train_pair(center, context, &neg_table, &mut rng);
                             }
                             W2vMode::Cbow => {
-                                epoch_loss += self.train_cbow(center, context, &neg_table, &mut rng);
+                                epoch_loss +=
+                                    self.train_cbow(center, context, &neg_table, &mut rng);
                             }
                         }
                     }
@@ -247,7 +257,12 @@ impl Word2Vec {
         Ok(scores)
     }
 
-    pub fn analogy(&self, positive: &[&str], negative: &[&str], topn: usize) -> NlpResult<Vec<(String, f64)>> {
+    pub fn analogy(
+        &self,
+        positive: &[&str],
+        negative: &[&str],
+        topn: usize,
+    ) -> NlpResult<Vec<(String, f64)>> {
         if !self.trained {
             return Err(NlpError::NotFitted);
         }
@@ -318,12 +333,30 @@ mod tests {
 
     fn toy_corpus() -> Vec<Vec<String>> {
         vec![
-            vec!["king", "queen", "royal", "castle"].into_iter().map(String::from).collect(),
-            vec!["king", "prince", "royal", "throne"].into_iter().map(String::from).collect(),
-            vec!["queen", "princess", "royal", "castle"].into_iter().map(String::from).collect(),
-            vec!["man", "woman", "child", "family"].into_iter().map(String::from).collect(),
-            vec!["man", "worker", "job", "office"].into_iter().map(String::from).collect(),
-            vec!["woman", "worker", "job", "office"].into_iter().map(String::from).collect(),
+            vec!["king", "queen", "royal", "castle"]
+                .into_iter()
+                .map(String::from)
+                .collect(),
+            vec!["king", "prince", "royal", "throne"]
+                .into_iter()
+                .map(String::from)
+                .collect(),
+            vec!["queen", "princess", "royal", "castle"]
+                .into_iter()
+                .map(String::from)
+                .collect(),
+            vec!["man", "woman", "child", "family"]
+                .into_iter()
+                .map(String::from)
+                .collect(),
+            vec!["man", "worker", "job", "office"]
+                .into_iter()
+                .map(String::from)
+                .collect(),
+            vec!["woman", "worker", "job", "office"]
+                .into_iter()
+                .map(String::from)
+                .collect(),
         ]
     }
 
@@ -345,7 +378,10 @@ mod tests {
         let words: Vec<_> = sim.iter().map(|(w, _)| w.as_str()).collect();
         // Co-occurring royalty terms should rank highly after training.
         assert!(
-            words.iter().any(|w| matches!(*w, "queen" | "prince" | "royal" | "princess" | "castle" | "throne")),
+            words.iter().any(|w| matches!(
+                *w,
+                "queen" | "prince" | "royal" | "princess" | "castle" | "throne"
+            )),
             "neighbors were {words:?}"
         );
     }

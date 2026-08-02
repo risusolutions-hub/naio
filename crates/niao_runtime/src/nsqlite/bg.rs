@@ -4,13 +4,20 @@ use super::common::*;
 use super::handles::{apply_default_pragmas, open_connection};
 use super::query::{exec_on_conn, parse_row_format, query_on_conn, RowFormat};
 use super::types::value_to_async;
-use crate::async_tasks::{spawn_async, task_done, task_result_value, task_wait_loop, with_task, AsyncValue};
+use crate::async_tasks::{
+    spawn_async, task_done, task_result_value, task_wait_loop, with_task, AsyncValue,
+};
 use crate::{error_value, NiaoResult, RuntimeError, Value, ValueRef};
 use niao_ast::Span;
 use niao_errors::codes;
 
 fn nsqlite_async_error(span: Span, msg: impl Into<String>) -> ValueRef {
-    error_value(codes::E1701_NSQLITE_ERROR, "nsqlite_error", msg.into(), span)
+    error_value(
+        codes::E1701_NSQLITE_ERROR,
+        "nsqlite_error",
+        msg.into(),
+        span,
+    )
 }
 
 fn conn_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> NiaoResult<u64> {
@@ -128,7 +135,14 @@ pub fn nsqlite_task_result(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef
         codes::E1705_NSQLITE_TASK_NOT_FOUND,
         "nsqlite task cancelled",
         |s, m| nsqlite_async_error(s, m),
-        |state| Ok(task_result_value(state, span, "nsqlite task cancelled", |s, m| nsqlite_async_error(s, m))),
+        |state| {
+            Ok(task_result_value(
+                state,
+                span,
+                "nsqlite task cancelled",
+                |s, m| nsqlite_async_error(s, m),
+            ))
+        },
     )
 }
 

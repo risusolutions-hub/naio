@@ -11,13 +11,21 @@ use niao_ml::gnn::{GcnLayer, GraphSageLayer};
 use std::cell::RefCell;
 use std::rc::Rc;
 
-fn graph_from_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> Result<Rc<RefCell<NativeDs>>, RuntimeError> {
+fn graph_from_arg(
+    args: &[ValueRef],
+    idx: usize,
+    name: &str,
+    span: Span,
+) -> Result<Rc<RefCell<NativeDs>>, RuntimeError> {
     match &*args[idx].borrow() {
         Value::Native(rc) => Ok(rc.clone()),
         other => Err(RuntimeError::at(
             span,
             codes::E1974_NML_TYPE,
-            format!("{name}() expects graph (Native DSA), got {}", other.type_name()),
+            format!(
+                "{name}() expects graph (Native DSA), got {}",
+                other.type_name()
+            ),
         )),
     }
 }
@@ -53,7 +61,10 @@ pub fn nml_graph_from_dsa(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef>
                 return Err(RuntimeError::at(
                     span,
                     codes::E1974_NML_TYPE,
-                    format!("nml_graph_from_dsa() expects graph, got {}", other.kind_name()),
+                    format!(
+                        "nml_graph_from_dsa() expects graph, got {}",
+                        other.kind_name()
+                    ),
                 ));
             }
         }

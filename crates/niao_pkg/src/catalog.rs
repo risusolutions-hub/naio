@@ -319,8 +319,9 @@ pub fn remote_libs() -> &'static [&'static str] {
 
 /// Alias used by install code.
 pub const STANDARD_LIBS: &[&str] = &[
-    "core", "dsa", "json", "io", "re", "net", "parallel", "time", "nsqlite", "npg", "nmongo", "nos", "nenv", "ncl", "nml", "nvis",
-    "nstr", "nmath", "nnum", "nframe", "nstats", "noptim", "nplot", "nrand", "nfmt", "nlog", "nargs", "ntest", "ncache", "nvalid", "ncolor", "ahiru",
+    "core", "dsa", "json", "io", "re", "net", "parallel", "time", "nsqlite", "npg", "nmongo",
+    "nos", "nenv", "ncl", "nml", "nvis", "nstr", "nmath", "nnum", "nframe", "nstats", "noptim",
+    "nplot", "nrand", "nfmt", "nlog", "nargs", "ntest", "ncache", "nvalid", "ncolor", "ahiru",
 ];
 
 /// Map user-facing names (e.g. `ahiru-server`) to catalog lib names (`ahiru`).

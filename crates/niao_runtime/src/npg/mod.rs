@@ -13,33 +13,32 @@ mod stmt;
 pub(crate) mod types;
 
 use crate::{error_from_runtime, error_value, NativeFn, NiaoResult, RuntimeError, Value, ValueRef};
+use bg::{
+    npg_async_exec, npg_async_query, npg_task_cancel, npg_task_done, npg_task_result, npg_task_wait,
+};
 use common::*;
 use connection::{
     npg_begin, npg_close, npg_commit, npg_configure, npg_connect, npg_connect_opts, npg_conninfo,
     npg_escape_literal, npg_is_in_transaction, npg_ping, npg_quote_ident, npg_rollback,
     npg_rollback_to, npg_savepoint, npg_server_version, npg_version,
 };
-use bg::{
-    npg_async_exec, npg_async_query, npg_task_cancel, npg_task_done, npg_task_result,
-    npg_task_wait,
-};
+use niao_ast::Span;
+use niao_errors::codes;
 use pg::{
     npg_advisory_lock, npg_advisory_unlock, npg_copy_from, npg_listen, npg_notify, npg_poll_notify,
     npg_unlisten,
 };
 use pool::{npg_pool, npg_pool_close, npg_pool_get, npg_pool_status};
-use stmt::{
-    npg_bind, npg_finalize, npg_prepare, npg_stmt_exec, npg_stmt_query, npg_stmt_reset,
-};
-use niao_ast::Span;
-use niao_errors::codes;
 use query::{
     batch_on_conn, exec_on_conn, insert_on_conn, query_column_on_conn, query_on_conn,
     query_row_on_conn, query_value_on_conn, RowFormat,
 };
-use schema::{list_indexes, list_tables, parse_migrations, run_migrations, table_exists, table_info};
+use schema::{
+    list_indexes, list_tables, parse_migrations, run_migrations, table_exists, table_info,
+};
 use std::collections::HashMap;
 use std::rc::Rc;
+use stmt::{npg_bind, npg_finalize, npg_prepare, npg_stmt_exec, npg_stmt_query, npg_stmt_reset};
 
 fn npg_error(span: Span, msg: impl Into<String>) -> ValueRef {
     error_value(codes::E1901_NPG_ERROR, "npg_error", msg.into(), span)
@@ -62,9 +61,11 @@ fn npg_exec(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     } else {
         Vec::new()
     };
-    handles::with_conn_mut(id, "npg_exec", span, |handle| exec_on_conn(handle, &sql, &params))
-        .map(|n| ok_int(n as i64))
-        .or_else(|e| Ok(error_from_runtime(&e)))
+    handles::with_conn_mut(id, "npg_exec", span, |handle| {
+        exec_on_conn(handle, &sql, &params)
+    })
+    .map(|n| ok_int(n as i64))
+    .or_else(|e| Ok(error_from_runtime(&e)))
 }
 
 fn npg_exec_many(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
@@ -72,10 +73,15 @@ fn npg_exec_many(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let id = conn_arg(args, 0, "npg_exec_many", span)?;
     let statements = sql_list_arg(args, 1, "npg_exec_many", span)?;
     handles::with_conn_mut(id, "npg_exec_many", span, |handle| {
-        let mut trans = handle.client_mut().transaction().map_err(|e| e.to_string())?;
+        let mut trans = handle
+            .client_mut()
+            .transaction()
+            .map_err(|e| e.to_string())?;
         let mut count = 0i64;
         for sql in &statements {
-            count += trans.execute(sql.as_str(), &[]).map_err(|e| e.to_string())? as i64;
+            count += trans
+                .execute(sql.as_str(), &[])
+                .map_err(|e| e.to_string())? as i64;
         }
         trans.commit().map_err(|e| e.to_string())?;
         Ok(count)
@@ -104,11 +110,16 @@ fn npg_table_exists(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
             string_arg(args, 2, "npg_table_exists", span)?,
         )
     } else {
-        ("public".to_string(), string_arg(args, 1, "npg_table_exists", span)?)
+        (
+            "public".to_string(),
+            string_arg(args, 1, "npg_table_exists", span)?,
+        )
     };
-    handles::with_conn_mut(id, "npg_table_exists", span, |handle| table_exists(handle, &schema, &name))
-        .map(ok_bool)
-        .or_else(|e| Ok(error_from_runtime(&e)))
+    handles::with_conn_mut(id, "npg_table_exists", span, |handle| {
+        table_exists(handle, &schema, &name)
+    })
+    .map(ok_bool)
+    .or_else(|e| Ok(error_from_runtime(&e)))
 }
 
 fn npg_list_tables(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
@@ -121,7 +132,12 @@ fn npg_list_tables(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     };
     handles::with_conn_mut(id, "npg_list_tables", span, |handle| {
         list_tables(handle, &schema).map(|names| {
-            Value::Array(names.into_iter().map(|n| Value::String(n).ref_cell()).collect())
+            Value::Array(
+                names
+                    .into_iter()
+                    .map(|n| Value::String(n).ref_cell())
+                    .collect(),
+            )
         })
     })
     .map(|v| v.ref_cell())
@@ -137,7 +153,10 @@ fn npg_table_info(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
             string_arg(args, 2, "npg_table_info", span)?,
         )
     } else {
-        ("public".to_string(), string_arg(args, 1, "npg_table_info", span)?)
+        (
+            "public".to_string(),
+            string_arg(args, 1, "npg_table_info", span)?,
+        )
     };
     handles::with_conn_mut(id, "npg_table_info", span, |handle| {
         table_info(handle, &schema, &table).map(Value::Array)
@@ -180,9 +199,11 @@ fn npg_query(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     } else {
         (Vec::new(), RowFormat::Object)
     };
-    handles::with_conn_mut(id, "npg_query", span, |handle| query_on_conn(handle, &sql, &params, format))
-        .map(|v| v.ref_cell())
-        .or_else(|e| Ok(error_from_runtime(&e)))
+    handles::with_conn_mut(id, "npg_query", span, |handle| {
+        query_on_conn(handle, &sql, &params, format)
+    })
+    .map(|v| v.ref_cell())
+    .or_else(|e| Ok(error_from_runtime(&e)))
 }
 
 fn npg_query_row(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
@@ -194,9 +215,11 @@ fn npg_query_row(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     } else {
         Vec::new()
     };
-    handles::with_conn_mut(id, "npg_query_row", span, |handle| query_row_on_conn(handle, &sql, &params))
-        .map(|v| v.ref_cell())
-        .or_else(|e| Ok(error_from_runtime(&e)))
+    handles::with_conn_mut(id, "npg_query_row", span, |handle| {
+        query_row_on_conn(handle, &sql, &params)
+    })
+    .map(|v| v.ref_cell())
+    .or_else(|e| Ok(error_from_runtime(&e)))
 }
 
 fn npg_query_value(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
@@ -271,9 +294,11 @@ fn npg_batch(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
             ));
         }
     };
-    handles::with_conn_mut(id, "npg_batch", span, |handle| batch_on_conn(handle, &sql, &rows))
-        .map(|n| ok_int(n as i64))
-        .or_else(|e| Ok(error_from_runtime(&e)))
+    handles::with_conn_mut(id, "npg_batch", span, |handle| {
+        batch_on_conn(handle, &sql, &rows)
+    })
+    .map(|n| ok_int(n as i64))
+    .or_else(|e| Ok(error_from_runtime(&e)))
 }
 
 fn npg_insert(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
@@ -294,13 +319,7 @@ fn npg_insert(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     };
     let schema = optional_string_arg(args, 3, "npg_insert", span)?;
     handles::with_conn_mut(id, "npg_insert", span, |handle| {
-        insert_on_conn(
-            handle,
-            schema.as_deref(),
-            &table,
-            &data,
-            span,
-        )
+        insert_on_conn(handle, schema.as_deref(), &table, &data, span)
     })
     .map(|v| v.ref_cell())
     .or_else(|e| Ok(error_from_runtime(&e)))
@@ -375,7 +394,11 @@ pub fn namespace() -> Value {
     bind(&mut map, "configure", Rc::new(npg_configure));
     bind(&mut map, "conninfo", Rc::new(npg_conninfo));
     bind(&mut map, "server_version", Rc::new(npg_server_version));
-    bind(&mut map, "is_in_transaction", Rc::new(npg_is_in_transaction));
+    bind(
+        &mut map,
+        "is_in_transaction",
+        Rc::new(npg_is_in_transaction),
+    );
     bind(&mut map, "pool", Rc::new(npg_pool));
     bind(&mut map, "pool_close", Rc::new(npg_pool_close));
     bind(&mut map, "pool_get", Rc::new(npg_pool_get));

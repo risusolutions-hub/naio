@@ -39,8 +39,10 @@ impl ZipArchive {
             let comp_size = u32::from_le_bytes(data[pos + 20..pos + 24].try_into().unwrap()) as u64;
             let uncomp_size =
                 u32::from_le_bytes(data[pos + 24..pos + 28].try_into().unwrap()) as u64;
-            let name_len = u16::from_le_bytes(data[pos + 28..pos + 30].try_into().unwrap()) as usize;
-            let extra_len = u16::from_le_bytes(data[pos + 30..pos + 32].try_into().unwrap()) as usize;
+            let name_len =
+                u16::from_le_bytes(data[pos + 28..pos + 30].try_into().unwrap()) as usize;
+            let extra_len =
+                u16::from_le_bytes(data[pos + 30..pos + 32].try_into().unwrap()) as usize;
             let comment_len =
                 u16::from_le_bytes(data[pos + 32..pos + 34].try_into().unwrap()) as usize;
             let local_off = u32::from_le_bytes(data[pos + 42..pos + 46].try_into().unwrap()) as u64;
@@ -89,14 +91,7 @@ impl ZipArchive {
                 ZipMethod::Deflate => (8u16, deflate(data)?),
             };
             let crc = crc32::crc32(data);
-            write_local(
-                &mut out,
-                name,
-                method_id,
-                &payload,
-                data.len() as u32,
-                crc,
-            )?;
+            write_local(&mut out, name, method_id, &payload, data.len() as u32, crc)?;
             write_central(
                 &mut central,
                 name,
@@ -110,14 +105,14 @@ impl ZipArchive {
         let cd_start = out.len() as u32;
         out.extend_from_slice(&central);
         let cd_size = out.len() as u32 - cd_start;
-    out.extend_from_slice(&SIG_EOCD.to_le_bytes());
-    out.extend_from_slice(&0u16.to_le_bytes());
-    out.extend_from_slice(&0u16.to_le_bytes());
-    out.extend_from_slice(&(entries.len() as u16).to_le_bytes());
-    out.extend_from_slice(&(entries.len() as u16).to_le_bytes());
-    out.extend_from_slice(&cd_size.to_le_bytes());
-    out.extend_from_slice(&cd_start.to_le_bytes());
-    out.extend_from_slice(&0u16.to_le_bytes());
+        out.extend_from_slice(&SIG_EOCD.to_le_bytes());
+        out.extend_from_slice(&0u16.to_le_bytes());
+        out.extend_from_slice(&0u16.to_le_bytes());
+        out.extend_from_slice(&(entries.len() as u16).to_le_bytes());
+        out.extend_from_slice(&(entries.len() as u16).to_le_bytes());
+        out.extend_from_slice(&cd_size.to_le_bytes());
+        out.extend_from_slice(&cd_start.to_le_bytes());
+        out.extend_from_slice(&0u16.to_le_bytes());
         Ok(out)
     }
 }
@@ -131,8 +126,7 @@ pub enum ZipMethod {
 fn find_eocd(data: &[u8]) -> Result<usize> {
     let start = data.len().saturating_sub(65557);
     for i in (start..data.len()).rev() {
-        if i + 4 <= data.len()
-            && u32::from_le_bytes(data[i..i + 4].try_into().unwrap()) == SIG_EOCD
+        if i + 4 <= data.len() && u32::from_le_bytes(data[i..i + 4].try_into().unwrap()) == SIG_EOCD
         {
             return Ok(i);
         }

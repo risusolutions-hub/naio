@@ -43,8 +43,14 @@ fn avalanche_single_bit_flips() {
         "avalanche mean {mean} out of band"
     );
     // No flip may leave the hash nearly unchanged or nearly fully inverted.
-    assert!(min_changed >= 12, "some flip barely changed output: {min_changed}");
-    assert!(max_changed <= 52, "some flip nearly inverted output: {max_changed}");
+    assert!(
+        min_changed >= 12,
+        "some flip barely changed output: {min_changed}"
+    );
+    assert!(
+        max_changed <= 52,
+        "some flip nearly inverted output: {max_changed}"
+    );
 }
 
 /// Across many inputs, every output bit should be set roughly half the time
@@ -83,7 +89,10 @@ fn sequential_keys_low_collision() {
     let expected = N as f64 / BUCKETS as f64;
     let max = *counts.iter().max().unwrap() as f64;
     // No bucket should be wildly overloaded (uniform-ish).
-    assert!(max < 3.0 * expected, "max bucket {max} vs expected {expected}");
+    assert!(
+        max < 3.0 * expected,
+        "max bucket {max} vs expected {expected}"
+    );
 }
 
 /// Two independently constructed `RandomState`s should hash the same key to

@@ -105,7 +105,10 @@ fn gini(y: &[f64], indices: &[usize], classes: &[f64]) -> f64 {
     let n = indices.len() as f64;
     let mut imp = 1.0;
     for &c in classes {
-        let cnt = indices.iter().filter(|&&i| (y[i] - c).abs() < 1e-12).count() as f64;
+        let cnt = indices
+            .iter()
+            .filter(|&&i| (y[i] - c).abs() < 1e-12)
+            .count() as f64;
         let p = cnt / n;
         imp -= p * p;
     }
@@ -119,7 +122,10 @@ fn entropy(y: &[f64], indices: &[usize], classes: &[f64]) -> f64 {
     let n = indices.len() as f64;
     let mut e = 0.0;
     for &c in classes {
-        let cnt = indices.iter().filter(|&&i| (y[i] - c).abs() < 1e-12).count() as f64;
+        let cnt = indices
+            .iter()
+            .filter(|&&i| (y[i] - c).abs() < 1e-12)
+            .count() as f64;
         if cnt > 0.0 {
             let p = cnt / n;
             e -= p * p.ln();
@@ -140,7 +146,10 @@ fn majority(y: &[f64], indices: &[usize], classes: &[f64]) -> (f64, usize) {
     let mut best_i = 0;
     let mut best_c = 0usize;
     for (ci, &c) in classes.iter().enumerate() {
-        let cnt = indices.iter().filter(|&&i| (y[i] - c).abs() < 1e-12).count();
+        let cnt = indices
+            .iter()
+            .filter(|&&i| (y[i] - c).abs() < 1e-12)
+            .count();
         if cnt > best_c {
             best_c = cnt;
             best_i = ci;
@@ -180,10 +189,8 @@ fn build_clf(
         vals.dedup_by(|a, b| (*a - *b).abs() < 1e-15);
         for w in vals.windows(2) {
             let thr = 0.5 * (w[0] + w[1]);
-            let (left, right): (Vec<_>, Vec<_>) = indices
-                .iter()
-                .copied()
-                .partition(|&i| x[i * d + f] <= thr);
+            let (left, right): (Vec<_>, Vec<_>) =
+                indices.iter().copied().partition(|&i| x[i * d + f] <= thr);
             if left.len() < min_leaf || right.len() < min_leaf {
                 continue;
             }
@@ -379,7 +386,10 @@ fn build_reg(
     let n = indices.len();
     let val = mean_y(y, indices);
     if n < min_split || depth >= max_depth {
-        return Node::Leaf { value: val, class: 0 };
+        return Node::Leaf {
+            value: val,
+            class: 0,
+        };
     }
     let parent = mse_imp(y, indices);
     let mut best_gain = 0.0f64;
@@ -411,16 +421,33 @@ fn build_reg(
         }
     }
     if best_gain <= 1e-15 {
-        return Node::Leaf { value: val, class: 0 };
+        return Node::Leaf {
+            value: val,
+            class: 0,
+        };
     }
     Node::Split {
         feature: best_feat,
         threshold: best_thr,
         left: Box::new(build_reg(
-            x, y, &best_left, d, depth + 1, max_depth, min_split, min_leaf,
+            x,
+            y,
+            &best_left,
+            d,
+            depth + 1,
+            max_depth,
+            min_split,
+            min_leaf,
         )),
         right: Box::new(build_reg(
-            x, y, &best_right, d, depth + 1, max_depth, min_split, min_leaf,
+            x,
+            y,
+            &best_right,
+            d,
+            depth + 1,
+            max_depth,
+            min_split,
+            min_leaf,
         )),
     }
 }

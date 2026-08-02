@@ -85,8 +85,9 @@ fn encode(s: &str) -> String {
     let mut out = String::with_capacity(s.len());
     for b in s.bytes() {
         match b {
-            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9'
-            | b'-' | b'_' | b'.' | b'~' | b',' | b'*' => out.push(b as char),
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' | b',' | b'*' => {
+                out.push(b as char)
+            }
             _ => out.push_str(&format!("%{b:02X}")),
         }
     }
@@ -157,7 +158,10 @@ mod tests {
     #[test]
     fn plain_url_no_params() {
         let q = qh("users");
-        assert_eq!(q.rest_url("https://abc.supabase.co"), "https://abc.supabase.co/rest/v1/users");
+        assert_eq!(
+            q.rest_url("https://abc.supabase.co"),
+            "https://abc.supabase.co/rest/v1/users"
+        );
     }
 
     #[test]
@@ -165,7 +169,11 @@ mod tests {
         let mut q = qh("users");
         q.select_cols = "id,name,email".to_string();
         let url = q.rest_url("https://abc.supabase.co");
-        assert!(url.contains("select=id%2Cname%2Cemail") || url.contains("select=id,name,email") || url.contains("select=id"));
+        assert!(
+            url.contains("select=id%2Cname%2Cemail")
+                || url.contains("select=id,name,email")
+                || url.contains("select=id")
+        );
         // Just verify select param is present
         assert!(url.contains("select="));
     }

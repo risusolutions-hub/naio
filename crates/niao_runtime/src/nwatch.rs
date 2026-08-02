@@ -155,13 +155,7 @@ fn nwatch_file(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let last_mtime = read_mtime(&path);
     let id = new_handle();
     WATCHES.with(|w| {
-        w.borrow_mut().insert(
-            id,
-            Watch::File {
-                path,
-                last_mtime,
-            },
-        );
+        w.borrow_mut().insert(id, Watch::File { path, last_mtime });
     });
     Ok(Value::Int(id).ref_cell())
 }
@@ -196,10 +190,7 @@ fn nwatch_poll(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
             *last_mtime = current;
             Ok(changed)
         }
-        Watch::Value { .. } => Err(watch_err(
-            span,
-            "nwatch_poll() expects a file watch handle",
-        )),
+        Watch::Value { .. } => Err(watch_err(span, "nwatch_poll() expects a file watch handle")),
     })? {
         Ok(b) => bool_val(b),
         Err(e) => Ok(e),
@@ -330,7 +321,10 @@ nwatch_fns![
 ];
 
 fn all_builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(flat, _, f)| (flat, f)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(flat, _, f)| (flat, f))
+        .collect()
 }
 
 pub fn namespace() -> Value {
@@ -409,7 +403,9 @@ mod tests {
             Value::Bool(true)
         ));
         let closed = nwatch_take_changed(&[h], span()).unwrap();
-        assert!(matches!(&*closed.borrow(), Value::Error(e) if e.code == E3103_NWATCH_INVALID_HANDLE));
+        assert!(
+            matches!(&*closed.borrow(), Value::Error(e) if e.code == E3103_NWATCH_INVALID_HANDLE)
+        );
     }
 
     #[test]

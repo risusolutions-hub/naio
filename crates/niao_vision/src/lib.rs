@@ -27,13 +27,14 @@ pub use io::{imdecode, imencode, imread, imwrite};
 pub use loader::{collate_normalize, shuffled_indices, VisionDataLoader};
 pub use ops::{
     box_blur, canny, connected_components, convolve, dilate, equalize_hist, erode, gaussian_blur,
-    histogram, integral_image, median_blur, morphology_close, morphology_open, pyramid_down, scharr,
-    sobel, threshold_adaptive, threshold_binary, threshold_otsu,
+    histogram, integral_image, median_blur, morphology_close, morphology_open, pyramid_down,
+    scharr, sobel, threshold_adaptive, threshold_binary, threshold_otsu,
 };
 pub use transform::{
-    center_crop, crop, flip_horizontal, flip_vertical, normalize, pad, resize, rotate, to_grayscale,
-    to_tensor, warp_affine, warp_perspective, CenterCrop, ColorJitter, Compose, GaussianBlur,
-    Interp, RandomErasing, RandomHorizontalFlip, RandomResizedCrop, Resize, Transform,
+    center_crop, crop, flip_horizontal, flip_vertical, normalize, pad, resize, rotate,
+    to_grayscale, to_tensor, warp_affine, warp_perspective, CenterCrop, ColorJitter, Compose,
+    GaussianBlur, Interp, RandomErasing, RandomHorizontalFlip, RandomResizedCrop, Resize,
+    Transform,
 };
 
 #[cfg(test)]
@@ -112,7 +113,10 @@ mod tests {
     fn flip_crop_exact() {
         let img = checkerboard(20, 30);
         let f = flip_horizontal(&img);
-        assert_eq!(f.data[0..3], img.data[((0) * 30 + 29) * 3..((0) * 30 + 29) * 3 + 3]);
+        assert_eq!(
+            f.data[0..3],
+            img.data[((0) * 30 + 29) * 3..((0) * 30 + 29) * 3 + 3]
+        );
         let c = crop(&img, 2, 3, 8, 10).unwrap();
         assert_eq!(c.height, 8);
         assert_eq!(c.width, 10);

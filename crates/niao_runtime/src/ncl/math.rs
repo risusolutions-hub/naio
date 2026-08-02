@@ -24,7 +24,9 @@ pub fn array_add(a: &Value, b: &Value) -> Result<Value, String> {
             Ok(Value::FloatArray(scalar_mul_f64(&xf, *k)))
         }
         (Value::FloatArray(x), Value::Float(k)) => Ok(Value::FloatArray(scalar_mul_f64(x, *k))),
-        (Value::FloatArray(x), Value::Int(k)) => Ok(Value::FloatArray(scalar_mul_f64(x, *k as f64))),
+        (Value::FloatArray(x), Value::Int(k)) => {
+            Ok(Value::FloatArray(scalar_mul_f64(x, *k as f64)))
+        }
         _ => Err("add: unsupported types".into()),
     }
 }

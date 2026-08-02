@@ -266,7 +266,9 @@ impl<'a> Lexer<'a> {
             }
             if ch == '\\' {
                 self.advance();
-                let escaped = self.advance().ok_or(LexError::UnterminatedString { line, col })?;
+                let escaped = self
+                    .advance()
+                    .ok_or(LexError::UnterminatedString { line, col })?;
                 match escaped {
                     'n' => s.push('\n'),
                     't' => s.push('\t'),
@@ -289,21 +291,18 @@ impl<'a> Lexer<'a> {
         if first == '0' && matches!(self.peek(), Some('x' | 'X')) {
             self.advance();
             if !self.peek().is_some_and(|c| c.is_ascii_hexdigit()) {
-                return Err(LexError::UnexpectedChar {
-                    ch: 'x',
-                    line,
-                    col,
-                });
+                return Err(LexError::UnexpectedChar { ch: 'x', line, col });
             }
             while self.peek().is_some_and(|c| c.is_ascii_hexdigit()) {
                 self.advance();
             }
             let text = &self.source[start..self.pos];
-            let val = i64::from_str_radix(&text[2..], 16).map_err(|_| LexError::UnexpectedChar {
-                ch: first,
-                line,
-                col,
-            })?;
+            let val =
+                i64::from_str_radix(&text[2..], 16).map_err(|_| LexError::UnexpectedChar {
+                    ch: first,
+                    line,
+                    col,
+                })?;
             return Ok(TokenKind::Int(val));
         }
 
@@ -332,7 +331,12 @@ impl<'a> Lexer<'a> {
         Ok(TokenKind::Int(val))
     }
 
-    fn read_ident(&mut self, _first: char, _line: usize, _col: usize) -> Result<TokenKind, LexError> {
+    fn read_ident(
+        &mut self,
+        _first: char,
+        _line: usize,
+        _col: usize,
+    ) -> Result<TokenKind, LexError> {
         let start = self.pos - 1;
         while self
             .peek()
@@ -459,10 +463,7 @@ impl<'a> Lexer<'a> {
             }
             Some('0'..='9') => {
                 let mut idx = 0;
-                while self
-                    .peek_ahead(idx)
-                    .is_some_and(|c| c.is_ascii_digit())
-                {
+                while self.peek_ahead(idx).is_some_and(|c| c.is_ascii_digit()) {
                     idx += 1;
                 }
                 !self
@@ -483,7 +484,10 @@ impl<'a> Lexer<'a> {
     }
 
     fn prev_non_whitespace_before(&self, pos: usize) -> Option<char> {
-        self.source[..pos].chars().rev().find(|c| !c.is_whitespace())
+        self.source[..pos]
+            .chars()
+            .rev()
+            .find(|c| !c.is_whitespace())
     }
 
     fn peek_ahead(&mut self, n: usize) -> Option<char> {
@@ -503,14 +507,18 @@ mod tests {
     fn lexes_hello() {
         let tokens = lex(r#"fn main() { print("hi") }"#).unwrap();
         assert!(tokens.iter().any(|t| matches!(&t.kind, TokenKind::Fn)));
-        assert!(tokens.iter().any(|t| matches!(&t.kind, TokenKind::Ident(s) if s == "main")));
+        assert!(tokens
+            .iter()
+            .any(|t| matches!(&t.kind, TokenKind::Ident(s) if s == "main")));
     }
 
     #[test]
     fn lexes_hex_integers() {
         let tokens = lex(r#"let b = [0x48, 0x69];"#).unwrap();
         assert!(tokens.iter().any(|t| matches!(&t.kind, TokenKind::Int(72))));
-        assert!(tokens.iter().any(|t| matches!(&t.kind, TokenKind::Int(105))));
+        assert!(tokens
+            .iter()
+            .any(|t| matches!(&t.kind, TokenKind::Int(105))));
     }
 
     #[test]
@@ -535,8 +543,12 @@ mod tests {
     fn slash_slash_in_comment_not_floor_div() {
         let src = "// 1M int benchmark — packed\nlet mid = n // 2\n";
         let tokens = lex(src).unwrap();
-        assert!(tokens.iter().any(|t| matches!(&t.kind, TokenKind::FloorDiv)));
-        assert!(!tokens.iter().any(|t| matches!(&t.kind, TokenKind::Ident(s) if s == "M")));
+        assert!(tokens
+            .iter()
+            .any(|t| matches!(&t.kind, TokenKind::FloorDiv)));
+        assert!(!tokens
+            .iter()
+            .any(|t| matches!(&t.kind, TokenKind::Ident(s) if s == "M")));
     }
 
     #[test]
@@ -549,7 +561,9 @@ mod tests {
     fn trailing_numeric_annotation_is_comment() {
         let src = "print(list_get(l, 1))          // 2\nlet mid = n // 2\n";
         let tokens = lex(src).unwrap();
-        assert!(tokens.iter().any(|t| matches!(&t.kind, TokenKind::FloorDiv)));
+        assert!(tokens
+            .iter()
+            .any(|t| matches!(&t.kind, TokenKind::FloorDiv)));
         assert_eq!(
             tokens
                 .iter()

@@ -69,15 +69,28 @@ impl Default for Validation {
     }
 }
 
-pub fn sign_hs256(header_json: &str, payload_json: &str, secret: &[u8]) -> Result<String, JwtError> {
+pub fn sign_hs256(
+    header_json: &str,
+    payload_json: &str,
+    secret: &[u8],
+) -> Result<String, JwtError> {
     sign(Algorithm::HS256, header_json, payload_json, secret)
 }
 
-pub fn sign_hs512(header_json: &str, payload_json: &str, secret: &[u8]) -> Result<String, JwtError> {
+pub fn sign_hs512(
+    header_json: &str,
+    payload_json: &str,
+    secret: &[u8],
+) -> Result<String, JwtError> {
     sign(Algorithm::HS512, header_json, payload_json, secret)
 }
 
-pub fn sign(algo: Algorithm, header_json: &str, payload_json: &str, secret: &[u8]) -> Result<String, JwtError> {
+pub fn sign(
+    algo: Algorithm,
+    header_json: &str,
+    payload_json: &str,
+    secret: &[u8],
+) -> Result<String, JwtError> {
     let header_b64 = encode_url_safe_no_pad(header_json.as_bytes());
     let payload_b64 = encode_url_safe_no_pad(payload_json.as_bytes());
     let signing_input = format!("{header_b64}.{payload_b64}");
@@ -113,7 +126,10 @@ pub fn decode_unverified(token: &str) -> Result<(Value, Value), JwtError> {
     Ok((header, payload))
 }
 
-fn split_and_verify_sig(token: &str, secret: &[u8]) -> Result<(String, String, Vec<u8>, Algorithm), JwtError> {
+fn split_and_verify_sig(
+    token: &str,
+    secret: &[u8],
+) -> Result<(String, String, Vec<u8>, Algorithm), JwtError> {
     let parts: Vec<&str> = token.split('.').collect();
     if parts.len() != 3 {
         return Err(JwtError::Format);
@@ -191,7 +207,10 @@ mod tests {
             ..Default::default()
         };
         let payload = verify(token, secret, &validation).unwrap();
-        assert_eq!(payload.get("sub").and_then(|v| v.as_str()), Some("1234567890"));
+        assert_eq!(
+            payload.get("sub").and_then(|v| v.as_str()),
+            Some("1234567890")
+        );
     }
 
     #[test]

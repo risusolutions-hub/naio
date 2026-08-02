@@ -394,6 +394,18 @@ pub const E2742_NDEVICE_TYPE: u32 = 2742;
 /// e2743 ndevice throttle.
 pub const E2743_NDEVICE_THROTTLE: u32 = 2743;
 
+/// e2750 ntune arity.
+pub const E2750_NTUNE_ARITY: u32 = 2750;
+
+/// e2751 ntune error.
+pub const E2751_NTUNE_ERROR: u32 = 2751;
+
+/// e2752 ntune type.
+pub const E2752_NTUNE_TYPE: u32 = 2752;
+
+/// e2753 ntune space.
+pub const E2753_NTUNE_SPACE: u32 = 2753;
+
 /// e2760 neval arity.
 pub const E2760_NEVAL_ARITY: u32 = 2760;
 
@@ -1213,6 +1225,131 @@ pub const E4093_NVISION_CODEC: u32 = 4093;
 pub const E4094_NVISION_SHAPE: u32 = 4094;
 pub const E4095_NVISION_MISSING: u32 = 4095;
 
+/// e4100 ndsp arity.
+pub const E4100_NDSP_ARITY: u32 = 4100;
+/// e4101 ndsp error.
+pub const E4101_NDSP_ERROR: u32 = 4101;
+/// e4102 ndsp type.
+pub const E4102_NDSP_TYPE: u32 = 4102;
+/// e4103 ndsp param.
+pub const E4103_NDSP_PARAM: u32 = 4103;
+/// e4104 ndsp length.
+pub const E4104_NDSP_LENGTH: u32 = 4104;
+/// e4105 ndsp filter.
+pub const E4105_NDSP_FILTER: u32 = 4105;
+
+/// e4110 nfin arity.
+pub const E4110_NFIN_ARITY: u32 = 4110;
+/// e4111 nfin error.
+pub const E4111_NFIN_ERROR: u32 = 4111;
+/// e4112 nfin type.
+pub const E4112_NFIN_TYPE: u32 = 4112;
+/// e4113 nfin param.
+pub const E4113_NFIN_PARAM: u32 = 4113;
+/// e4114 nfin length.
+pub const E4114_NFIN_LENGTH: u32 = 4114;
+/// e4115 nfin non convergence.
+pub const E4115_NFIN_NON_CONVERGENCE: u32 = 4115;
+
+/// e4120 ndataset arity.
+pub const E4120_NDATASET_ARITY: u32 = 4120;
+/// e4121 ndataset error.
+pub const E4121_NDATASET_ERROR: u32 = 4121;
+/// e4122 ndataset type.
+pub const E4122_NDATASET_TYPE: u32 = 4122;
+/// e4123 ndataset invalid handle.
+pub const E4123_NDATASET_INVALID_HANDLE: u32 = 4123;
+/// e4124 ndataset column.
+pub const E4124_NDATASET_COLUMN: u32 = 4124;
+/// e4125 ndataset index.
+pub const E4125_NDATASET_INDEX: u32 = 4125;
+
+/// e4130 nspeech arity.
+pub const E4130_NSPEECH_ARITY: u32 = 4130;
+/// e4131 nspeech error.
+pub const E4131_NSPEECH_ERROR: u32 = 4131;
+/// e4132 nspeech type.
+pub const E4132_NSPEECH_TYPE: u32 = 4132;
+/// e4133 nspeech param.
+pub const E4133_NSPEECH_PARAM: u32 = 4133;
+/// e4134 nspeech invalid handle.
+pub const E4134_NSPEECH_INVALID_HANDLE: u32 = 4134;
+/// e4135 nspeech audio.
+pub const E4135_NSPEECH_AUDIO: u32 = 4135;
+/// e4136 nspeech model.
+pub const E4136_NSPEECH_MODEL: u32 = 4136;
+/// e4137 nspeech mic.
+pub const E4137_NSPEECH_MIC: u32 = 4137;
+
+/// e4138 ntts arity.
+pub const E4138_NTTS_ARITY: u32 = 4138;
+/// e4139 ntts error.
+pub const E4139_NTTS_ERROR: u32 = 4139;
+/// e4140 ntts type.
+pub const E4140_NTTS_TYPE: u32 = 4140;
+/// e4141 ntts param.
+pub const E4141_NTTS_PARAM: u32 = 4141;
+/// e4142 ntts invalid handle.
+pub const E4142_NTTS_INVALID_HANDLE: u32 = 4142;
+/// e4143 ntts model.
+pub const E4143_NTTS_MODEL: u32 = 4143;
+/// e4144 ntts synth.
+pub const E4144_NTTS_SYNTH: u32 = 4144;
+/// e4145 ntts audio.
+pub const E4145_NTTS_AUDIO: u32 = 4145;
+
+/// e4600 nunits arity.
+pub const E4600_NUNITS_ARITY: u32 = 4600;
+/// e4601 nunits error.
+pub const E4601_NUNITS_ERROR: u32 = 4601;
+/// e4602 nunits type.
+pub const E4602_NUNITS_TYPE: u32 = 4602;
+/// e4603 nunits parse.
+pub const E4603_NUNITS_PARSE: u32 = 4603;
+/// e4604 nunits dimension.
+pub const E4604_NUNITS_DIMENSION: u32 = 4604;
+
+/// e4605 ngeo arity.
+pub const E4605_NGEO_ARITY: u32 = 4605;
+/// e4606 ngeo error.
+pub const E4606_NGEO_ERROR: u32 = 4606;
+/// e4607 ngeo type.
+pub const E4607_NGEO_TYPE: u32 = 4607;
+/// e4608 ngeo invalid handle.
+pub const E4608_NGEO_INVALID_HANDLE: u32 = 4608;
+/// e4609 ngeo parse.
+pub const E4609_NGEO_PARSE: u32 = 4609;
+
+/// e4610 nonnx arity.
+pub const E4610_NONNX_ARITY: u32 = 4610;
+/// e4611 nonnx error.
+pub const E4611_NONNX_ERROR: u32 = 4611;
+/// e4612 nonnx type.
+pub const E4612_NONNX_TYPE: u32 = 4612;
+/// e4613 nonnx param.
+pub const E4613_NONNX_PARAM: u32 = 4613;
+/// e4614 nonnx invalid handle.
+pub const E4614_NONNX_INVALID_HANDLE: u32 = 4614;
+/// e4615 nonnx io.
+pub const E4615_NONNX_IO: u32 = 4615;
+/// e4616 nonnx shape.
+pub const E4616_NONNX_SHAPE: u32 = 4616;
+
+/// e4617 nhub arity.
+pub const E4617_NHUB_ARITY: u32 = 4617;
+/// e4618 nhub error.
+pub const E4618_NHUB_ERROR: u32 = 4618;
+/// e4619 nhub type.
+pub const E4619_NHUB_TYPE: u32 = 4619;
+/// e4620 nhub invalid handle.
+pub const E4620_NHUB_INVALID_HANDLE: u32 = 4620;
+/// e4621 nhub io.
+pub const E4621_NHUB_IO: u32 = 4621;
+/// e4622 nhub checksum.
+pub const E4622_NHUB_CHECKSUM: u32 = 4622;
+/// e4623 nhub network.
+pub const E4623_NHUB_NETWORK: u32 = 4623;
+
 /// Division by zero.
 pub const E2001_DIVISION_BY_ZERO: u32 = 2001;
 /// Reference to undefined variable.
@@ -1294,6 +1431,7 @@ pub fn runtime_kind_name(code: u32) -> &'static str {
         E3210_NDOC_ARITY..=E3212_NDOC_TYPE => "ndoc_error",
         E3310_NEMBED_ARITY..=E3313_NEMBED_INVALID_HANDLE => "nembed_error",
         E3240_NERRGEN_ARITY..=E3242_NERRGEN_TYPE => "nerrgen_error",
+        E2750_NTUNE_ARITY..=E2753_NTUNE_SPACE => "ntune_error",
         E2760_NEVAL_ARITY..=E2763_NEVAL_SHAPE => "neval_error",
         E3010_NEXPLAIN_ARITY..=E3012_NEXPLAIN_TYPE => "nexplain_error",
         E3040_NFALLBACK_ARITY..=E3042_NFALLBACK_TYPE => "nfallback_error",
@@ -1318,6 +1456,11 @@ pub fn runtime_kind_name(code: u32) -> &'static str {
         E4070_NTS_ARITY..=E4075_NTS_NON_CONVERGENCE => "nts_error",
         E4080_NNLP_ARITY..=E4084_NNLP_EMPTY_VOCAB => "nnlp_error",
         E4090_NVISION_ARITY..=E4095_NVISION_MISSING => "nvision_error",
+        E4100_NDSP_ARITY..=E4105_NDSP_FILTER => "ndsp_error",
+        E4110_NFIN_ARITY..=E4115_NFIN_NON_CONVERGENCE => "nfin_error",
+        E4120_NDATASET_ARITY..=E4125_NDATASET_INDEX => "ndataset_error",
+        E4130_NSPEECH_ARITY..=E4137_NSPEECH_MIC => "nspeech_error",
+        E4138_NTTS_ARITY..=E4145_NTTS_AUDIO => "ntts_error",
         E2730_NNPU_ARITY..=E2732_NNPU_TYPE => "nnpu_error",
         E3020_NPACE_ARITY..=E3022_NPACE_TYPE => "npace_error",
         E3390_NPAR_ARITY..=E3392_NPAR_TYPE => "npar_error",
@@ -1352,6 +1495,10 @@ pub fn runtime_kind_name(code: u32) -> &'static str {
         E2970_NWHY_ARITY..=E2973_NWHY_INVALID_HANDLE => "nwhy_error",
         E3230_NWORKSPACE_ARITY..=E3232_NWORKSPACE_TYPE => "nworkspace_error",
         E2870_NWS_ARITY..=E2873_NWS_INVALID_HANDLE => "nws_error",
+        E4600_NUNITS_ARITY..=E4604_NUNITS_DIMENSION => "nunits_error",
+        E4605_NGEO_ARITY..=E4609_NGEO_PARSE => "ngeo_error",
+        E4610_NONNX_ARITY..=E4616_NONNX_SHAPE => "nonnx_error",
+        E4617_NHUB_ARITY..=E4623_NHUB_NETWORK => "nhub_error",
         _ => "runtime_error",
     }
 }

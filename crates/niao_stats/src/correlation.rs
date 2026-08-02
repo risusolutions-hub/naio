@@ -12,7 +12,9 @@ pub struct CorrResult {
 
 pub fn pearsonr(x: &[f64], y: &[f64]) -> StatsResult<CorrResult> {
     if x.len() != y.len() || x.is_empty() {
-        return Err(StatsError::Error("pearsonr: length mismatch or empty".into()));
+        return Err(StatsError::Error(
+            "pearsonr: length mismatch or empty".into(),
+        ));
     }
     let mx = mean(x)?;
     let my = mean(y)?;

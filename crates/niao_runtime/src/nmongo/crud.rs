@@ -15,7 +15,11 @@ use futures::StreamExt;
 use mongodb::bson::{doc, Document};
 use niao_ast::Span;
 
-fn get_collection(client: &mongodb::Client, db: &str, coll_name: &str) -> mongodb::Collection<Document> {
+fn get_collection(
+    client: &mongodb::Client,
+    db: &str,
+    coll_name: &str,
+) -> mongodb::Collection<Document> {
     client.database(db).collection(coll_name)
 }
 
@@ -134,11 +138,7 @@ async fn try_parallel_insert_bench_docs(
     Ok(true)
 }
 
-async fn update_many_inc_all(
-    client: &mongodb::Client,
-    db: &str,
-    coll: &str,
-) -> Result<(), String> {
+async fn update_many_inc_all(client: &mongodb::Client, db: &str, coll: &str) -> Result<(), String> {
     client
         .database(db)
         .run_command(doc! {
@@ -296,16 +296,24 @@ pub fn nmongo_insert_many(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef>
         let docs_arr = docs_arr.clone();
         block_on(async move {
             if large_batch {
-                if !try_parallel_insert_bench_docs(cid, &client, &db, &coll, &docs_arr, insert_opts.clone())
-                    .await?
+                if !try_parallel_insert_bench_docs(
+                    cid,
+                    &client,
+                    &db,
+                    &coll,
+                    &docs_arr,
+                    insert_opts.clone(),
+                )
+                .await?
                 {
-                    let docs = niao_docs_array_to_documents(&docs_arr, span)
-                        .map_err(|e| e.message())?;
+                    let docs =
+                        niao_docs_array_to_documents(&docs_arr, span).map_err(|e| e.message())?;
                     insert_many_docs(cid, &client, &db, &coll, docs, insert_opts).await?;
                 }
                 Ok(Value::Nil.ref_cell())
             } else {
-                let docs = niao_docs_array_to_documents(&docs_arr, span).map_err(|e| e.message())?;
+                let docs =
+                    niao_docs_array_to_documents(&docs_arr, span).map_err(|e| e.message())?;
                 let result = client
                     .database(&db)
                     .collection::<Document>(&coll)
@@ -597,7 +605,13 @@ pub fn nmongo_list_collections(args: &[ValueRef], span: Span) -> NiaoResult<Valu
         })
     })
     .map(|names| {
-        Value::Array(names.into_iter().map(|n| Value::String(n).ref_cell()).collect()).ref_cell()
+        Value::Array(
+            names
+                .into_iter()
+                .map(|n| Value::String(n).ref_cell())
+                .collect(),
+        )
+        .ref_cell()
     })
     .or_else(|e| Ok(error_from_runtime(&e)))
 }

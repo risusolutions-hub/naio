@@ -1,10 +1,13 @@
-﻿//! Native nschema standard library — infer JSON Schema from examples,
+//! Native nschema standard library — infer JSON Schema from examples,
 //! validate/coerce/parse structured data, and emit LLM prompt snippets /
 //! tool specs (pairs with `nagent` for agent tool wiring).
 //!
 //! Import with `import "nschema"` (or `import "std/nschema"`).
 
-use crate::{error_value, json_parse, json_stringify, values_equal, NativeFn, NiaoResult, RuntimeError, Value, ValueRef};
+use crate::{
+    error_value, json_parse, json_stringify, values_equal, NativeFn, NiaoResult, RuntimeError,
+    Value, ValueRef,
+};
 use niao_ast::Span;
 use niao_regex::Regex;
 use std::cell::RefCell;
@@ -41,12 +44,21 @@ fn arity(args: &[ValueRef], n: usize, name: &str, span: Span) -> NiaoResult<()> 
     Ok(())
 }
 
-fn arity_range(args: &[ValueRef], min: usize, max: usize, name: &str, span: Span) -> NiaoResult<()> {
+fn arity_range(
+    args: &[ValueRef],
+    min: usize,
+    max: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<()> {
     if args.len() < min || args.len() > max {
         return Err(RuntimeError::at(
             span,
             E3290_NSCHEMA_ARITY,
-            format!("{name}() expects {min}..={max} argument(s), got {}", args.len()),
+            format!(
+                "{name}() expects {min}..={max} argument(s), got {}",
+                args.len()
+            ),
         ));
     }
     Ok(())
@@ -66,7 +78,12 @@ fn string_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> NiaoResu
     }
 }
 
-fn schema_obj(args: &[ValueRef], idx: usize, name: &str, span: Span) -> NiaoResult<HashMap<String, ValueRef>> {
+fn schema_obj(
+    args: &[ValueRef],
+    idx: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<HashMap<String, ValueRef>> {
     match &*args[idx].borrow() {
         Value::Object(map) => Ok(map.clone()),
         other => Err(type_err(
@@ -95,7 +112,11 @@ fn compiled(pattern: &str, span: Span) -> NiaoResult<Rc<Regex>> {
             return Ok(Rc::clone(re));
         }
         let re = Regex::new(pattern).map_err(|e| {
-            RuntimeError::at(span, E3291_NSCHEMA_ERROR, format!("invalid pattern '{pattern}': {e}"))
+            RuntimeError::at(
+                span,
+                E3291_NSCHEMA_ERROR,
+                format!("invalid pattern '{pattern}': {e}"),
+            )
         })?;
         if map.len() >= PATTERN_CACHE_CAP {
             if let Some(k) = map.keys().next().cloned() {
@@ -183,7 +204,10 @@ fn infer_schema(val: &Value) -> HashMap<String, ValueRef> {
             let mut props = HashMap::new();
             let mut required = Vec::new();
             for (k, v) in map {
-                props.insert(k.clone(), Value::Object(infer_schema(&v.borrow())).ref_cell());
+                props.insert(
+                    k.clone(),
+                    Value::Object(infer_schema(&v.borrow())).ref_cell(),
+                );
                 required.push(Value::String(k.clone()).ref_cell());
             }
             schema.insert("properties".into(), Value::Object(props).ref_cell());
@@ -242,10 +266,7 @@ fn value_matches_type(val: &Value, ty: &str) -> bool {
         "string" | "str" => matches!(val, Value::String(_)),
         "array" => matches!(
             val,
-            Value::Array(_)
-                | Value::IntArray(_)
-                | Value::FloatArray(_)
-                | Value::BoolArray(_)
+            Value::Array(_) | Value::IntArray(_) | Value::FloatArray(_) | Value::BoolArray(_)
         ),
         "object" => matches!(val, Value::Object(_)),
         _ => true,
@@ -354,18 +375,18 @@ fn validate_value(
                     match map.get(key) {
                         None => {
                             if is_required(schema, key)
-                                || rule.get("required").is_some_and(|r| {
-                                    matches!(&*r.borrow(), Value::Bool(true))
-                                })
+                                || rule
+                                    .get("required")
+                                    .is_some_and(|r| matches!(&*r.borrow(), Value::Bool(true)))
                             {
                                 errors.push(format!("{child_path}: required field missing"));
                             }
                         }
                         Some(v) if matches!(&*v.borrow(), Value::Nil) => {
                             if is_required(schema, key)
-                                || rule.get("required").is_some_and(|r| {
-                                    matches!(&*r.borrow(), Value::Bool(true))
-                                })
+                                || rule
+                                    .get("required")
+                                    .is_some_and(|r| matches!(&*r.borrow(), Value::Bool(true)))
                             {
                                 errors.push(format!("{child_path}: required field missing"));
                             }
@@ -391,7 +412,11 @@ fn validate_value(
     Ok(errors)
 }
 
-fn coerce_value(val: &ValueRef, schema: &HashMap<String, ValueRef>, span: Span) -> NiaoResult<ValueRef> {
+fn coerce_value(
+    val: &ValueRef,
+    schema: &HashMap<String, ValueRef>,
+    span: Span,
+) -> NiaoResult<ValueRef> {
     let borrowed = val.borrow();
     let ty = schema_type(schema);
 
@@ -410,13 +435,11 @@ fn coerce_value(val: &ValueRef, schema: &HashMap<String, ValueRef>, span: Span) 
                 return Ok(schema_err(span, format!("cannot coerce '{s}' to number")));
             }
         }
-        (Value::String(s), Some("boolean" | "bool")) => {
-            match s.to_lowercase().as_str() {
-                "true" | "1" | "yes" => Value::Bool(true).ref_cell(),
-                "false" | "0" | "no" => Value::Bool(false).ref_cell(),
-                _ => return Ok(schema_err(span, format!("cannot coerce '{s}' to boolean"))),
-            }
-        }
+        (Value::String(s), Some("boolean" | "bool")) => match s.to_lowercase().as_str() {
+            "true" | "1" | "yes" => Value::Bool(true).ref_cell(),
+            "false" | "0" | "no" => Value::Bool(false).ref_cell(),
+            _ => return Ok(schema_err(span, format!("cannot coerce '{s}' to boolean"))),
+        },
         (Value::Int(n), Some("number")) => Value::Float(*n as f64).ref_cell(),
         (Value::Object(map), Some("object")) => {
             let mut out = HashMap::new();
@@ -467,7 +490,11 @@ fn coerce_value(val: &ValueRef, schema: &HashMap<String, ValueRef>, span: Span) 
     }
 }
 
-fn schema_to_prompt(schema: &HashMap<String, ValueRef>, title: &str, span: Span) -> NiaoResult<String> {
+fn schema_to_prompt(
+    schema: &HashMap<String, ValueRef>,
+    title: &str,
+    span: Span,
+) -> NiaoResult<String> {
     let json = json_stringify(&[Value::Object(schema.clone()).ref_cell()], span)?;
     let body = match &*json.borrow() {
         Value::String(s) => s.clone(),
@@ -542,10 +569,7 @@ fn nschema_tool(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let mut out = HashMap::new();
     out.insert("name".into(), Value::String(name).ref_cell());
     out.insert("description".into(), Value::String(description).ref_cell());
-    out.insert(
-        "parameters".into(),
-        Value::Object(schema).ref_cell(),
-    );
+    out.insert("parameters".into(), Value::Object(schema).ref_cell());
     Ok(Value::Object(out).ref_cell())
 }
 
@@ -571,7 +595,10 @@ nschema_fns![
 ];
 
 fn all_builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(flat, _, f)| (flat, f)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(flat, _, f)| (flat, f))
+        .collect()
 }
 
 pub fn namespace() -> Value {
@@ -633,7 +660,10 @@ mod tests {
         let mut val = HashMap::new();
         val.insert("age".into(), Value::String("42".into()).ref_cell());
         let coerced = nschema_coerce(
-            &[Value::Object(val).ref_cell(), Value::Object(schema.clone()).ref_cell()],
+            &[
+                Value::Object(val).ref_cell(),
+                Value::Object(schema.clone()).ref_cell(),
+            ],
             span(),
         )
         .unwrap();
@@ -653,7 +683,9 @@ mod tests {
         .unwrap();
         let check_b = check.borrow();
         match &*check_b {
-            Value::Object(r) => assert!(matches!(&*r.get("ok").unwrap().borrow(), Value::Bool(true))),
+            Value::Object(r) => {
+                assert!(matches!(&*r.get("ok").unwrap().borrow(), Value::Bool(true)))
+            }
             other => panic!("expected object, got {other:?}"),
         }
     }

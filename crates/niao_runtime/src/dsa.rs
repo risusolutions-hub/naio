@@ -7,7 +7,8 @@
 
 pub use crate::dsa_storage::{
     key_to_value, value_to_key, AnyMap, AnySet, DsKey, MapData, MapData as NativeMapData, SeqData,
-    SeqData as NativeSeqData, SetData, SetData as NativeSetData, StackData, StackData as NativeStackData,
+    SeqData as NativeSeqData, SetData, SetData as NativeSetData, StackData,
+    StackData as NativeStackData,
 };
 
 use crate::{apply_binop, values_equal, NativeFn, NiaoResult, RuntimeError, Value, ValueRef};
@@ -337,7 +338,13 @@ fn arity(args: &[ValueRef], n: usize, name: &str, span: Span) -> NiaoResult<()> 
     Ok(())
 }
 
-fn ds_arg(args: &[ValueRef], idx: usize, name: &str, expected: &str, span: Span) -> NiaoResult<DsRef> {
+fn ds_arg(
+    args: &[ValueRef],
+    idx: usize,
+    name: &str,
+    expected: &str,
+    span: Span,
+) -> NiaoResult<DsRef> {
     match &*args[idx].borrow() {
         Value::Native(ds) => Ok(Rc::clone(ds)),
         other => Err(type_err(
@@ -370,7 +377,10 @@ fn size_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> NiaoResult
     if n < 0 {
         return Err(type_err(
             span,
-            format!("{name}() expects a non-negative int as argument {}", idx + 1),
+            format!(
+                "{name}() expects a non-negative int as argument {}",
+                idx + 1
+            ),
         ));
     }
     Ok(n as usize)
@@ -504,12 +514,16 @@ fn list_push_back(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
 
 fn list_pop_front(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity(args, 1, "list_pop_front", span)?;
-    with_list(args, 0, "list_pop_front", span, |l| Ok(opt_val(l.pop_front())))
+    with_list(args, 0, "list_pop_front", span, |l| {
+        Ok(opt_val(l.pop_front()))
+    })
 }
 
 fn list_pop_back(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity(args, 1, "list_pop_back", span)?;
-    with_list(args, 0, "list_pop_back", span, |l| Ok(opt_val(l.pop_back())))
+    with_list(args, 0, "list_pop_back", span, |l| {
+        Ok(opt_val(l.pop_back()))
+    })
 }
 
 fn list_front(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
@@ -577,7 +591,9 @@ fn list_contains(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let target = Rc::clone(&args[1]);
     with_list(args, 0, "list_contains", span, |l| {
         let refs = l.iter_refs();
-        let found = refs.iter().any(|v| values_equal(&v.borrow(), &target.borrow()));
+        let found = refs
+            .iter()
+            .any(|v| values_equal(&v.borrow(), &target.borrow()));
         Ok(Value::Bool(found).ref_cell())
     })
 }
@@ -768,12 +784,16 @@ fn deque_push_back(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
 
 fn deque_pop_front(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity(args, 1, "deque_pop_front", span)?;
-    with_deque(args, 0, "deque_pop_front", span, |d| Ok(opt_val(d.pop_front())))
+    with_deque(args, 0, "deque_pop_front", span, |d| {
+        Ok(opt_val(d.pop_front()))
+    })
 }
 
 fn deque_pop_back(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity(args, 1, "deque_pop_back", span)?;
-    with_deque(args, 0, "deque_pop_back", span, |d| Ok(opt_val(d.pop_back())))
+    with_deque(args, 0, "deque_pop_back", span, |d| {
+        Ok(opt_val(d.pop_back()))
+    })
 }
 
 fn deque_front(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
@@ -844,8 +864,7 @@ fn heap_push(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
 fn heap_pop(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity(args, 1, "heap_pop", span)?;
     with_heap(args, 0, "heap_pop", span, |h| {
-        Ok(h
-            .pop_num()
+        Ok(h.pop_num()
             .map(|e| e.to_value().ref_cell())
             .unwrap_or_else(nil))
     })
@@ -854,8 +873,7 @@ fn heap_pop(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
 fn heap_peek(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity(args, 1, "heap_peek", span)?;
     with_heap(args, 0, "heap_peek", span, |h| {
-        Ok(h
-            .peek_num()
+        Ok(h.peek_num()
             .map(|e| e.to_value().ref_cell())
             .unwrap_or_else(nil))
     })
@@ -932,11 +950,7 @@ fn set_to_array(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
 
 /// Fetch both set arguments for binary set operations, handling aliasing
 /// (e.g. `set_union(s, s)`) without a double borrow.
-fn set_pair(
-    args: &[ValueRef],
-    name: &str,
-    span: Span,
-) -> NiaoResult<(AnySet, AnySet)> {
+fn set_pair(args: &[ValueRef], name: &str, span: Span) -> NiaoResult<(AnySet, AnySet)> {
     let a = ds_arg(args, 0, name, "set", span)?;
     let b = ds_arg(args, 1, name, "set", span)?;
     let sa = match &*a.borrow() {
@@ -976,7 +990,10 @@ fn set_union(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
 fn set_intersect(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity(args, 2, "set_intersect", span)?;
     let (a, b) = set_pair(args, "set_intersect", span)?;
-    let mut out = AnySet::with_capacity_and_hasher(a.len().min(b.len()), niao_collections::RandomState::new());
+    let mut out = AnySet::with_capacity_and_hasher(
+        a.len().min(b.len()),
+        niao_collections::RandomState::new(),
+    );
     for k in a.iter() {
         if b.contains(k) {
             out.insert(k.clone());
@@ -1101,7 +1118,10 @@ fn check_node(g: &GraphDs, node: i64, name: &str, span: Span) -> NiaoResult<usiz
         return Err(RuntimeError::at(
             span,
             1102,
-            format!("{name}(): node {node} out of range (graph has {} nodes)", g.n),
+            format!(
+                "{name}(): node {node} out of range (graph has {} nodes)",
+                g.n
+            ),
         ));
     }
     Ok(node as usize)
@@ -1235,7 +1255,10 @@ fn graph_dijkstra(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
                 }
             }
         }
-        let out: Vec<i64> = dist.into_iter().map(|d| if d == INF { -1 } else { d }).collect();
+        let out: Vec<i64> = dist
+            .into_iter()
+            .map(|d| if d == INF { -1 } else { d })
+            .collect();
         Ok(Value::IntArray(out).ref_cell())
     })
 }
@@ -1276,7 +1299,9 @@ fn graph_topo_sort(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
                 indeg[v as usize] += 1;
             }
         }
-        let mut queue: VecDeque<u32> = (0..g.n as u32).filter(|&u| indeg[u as usize] == 0).collect();
+        let mut queue: VecDeque<u32> = (0..g.n as u32)
+            .filter(|&u| indeg[u as usize] == 0)
+            .collect();
         let mut order = Vec::with_capacity(g.n);
         while let Some(u) = queue.pop_front() {
             order.push(u as i64);
@@ -1522,7 +1547,10 @@ fn min_max_impl(args: &[ValueRef], name: &str, span: Span, want_max: bool) -> Ni
             } else {
                 v.iter().min()
             };
-            Ok(best.map(|&n| Value::Int(n)).unwrap_or(Value::Nil).ref_cell())
+            Ok(best
+                .map(|&n| Value::Int(n))
+                .unwrap_or(Value::Nil)
+                .ref_cell())
         }
         Value::Array(items) => {
             if items.is_empty() {
@@ -1563,7 +1591,10 @@ fn index_of_impl(args: &[ValueRef], name: &str, span: Span) -> NiaoResult<i64> {
             let Value::Int(t) = target else {
                 return Ok(-1);
             };
-            Ok(v.iter().position(|&x| x == t).map(|i| i as i64).unwrap_or(-1))
+            Ok(v.iter()
+                .position(|&x| x == t)
+                .map(|i| i as i64)
+                .unwrap_or(-1))
         }
         Value::Array(items) => Ok(items
             .iter()
@@ -1905,10 +1936,18 @@ pub mod fast {
     ) -> Option<i64> {
         let mut b = ds.borrow_mut();
         match &mut *b {
-            NativeDs::Queue(q) if op == 0 => q.push_back_range_int(start, limit, mul, add).then_some(limit),
-            NativeDs::Stack(s) if op == 3 => s.push_range_int(start, limit, mul, add).then_some(limit),
-            NativeDs::Deque(d) if op == 6 => d.push_back_range_int(start, limit, mul, add).then_some(limit),
-            NativeDs::List(l) if op == 11 => l.push_back_range_int(start, limit, mul, add).then_some(limit),
+            NativeDs::Queue(q) if op == 0 => q
+                .push_back_range_int(start, limit, mul, add)
+                .then_some(limit),
+            NativeDs::Stack(s) if op == 3 => {
+                s.push_range_int(start, limit, mul, add).then_some(limit)
+            }
+            NativeDs::Deque(d) if op == 6 => d
+                .push_back_range_int(start, limit, mul, add)
+                .then_some(limit),
+            NativeDs::List(l) if op == 11 => l
+                .push_back_range_int(start, limit, mul, add)
+                .then_some(limit),
             NativeDs::Heap(h) if op == 16 => {
                 if h.generic.is_some() {
                     return None;
@@ -2015,7 +2054,9 @@ pub mod fast {
             return None;
         };
         let s = match m {
-            MapData::Dense(values) => sum + crate::int_algos::map_lookup_dense_sum(values, start, limit),
+            MapData::Dense(values) => {
+                sum + crate::int_algos::map_lookup_dense_sum(values, start, limit)
+            }
             MapData::IntInt { map, .. } => {
                 let mut s = sum;
                 let mut i = start;

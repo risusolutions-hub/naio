@@ -45,7 +45,10 @@ pub fn npg_unlisten(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
         "UNLISTEN *".to_string()
     };
     handles::with_conn_mut(id, "npg_unlisten", span, |handle| {
-        handle.client_mut().batch_execute(&sql).map_err(|e| e.to_string())
+        handle
+            .client_mut()
+            .batch_execute(&sql)
+            .map_err(|e| e.to_string())
     })
     .map(|_| ok_nil())
     .or_else(|e| Ok(error_from_runtime(&e)))

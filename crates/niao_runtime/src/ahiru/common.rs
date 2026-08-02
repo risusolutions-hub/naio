@@ -40,13 +40,21 @@ pub fn arity_range(
         return Err(RuntimeError::at(
             span,
             codes::E2100_AHIRU_ARITY,
-            format!("{name}() expects {min}..={max} argument(s), got {}", args.len()),
+            format!(
+                "{name}() expects {min}..={max} argument(s), got {}",
+                args.len()
+            ),
         ));
     }
     Ok(())
 }
 
-pub fn string_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> Result<String, RuntimeError> {
+pub fn string_arg(
+    args: &[ValueRef],
+    idx: usize,
+    name: &str,
+    span: Span,
+) -> Result<String, RuntimeError> {
     match &*args[idx].borrow() {
         Value::String(s) => Ok(s.clone()),
         other => Err(type_err(
@@ -97,7 +105,10 @@ pub fn ok_nil() -> Result<ValueRef, RuntimeError> {
     Ok(Value::Nil.ref_cell())
 }
 
-pub fn object_to_config(map: &HashMap<String, ValueRef>, span: Span) -> Result<AhiruConfig, RuntimeError> {
+pub fn object_to_config(
+    map: &HashMap<String, ValueRef>,
+    span: Span,
+) -> Result<AhiruConfig, RuntimeError> {
     if let Some(path_ref) = map.get("config_path").or_else(|| map.get("path")) {
         if let Value::String(path) = &*path_ref.borrow() {
             return AhiruConfig::from_file(std::path::Path::new(path))
@@ -115,12 +126,10 @@ pub fn route_meta_from_opts(
         Value::Object(m) => m.clone(),
         _ => HashMap::new(),
     };
-    let permission = map
-        .get("permission")
-        .and_then(|v| match &*v.borrow() {
-            Value::String(s) => Some(s.clone()),
-            _ => None,
-        });
+    let permission = map.get("permission").and_then(|v| match &*v.borrow() {
+        Value::String(s) => Some(s.clone()),
+        _ => None,
+    });
     let ws = map
         .get("ws")
         .and_then(|v| match &*v.borrow() {
@@ -244,12 +253,10 @@ pub fn middleware_from_name(
             ))
         }
         "secure_headers" | "helmet" => Ok(ahiru_core::MiddlewareKind::SecureHeaders {
-            csp_policy: opts
-                .get("csp_policy")
-                .and_then(|v| match &*v.borrow() {
-                    Value::String(s) => Some(s.clone()),
-                    _ => None,
-                }),
+            csp_policy: opts.get("csp_policy").and_then(|v| match &*v.borrow() {
+                Value::String(s) => Some(s.clone()),
+                _ => None,
+            }),
         }),
         "gzip" | "compression" => Ok(ahiru_core::MiddlewareKind::Compression(
             ahiru_core::CompressionAlgo::Gzip,

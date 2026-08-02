@@ -7,7 +7,7 @@ use crate::{NativeFn, NiaoResult, RuntimeError, Value, ValueRef};
 use common::*;
 use niao_ast::Span;
 use niao_errors::codes;
-use niao_llm::{BackendKind, ChatMessage, GenerateOptions, LoadOptions, LlmSession};
+use niao_llm::{BackendKind, ChatMessage, GenerateOptions, LlmSession, LoadOptions};
 use std::collections::HashMap;
 use std::rc::Rc;
 
@@ -105,7 +105,10 @@ fn parse_load_opts(args: &[ValueRef], span: Span) -> Result<LoadOptions, Runtime
     Ok(opts)
 }
 
-fn parse_gen_opts(map: Option<&HashMap<String, ValueRef>>, _span: Span) -> Result<GenerateOptions, RuntimeError> {
+fn parse_gen_opts(
+    map: Option<&HashMap<String, ValueRef>>,
+    _span: Span,
+) -> Result<GenerateOptions, RuntimeError> {
     let mut opts = GenerateOptions::default();
     let Some(map) = map else {
         return Ok(opts);
@@ -250,11 +253,13 @@ fn parse_sse_handle(val: &ValueRef, span: Span) -> Result<Option<u64>, RuntimeEr
         })),
         other => Err(type_err(
             span,
-            format!("sse handle must be int or stream object, got {}", other.type_name()),
+            format!(
+                "sse handle must be int or stream object, got {}",
+                other.type_name()
+            ),
         )),
     }
 }
-
 
 fn nllm_chat_stream(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity_range(args, 2, 4, "nllm_chat_stream", span)?;

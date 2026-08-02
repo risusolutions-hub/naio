@@ -50,7 +50,9 @@ pub struct GroupBy<'a> {
 impl<'a> GroupBy<'a> {
     pub fn new(frame: &'a DataFrame, keys: &[&str]) -> FrameResult<Self> {
         if keys.is_empty() {
-            return Err(FrameError::Error("groupby requires at least one key".into()));
+            return Err(FrameError::Error(
+                "groupby requires at least one key".into(),
+            ));
         }
         for k in keys {
             let _ = frame.get(k)?;
@@ -93,8 +95,7 @@ impl<'a> GroupBy<'a> {
             }
         }
 
-        let mut map: HashMap<CompositeKey, usize> =
-            HashMap::with_capacity(frame.nrows() / 8 + 16);
+        let mut map: HashMap<CompositeKey, usize> = HashMap::with_capacity(frame.nrows() / 8 + 16);
         let mut groups: Vec<(CompositeKey, Vec<usize>)> = Vec::new();
         for i in 0..frame.nrows() {
             let key = frame.composite_key_at(keys, i)?;
@@ -130,10 +131,9 @@ impl<'a> GroupBy<'a> {
             map.insert(k.clone(), i);
         }
         for i in 0..self.frame.nrows() {
-            let key = self.frame.composite_key_at(
-                &self.keys.iter().map(|s| s.as_str()).collect::<Vec<_>>(),
-                i,
-            )?;
+            let key = self
+                .frame
+                .composite_key_at(&self.keys.iter().map(|s| s.as_str()).collect::<Vec<_>>(), i)?;
             if let Some(&gi) = map.get(&key) {
                 self.groups[gi].1.push(i);
             }
@@ -146,7 +146,9 @@ impl<'a> GroupBy<'a> {
     /// still uses pre-built groups (correct ordering).
     pub fn agg(&mut self, aggs: &[(&str, AggOp)]) -> FrameResult<DataFrame> {
         if self.keys.len() == 1
-            && aggs.iter().all(|(_, op)| matches!(op, AggOp::Sum | AggOp::Mean))
+            && aggs
+                .iter()
+                .all(|(_, op)| matches!(op, AggOp::Sum | AggOp::Mean))
             && !aggs.is_empty()
         {
             if let Ok(out) = self.agg_sum_mean_stream(aggs) {
@@ -258,11 +260,7 @@ impl<'a> GroupBy<'a> {
         // Reconstruct key columns from first row of each group
         for (ki, key_name) in self.keys.iter().enumerate() {
             let src = self.frame.get(key_name)?;
-            let indices: Vec<usize> = self
-                .groups
-                .iter()
-                .map(|(_, idxs)| idxs[0])
-                .collect();
+            let indices: Vec<usize> = self.groups.iter().map(|(_, idxs)| idxs[0]).collect();
             let mut col = src.take(&indices);
             // Preserve null keys from CompositeKey
             for (gi, (ck, _)) in self.groups.iter().enumerate() {
@@ -302,8 +300,7 @@ impl<'a> GroupBy<'a> {
                     Series::from_i64(format!("{col_name}_n_unique"), vals)
                 }
                 AggOp::First => {
-                    let indices: Vec<usize> =
-                        self.groups.iter().map(|(_, idxs)| idxs[0]).collect();
+                    let indices: Vec<usize> = self.groups.iter().map(|(_, idxs)| idxs[0]).collect();
                     let mut s = src.take(&indices);
                     s.name = format!("{col_name}_first");
                     s

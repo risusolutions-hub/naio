@@ -104,12 +104,7 @@ fn random_mask() -> [u8; 4] {
         .map(|d| d.as_nanos() as u64)
         .unwrap_or(0);
     let v = t ^ t.rotate_left(17) ^ 0x9E3779B97F4A7C15;
-    [
-        (v >> 24) as u8,
-        (v >> 16) as u8,
-        (v >> 8) as u8,
-        v as u8,
-    ]
+    [(v >> 24) as u8, (v >> 16) as u8, (v >> 8) as u8, v as u8]
 }
 
 pub fn decode_frame(buf: &[u8], role: Role) -> Result<(Frame, usize), WsError> {

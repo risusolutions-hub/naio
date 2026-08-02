@@ -1,10 +1,13 @@
-﻿//! Native neval standard library — model evaluation metrics: exact match,
+//! Native neval standard library — model evaluation metrics: exact match,
 //! token-F1, similarity, classification/regression scores, dataset runner,
 //! and latency benchmarking.
 //!
 //! Import with `import "neval"` (or `import "std/neval"`).
 
-use crate::{call_niao_function, error_value, NativeFn, NiaoResult, RuntimeError, StringArray, Value, ValueRef};
+use crate::{
+    call_niao_function, error_value, NativeFn, NiaoResult, RuntimeError, StringArray, Value,
+    ValueRef,
+};
 use niao_ast::Span;
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -31,12 +34,21 @@ fn arity(args: &[ValueRef], n: usize, name: &str, span: Span) -> NiaoResult<()> 
     Ok(())
 }
 
-fn arity_range(args: &[ValueRef], min: usize, max: usize, name: &str, span: Span) -> NiaoResult<()> {
+fn arity_range(
+    args: &[ValueRef],
+    min: usize,
+    max: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<()> {
     if args.len() < min || args.len() > max {
         return Err(RuntimeError::at(
             span,
             E2760_NEVAL_ARITY,
-            format!("{name}() expects {min}..={max} argument(s), got {}", args.len()),
+            format!(
+                "{name}() expects {min}..={max} argument(s), got {}",
+                args.len()
+            ),
         ));
     }
     Ok(())
@@ -139,7 +151,12 @@ fn value_to_string(v: &Value) -> String {
     }
 }
 
-fn string_array_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> NiaoResult<Vec<String>> {
+fn string_array_arg(
+    args: &[ValueRef],
+    idx: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<Vec<String>> {
     match &*args[idx].borrow() {
         Value::StringArray(items) => Ok(items.dense_vec()),
         Value::Array(items) => {
@@ -209,7 +226,12 @@ fn float_array_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> Nia
     }
 }
 
-fn object_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> NiaoResult<HashMap<String, ValueRef>> {
+fn object_arg(
+    args: &[ValueRef],
+    idx: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<HashMap<String, ValueRef>> {
     match &*args[idx].borrow() {
         Value::Object(map) => Ok(map.clone()),
         other => Err(type_err(
@@ -223,7 +245,12 @@ fn object_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> NiaoResu
     }
 }
 
-fn dataset_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> NiaoResult<Vec<HashMap<String, ValueRef>>> {
+fn dataset_arg(
+    args: &[ValueRef],
+    idx: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<Vec<HashMap<String, ValueRef>>> {
     match &*args[idx].borrow() {
         Value::Array(items) => {
             let mut out = Vec::new();
@@ -260,7 +287,9 @@ fn dataset_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> NiaoRes
 // ---------------------------------------------------------------------------
 
 fn tokenize_words(s: &str) -> Vec<String> {
-    s.split_whitespace().map(|w| w.to_ascii_lowercase()).collect()
+    s.split_whitespace()
+        .map(|w| w.to_ascii_lowercase())
+        .collect()
 }
 
 fn levenshtein(a: &str, b: &str) -> usize {
@@ -279,7 +308,11 @@ fn levenshtein(a: &str, b: &str) -> usize {
     for i in 1..=n {
         cur[0] = i;
         for j in 1..=m {
-            let cost = if a_chars[i - 1] == b_chars[j - 1] { 0 } else { 1 };
+            let cost = if a_chars[i - 1] == b_chars[j - 1] {
+                0
+            } else {
+                1
+            };
             cur[j] = (prev[j] + 1).min(cur[j - 1] + 1).min(prev[j - 1] + cost);
         }
         std::mem::swap(&mut prev, &mut cur);
@@ -332,7 +365,10 @@ fn token_f1_scores(pred: &str, reference: &str) -> (f64, f64, f64) {
     (precision, recall, f1)
 }
 
-fn classification_counts(preds: &[String], labels: &[String]) -> (usize, HashMap<String, HashMap<String, i64>>) {
+fn classification_counts(
+    preds: &[String],
+    labels: &[String],
+) -> (usize, HashMap<String, HashMap<String, i64>>) {
     let mut correct = 0usize;
     let mut matrix: HashMap<String, HashMap<String, i64>> = HashMap::new();
     for (p, l) in preds.iter().zip(labels.iter()) {
@@ -380,7 +416,11 @@ fn macro_prf(preds: &[String], labels: &[String]) -> (f64, f64, f64) {
             .filter(|(p, l)| *p != cls && *l == cls)
             .count() as f64;
         let precision = if tp + fp == 0.0 { 0.0 } else { tp / (tp + fp) };
-        let recall = if tp + fn_ == 0.0 { 0.0 } else { tp / (tp + fn_) };
+        let recall = if tp + fn_ == 0.0 {
+            0.0
+        } else {
+            tp / (tp + fn_)
+        };
         let f1 = if precision + recall == 0.0 {
             0.0
         } else {
@@ -465,7 +505,10 @@ fn neval_accuracy(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
         ));
     }
     if preds.is_empty() {
-        return Ok(neval_err(span, "neval_accuracy() requires at least one sample"));
+        return Ok(neval_err(
+            span,
+            "neval_accuracy() requires at least one sample",
+        ));
     }
     let (correct, _) = classification_counts(&preds, &labels);
     Ok(Value::Float(correct as f64 / preds.len() as f64).ref_cell())
@@ -476,7 +519,10 @@ fn neval_precision(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let preds = string_array_arg(args, 0, "neval_precision", span)?;
     let labels = string_array_arg(args, 1, "neval_precision", span)?;
     if preds.len() != labels.len() {
-        return Err(shape_err(span, "neval_precision() preds and labels length mismatch"));
+        return Err(shape_err(
+            span,
+            "neval_precision() preds and labels length mismatch",
+        ));
     }
     let (p, _, _) = macro_prf(&preds, &labels);
     Ok(Value::Float(p).ref_cell())
@@ -487,7 +533,10 @@ fn neval_recall(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let preds = string_array_arg(args, 0, "neval_recall", span)?;
     let labels = string_array_arg(args, 1, "neval_recall", span)?;
     if preds.len() != labels.len() {
-        return Err(shape_err(span, "neval_recall() preds and labels length mismatch"));
+        return Err(shape_err(
+            span,
+            "neval_recall() preds and labels length mismatch",
+        ));
     }
     let (_, r, _) = macro_prf(&preds, &labels);
     Ok(Value::Float(r).ref_cell())
@@ -498,7 +547,10 @@ fn neval_f1(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let preds = string_array_arg(args, 0, "neval_f1", span)?;
     let labels = string_array_arg(args, 1, "neval_f1", span)?;
     if preds.len() != labels.len() {
-        return Err(shape_err(span, "neval_f1() preds and labels length mismatch"));
+        return Err(shape_err(
+            span,
+            "neval_f1() preds and labels length mismatch",
+        ));
     }
     let (_, _, f) = macro_prf(&preds, &labels);
     Ok(Value::Float(f).ref_cell())
@@ -509,7 +561,10 @@ fn neval_confusion(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let preds = string_array_arg(args, 0, "neval_confusion", span)?;
     let labels = string_array_arg(args, 1, "neval_confusion", span)?;
     if preds.len() != labels.len() {
-        return Err(shape_err(span, "neval_confusion() preds and labels length mismatch"));
+        return Err(shape_err(
+            span,
+            "neval_confusion() preds and labels length mismatch",
+        ));
     }
     let (_, matrix) = classification_counts(&preds, &labels);
     let mut out = HashMap::new();
@@ -528,9 +583,16 @@ fn neval_mae(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let preds = float_array_arg(args, 0, "neval_mae", span)?;
     let labels = float_array_arg(args, 1, "neval_mae", span)?;
     if preds.len() != labels.len() || preds.is_empty() {
-        return Err(shape_err(span, "neval_mae() requires equal non-empty arrays"));
+        return Err(shape_err(
+            span,
+            "neval_mae() requires equal non-empty arrays",
+        ));
     }
-    let sum: f64 = preds.iter().zip(labels.iter()).map(|(p, l)| (p - l).abs()).sum();
+    let sum: f64 = preds
+        .iter()
+        .zip(labels.iter())
+        .map(|(p, l)| (p - l).abs())
+        .sum();
     Ok(Value::Float(sum / preds.len() as f64).ref_cell())
 }
 
@@ -539,7 +601,10 @@ fn neval_mse(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let preds = float_array_arg(args, 0, "neval_mse", span)?;
     let labels = float_array_arg(args, 1, "neval_mse", span)?;
     if preds.len() != labels.len() || preds.is_empty() {
-        return Err(shape_err(span, "neval_mse() requires equal non-empty arrays"));
+        return Err(shape_err(
+            span,
+            "neval_mse() requires equal non-empty arrays",
+        ));
     }
     let sum: f64 = preds
         .iter()
@@ -557,7 +622,10 @@ fn neval_rmse(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let preds = float_array_arg(args, 0, "neval_rmse", span)?;
     let labels = float_array_arg(args, 1, "neval_rmse", span)?;
     if preds.len() != labels.len() || preds.is_empty() {
-        return Err(shape_err(span, "neval_rmse() requires equal non-empty arrays"));
+        return Err(shape_err(
+            span,
+            "neval_rmse() requires equal non-empty arrays",
+        ));
     }
     let sum: f64 = preds
         .iter()
@@ -575,7 +643,10 @@ fn neval_r2(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let preds = float_array_arg(args, 0, "neval_r2", span)?;
     let labels = float_array_arg(args, 1, "neval_r2", span)?;
     if preds.len() != labels.len() || preds.is_empty() {
-        return Err(shape_err(span, "neval_r2() requires equal non-empty arrays"));
+        return Err(shape_err(
+            span,
+            "neval_r2() requires equal non-empty arrays",
+        ));
     }
     let mean = labels.iter().sum::<f64>() / labels.len() as f64;
     let ss_tot: f64 = labels.iter().map(|y| (y - mean).powi(2)).sum();
@@ -677,7 +748,10 @@ fn neval_run(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let accuracy = exact as f64 / n;
     let (_, _, macro_f1) = macro_prf(&preds, &labels);
     Ok(metrics_object(HashMap::from([
-        ("count".to_string(), Value::Int(preds.len() as i64).ref_cell()),
+        (
+            "count".to_string(),
+            Value::Int(preds.len() as i64).ref_cell(),
+        ),
         ("exact".to_string(), Value::Int(exact).ref_cell()),
         float_metric("accuracy", accuracy),
         float_metric("avg_similarity", sim_sum / n),
@@ -747,7 +821,10 @@ neval_fns![
 ];
 
 fn all_builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(flat, _, f)| (flat, f)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(flat, _, f)| (flat, f))
+        .collect()
 }
 
 pub fn namespace() -> Value {
@@ -777,7 +854,10 @@ mod tests {
     fn exact_and_similarity() {
         assert!(matches!(
             &*neval_exact(
-                &[Value::String("abc".into()).ref_cell(), Value::String("abc".into()).ref_cell()],
+                &[
+                    Value::String("abc".into()).ref_cell(),
+                    Value::String("abc".into()).ref_cell()
+                ],
                 span()
             )
             .unwrap()
@@ -785,7 +865,10 @@ mod tests {
             Value::Bool(true)
         ));
         let sim_val = neval_similarity(
-            &[Value::String("kitten".into()).ref_cell(), Value::String("sitting".into()).ref_cell()],
+            &[
+                Value::String("kitten".into()).ref_cell(),
+                Value::String("sitting".into()).ref_cell(),
+            ],
             span(),
         )
         .unwrap()
@@ -800,7 +883,10 @@ mod tests {
     #[test]
     fn token_f1_and_classification() {
         let f1_val = neval_token_f1(
-            &[Value::String("a b c".into()).ref_cell(), Value::String("a b d".into()).ref_cell()],
+            &[
+                Value::String("a b c".into()).ref_cell(),
+                Value::String("a b d".into()).ref_cell(),
+            ],
             span(),
         )
         .unwrap()

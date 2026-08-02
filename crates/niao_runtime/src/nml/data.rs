@@ -33,7 +33,9 @@ pub fn nml_from_dataframe(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef>
         };
         let mut feat_cols = Vec::new();
         for name in &feat_names {
-            let s = df.get_column(name).ok_or_else(|| format!("column '{name}' not found"))?;
+            let s = df
+                .get_column(name)
+                .ok_or_else(|| format!("column '{name}' not found"))?;
             feat_cols.push(series_to_f32(&s.data)?);
         }
         let label_s = df
@@ -111,7 +113,9 @@ pub fn nml_one_hot(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let id = nml_handle_arg(args, 0, "nml_one_hot", span)?;
     let classes = int_arg(args, 1, "nml_one_hot", span)? as usize;
     let t = super::tensor_from_handle(id, "nml_one_hot", span)?;
-    let labels: Vec<i64> = t.to_cpu().map_err(|e| RuntimeError::at(span, codes::E1971_NML_ERROR, e.to_string()))?
+    let labels: Vec<i64> = t
+        .to_cpu()
+        .map_err(|e| RuntimeError::at(span, codes::E1971_NML_ERROR, e.to_string()))?
         .iter()
         .map(|&v| v as i64)
         .collect();
@@ -127,9 +131,8 @@ pub fn nml_batch(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
         let batch = int_arg(args, 2, "nml_batch", span)? as usize;
         let x = super::tensor_from_handle(x_id, "nml_batch", span)?;
         let y = super::tensor_from_handle(y_id, "nml_batch", span)?;
-        let loader = niao_ml::DataLoader::new(x, y, batch).map_err(|e| {
-            RuntimeError::at(span, codes::E1971_NML_ERROR, e.to_string())
-        })?;
+        let loader = niao_ml::DataLoader::new(x, y, batch)
+            .map_err(|e| RuntimeError::at(span, codes::E1971_NML_ERROR, e.to_string()))?;
         return Ok(ok_handle(alloc_handle(NmlHandle::DataLoader(loader))));
     }
 
@@ -179,8 +182,9 @@ pub fn ncl_to_nml_matrix(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> 
                     data[r * feat_n + f] = v;
                 }
             }
-            let t = niao_tensor::Tensor::from_cpu_data(&[n, feat_n], data, niao_tensor::Device::Cpu)
-                .map_err(|e| e.to_string())?;
+            let t =
+                niao_tensor::Tensor::from_cpu_data(&[n, feat_n], data, niao_tensor::Device::Cpu)
+                    .map_err(|e| e.to_string())?;
             Ok(alloc_handle(NmlHandle::Tensor(t)))
         }
         _ => Err("expected Series or DataFrame".into()),
@@ -215,7 +219,10 @@ pub fn nmongo_to_ncl(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
             return Err(RuntimeError::at(
                 span,
                 codes::E1974_NML_TYPE,
-                format!("nmongo_to_ncl() expects document array, got {}", other.type_name()),
+                format!(
+                    "nmongo_to_ncl() expects document array, got {}",
+                    other.type_name()
+                ),
             ));
         }
     };
@@ -253,7 +260,9 @@ pub fn nml_node_features_from_ncl(args: &[ValueRef], span: Span) -> NiaoResult<V
         let mut cols = vec![vec![0.0f32; max_id]; feat_n];
         let mut row_feats: Vec<Vec<f32>> = Vec::new();
         for name in &feat_names {
-            let s = df.get_column(name).ok_or_else(|| format!("column '{name}' not found"))?;
+            let s = df
+                .get_column(name)
+                .ok_or_else(|| format!("column '{name}' not found"))?;
             row_feats.push(series_to_f32(&s.data)?);
         }
         for r in 0..n {
@@ -270,8 +279,9 @@ pub fn nml_node_features_from_ncl(args: &[ValueRef], span: Span) -> NiaoResult<V
                 data[node * feat_n + f] = v;
             }
         }
-        let t = niao_tensor::Tensor::from_cpu_data(&[max_id, feat_n], data, niao_tensor::Device::Cpu)
-            .map_err(|e| e.to_string())?;
+        let t =
+            niao_tensor::Tensor::from_cpu_data(&[max_id, feat_n], data, niao_tensor::Device::Cpu)
+                .map_err(|e| e.to_string())?;
         Ok(alloc_handle(NmlHandle::Tensor(t)))
     })
     .map(ok_handle)
@@ -283,14 +293,18 @@ pub fn nml_pipeline(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let x_id = nml_handle_arg(args, 1, "nml_pipeline", span)?;
     let y_id = nml_handle_arg(args, 2, "nml_pipeline", span)?;
     let spec: niao_data::PipelineSpec = serde_json::from_str(&spec_json).map_err(|e| {
-        RuntimeError::at(span, codes::E1971_NML_ERROR, format!("invalid pipeline spec: {e}"))
+        RuntimeError::at(
+            span,
+            codes::E1971_NML_ERROR,
+            format!("invalid pipeline spec: {e}"),
+        )
     })?;
     let x = super::tensor_from_handle(x_id, "nml_pipeline", span)?;
     let y = super::tensor_from_handle(y_id, "nml_pipeline", span)?;
     let mut pipe = niao_data::Pipeline::from_spec(&spec);
-    let out = pipe.run(&x, &y).map_err(|e| {
-        RuntimeError::at(span, codes::E1971_NML_ERROR, e.to_string())
-    })?;
+    let out = pipe
+        .run(&x, &y)
+        .map_err(|e| RuntimeError::at(span, codes::E1971_NML_ERROR, e.to_string()))?;
     let mut map = HashMap::new();
     map.insert(
         "x_train".to_string(),
@@ -328,7 +342,9 @@ pub fn nml_columnar_epoch(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef>
         };
         let mut feats = Vec::new();
         for name in &feat_names {
-            let s = df.get_column(name).ok_or_else(|| format!("column '{name}' not found"))?;
+            let s = df
+                .get_column(name)
+                .ok_or_else(|| format!("column '{name}' not found"))?;
             feats.push(series_to_f32(&s.data)?);
         }
         let label_s = df
@@ -341,7 +357,9 @@ pub fn nml_columnar_epoch(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef>
         let NmlHandle::Trainer(t) = h else {
             return Err("expected trainer".into());
         };
-        let loss = t.train_columnar_epoch(&mut epoch).map_err(|e| e.to_string())?;
+        let loss = t
+            .train_columnar_epoch(&mut epoch)
+            .map_err(|e| e.to_string())?;
         Ok(loss)
     })
     .map(ok_float)
@@ -358,7 +376,10 @@ pub fn data_builtins() -> Vec<(&'static str, NativeFn)> {
         ("ncl_to_nml_matrix", Rc::new(ncl_to_nml_matrix)),
         ("npg_to_ncl", Rc::new(npg_to_ncl)),
         ("nmongo_to_ncl", Rc::new(nmongo_to_ncl)),
-        ("nml_node_features_from_ncl", Rc::new(nml_node_features_from_ncl)),
+        (
+            "nml_node_features_from_ncl",
+            Rc::new(nml_node_features_from_ncl),
+        ),
         ("nml_pipeline", Rc::new(nml_pipeline)),
         ("nml_columnar_epoch", Rc::new(nml_columnar_epoch)),
     ]

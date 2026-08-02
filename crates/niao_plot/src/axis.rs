@@ -160,7 +160,14 @@ mod tests {
 
     #[test]
     fn log_transform_px() {
-        let tr = Transform::new(Limits::new(1.0, 100.0), Scale::Log, 50.0, 50.0, 300.0, 200.0);
+        let tr = Transform::new(
+            Limits::new(1.0, 100.0),
+            Scale::Log,
+            50.0,
+            50.0,
+            300.0,
+            200.0,
+        );
         let px1 = tr.data_to_px_x(1.0);
         let px10 = tr.data_to_px_x(10.0);
         let px100 = tr.data_to_px_x(100.0);

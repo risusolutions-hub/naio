@@ -16,14 +16,18 @@ pub fn parse_row_format(s: &str) -> Result<RowFormat, String> {
     match s {
         "object" => Ok(RowFormat::Object),
         "array" => Ok(RowFormat::Array),
-        other => Err(format!("unknown row format \"{other}\" (use \"object\" or \"array\")")),
+        other => Err(format!(
+            "unknown row format \"{other}\" (use \"object\" or \"array\")"
+        )),
     }
 }
 
 fn row_to_object(row: &Row<'_>, cols: &[String]) -> Value {
     let mut map = HashMap::with_capacity(cols.len());
     for (i, name) in cols.iter().enumerate() {
-        let val = row.get::<_, rusqlite::types::Value>(i).unwrap_or(rusqlite::types::Value::Null);
+        let val = row
+            .get::<_, rusqlite::types::Value>(i)
+            .unwrap_or(rusqlite::types::Value::Null);
         map.insert(name.clone(), sql_to_niao(val).ref_cell());
     }
     Value::Object(map)
@@ -32,16 +36,15 @@ fn row_to_object(row: &Row<'_>, cols: &[String]) -> Value {
 fn row_to_array(row: &Row<'_>, col_count: usize) -> Value {
     let mut items = Vec::with_capacity(col_count);
     for i in 0..col_count {
-        let val = row.get::<_, rusqlite::types::Value>(i).unwrap_or(rusqlite::types::Value::Null);
+        let val = row
+            .get::<_, rusqlite::types::Value>(i)
+            .unwrap_or(rusqlite::types::Value::Null);
         items.push(sql_to_niao(val).ref_cell());
     }
     Value::Array(items)
 }
 
-pub fn collect_rows(
-    mut stmt: rusqlite::Statement<'_>,
-    format: RowFormat,
-) -> Result<Value, String> {
+pub fn collect_rows(mut stmt: rusqlite::Statement<'_>, format: RowFormat) -> Result<Value, String> {
     let col_count = stmt.column_count() as usize;
     let cols: Vec<String> = (0..col_count)
         .map(|i| stmt.column_name(i).unwrap_or("").to_string())
@@ -64,7 +67,12 @@ pub fn collect_rows(
             let mut map = HashMap::new();
             map.insert(
                 "columns".to_string(),
-                Value::Array(cols.into_iter().map(|c| Value::String(c).ref_cell()).collect()).ref_cell(),
+                Value::Array(
+                    cols.into_iter()
+                        .map(|c| Value::String(c).ref_cell())
+                        .collect(),
+                )
+                .ref_cell(),
             );
             map.insert("rows".to_string(), Value::Array(data).ref_cell());
             Ok(Value::Object(map))
@@ -111,7 +119,9 @@ pub fn query_value_on_conn(
     apply_params(&mut stmt, params)?;
     let mut rows = stmt.raw_query();
     if let Some(row) = rows.next().map_err(|e| e.to_string())? {
-        let val = row.get::<_, rusqlite::types::Value>(0).unwrap_or(rusqlite::types::Value::Null);
+        let val = row
+            .get::<_, rusqlite::types::Value>(0)
+            .unwrap_or(rusqlite::types::Value::Null);
         Ok(sql_to_niao(val))
     } else {
         Ok(Value::Nil)
@@ -128,13 +138,19 @@ pub fn query_column_on_conn(
     let mut rows = stmt.raw_query();
     let mut out = Vec::new();
     while let Some(row) = rows.next().map_err(|e| e.to_string())? {
-        let val = row.get::<_, rusqlite::types::Value>(0).unwrap_or(rusqlite::types::Value::Null);
+        let val = row
+            .get::<_, rusqlite::types::Value>(0)
+            .unwrap_or(rusqlite::types::Value::Null);
         out.push(sql_to_niao(val).ref_cell());
     }
     Ok(Value::Array(out))
 }
 
-pub fn exec_on_conn(conn: &mut ConnHandle, sql: &str, params: &[super::types::BoundValue]) -> Result<(), String> {
+pub fn exec_on_conn(
+    conn: &mut ConnHandle,
+    sql: &str,
+    params: &[super::types::BoundValue],
+) -> Result<(), String> {
     if params.is_empty() {
         conn.conn.execute(sql, []).map_err(|e| e.to_string())?;
     } else {

@@ -57,8 +57,9 @@ fn compress(state: &mut [u32; 8], block: &[u8; 64]) {
             .wrapping_add(small_sigma0(w[i - 15]))
             .wrapping_add(w[i - 16]);
     }
-    let (mut a, mut b, mut c, mut d, mut e, mut f, mut g, mut h) =
-        (state[0], state[1], state[2], state[3], state[4], state[5], state[6], state[7]);
+    let (mut a, mut b, mut c, mut d, mut e, mut f, mut g, mut h) = (
+        state[0], state[1], state[2], state[3], state[4], state[5], state[6], state[7],
+    );
     for i in 0..64 {
         let t1 = h
             .wrapping_add(big_sigma1(e))

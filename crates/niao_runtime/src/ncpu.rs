@@ -147,10 +147,19 @@ fn ncpu_get_max_temp(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
 fn ncpu_info(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity(args, 0, "ncpu_info", span)?;
     let mut map = HashMap::new();
-    map.insert("cores".to_string(), Value::Int(hw::logical_cores() as i64).ref_cell());
+    map.insert(
+        "cores".to_string(),
+        Value::Int(hw::logical_cores() as i64).ref_cell(),
+    );
     map.insert("physical_cores".to_string(), opt_num(hw::physical_cores()));
-    map.insert("arch".to_string(), Value::String(std::env::consts::ARCH.to_string()).ref_cell());
-    map.insert("brand".to_string(), Value::String(hw::cpu_brand()).ref_cell());
+    map.insert(
+        "arch".to_string(),
+        Value::String(std::env::consts::ARCH.to_string()).ref_cell(),
+    );
+    map.insert(
+        "brand".to_string(),
+        Value::String(hw::cpu_brand()).ref_cell(),
+    );
     map.insert("usage".to_string(), opt_pct(hw::cpu_usage_pct()));
     map.insert("temp_c".to_string(), opt_num(hw::cpu_temp_c()));
     map.insert(
@@ -161,7 +170,10 @@ fn ncpu_info(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
         "max_temp_c".to_string(),
         Value::Int(hw::CPU_MAX_TEMP_C.load(Ordering::Relaxed) as i64).ref_cell(),
     );
-    map.insert("threads".to_string(), Value::Int(hw::allowed_threads() as i64).ref_cell());
+    map.insert(
+        "threads".to_string(),
+        Value::Int(hw::allowed_threads() as i64).ref_cell(),
+    );
     Ok(Value::Object(map).ref_cell())
 }
 
@@ -193,7 +205,10 @@ ncpu_fns![
 ];
 
 fn all_builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(flat, _, f)| (flat, f)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(flat, _, f)| (flat, f))
+        .collect()
 }
 
 pub fn namespace() -> Value {

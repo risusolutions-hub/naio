@@ -111,12 +111,20 @@ fn fit_ses_or_holt(y: &[f64], with_trend: bool) -> TsResult<EtsFit> {
 
     let mut obj = |u: &[f64], _grad: &mut [f64]| -> f64 {
         let alpha = u[0].clamp(0.001, 0.999);
-        let beta = if with_trend { u[1].clamp(0.001, 0.999) } else { 0.0 };
+        let beta = if with_trend {
+            u[1].clamp(0.001, 0.999)
+        } else {
+            0.0
+        };
         let (fitted, _) = hw_smooth(&yv, alpha, beta, 0.0, 0, false);
         fitted.iter().zip(&yv).map(|(&f, &o)| (o - f).powi(2)).sum()
     };
 
-    let u0 = if with_trend { vec![0.3, 0.1] } else { vec![0.3] };
+    let u0 = if with_trend {
+        vec![0.3, 0.1]
+    } else {
+        vec![0.3]
+    };
     let lo: Vec<f64> = vec![0.0; n_params];
     let hi: Vec<f64> = vec![1.0; n_params];
     let res = minimize(
@@ -184,7 +192,10 @@ fn fit_holt_winters(y: &[f64], period: usize, mult: bool) -> TsResult<EtsFit> {
         },
     );
     if !res.success {
-        return Err(TsError::NonConvergence(format!("Holt-Winters: {}", res.message)));
+        return Err(TsError::NonConvergence(format!(
+            "Holt-Winters: {}",
+            res.message
+        )));
     }
     let alpha = res.x[0].clamp(0.001, 0.999);
     let beta = res.x[1].clamp(0.001, 0.999);
@@ -251,10 +262,11 @@ fn hw_smooth(
             trend = beta * (level - prev_level) + (1.0 - beta) * trend;
         } else if mult {
             fitted[t] = (level + trend) * prev_season;
-            level = alpha * (y[t] / prev_season.max(1e-12)) + (1.0 - alpha) * (prev_level + prev_trend);
+            level =
+                alpha * (y[t] / prev_season.max(1e-12)) + (1.0 - alpha) * (prev_level + prev_trend);
             trend = beta * (level - prev_level) + (1.0 - beta) * prev_trend;
-            seasonal[t % period] =
-                gamma * (y[t] / (level * (prev_level + prev_trend).max(1e-12))) + (1.0 - gamma) * prev_season;
+            seasonal[t % period] = gamma * (y[t] / (level * (prev_level + prev_trend).max(1e-12)))
+                + (1.0 - gamma) * prev_season;
         } else {
             fitted[t] = level + trend + prev_season;
             level = alpha * (y[t] - prev_season) + (1.0 - alpha) * (prev_level + prev_trend);

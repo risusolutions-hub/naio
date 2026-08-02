@@ -4,7 +4,11 @@ use ahiru_core::{AhiruResponse, RequestContext};
 use std::collections::HashMap;
 use std::time::Instant;
 
-pub fn run_bench(routes: &[String], concurrency: usize, iterations: usize) -> Result<(), Box<dyn std::error::Error>> {
+pub fn run_bench(
+    routes: &[String],
+    concurrency: usize,
+    iterations: usize,
+) -> Result<(), Box<dyn std::error::Error>> {
     let rt = tokio::runtime::Runtime::new()?;
     for route in routes {
         let handler = match route.as_str() {

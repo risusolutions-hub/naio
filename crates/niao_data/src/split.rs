@@ -16,7 +16,12 @@ pub fn train_val_split(x: &Tensor, y: &Tensor, ratio: f32, seed: u64) -> TensorR
     train_test_split(x, y, ratio, seed)
 }
 
-pub fn train_test_split(x: &Tensor, y: &Tensor, train_ratio: f32, seed: u64) -> TensorResult<SplitResult> {
+pub fn train_test_split(
+    x: &Tensor,
+    y: &Tensor,
+    train_ratio: f32,
+    seed: u64,
+) -> TensorResult<SplitResult> {
     let n = x.shape[0];
     let mut indices: Vec<usize> = (0..n).collect();
     let mut rng = rand::rngs::StdRng::seed_from_u64(seed);

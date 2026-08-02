@@ -1,8 +1,8 @@
 //! Thread-local handle table for sockets, TLS streams, HTTP servers, and WebSockets.
 
 use super::socket::NetHandle;
-use niao_errors::codes;
 use niao_ast::Span;
+use niao_errors::codes;
 use std::cell::RefCell;
 use std::collections::HashMap;
 

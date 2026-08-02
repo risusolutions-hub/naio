@@ -58,10 +58,7 @@ pub fn sent_tokenize(text: &str) -> Vec<String> {
             let end = i + 1;
             let slice_lower: String = lower_chars[start..end].iter().collect();
             let is_abbrev = ABBREV.iter().any(|a| slice_lower.ends_with(a));
-            let next_is_lower = chars
-                .get(end)
-                .map(|nc| nc.is_lowercase())
-                .unwrap_or(false);
+            let next_is_lower = chars.get(end).map(|nc| nc.is_lowercase()).unwrap_or(false);
             if !is_abbrev && (!next_is_lower || c != '.') {
                 let sent: String = chars[start..end].iter().collect();
                 let trimmed = sent.trim();

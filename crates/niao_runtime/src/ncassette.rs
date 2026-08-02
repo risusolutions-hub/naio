@@ -118,12 +118,21 @@ fn arity(args: &[ValueRef], n: usize, name: &str, span: Span) -> NiaoResult<()> 
     Ok(())
 }
 
-fn arity_range(args: &[ValueRef], min: usize, max: usize, name: &str, span: Span) -> NiaoResult<()> {
+fn arity_range(
+    args: &[ValueRef],
+    min: usize,
+    max: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<()> {
     if args.len() < min || args.len() > max {
         return Err(RuntimeError::at(
             span,
             E2960_NCASSETTE_ARITY,
-            format!("{name}() expects {min}..={max} argument(s), got {}", args.len()),
+            format!(
+                "{name}() expects {min}..={max} argument(s), got {}",
+                args.len()
+            ),
         ));
     }
     Ok(())
@@ -498,7 +507,10 @@ ncassette_fns![
 ];
 
 fn all_builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(flat, _, f)| (flat, f)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(flat, _, f)| (flat, f))
+        .collect()
 }
 
 pub fn namespace() -> Value {
@@ -571,7 +583,9 @@ mod tests {
         let key = "GET|/users|";
         ncassette_put(&[h.clone(), s(key), s("{\"ok\":true}")], span()).unwrap();
         assert!(matches!(
-            &*ncassette_has(&[h.clone(), s(key)], span()).unwrap().borrow(),
+            &*ncassette_has(&[h.clone(), s(key)], span())
+                .unwrap()
+                .borrow(),
             Value::Bool(true)
         ));
         let v = ncassette_get(&[h.clone(), s(key)], span()).unwrap();

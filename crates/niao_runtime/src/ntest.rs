@@ -53,12 +53,21 @@ fn arity(args: &[ValueRef], n: usize, name: &str, span: Span) -> NiaoResult<()> 
     Ok(())
 }
 
-fn arity_range(args: &[ValueRef], min: usize, max: usize, name: &str, span: Span) -> NiaoResult<()> {
+fn arity_range(
+    args: &[ValueRef],
+    min: usize,
+    max: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<()> {
     if args.len() < min || args.len() > max {
         return Err(RuntimeError::at(
             span,
             codes::E2660_NTEST_ARITY,
-            format!("{name}() expects {min}..={max} argument(s), got {}", args.len()),
+            format!(
+                "{name}() expects {min}..={max} argument(s), got {}",
+                args.len()
+            ),
         ));
     }
     Ok(())
@@ -238,7 +247,10 @@ fn ntest_run(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     summary.insert("passed".to_string(), Value::Int(passed).ref_cell());
     summary.insert("failed".to_string(), Value::Int(failed).ref_cell());
     summary.insert("skipped".to_string(), Value::Int(skipped).ref_cell());
-    summary.insert("duration_ms".to_string(), Value::Int(duration_ms).ref_cell());
+    summary.insert(
+        "duration_ms".to_string(),
+        Value::Int(duration_ms).ref_cell(),
+    );
     summary.insert("ok".to_string(), Value::Bool(failed == 0).ref_cell());
     summary.insert("failures".to_string(), Value::Array(failures).ref_cell());
     Ok(Value::Object(summary).ref_cell())
@@ -263,8 +275,9 @@ fn ntest_assert_false(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity_range(args, 1, 2, "ntest_assert_false", span)?;
     let ok = matches!(&*args[0].borrow(), Value::Bool(false));
     if !ok {
-        let msg = custom_msg(args, 1)
-            .unwrap_or_else(|| format!("assert_false failed: got {}", args[0].borrow().to_string()));
+        let msg = custom_msg(args, 1).unwrap_or_else(|| {
+            format!("assert_false failed: got {}", args[0].borrow().to_string())
+        });
         return Err(assert_fail(span, msg));
     }
     nil()
@@ -420,14 +433,25 @@ ntest_fns![
     ("ntest_assert_eq", "assert_eq", ntest_assert_eq),
     ("ntest_assert_ne", "assert_ne", ntest_assert_ne),
     ("ntest_assert_near", "assert_near", ntest_assert_near),
-    ("ntest_assert_contains", "assert_contains", ntest_assert_contains),
+    (
+        "ntest_assert_contains",
+        "assert_contains",
+        ntest_assert_contains
+    ),
     ("ntest_assert_error", "assert_error", ntest_assert_error),
-    ("ntest_assert_not_error", "assert_not_error", ntest_assert_not_error),
+    (
+        "ntest_assert_not_error",
+        "assert_not_error",
+        ntest_assert_not_error
+    ),
     ("ntest_fail", "fail", ntest_fail),
 ];
 
 fn all_builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(flat, _, f)| (flat, f)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(flat, _, f)| (flat, f))
+        .collect()
 }
 
 pub fn namespace() -> Value {
@@ -470,8 +494,19 @@ mod tests {
 
     #[test]
     fn assert_near_eps() {
-        assert!(ntest_assert_near(&[Value::Float(1.0).ref_cell(), Value::Float(1.0 + 1e-12).ref_cell()], span()).is_ok());
-        assert!(ntest_assert_near(&[Value::Float(1.0).ref_cell(), Value::Float(1.1).ref_cell()], span()).is_err());
+        assert!(ntest_assert_near(
+            &[
+                Value::Float(1.0).ref_cell(),
+                Value::Float(1.0 + 1e-12).ref_cell()
+            ],
+            span()
+        )
+        .is_ok());
+        assert!(ntest_assert_near(
+            &[Value::Float(1.0).ref_cell(), Value::Float(1.1).ref_cell()],
+            span()
+        )
+        .is_err());
     }
 
     #[test]

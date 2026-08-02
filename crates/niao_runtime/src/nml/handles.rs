@@ -1,14 +1,14 @@
 //! NML native handle arena.
 
+use niao_ast::Span;
+use niao_classic::{DecisionTree, KMeans, LogisticRegression, RandomForest};
+use niao_errors::codes;
+use niao_graph::SparseAdj;
+use niao_ml::dataloader::DataLoader;
+use niao_ml::gnn::{GcnLayer, GnnModel, GraphSageLayer};
 use niao_ml::model::Sequential;
 use niao_ml::trainer::Trainer;
-use niao_ml::dataloader::DataLoader;
 use niao_tensor::Tensor;
-use niao_classic::{KMeans, LogisticRegression, DecisionTree, RandomForest};
-use niao_graph::SparseAdj;
-use niao_ml::gnn::{GcnLayer, GnnModel, GraphSageLayer};
-use niao_ast::Span;
-use niao_errors::codes;
 use std::cell::RefCell;
 use std::collections::HashMap;
 
@@ -59,7 +59,9 @@ impl NmlHandle {
             NmlHandle::RandomForest(r) => format!("RandomForest[{} trees]", r.n_trees),
             NmlHandle::SparseAdj(a) => format!("SparseAdj[n={} nnz={}]", a.n, a.nnz()),
             NmlHandle::GcnLayer(l) => format!("GcnLayer[{}->{}]", l.in_features, l.out_features),
-            NmlHandle::GraphSageLayer(l) => format!("GraphSage[{}->{}]", l.in_features, l.out_features),
+            NmlHandle::GraphSageLayer(l) => {
+                format!("GraphSage[{}->{}]", l.in_features, l.out_features)
+            }
             NmlHandle::GnnModel(m) => format!("GnnModel[{} layers]", m.layers.len()),
         }
     }
@@ -98,23 +100,25 @@ where
     F: FnOnce(&NmlHandle) -> Result<R, String>,
 {
     let h = HANDLES.with(|m| {
-        m.borrow()
-            .get(&id)
-            .cloned()
-            .ok_or_else(|| {
-                crate::RuntimeError::at(
-                    span,
-                    codes::E1972_NML_INVALID_HANDLE,
-                    format!("{name}(): invalid NML handle {id}"),
-                )
-            })
+        m.borrow().get(&id).cloned().ok_or_else(|| {
+            crate::RuntimeError::at(
+                span,
+                codes::E1972_NML_INVALID_HANDLE,
+                format!("{name}(): invalid NML handle {id}"),
+            )
+        })
     })?;
     f(&h).map_err(|msg| {
         crate::RuntimeError::at(span, codes::E1971_NML_ERROR, format!("{name}(): {msg}"))
     })
 }
 
-pub fn with_handle_mut<F, R>(id: u64, name: &str, span: Span, f: F) -> Result<R, crate::RuntimeError>
+pub fn with_handle_mut<F, R>(
+    id: u64,
+    name: &str,
+    span: Span,
+    f: F,
+) -> Result<R, crate::RuntimeError>
 where
     F: FnOnce(&mut NmlHandle) -> Result<R, String>,
 {

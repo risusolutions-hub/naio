@@ -22,4 +22,3 @@ pub fn prometheus_text() -> String {
          ahiru_http_errors_total {errs}\n"
     )
 }
-

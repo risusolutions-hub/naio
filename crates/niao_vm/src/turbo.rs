@@ -404,10 +404,7 @@ impl LoopRegion {
 
 /// Find every loop (backward-jump target) in a function and try to compile it.
 /// Returns `(jump_ip, region)` pairs: the VM intercepts those Jump instructions.
-pub(crate) fn find_regions(
-    code: &[OpCode],
-    constants: &[FastVal],
-) -> Vec<(usize, Rc<LoopRegion>)> {
+pub(crate) fn find_regions(code: &[OpCode], constants: &[FastVal]) -> Vec<(usize, Rc<LoopRegion>)> {
     let mut heads: HashMap<usize, usize> = HashMap::new();
     let mut back_jumps: Vec<(usize, usize)> = Vec::new();
     for (j, op) in code.iter().enumerate() {
@@ -1302,8 +1299,13 @@ mod jit {
                     let a = b.use_var(vars[x as usize]);
                     let c = b.use_var(vars[y as usize]);
                     let cond = b.ins().icmp(cmp_cc(kind), a, c);
-                    b.ins()
-                        .brif(cond, blocks[taken as usize], &[], blocks[fall as usize], &[]);
+                    b.ins().brif(
+                        cond,
+                        blocks[taken as usize],
+                        &[],
+                        blocks[fall as usize],
+                        &[],
+                    );
                 }
                 UOp::BrLt(x, y, t)
                 | UOp::BrLe(x, y, t)

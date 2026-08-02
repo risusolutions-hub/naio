@@ -22,7 +22,12 @@ fn alloc_ftp(client: FtpClient) -> u64 {
     id
 }
 
-fn ftp_arg(args: &[crate::ValueRef], idx: usize, name: &str, span: Span) -> Result<u64, crate::RuntimeError> {
+fn ftp_arg(
+    args: &[crate::ValueRef],
+    idx: usize,
+    name: &str,
+    span: Span,
+) -> Result<u64, crate::RuntimeError> {
     let id = super::handle_arg(args, idx, name, span)?;
     FTP_HANDLES.with(|m| {
         if m.borrow().contains_key(&id) {
@@ -60,11 +65,7 @@ pub fn net_ftp_login(args: &[crate::ValueRef], span: Span) -> NetResult {
     FTP_HANDLES.with(|m| {
         let mut guard = m.borrow_mut();
         let client = guard.get_mut(&id).ok_or_else(|| {
-            crate::RuntimeError::at(
-                span,
-                codes::E1402_NET_INVALID_HANDLE,
-                "invalid ftp handle",
-            )
+            crate::RuntimeError::at(span, codes::E1402_NET_INVALID_HANDLE, "invalid ftp handle")
         })?;
         client
             .login(&user, &pass)
@@ -80,11 +81,7 @@ pub fn net_ftp_get(args: &[crate::ValueRef], span: Span) -> NetResult {
     FTP_HANDLES.with(|m| {
         let mut guard = m.borrow_mut();
         let client = guard.get_mut(&id).ok_or_else(|| {
-            crate::RuntimeError::at(
-                span,
-                codes::E1402_NET_INVALID_HANDLE,
-                "invalid ftp handle",
-            )
+            crate::RuntimeError::at(span, codes::E1402_NET_INVALID_HANDLE, "invalid ftp handle")
         })?;
         let data = client
             .get(&remote)
@@ -101,11 +98,7 @@ pub fn net_ftp_put(args: &[crate::ValueRef], span: Span) -> NetResult {
     FTP_HANDLES.with(|m| {
         let mut guard = m.borrow_mut();
         let client = guard.get_mut(&id).ok_or_else(|| {
-            crate::RuntimeError::at(
-                span,
-                codes::E1402_NET_INVALID_HANDLE,
-                "invalid ftp handle",
-            )
+            crate::RuntimeError::at(span, codes::E1402_NET_INVALID_HANDLE, "invalid ftp handle")
         })?;
         client
             .put(&remote, content.as_bytes())

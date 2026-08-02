@@ -270,8 +270,7 @@ impl Interpreter {
             if let Some(export) = niao_runtime::native_module_export_name(import_path) {
                 if let Some(val) = self.globals.get(export) {
                     if let Some(alias) = &imp.alias {
-                        self.globals
-                            .define(alias.clone(), Rc::clone(&val));
+                        self.globals.define(alias.clone(), Rc::clone(&val));
                     }
                 }
             }
@@ -476,9 +475,11 @@ impl Interpreter {
         match self.execute_block(&func.def.body, env)? {
             ExecResult::Return(val) => Ok(val),
             ExecResult::Value(val) => Ok(val),
-            ExecResult::Break | ExecResult::Continue => {
-                Err(RuntimeError::at(func.def.span, 1005, "invalid control flow"))
-            }
+            ExecResult::Break | ExecResult::Continue => Err(RuntimeError::at(
+                func.def.span,
+                1005,
+                "invalid control flow",
+            )),
         }
     }
 
@@ -505,7 +506,12 @@ impl Interpreter {
         env: Rc<Environment>,
     ) -> Result<ExecResult, RuntimeError> {
         match stmt {
-            Stmt::VarDecl { name, init, span: _, .. } => {
+            Stmt::VarDecl {
+                name,
+                init,
+                span: _,
+                ..
+            } => {
                 let val = if let Some(expr) = init {
                     self.eval_expr(expr, Rc::clone(&env))?
                 } else {
@@ -640,7 +646,8 @@ impl Interpreter {
                                 if !arr.set(i, {
                                     let Value::String(s) = &*val.borrow() else {
                                         return Err(RuntimeError::TypeError {
-                                            message: "string array index requires string value".into(),
+                                            message: "string array index requires string value"
+                                                .into(),
                                             line: span.line,
                                             col: span.col,
                                         });
@@ -713,7 +720,9 @@ impl Interpreter {
                 }
                 Ok(ExecResult::Value(Value::Nil.ref_cell()))
             }
-            Stmt::For { var, iter, body, .. } => {
+            Stmt::For {
+                var, iter, body, ..
+            } => {
                 let iterable = self.eval_expr(iter, Rc::clone(&env))?;
                 let items = match &*iterable.borrow() {
                     Value::Array(a) => a.clone(),
@@ -750,28 +759,25 @@ impl Interpreter {
                 catch_var,
                 catch_block,
                 ..
-            } => {
-                match self.execute_block(try_block, Rc::clone(&env)) {
-                    Ok(result) => Ok(result),
-                    Err(e) => {
-                        let catch_env = Environment::child(Rc::clone(&env));
-                        let catch_val = match e {
-                            RuntimeError::Thrown(v) => Value::Error(v).ref_cell(),
-                            other => error_from_runtime(&other),
-                        };
-                        catch_env.define(catch_var.clone(), catch_val);
-                        self.execute_block(catch_block, catch_env)
-                    }
+            } => match self.execute_block(try_block, Rc::clone(&env)) {
+                Ok(result) => Ok(result),
+                Err(e) => {
+                    let catch_env = Environment::child(Rc::clone(&env));
+                    let catch_val = match e {
+                        RuntimeError::Thrown(v) => Value::Error(v).ref_cell(),
+                        other => error_from_runtime(&other),
+                    };
+                    catch_env.define(catch_var.clone(), catch_val);
+                    self.execute_block(catch_block, catch_env)
                 }
-            }
+            },
             Stmt::Throw { value, span } => {
                 let val = self.eval_expr(value, Rc::clone(&env))?;
                 let err = match &*val.borrow() {
                     Value::Error(e) => RuntimeError::thrown(e.clone()),
-                    other => RuntimeError::thrown(NiaoErrorValue::from_message(
-                        other.to_string(),
-                        *span,
-                    )),
+                    other => {
+                        RuntimeError::thrown(NiaoErrorValue::from_message(other.to_string(), *span))
+                    }
                 };
                 Err(err)
             }
@@ -780,11 +786,7 @@ impl Interpreter {
         }
     }
 
-    fn eval_expr(
-        &mut self,
-        expr: &Expr,
-        env: Rc<Environment>,
-    ) -> Result<ValueRef, RuntimeError> {
+    fn eval_expr(&mut self, expr: &Expr, env: Rc<Environment>) -> Result<ValueRef, RuntimeError> {
         match expr {
             Expr::Int(v, _) => Ok(Value::Int(*v).ref_cell()),
             Expr::Float(v, _) => Ok(Value::Float(*v).ref_cell()),
@@ -812,13 +814,17 @@ impl Interpreter {
                 let result = apply_unaryop(*op, &val.borrow(), *span)?;
                 Ok(result.ref_cell())
             }
-            Expr::Call { callee, args, span } => {
-                self.eval_call(callee, args, *span, env)
-            }
-            Expr::Member { object, field, span } => {
-                self.eval_member(object, field, *span, env, false)
-            }
-            Expr::Index { object, index, span } => {
+            Expr::Call { callee, args, span } => self.eval_call(callee, args, *span, env),
+            Expr::Member {
+                object,
+                field,
+                span,
+            } => self.eval_member(object, field, *span, env, false),
+            Expr::Index {
+                object,
+                index,
+                span,
+            } => {
                 let obj = self.eval_expr(object, Rc::clone(&env))?;
                 let idx = self.eval_expr(index, env)?;
                 let i = match &*idx.borrow() {
@@ -834,10 +840,18 @@ impl Interpreter {
                 let elem = {
                     let borrowed = obj.borrow();
                     match &*borrowed {
-                        Value::IntArray(arr) => arr.get(i).copied().map(|n| Value::Int(n).ref_cell()),
-                        Value::FloatArray(arr) => arr.get(i).copied().map(|n| Value::Float(n).ref_cell()),
-                        Value::BoolArray(arr) => arr.get(i).copied().map(|n| Value::Bool(n != 0).ref_cell()),
-                        Value::ByteArray(arr) => arr.get(i).copied().map(|n| Value::Int(n as i64).ref_cell()),
+                        Value::IntArray(arr) => {
+                            arr.get(i).copied().map(|n| Value::Int(n).ref_cell())
+                        }
+                        Value::FloatArray(arr) => {
+                            arr.get(i).copied().map(|n| Value::Float(n).ref_cell())
+                        }
+                        Value::BoolArray(arr) => {
+                            arr.get(i).copied().map(|n| Value::Bool(n != 0).ref_cell())
+                        }
+                        Value::ByteArray(arr) => {
+                            arr.get(i).copied().map(|n| Value::Int(n as i64).ref_cell())
+                        }
                         Value::StringArray(arr) => arr.get(i).map(|s| Value::String(s).ref_cell()),
                         Value::Array(arr) => arr.get(i).cloned(),
                         _ => None,
@@ -885,7 +899,9 @@ impl Interpreter {
                 }
                 Ok(Value::Object(map).ref_cell())
             }
-            Expr::ClassInit { name, fields, span } => self.eval_class_init(name, fields, *span, env),
+            Expr::ClassInit { name, fields, span } => {
+                self.eval_class_init(name, fields, *span, env)
+            }
             Expr::SuperCall { method, args, span } => {
                 self.eval_super_call(method, args, *span, env)
             }
@@ -899,7 +915,12 @@ impl Interpreter {
         span: Span,
         env: Rc<Environment>,
     ) -> Result<ValueRef, RuntimeError> {
-        if let Expr::Member { object, field, span: member_span } = callee {
+        if let Expr::Member {
+            object,
+            field,
+            span: member_span,
+        } = callee
+        {
             if let Expr::Ident(class_name, _) = &**object {
                 if self.class_registry.borrow().get_class(class_name).is_some() {
                     let mut arg_vals = Vec::new();
@@ -973,17 +994,13 @@ impl Interpreter {
                         &field_name,
                         self.current_class_name(),
                     )?;
-                    return inst
-                        .fields
-                        .get(&field_name)
-                        .cloned()
-                        .ok_or_else(|| {
-                            RuntimeError::at(
-                                span,
-                                1021,
-                                format!("field '{field_name}' not found on instance"),
-                            )
-                        });
+                    return inst.fields.get(&field_name).cloned().ok_or_else(|| {
+                        RuntimeError::at(
+                            span,
+                            1021,
+                            format!("field '{field_name}' not found on instance"),
+                        )
+                    });
                 }
                 Err(RuntimeError::at(
                     span,
@@ -991,27 +1008,33 @@ impl Interpreter {
                     format!("unknown class '{class_name}'"),
                 ))
             }
-            Value::Object(_) => Ok(borrowed
-                .object_get_field(field)
-                .ok_or(RuntimeError::TypeError {
-                    message: format!("field '{field}' not found"),
-                    line: span.line,
-                    col: span.col,
-                })?),
-            Value::BsonDoc(_) => Ok(borrowed
-                .object_get_field(field)
-                .ok_or(RuntimeError::TypeError {
-                    message: format!("field '{field}' not found"),
-                    line: span.line,
-                    col: span.col,
-                })?),
-            Value::Error(_) => error_field(&borrowed, field)
-                .map(|v| v.ref_cell())
-                .ok_or(RuntimeError::TypeError {
-                    message: format!("field '{field}' not found"),
-                    line: span.line,
-                    col: span.col,
-                }),
+            Value::Object(_) => {
+                Ok(borrowed
+                    .object_get_field(field)
+                    .ok_or(RuntimeError::TypeError {
+                        message: format!("field '{field}' not found"),
+                        line: span.line,
+                        col: span.col,
+                    })?)
+            }
+            Value::BsonDoc(_) => {
+                Ok(borrowed
+                    .object_get_field(field)
+                    .ok_or(RuntimeError::TypeError {
+                        message: format!("field '{field}' not found"),
+                        line: span.line,
+                        col: span.col,
+                    })?)
+            }
+            Value::Error(_) => {
+                error_field(&borrowed, field)
+                    .map(|v| v.ref_cell())
+                    .ok_or(RuntimeError::TypeError {
+                        message: format!("field '{field}' not found"),
+                        line: span.line,
+                        col: span.col,
+                    })
+            }
             _ => Err(RuntimeError::TypeError {
                 message: "invalid member access".into(),
                 line: span.line,
@@ -1049,10 +1072,9 @@ impl Interpreter {
                     format!("method '{method}' not found on class '{class_name}'"),
                 )
             })?;
-        self.class_registry.borrow().check_method_access(
-            &method_entry,
-            self.current_class_name(),
-        )?;
+        self.class_registry
+            .borrow()
+            .check_method_access(&method_entry, self.current_class_name())?;
         let mut full_args = vec![Rc::clone(&receiver)];
         full_args.extend(args.iter().cloned());
         self.call_instance_method(&method_entry, &class_name, &full_args)
@@ -1135,18 +1157,15 @@ impl Interpreter {
         span: Span,
         env: Rc<Environment>,
     ) -> Result<ValueRef, RuntimeError> {
-        let ctx = current_method_context().ok_or_else(|| {
-            RuntimeError::at(span, 1023, "super call outside of instance method")
-        })?;
+        let ctx = current_method_context()
+            .ok_or_else(|| RuntimeError::at(span, 1023, "super call outside of instance method"))?;
         let parent_method = self
             .class_registry
             .borrow()
             .resolve_super_method(&ctx.class_name, method)?;
-        let self_val = env.get("self").ok_or_else(|| RuntimeError::at(
-            span,
-            1023,
-            "super call requires self in scope",
-        ))?;
+        let self_val = env
+            .get("self")
+            .ok_or_else(|| RuntimeError::at(span, 1023, "super call requires self in scope"))?;
         let mut arg_vals = vec![self_val];
         for arg in args {
             arg_vals.push(self.eval_expr(arg, Rc::clone(&env))?);
@@ -1162,9 +1181,7 @@ impl Interpreter {
 }
 
 fn resolve_stdlib_path(stdlib: &Path, import_path: &str) -> Option<PathBuf> {
-    let rel = import_path
-        .strip_prefix("std/")
-        .unwrap_or(import_path);
+    let rel = import_path.strip_prefix("std/").unwrap_or(import_path);
     let direct = stdlib.join(format!("{rel}.niao"));
     if direct.is_file() {
         return Some(direct);

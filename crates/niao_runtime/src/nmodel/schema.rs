@@ -106,13 +106,20 @@ pub fn parse_schema(val: &ValueRef, span: Span) -> Result<SchemaHandle, RuntimeE
             other => {
                 return Err(schema_err(
                     span,
-                    format!("model \"{}\" must be object, got {}", model_name, other.type_name()),
+                    format!(
+                        "model \"{}\" must be object, got {}",
+                        model_name,
+                        other.type_name()
+                    ),
                 ))
             }
         };
-        let fields_ref = model_obj
-            .get("fields")
-            .ok_or_else(|| schema_err(span, format!("model \"{}\" missing \"fields\" key", model_name)))?;
+        let fields_ref = model_obj.get("fields").ok_or_else(|| {
+            schema_err(
+                span,
+                format!("model \"{}\" missing \"fields\" key", model_name),
+            )
+        })?;
         let fields_borrow = fields_ref.borrow();
         let fields_obj = match &*fields_borrow {
             Value::Object(m) => m,
@@ -146,7 +153,13 @@ pub fn parse_schema(val: &ValueRef, span: Span) -> Result<SchemaHandle, RuntimeE
             };
             fields.push(parse_field(field_name, &spec, span)?);
         }
-        models.insert(model_name.clone(), ModelDef { name: model_name.clone(), fields });
+        models.insert(
+            model_name.clone(),
+            ModelDef {
+                name: model_name.clone(),
+                fields,
+            },
+        );
     }
 
     Ok(SchemaHandle { models })
@@ -194,12 +207,22 @@ pub fn parse_field(name: &str, spec: &str, span: Span) -> Result<FieldDef, Runti
         } else {
             return Err(schema_err(
                 span,
-                format!("unknown field attribute \"@{}\" on field \"{}\"", attr, name),
+                format!(
+                    "unknown field attribute \"@{}\" on field \"{}\"",
+                    attr, name
+                ),
             ));
         }
     }
 
-    Ok(FieldDef { name: name.to_string(), ty, is_id, is_unique, nullable, default_sql })
+    Ok(FieldDef {
+        name: name.to_string(),
+        ty,
+        is_id,
+        is_unique,
+        nullable,
+        default_sql,
+    })
 }
 
 /// Coerce a user-provided default string to a SQL literal.

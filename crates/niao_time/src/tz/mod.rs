@@ -16,9 +16,7 @@ pub struct Timezone {
 
 impl Timezone {
     pub fn utc() -> Self {
-        Self {
-            kind: TzKind::Utc,
-        }
+        Self { kind: TzKind::Utc }
     }
 
     pub fn local() -> Self {
@@ -82,11 +80,7 @@ fn leak_name(s: &str) -> &'static str {
         "Australia/Lord_Howe",
         "Pacific/Auckland",
     ];
-    names
-        .iter()
-        .find(|n| **n == s)
-        .copied()
-        .unwrap_or("UTC")
+    names.iter().find(|n| **n == s).copied().unwrap_or("UTC")
 }
 
 pub fn resolve_timezone(name: &str) -> Result<Timezone, String> {

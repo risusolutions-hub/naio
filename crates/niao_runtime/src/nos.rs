@@ -100,12 +100,21 @@ fn arity(args: &[ValueRef], n: usize, name: &str, span: Span) -> NiaoResult<()> 
     Ok(())
 }
 
-fn arity_range(args: &[ValueRef], min: usize, max: usize, name: &str, span: Span) -> NiaoResult<()> {
+fn arity_range(
+    args: &[ValueRef],
+    min: usize,
+    max: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<()> {
     if args.len() < min || args.len() > max {
         return Err(RuntimeError::at(
             span,
             codes::E1800_NOS_ARITY,
-            format!("{name}() expects {min}..={max} argument(s), got {}", args.len()),
+            format!(
+                "{name}() expects {min}..={max} argument(s), got {}",
+                args.len()
+            ),
         ));
     }
     Ok(())
@@ -186,13 +195,29 @@ fn stat_object(meta: &Metadata) -> Value {
         map.insert(k.to_string(), v.ref_cell());
     };
     insert(&mut map, "size", Value::Int(meta.len() as i64));
-    insert(&mut map, "mtime_ms", Value::Int(metadata_ms(meta, "modified")));
-    insert(&mut map, "atime_ms", Value::Int(metadata_ms(meta, "accessed")));
-    insert(&mut map, "ctime_ms", Value::Int(metadata_ms(meta, "created")));
+    insert(
+        &mut map,
+        "mtime_ms",
+        Value::Int(metadata_ms(meta, "modified")),
+    );
+    insert(
+        &mut map,
+        "atime_ms",
+        Value::Int(metadata_ms(meta, "accessed")),
+    );
+    insert(
+        &mut map,
+        "ctime_ms",
+        Value::Int(metadata_ms(meta, "created")),
+    );
     insert(&mut map, "is_file", Value::Bool(meta.is_file()));
     insert(&mut map, "is_dir", Value::Bool(meta.is_dir()));
     insert(&mut map, "is_symlink", Value::Bool(meta.is_symlink()));
-    insert(&mut map, "readonly", Value::Bool(meta.permissions().readonly()));
+    insert(
+        &mut map,
+        "readonly",
+        Value::Bool(meta.permissions().readonly()),
+    );
     Value::Object(map)
 }
 

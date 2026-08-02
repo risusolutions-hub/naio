@@ -5,7 +5,9 @@ use super::config::connect_url;
 use super::handles::{self, ConnHandle, ConnInner};
 use super::query::{exec_on_conn, parse_row_format, query_on_conn, RowFormat};
 use super::types::value_to_async;
-use crate::async_tasks::{spawn_async, task_done, task_result_value, task_wait_loop, with_task, AsyncValue};
+use crate::async_tasks::{
+    spawn_async, task_done, task_result_value, task_wait_loop, with_task, AsyncValue,
+};
 use crate::{error_value, NiaoResult, RuntimeError, Value, ValueRef};
 use niao_ast::Span;
 use niao_errors::codes;
@@ -115,7 +117,14 @@ pub fn npg_task_result(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
         codes::E1905_NPG_TASK_NOT_FOUND,
         "npg task cancelled",
         |s, m| npg_async_error(s, m),
-        |state| Ok(task_result_value(state, span, "npg task cancelled", |s, m| npg_async_error(s, m))),
+        |state| {
+            Ok(task_result_value(
+                state,
+                span,
+                "npg task cancelled",
+                |s, m| npg_async_error(s, m),
+            ))
+        },
     )
 }
 

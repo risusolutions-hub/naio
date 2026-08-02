@@ -1,7 +1,9 @@
 //! High-level query helpers and row mapping.
 
 use super::handles::ConnHandle;
-use super::types::{bound_to_sql_params, pg_to_niao, rewrite_placeholders, row_column_names, sql_param_refs};
+use super::types::{
+    bound_to_sql_params, pg_to_niao, rewrite_placeholders, row_column_names, sql_param_refs,
+};
 use crate::Value;
 use niao_db::postgres::Row;
 use std::collections::HashMap;
@@ -17,7 +19,9 @@ pub fn parse_row_format(s: &str) -> Result<RowFormat, String> {
     match s {
         "object" => Ok(RowFormat::Object),
         "array" => Ok(RowFormat::Array),
-        other => Err(format!("unknown row format \"{other}\" (use \"object\" or \"array\")")),
+        other => Err(format!(
+            "unknown row format \"{other}\" (use \"object\" or \"array\")"
+        )),
     }
 }
 
@@ -67,7 +71,12 @@ pub fn collect_rows(rows: Vec<Row>, format: RowFormat) -> Result<Value, String> 
             let mut map = HashMap::new();
             map.insert(
                 "columns".to_string(),
-                Value::Array(cols.into_iter().map(|c| Value::String(c).ref_cell()).collect()).ref_cell(),
+                Value::Array(
+                    cols.into_iter()
+                        .map(|c| Value::String(c).ref_cell())
+                        .collect(),
+                )
+                .ref_cell(),
             );
             map.insert("rows".to_string(), Value::Array(data).ref_cell());
             Ok(Value::Object(map))
@@ -149,7 +158,11 @@ pub fn query_column_on_conn(
     Ok(Value::Array(out))
 }
 
-pub fn exec_on_conn(conn: &mut ConnHandle, sql: &str, params: &[super::types::BoundValue]) -> Result<u64, String> {
+pub fn exec_on_conn(
+    conn: &mut ConnHandle,
+    sql: &str,
+    params: &[super::types::BoundValue],
+) -> Result<u64, String> {
     let sql = rewrite_placeholders(sql);
     let boxes = bound_to_sql_params(params);
     let refs = sql_param_refs(&boxes);
@@ -171,7 +184,9 @@ pub fn batch_on_conn(
     for row in rows {
         let boxes = bound_to_sql_params(row);
         let refs = sql_param_refs(&boxes);
-        total += trans.execute(sql.as_str(), &refs).map_err(|e| e.to_string())?;
+        total += trans
+            .execute(sql.as_str(), &refs)
+            .map_err(|e| e.to_string())?;
     }
     trans.commit().map_err(|e| e.to_string())?;
     Ok(total)
@@ -203,10 +218,7 @@ pub fn insert_on_conn(
         cols.push(super::types::quote_ident(k));
         placeholders.push(format!("${n}"));
         n += 1;
-        params.push(
-            super::types::niao_to_bound(&*v.borrow(), span)
-                .map_err(|e| format!("{e}"))?,
-        );
+        params.push(super::types::niao_to_bound(&*v.borrow(), span).map_err(|e| format!("{e}"))?);
     }
     let sql = format!(
         "INSERT INTO {table_ref} ({}) VALUES ({}) RETURNING *",
@@ -215,7 +227,10 @@ pub fn insert_on_conn(
     );
     let boxes = bound_to_sql_params(&params);
     let refs = sql_param_refs(&boxes);
-    let rows = conn.client_mut().query(&sql, &refs).map_err(|e| e.to_string())?;
+    let rows = conn
+        .client_mut()
+        .query(&sql, &refs)
+        .map_err(|e| e.to_string())?;
     if let Some(row) = rows.first() {
         let cols = row_column_names(row);
         Ok(row_to_object(row, &cols))

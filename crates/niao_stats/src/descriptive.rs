@@ -162,7 +162,9 @@ pub fn zscore(data: &[f64]) -> StatsResult<Vec<f64>> {
 
 pub fn trim_mean(data: &[f64], proportiontocut: f64) -> StatsResult<f64> {
     if proportiontocut < 0.0 || proportiontocut >= 0.5 {
-        return Err(StatsError::Domain("proportiontocut must be in [0, 0.5)".into()));
+        return Err(StatsError::Domain(
+            "proportiontocut must be in [0, 0.5)".into(),
+        ));
     }
     let mut v = data.to_vec();
     v.sort_by(|a, b| a.partial_cmp(b).unwrap());

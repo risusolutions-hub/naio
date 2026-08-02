@@ -193,12 +193,21 @@ fn arity(args: &[ValueRef], n: usize, name: &str, span: Span) -> NiaoResult<()> 
     Ok(())
 }
 
-fn arity_range(args: &[ValueRef], min: usize, max: usize, name: &str, span: Span) -> NiaoResult<()> {
+fn arity_range(
+    args: &[ValueRef],
+    min: usize,
+    max: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<()> {
     if args.len() < min || args.len() > max {
         return Err(RuntimeError::at(
             span,
             codes::E2670_NCACHE_ARITY,
-            format!("{name}() expects {min}..={max} argument(s), got {}", args.len()),
+            format!(
+                "{name}() expects {min}..={max} argument(s), got {}",
+                args.len()
+            ),
         ));
     }
     Ok(())
@@ -349,11 +358,9 @@ fn ncache_has(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let key = string_arg(args, 1, "ncache_has", span)?;
     let now = now_ms();
     // Non-counting peek: does not affect hit/miss stats or recency.
-    let result = with_cache(id, span, |c| {
-        match c.map.get(&key) {
-            Some(entry) => !Cache::is_expired(entry, now),
-            None => false,
-        }
+    let result = with_cache(id, span, |c| match c.map.get(&key) {
+        Some(entry) => !Cache::is_expired(entry, now),
+        None => false,
     })?;
     match result {
         Ok(b) => Ok(Value::Bool(b).ref_cell()),
@@ -419,15 +426,16 @@ fn ncache_purge(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
 fn ncache_stats(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity(args, 1, "ncache_stats", span)?;
     let id = int_arg(args, 0, "ncache_stats", span)?;
-    match with_cache(id, span, |c| {
-        (c.hits, c.misses, c.map.len(), c.capacity)
-    })? {
+    match with_cache(id, span, |c| (c.hits, c.misses, c.map.len(), c.capacity))? {
         Ok((hits, misses, len, capacity)) => {
             let mut map = HashMap::new();
             map.insert("hits".to_string(), Value::Int(hits as i64).ref_cell());
             map.insert("misses".to_string(), Value::Int(misses as i64).ref_cell());
             map.insert("len".to_string(), Value::Int(len as i64).ref_cell());
-            map.insert("capacity".to_string(), Value::Int(capacity as i64).ref_cell());
+            map.insert(
+                "capacity".to_string(),
+                Value::Int(capacity as i64).ref_cell(),
+            );
             let total = hits + misses;
             let rate = if total == 0 {
                 0.0
@@ -470,7 +478,10 @@ ncache_fns![
 ];
 
 fn all_builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(flat, _, f)| (flat, f)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(flat, _, f)| (flat, f))
+        .collect()
 }
 
 pub fn namespace() -> Value {
@@ -546,7 +557,10 @@ mod tests {
         match &*stats.borrow() {
             Value::Object(map) => {
                 assert!(matches!(&*map.get("hits").unwrap().borrow(), Value::Int(1)));
-                assert!(matches!(&*map.get("misses").unwrap().borrow(), Value::Int(1)));
+                assert!(matches!(
+                    &*map.get("misses").unwrap().borrow(),
+                    Value::Int(1)
+                ));
             }
             other => panic!("expected object, got {other:?}"),
         }

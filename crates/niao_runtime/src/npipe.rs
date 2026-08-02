@@ -114,7 +114,12 @@ fn string_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> NiaoResu
     }
 }
 
-fn string_array_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> NiaoResult<Vec<String>> {
+fn string_array_arg(
+    args: &[ValueRef],
+    idx: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<Vec<String>> {
     match &*args[idx].borrow() {
         Value::Array(items) => {
             let mut out = Vec::with_capacity(items.len());
@@ -371,7 +376,10 @@ npipe_fns![
 ];
 
 fn all_builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(flat, _, f)| (flat, f)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(flat, _, f)| (flat, f))
+        .collect()
 }
 
 pub fn namespace() -> Value {
@@ -474,14 +482,8 @@ mod tests {
 
     #[test]
     fn ops_id_len_type_keys_not_nil() {
-        assert_eq!(
-            expect_int(Ok(apply_op("id", i(7), span()).unwrap())),
-            7
-        );
-        assert_eq!(
-            expect_int(Ok(apply_op("len", s("hi"), span()).unwrap())),
-            2
-        );
+        assert_eq!(expect_int(Ok(apply_op("id", i(7), span()).unwrap())), 7);
+        assert_eq!(expect_int(Ok(apply_op("len", s("hi"), span()).unwrap())), 2);
         assert_eq!(
             expect_str(Ok(apply_op("type", i(1), span()).unwrap())),
             "int"
@@ -496,9 +498,12 @@ mod tests {
             other => panic!("expected array, got {other:?}"),
         }
         assert!(expect_bool(Ok(apply_op("not_nil", i(1), span()).unwrap())));
-        assert!(!expect_bool(Ok(
-            apply_op("not_nil", Value::Nil.ref_cell(), span()).unwrap()
-        )));
+        assert!(!expect_bool(Ok(apply_op(
+            "not_nil",
+            Value::Nil.ref_cell(),
+            span()
+        )
+        .unwrap())));
     }
 
     #[test]
@@ -514,10 +519,7 @@ mod tests {
     fn run_ops_without_handle() {
         let ops = arr(vec![s("type"), s("len")]);
         // type("hello") → "string", len("string") → 6
-        assert_eq!(
-            expect_int(npipe_run_ops(&[ops, s("hello")], span())),
-            6
-        );
+        assert_eq!(expect_int(npipe_run_ops(&[ops, s("hello")], span())), 6);
     }
 
     #[test]

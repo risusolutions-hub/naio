@@ -125,38 +125,53 @@ pub async fn serve_web(file: &Path, default_port: u16) -> Result<(), WebError> {
         app = match method {
             HttpMethod::Get => {
                 let h = Arc::clone(&h);
-                app.route(&route_path, get(move || {
-                    let h = Arc::clone(&h);
-                    async move { execute_route(&h).await }
-                }))
+                app.route(
+                    &route_path,
+                    get(move || {
+                        let h = Arc::clone(&h);
+                        async move { execute_route(&h).await }
+                    }),
+                )
             }
             HttpMethod::Post => {
                 let h = Arc::clone(&h);
-                app.route(&route_path, post(move || {
-                    let h = Arc::clone(&h);
-                    async move { execute_route(&h).await }
-                }))
+                app.route(
+                    &route_path,
+                    post(move || {
+                        let h = Arc::clone(&h);
+                        async move { execute_route(&h).await }
+                    }),
+                )
             }
             HttpMethod::Put => {
                 let h = Arc::clone(&h);
-                app.route(&route_path, put(move || {
-                    let h = Arc::clone(&h);
-                    async move { execute_route(&h).await }
-                }))
+                app.route(
+                    &route_path,
+                    put(move || {
+                        let h = Arc::clone(&h);
+                        async move { execute_route(&h).await }
+                    }),
+                )
             }
             HttpMethod::Delete => {
                 let h = Arc::clone(&h);
-                app.route(&route_path, delete(move || {
-                    let h = Arc::clone(&h);
-                    async move { execute_route(&h).await }
-                }))
+                app.route(
+                    &route_path,
+                    delete(move || {
+                        let h = Arc::clone(&h);
+                        async move { execute_route(&h).await }
+                    }),
+                )
             }
             HttpMethod::Patch => {
                 let h = Arc::clone(&h);
-                app.route(&route_path, patch(move || {
-                    let h = Arc::clone(&h);
-                    async move { execute_route(&h).await }
-                }))
+                app.route(
+                    &route_path,
+                    patch(move || {
+                        let h = Arc::clone(&h);
+                        async move { execute_route(&h).await }
+                    }),
+                )
             }
         };
     }
@@ -179,7 +194,9 @@ fn block_to_fn_source(block: &Block) -> String {
 
 fn stmt_to_source(stmt: &Stmt) -> String {
     match stmt {
-        Stmt::Return { value: Some(expr), .. } => {
+        Stmt::Return {
+            value: Some(expr), ..
+        } => {
             format!("    return {};", expr_to_source(expr))
         }
         Stmt::Return { .. } => "    return;".into(),

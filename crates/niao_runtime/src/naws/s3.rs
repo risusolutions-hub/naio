@@ -1,8 +1,6 @@
 //! naws S3 operations: put, get, delete, list.
 
-use super::{
-    aws_error, get_config, ok_bool, ok_string, ok_value, string_opt, AwsResult,
-};
+use super::{aws_error, get_config, ok_bool, ok_string, ok_value, string_opt, AwsResult};
 use crate::{Value, ValueRef};
 use niao_ast::Span;
 use niao_errors::codes;
@@ -60,7 +58,12 @@ pub fn s3_put(args: &[ValueRef], span: Span) -> AwsResult {
             let status = resp.status as i64;
             if status >= 400 {
                 let body_str = String::from_utf8_lossy(&resp.body).into_owned();
-                return Ok(aws_error(codes::E2801_NAWS_ERROR, "naws_s3_error", body_str, span));
+                return Ok(aws_error(
+                    codes::E2801_NAWS_ERROR,
+                    "naws_s3_error",
+                    body_str,
+                    span,
+                ));
             }
             let etag = resp
                 .header("etag")
@@ -71,7 +74,12 @@ pub fn s3_put(args: &[ValueRef], span: Span) -> AwsResult {
             map.insert("status".into(), ok_value(Value::Int(status)));
             Ok(Value::Object(map).ref_cell())
         }
-        Err(e) => Ok(aws_error(codes::E2801_NAWS_ERROR, "naws_s3_error", e.to_string(), span)),
+        Err(e) => Ok(aws_error(
+            codes::E2801_NAWS_ERROR,
+            "naws_s3_error",
+            e.to_string(),
+            span,
+        )),
     }
 }
 
@@ -121,7 +129,12 @@ pub fn s3_get(args: &[ValueRef], span: Span) -> AwsResult {
             let status = resp.status as i64;
             if status >= 400 {
                 let body_str = String::from_utf8_lossy(&resp.body).into_owned();
-                return Ok(aws_error(codes::E2801_NAWS_ERROR, "naws_s3_error", body_str, span));
+                return Ok(aws_error(
+                    codes::E2801_NAWS_ERROR,
+                    "naws_s3_error",
+                    body_str,
+                    span,
+                ));
             }
             let body_str = String::from_utf8_lossy(&resp.body).into_owned();
             let mut hdrs = HashMap::new();
@@ -136,7 +149,12 @@ pub fn s3_get(args: &[ValueRef], span: Span) -> AwsResult {
             map.insert("headers".into(), ok_value(Value::Object(hdrs)));
             Ok(Value::Object(map).ref_cell())
         }
-        Err(e) => Ok(aws_error(codes::E2801_NAWS_ERROR, "naws_s3_error", e.to_string(), span)),
+        Err(e) => Ok(aws_error(
+            codes::E2801_NAWS_ERROR,
+            "naws_s3_error",
+            e.to_string(),
+            span,
+        )),
     }
 }
 
@@ -186,11 +204,21 @@ pub fn s3_delete(args: &[ValueRef], span: Span) -> AwsResult {
             let status = resp.status as i64;
             if status >= 400 {
                 let body_str = String::from_utf8_lossy(&resp.body).into_owned();
-                return Ok(aws_error(codes::E2801_NAWS_ERROR, "naws_s3_error", body_str, span));
+                return Ok(aws_error(
+                    codes::E2801_NAWS_ERROR,
+                    "naws_s3_error",
+                    body_str,
+                    span,
+                ));
             }
             Ok(ok_bool(true))
         }
-        Err(e) => Ok(aws_error(codes::E2801_NAWS_ERROR, "naws_s3_error", e.to_string(), span)),
+        Err(e) => Ok(aws_error(
+            codes::E2801_NAWS_ERROR,
+            "naws_s3_error",
+            e.to_string(),
+            span,
+        )),
     }
 }
 
@@ -245,12 +273,22 @@ pub fn s3_list(args: &[ValueRef], span: Span) -> AwsResult {
             let status = resp.status as i64;
             let body_str = String::from_utf8_lossy(&resp.body).into_owned();
             if status >= 400 {
-                return Ok(aws_error(codes::E2801_NAWS_ERROR, "naws_s3_error", body_str, span));
+                return Ok(aws_error(
+                    codes::E2801_NAWS_ERROR,
+                    "naws_s3_error",
+                    body_str,
+                    span,
+                ));
             }
             let keys = parse_s3_list_keys(&body_str);
             Ok(Value::Array(keys.into_iter().map(|k| ok_string(k)).collect()).ref_cell())
         }
-        Err(e) => Ok(aws_error(codes::E2801_NAWS_ERROR, "naws_s3_error", e.to_string(), span)),
+        Err(e) => Ok(aws_error(
+            codes::E2801_NAWS_ERROR,
+            "naws_s3_error",
+            e.to_string(),
+            span,
+        )),
     }
 }
 

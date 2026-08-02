@@ -9,7 +9,12 @@ use crate::StringArray;
 use niao_ast::Span;
 use rusqlite::types::Value as SqlValue;
 
-pub fn from_sqlite(conn_id: u64, sql: &str, params: &[crate::ValueRef], span: Span) -> Result<DataFrame, String> {
+pub fn from_sqlite(
+    conn_id: u64,
+    sql: &str,
+    params: &[crate::ValueRef],
+    span: Span,
+) -> Result<DataFrame, String> {
     handles::with_conn_mut(conn_id, "ncl_from_sqlite", span, |handle| {
         let bound: Result<Vec<BoundValue>, _> = params
             .iter()
@@ -23,9 +28,8 @@ pub fn from_sqlite(conn_id: u64, sql: &str, params: &[crate::ValueRef], span: Sp
             .map(|i| stmt.column_name(i).unwrap_or("").to_string())
             .collect();
 
-        let mut col_bufs: Vec<ColumnBuilder> = (0..col_count)
-            .map(|_| ColumnBuilder::new())
-            .collect();
+        let mut col_bufs: Vec<ColumnBuilder> =
+            (0..col_count).map(|_| ColumnBuilder::new()).collect();
 
         let mut rows = stmt.raw_query();
         while let Some(row) = rows.next().map_err(|e| e.to_string())? {
@@ -151,7 +155,10 @@ fn table_value_to_dataframe(value: &crate::Value) -> Result<DataFrame, String> {
             .iter()
             .map(|c| match &*c.borrow() {
                 crate::Value::String(s) => Ok(s.clone()),
-                other => Err(format!("expected column name string, got {}", other.type_name())),
+                other => Err(format!(
+                    "expected column name string, got {}",
+                    other.type_name()
+                )),
             })
             .collect::<Result<_, _>>()?,
         other => return Err(format!("expected columns array, got {}", other.type_name())),
@@ -220,7 +227,8 @@ fn push_niao_value(builder: &mut ColumnBuilder, val: &crate::Value) {
 }
 
 pub fn from_object_rows(rows: &[crate::ValueRef], columns: &[String]) -> Result<DataFrame, String> {
-    let mut builders: Vec<ColumnBuilder> = (0..columns.len()).map(|_| ColumnBuilder::new()).collect();
+    let mut builders: Vec<ColumnBuilder> =
+        (0..columns.len()).map(|_| ColumnBuilder::new()).collect();
     for row_ref in rows {
         let crate::Value::Object(map) = &*row_ref.borrow() else {
             return Err("expected object row".into());

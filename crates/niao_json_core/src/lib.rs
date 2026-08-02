@@ -4,16 +4,18 @@ pub mod error;
 pub mod number;
 pub mod object;
 pub mod parse;
-pub mod value;
-pub mod write;
-pub mod toml;
 #[cfg(feature = "serde")]
 pub mod serde;
+pub mod toml;
+pub mod value;
+pub mod write;
 
 pub use error::ParseError;
 pub use number::Number;
 pub use object::Object;
-pub use parse::{is_valid, is_valid_bytes, parse, parse_bytes, parse_bytes_with_depth, DEFAULT_MAX_DEPTH};
+pub use parse::{
+    is_valid, is_valid_bytes, parse, parse_bytes, parse_bytes_with_depth, DEFAULT_MAX_DEPTH,
+};
 pub use value::Value;
 pub use write::{to_string, to_string_pretty, to_vec, write_value, Writer};
 
@@ -21,13 +23,17 @@ pub use write::{to_string, to_string_pretty, to_vec, write_value, Writer};
 mod tests {
     use super::*;
     use crate::number::Number;
-use crate::object::Object;
+    use crate::object::Object;
 
     fn roundtrip(s: &str) {
         let v = parse(s).expect("parse");
         let out = to_string(&v);
         let v2 = parse(&out).expect("re-parse");
-        assert_eq!(to_string(&v), to_string(&v2), "roundtrip failed for {s:?} -> {out:?}");
+        assert_eq!(
+            to_string(&v),
+            to_string(&v2),
+            "roundtrip failed for {s:?} -> {out:?}"
+        );
     }
 
     #[test]

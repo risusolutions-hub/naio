@@ -20,7 +20,10 @@ pub fn detect_language(text: &str) -> String {
     let mut best_lang = "unknown".to_string();
     let mut best_score = 0usize;
     for (lang, profile) in LANG_PROFILES {
-        let score = profile.iter().filter(|w| toks.contains(&w.to_string())).count();
+        let score = profile
+            .iter()
+            .filter(|w| toks.contains(&w.to_string()))
+            .count();
         if score > best_score {
             best_score = score;
             best_lang = lang.to_string();
@@ -65,8 +68,7 @@ pub fn sentiment(text: &str) -> &'static str {
 /// RAKE-style keyword extraction via degree scoring of word co-occurrence.
 pub fn keywords_rake(text: &str, topn: usize) -> Vec<(String, f64)> {
     let sents: Vec<&str> = text.split(|c| c == '.' || c == '!' || c == '?').collect();
-    let stop: std::collections::HashSet<String> =
-        crate::stopwords::english_stopwords();
+    let stop: std::collections::HashSet<String> = crate::stopwords::english_stopwords();
     let mut phrase_scores: HashMap<String, f64> = HashMap::new();
     let mut word_degree: HashMap<String, f64> = HashMap::new();
     let mut word_freq: HashMap<String, f64> = HashMap::new();
@@ -158,7 +160,10 @@ mod tests {
 
     #[test]
     fn keywords_non_empty() {
-        let kws = keywords("machine learning algorithms for natural language processing", 3);
+        let kws = keywords(
+            "machine learning algorithms for natural language processing",
+            3,
+        );
         assert!(!kws.is_empty());
     }
 }

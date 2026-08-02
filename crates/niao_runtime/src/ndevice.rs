@@ -35,12 +35,21 @@ fn type_err(span: Span, msg: impl Into<String>) -> RuntimeError {
     }
 }
 
-fn arity_range(args: &[ValueRef], min: usize, max: usize, name: &str, span: Span) -> NiaoResult<()> {
+fn arity_range(
+    args: &[ValueRef],
+    min: usize,
+    max: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<()> {
     if args.len() < min || args.len() > max {
         return Err(RuntimeError::at(
             span,
             codes::E2740_NDEVICE_ARITY,
-            format!("{name}() expects {min}..={max} argument(s), got {}", args.len()),
+            format!(
+                "{name}() expects {min}..={max} argument(s), got {}",
+                args.len()
+            ),
         ));
     }
     Ok(())
@@ -106,9 +115,18 @@ fn set_profile_name(name: &str) {
 
 fn cpu_report() -> ValueRef {
     let mut map = HashMap::new();
-    map.insert("cores".to_string(), Value::Int(hw::logical_cores() as i64).ref_cell());
-    map.insert("brand".to_string(), Value::String(hw::cpu_brand()).ref_cell());
-    map.insert("arch".to_string(), Value::String(std::env::consts::ARCH.to_string()).ref_cell());
+    map.insert(
+        "cores".to_string(),
+        Value::Int(hw::logical_cores() as i64).ref_cell(),
+    );
+    map.insert(
+        "brand".to_string(),
+        Value::String(hw::cpu_brand()).ref_cell(),
+    );
+    map.insert(
+        "arch".to_string(),
+        Value::String(std::env::consts::ARCH.to_string()).ref_cell(),
+    );
     map.insert("temp_c".to_string(), opt_num(hw::cpu_temp_c()));
     map.insert(
         "limit_pct".to_string(),
@@ -120,9 +138,18 @@ fn cpu_report() -> ValueRef {
 fn gpu_report() -> ValueRef {
     let snap = hw::gpu_snapshot();
     let mut map = HashMap::new();
-    map.insert("available".to_string(), Value::Bool(!snap.gpus.is_empty()).ref_cell());
-    map.insert("count".to_string(), Value::Int(snap.gpus.len() as i64).ref_cell());
-    map.insert("backend".to_string(), Value::String(snap.backend.to_string()).ref_cell());
+    map.insert(
+        "available".to_string(),
+        Value::Bool(!snap.gpus.is_empty()).ref_cell(),
+    );
+    map.insert(
+        "count".to_string(),
+        Value::Int(snap.gpus.len() as i64).ref_cell(),
+    );
+    map.insert(
+        "backend".to_string(),
+        Value::String(snap.backend.to_string()).ref_cell(),
+    );
     if let Some(g) = snap.gpus.first() {
         map.insert("name".to_string(), Value::String(g.name.clone()).ref_cell());
         map.insert("vram_total_mb".to_string(), opt_num(g.vram_total_mb));
@@ -142,8 +169,14 @@ fn ram_report() -> ValueRef {
     let mut map = HashMap::new();
     map.insert("total_mb".to_string(), opt_num(total));
     map.insert("available_mb".to_string(), opt_num(avail));
-    map.insert("process_mb".to_string(), Value::Int(hw::process_mb()).ref_cell());
-    map.insert("limit_mb".to_string(), Value::Int(hw::ram_budget_mb()).ref_cell());
+    map.insert(
+        "process_mb".to_string(),
+        Value::Int(hw::process_mb()).ref_cell(),
+    );
+    map.insert(
+        "limit_mb".to_string(),
+        Value::Int(hw::ram_budget_mb()).ref_cell(),
+    );
     map.insert(
         "pressure".to_string(),
         Value::String(hw::ram_pressure().to_string()).ref_cell(),
@@ -167,7 +200,10 @@ fn ndevice_detect(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     map.insert("gpu".to_string(), gpu_report());
     map.insert("ram".to_string(), ram_report());
     map.insert("npu".to_string(), npu_report());
-    map.insert("os".to_string(), Value::String(std::env::consts::OS.to_string()).ref_cell());
+    map.insert(
+        "os".to_string(),
+        Value::String(std::env::consts::OS.to_string()).ref_cell(),
+    );
     Ok(Value::Object(map).ref_cell())
 }
 
@@ -182,7 +218,11 @@ fn ndevice_summary(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
         .map(|g| g.name.clone())
         .unwrap_or_else(|| "no GPU".to_string());
     let npu = hw::npu_detect();
-    let npu_part = if npu.present { npu.name } else { "no NPU".to_string() };
+    let npu_part = if npu.present {
+        npu.name
+    } else {
+        "no NPU".to_string()
+    };
     let ram_part = if total > 0 {
         format!("{:.1} GB RAM", total as f64 / 1024.0)
     } else {
@@ -244,7 +284,10 @@ fn ndevice_set_limits(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
         other => {
             return Err(type_err(
                 span,
-                format!("ndevice_set_limits() expects an object, got {}", other.type_name()),
+                format!(
+                    "ndevice_set_limits() expects an object, got {}",
+                    other.type_name()
+                ),
             ))
         }
     };
@@ -252,7 +295,10 @@ fn ndevice_set_limits(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
         if (1..=100).contains(&v) {
             Ok(v as u8)
         } else {
-            Err(type_err(span, format!("ndevice_set_limits() {key} must be 1..=100")))
+            Err(type_err(
+                span,
+                format!("ndevice_set_limits() {key} must be 1..=100"),
+            ))
         }
     };
     if let Some(v) = obj_int(&map, "cpu_pct") {
@@ -272,19 +318,28 @@ fn ndevice_set_limits(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     }
     if let Some(v) = obj_int(&map, "ram_pct") {
         if !(0..=100).contains(&v) {
-            return Err(type_err(span, "ndevice_set_limits() ram_pct must be 0..=100"));
+            return Err(type_err(
+                span,
+                "ndevice_set_limits() ram_pct must be 0..=100",
+            ));
         }
         hw::RAM_LIMIT_PCT.store(v as u8, Ordering::Relaxed);
     }
     if let Some(v) = obj_int(&map, "gpu_max_temp") {
         if !(0..=110).contains(&v) {
-            return Err(type_err(span, "ndevice_set_limits() gpu_max_temp must be 0..=110"));
+            return Err(type_err(
+                span,
+                "ndevice_set_limits() gpu_max_temp must be 0..=110",
+            ));
         }
         hw::GPU_MAX_TEMP_C.store(v as u8, Ordering::Relaxed);
     }
     if let Some(v) = obj_int(&map, "cpu_max_temp") {
         if !(0..=110).contains(&v) {
-            return Err(type_err(span, "ndevice_set_limits() cpu_max_temp must be 0..=110"));
+            return Err(type_err(
+                span,
+                "ndevice_set_limits() cpu_max_temp must be 0..=110",
+            ));
         }
         hw::CPU_MAX_TEMP_C.store(v as u8, Ordering::Relaxed);
     }
@@ -307,7 +362,10 @@ fn ndevice_limits(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
         "npu_pct".to_string(),
         Value::Int(hw::NPU_LIMIT_PCT.load(Ordering::Relaxed) as i64).ref_cell(),
     );
-    map.insert("ram_mb".to_string(), Value::Int(hw::ram_budget_mb()).ref_cell());
+    map.insert(
+        "ram_mb".to_string(),
+        Value::Int(hw::ram_budget_mb()).ref_cell(),
+    );
     map.insert(
         "gpu_max_temp".to_string(),
         Value::Int(hw::GPU_MAX_TEMP_C.load(Ordering::Relaxed) as i64).ref_cell(),
@@ -360,7 +418,10 @@ fn ndevice_guard_start(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
         }
     }
     if !(100..=60_000).contains(&interval_ms) {
-        return Err(type_err(span, "ndevice_guard_start() interval_ms must be 100..=60000"));
+        return Err(type_err(
+            span,
+            "ndevice_guard_start() interval_ms must be 100..=60000",
+        ));
     }
     let started = hw::guard_start(interval_ms as u64);
     Ok(Value::Bool(started).ref_cell())
@@ -381,14 +442,23 @@ fn ndevice_status(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity_range(args, 0, 0, "ndevice_status", span)?;
     let st = hw::guard_status();
     let mut map = HashMap::new();
-    map.insert("guard_running".to_string(), Value::Bool(st.running).ref_cell());
+    map.insert(
+        "guard_running".to_string(),
+        Value::Bool(st.running).ref_cell(),
+    );
     map.insert("ticks".to_string(), Value::Int(st.ticks as i64).ref_cell());
-    map.insert("throttle_level".to_string(), Value::Int(st.level as i64).ref_cell());
+    map.insert(
+        "throttle_level".to_string(),
+        Value::Int(st.level as i64).ref_cell(),
+    );
     map.insert("reason".to_string(), Value::String(st.reason).ref_cell());
     map.insert("gpu_temp_c".to_string(), opt_num(st.gpu_temp_c));
     map.insert("cpu_temp_c".to_string(), opt_num(st.cpu_temp_c));
     map.insert("ram_used_pct".to_string(), opt_num(st.ram_used_pct));
-    map.insert("threads".to_string(), Value::Int(hw::allowed_threads() as i64).ref_cell());
+    map.insert(
+        "threads".to_string(),
+        Value::Int(hw::allowed_threads() as i64).ref_cell(),
+    );
     Ok(Value::Object(map).ref_cell())
 }
 
@@ -493,9 +563,17 @@ ndevice_fns![
     ("ndevice_limits", "limits", ndevice_limits),
     ("ndevice_guard_start", "guard_start", ndevice_guard_start),
     ("ndevice_guard_stop", "guard_stop", ndevice_guard_stop),
-    ("ndevice_guard_running", "guard_running", ndevice_guard_running),
+    (
+        "ndevice_guard_running",
+        "guard_running",
+        ndevice_guard_running
+    ),
     ("ndevice_status", "status", ndevice_status),
-    ("ndevice_throttle_level", "throttle_level", ndevice_throttle_level),
+    (
+        "ndevice_throttle_level",
+        "throttle_level",
+        ndevice_throttle_level
+    ),
     ("ndevice_set_throttle", "set_throttle", ndevice_set_throttle),
     ("ndevice_pace", "pace", ndevice_pace),
     ("ndevice_threads", "threads", ndevice_threads),
@@ -504,7 +582,10 @@ ndevice_fns![
 ];
 
 fn all_builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(flat, _, f)| (flat, f)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(flat, _, f)| (flat, f))
+        .collect()
 }
 
 pub fn namespace() -> Value {
@@ -538,9 +619,7 @@ mod tests {
         assert_eq!(hw::GPU_MAX_TEMP_C.load(Ordering::Relaxed), 75);
         ndevice_profile(&[Value::String("performance".into()).ref_cell()], span()).unwrap();
         assert_eq!(hw::CPU_LIMIT_PCT.load(Ordering::Relaxed), 100);
-        assert!(
-            ndevice_profile(&[Value::String("bogus".into()).ref_cell()], span()).is_err()
-        );
+        assert!(ndevice_profile(&[Value::String("bogus".into()).ref_cell()], span()).is_err());
     }
 
     #[test]

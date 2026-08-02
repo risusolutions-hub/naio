@@ -115,7 +115,10 @@ fn short_char(map: &HashMap<String, ValueRef>, span: Span) -> NiaoResult<Option<
             let mut chars = s.chars();
             match (chars.next(), chars.next()) {
                 (Some(c), None) => Ok(Some(c)),
-                _ => Err(spec_err(span, format!("short alias must be one character, got '{s}'"))),
+                _ => Err(spec_err(
+                    span,
+                    format!("short alias must be one character, got '{s}'"),
+                )),
             }
         }
         None => Ok(None),
@@ -139,7 +142,10 @@ fn spec_list<'a>(
                     other => {
                         return Err(spec_err(
                             span,
-                            format!("spec.{key} entries must be objects, found {}", other.type_name()),
+                            format!(
+                                "spec.{key} entries must be objects, found {}",
+                                other.type_name()
+                            ),
                         ))
                     }
                 }
@@ -186,8 +192,9 @@ fn build_spec(args: &[ValueRef], idx: usize, name: &str, span: Span) -> NiaoResu
             return Err(spec_err(span, "option entry missing 'name'"));
         };
         let ty = match obj_str(&o, "type") {
-            Some(t) => OptType::parse(&t)
-                .ok_or_else(|| spec_err(span, format!("option '{oname}' has unknown type '{t}'")))?,
+            Some(t) => OptType::parse(&t).ok_or_else(|| {
+                spec_err(span, format!("option '{oname}' has unknown type '{t}'"))
+            })?,
             None => OptType::Str,
         };
         let default = o.get("default").map(|v| v.borrow().clone());
@@ -250,7 +257,10 @@ fn argv_list(args: &[ValueRef], idx: usize, name: &str, span: Span) -> NiaoResul
                     other => {
                         return Err(type_err(
                             span,
-                            format!("{name}() argv must contain strings, found {}", other.type_name()),
+                            format!(
+                                "{name}() argv must contain strings, found {}",
+                                other.type_name()
+                            ),
                         ))
                     }
                 }
@@ -268,14 +278,18 @@ fn argv_list(args: &[ValueRef], idx: usize, name: &str, span: Span) -> NiaoResul
 fn convert_typed(raw: &str, ty: OptType, opt_name: &str, span: Span) -> Result<Value, ValueRef> {
     match ty {
         OptType::Str => Ok(Value::String(raw.to_string())),
-        OptType::Int => raw
-            .parse::<i64>()
-            .map(Value::Int)
-            .map_err(|_| parse_err(span, format!("option --{opt_name} expects an int, got '{raw}'"))),
-        OptType::Float => raw
-            .parse::<f64>()
-            .map(Value::Float)
-            .map_err(|_| parse_err(span, format!("option --{opt_name} expects a float, got '{raw}'"))),
+        OptType::Int => raw.parse::<i64>().map(Value::Int).map_err(|_| {
+            parse_err(
+                span,
+                format!("option --{opt_name} expects an int, got '{raw}'"),
+            )
+        }),
+        OptType::Float => raw.parse::<f64>().map(Value::Float).map_err(|_| {
+            parse_err(
+                span,
+                format!("option --{opt_name} expects a float, got '{raw}'"),
+            )
+        }),
         OptType::Bool => match raw.to_ascii_lowercase().as_str() {
             "true" | "1" | "yes" | "on" => Ok(Value::Bool(true)),
             "false" | "0" | "no" | "off" => Ok(Value::Bool(false)),
@@ -406,8 +420,14 @@ fn parse_impl(spec: &Spec, argv: &[String], span: Span) -> Result<ValueRef, Valu
             let mut out: HashMap<String, ValueRef> = HashMap::new();
             out.insert("ok".to_string(), Value::Bool(true).ref_cell());
             out.insert("help".to_string(), Value::Bool(true).ref_cell());
-            out.insert("text".to_string(), Value::String(help_text(spec)).ref_cell());
-            out.insert("values".to_string(), Value::Object(HashMap::new()).ref_cell());
+            out.insert(
+                "text".to_string(),
+                Value::String(help_text(spec)).ref_cell(),
+            );
+            out.insert(
+                "values".to_string(),
+                Value::Object(HashMap::new()).ref_cell(),
+            );
             out.insert("rest".to_string(), Value::Array(Vec::new()).ref_cell());
             return Ok(Value::Object(out).ref_cell());
         }
@@ -419,7 +439,10 @@ fn parse_impl(spec: &Spec, argv: &[String], span: Span) -> Result<ValueRef, Valu
             match lookup_long(spec, &name) {
                 Some(Owner::Flag(fi)) => {
                     if inline_value.is_some() {
-                        return Err(parse_err(span, format!("flag --{name} does not take a value")));
+                        return Err(parse_err(
+                            span,
+                            format!("flag --{name} does not take a value"),
+                        ));
                     }
                     values.insert(spec.flags[fi].name.clone(), Value::Bool(true).ref_cell());
                 }
@@ -460,14 +483,20 @@ fn parse_impl(spec: &Spec, argv: &[String], span: Span) -> Result<ValueRef, Valu
                         if pos != shorts.len() - 1 {
                             return Err(parse_err(
                                 span,
-                                format!("short option -{c} takes a value and must be last in '-{}'", tok.trim_start_matches('-')),
+                                format!(
+                                    "short option -{c} takes a value and must be last in '-{}'",
+                                    tok.trim_start_matches('-')
+                                ),
                             ));
                         }
                         i += 1;
                         let raw = match argv.get(i) {
                             Some(v) => v.clone(),
                             None => {
-                                return Err(parse_err(span, format!("option -{c} is missing its value")))
+                                return Err(parse_err(
+                                    span,
+                                    format!("option -{c} is missing its value"),
+                                ))
                             }
                         };
                         let opt = &spec.options[oi];
@@ -492,7 +521,10 @@ fn parse_impl(spec: &Spec, argv: &[String], span: Span) -> Result<ValueRef, Valu
                 .map(|v| matches!(&*v.borrow(), Value::Nil))
                 .unwrap_or(true);
             if missing {
-                return Err(parse_err(span, format!("missing required option --{}", o.name)));
+                return Err(parse_err(
+                    span,
+                    format!("missing required option --{}", o.name),
+                ));
             }
         }
     }
@@ -506,7 +538,10 @@ fn parse_impl(spec: &Spec, argv: &[String], span: Span) -> Result<ValueRef, Valu
                 .map(|s| Value::String(s).ref_cell())
                 .collect();
             if p.required && remainder.is_empty() {
-                return Err(parse_err(span, format!("missing required argument <{}>", p.name)));
+                return Err(parse_err(
+                    span,
+                    format!("missing required argument <{}>", p.name),
+                ));
             }
             values.insert(p.name.clone(), Value::Array(remainder).ref_cell());
         } else {
@@ -516,7 +551,10 @@ fn parse_impl(spec: &Spec, argv: &[String], span: Span) -> Result<ValueRef, Valu
                 }
                 None => {
                     if p.required {
-                        return Err(parse_err(span, format!("missing required argument <{}>", p.name)));
+                        return Err(parse_err(
+                            span,
+                            format!("missing required argument <{}>", p.name),
+                        ));
                     }
                     values.insert(p.name.clone(), Value::Nil.ref_cell());
                 }
@@ -532,7 +570,12 @@ fn parse_impl(spec: &Spec, argv: &[String], span: Span) -> Result<ValueRef, Valu
     out.insert("values".to_string(), Value::Object(values).ref_cell());
     out.insert(
         "rest".to_string(),
-        Value::Array(rest.into_iter().map(|s| Value::String(s).ref_cell()).collect()).ref_cell(),
+        Value::Array(
+            rest.into_iter()
+                .map(|s| Value::String(s).ref_cell())
+                .collect(),
+        )
+        .ref_cell(),
     );
     Ok(Value::Object(out).ref_cell())
 }
@@ -546,7 +589,10 @@ fn nargs_parse(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
         return Err(RuntimeError::at(
             span,
             codes::E2650_NARGS_ARITY,
-            format!("nargs_parse() expects 2 arguments (spec, argv), got {}", args.len()),
+            format!(
+                "nargs_parse() expects 2 arguments (spec, argv), got {}",
+                args.len()
+            ),
         ));
     }
     let spec = build_spec(args, 0, "nargs_parse", span)?;
@@ -562,7 +608,10 @@ fn nargs_parse_env(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
         return Err(RuntimeError::at(
             span,
             codes::E2650_NARGS_ARITY,
-            format!("nargs_parse_env() expects 1 argument (spec), got {}", args.len()),
+            format!(
+                "nargs_parse_env() expects 1 argument (spec), got {}",
+                args.len()
+            ),
         ));
     }
     let spec = build_spec(args, 0, "nargs_parse_env", span)?;
@@ -620,7 +669,10 @@ nargs_fns![
 ];
 
 fn all_builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(flat, _, f)| (flat, f)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(flat, _, f)| (flat, f))
+        .collect()
 }
 
 pub fn namespace() -> Value {
@@ -710,7 +762,11 @@ mod tests {
 
     #[test]
     fn parses_flags_options_positionals() {
-        let r = nargs_parse(&[sample_spec(), argv(&["-v", "--port", "9090", "in.txt"])], span()).unwrap();
+        let r = nargs_parse(
+            &[sample_spec(), argv(&["-v", "--port", "9090", "in.txt"])],
+            span(),
+        )
+        .unwrap();
         assert!(matches!(get_value(&r, "verbose"), Value::Bool(true)));
         assert!(matches!(get_value(&r, "port"), Value::Int(9090)));
         match get_value(&r, "input") {
@@ -755,7 +811,10 @@ mod tests {
         let r = nargs_parse(&[sample_spec(), argv(&["--help"])], span()).unwrap();
         match &*r.borrow() {
             Value::Object(map) => {
-                assert!(matches!(&*map.get("help").unwrap().borrow(), Value::Bool(true)));
+                assert!(matches!(
+                    &*map.get("help").unwrap().borrow(),
+                    Value::Bool(true)
+                ));
                 match &*map.get("text").unwrap().borrow() {
                     Value::String(s) => assert!(s.contains("Usage: demo")),
                     other => panic!("expected string, got {other:?}"),

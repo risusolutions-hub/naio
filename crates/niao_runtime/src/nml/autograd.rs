@@ -17,11 +17,9 @@ thread_local! {
 pub fn nml_enable_grad(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity(args, 1, "nml_enable_grad", span)?;
     let id = nml_handle_arg(args, 0, "nml_enable_grad", span)?;
-    with_handle(id, "nml_enable_grad", span, |h| {
-        match h {
-            NmlHandle::Tensor(_) => Ok(()),
-            _ => Err("expected tensor".into()),
-        }
+    with_handle(id, "nml_enable_grad", span, |h| match h {
+        NmlHandle::Tensor(_) => Ok(()),
+        _ => Err("expected tensor".into()),
     })?;
     GRAD_TENSORS.with(|s| s.borrow_mut().insert(id));
     Ok(Value::NmlHandle(id).ref_cell())

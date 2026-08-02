@@ -1,4 +1,4 @@
-﻿//! Native nworkspace standard library — workspace manifest, member dependency
+//! Native nworkspace standard library — workspace manifest, member dependency
 //! graph, topological order, and subprocess run.
 //!
 //! Import with `import "nworkspace"` (or `import "std/nworkspace"`).
@@ -71,15 +71,13 @@ fn json_to_value(j: JsonValue) -> Value {
 }
 
 fn parse_toml_text(text: &str, span: Span) -> NiaoResult<Value> {
-    parse_to_value(text)
-        .map(json_to_value)
-        .map_err(|e| {
-            RuntimeError::at(
-                span,
-                E3231_NWORKSPACE_ERROR,
-                format!("workspace parse error: {e}"),
-            )
-        })
+    parse_to_value(text).map(json_to_value).map_err(|e| {
+        RuntimeError::at(
+            span,
+            E3231_NWORKSPACE_ERROR,
+            format!("workspace parse error: {e}"),
+        )
+    })
 }
 
 fn string_field(map: &HashMap<String, ValueRef>, key: &str) -> Option<String> {
@@ -107,11 +105,13 @@ fn parse_member_table(
     root: &Path,
     span: Span,
 ) -> Result<Member, ValueRef> {
-    let name = string_field(table, "name").ok_or_else(|| {
-        workspace_err(span, "member table requires string field 'name'")
-    })?;
+    let name = string_field(table, "name")
+        .ok_or_else(|| workspace_err(span, "member table requires string field 'name'"))?;
     let rel = string_field(table, "path").ok_or_else(|| {
-        workspace_err(span, format!("member '{name}' requires string field 'path'"))
+        workspace_err(
+            span,
+            format!("member '{name}' requires string field 'path'"),
+        )
     })?;
     let entry = string_field(table, "entry").unwrap_or_else(|| "main.niao".to_string());
     let depends = string_list(table, "depends");
@@ -156,7 +156,10 @@ fn parse_workspace_value(
         members.push(parse_member_table(&table, &root, span)?);
     }
     if members.is_empty() {
-        return Err(workspace_err(span, "workspace must declare at least one member"));
+        return Err(workspace_err(
+            span,
+            "workspace must declare at least one member",
+        ));
     }
     let names: HashSet<&str> = members.iter().map(|m| m.name.as_str()).collect();
     for m in &members {
@@ -188,7 +191,10 @@ fn workspace_to_value(ws: &Workspace) -> Value {
                 "path".to_string(),
                 Value::String(m.path.to_string_lossy().into_owned()).ref_cell(),
             );
-            map.insert("entry".to_string(), Value::String(m.entry.clone()).ref_cell());
+            map.insert(
+                "entry".to_string(),
+                Value::String(m.entry.clone()).ref_cell(),
+            );
             let deps: Vec<ValueRef> = m
                 .depends
                 .iter()
@@ -199,7 +205,10 @@ fn workspace_to_value(ws: &Workspace) -> Value {
         })
         .collect();
     let mut map = HashMap::new();
-    map.insert("name".to_string(), Value::String(ws.name.clone()).ref_cell());
+    map.insert(
+        "name".to_string(),
+        Value::String(ws.name.clone()).ref_cell(),
+    );
     map.insert(
         "root".to_string(),
         Value::String(ws.root.to_string_lossy().into_owned()).ref_cell(),
@@ -216,7 +225,12 @@ fn workspace_to_value(ws: &Workspace) -> Value {
     Value::Object(map)
 }
 
-fn workspace_from_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> Result<Workspace, ValueRef> {
+fn workspace_from_arg(
+    args: &[ValueRef],
+    idx: usize,
+    name: &str,
+    span: Span,
+) -> Result<Workspace, ValueRef> {
     match &*args[idx].borrow() {
         Value::Object(map) => {
             let root = string_field(map, "root")
@@ -360,12 +374,21 @@ fn arity(args: &[ValueRef], n: usize, name: &str, span: Span) -> NiaoResult<()> 
     Ok(())
 }
 
-fn arity_range(args: &[ValueRef], min: usize, max: usize, name: &str, span: Span) -> NiaoResult<()> {
+fn arity_range(
+    args: &[ValueRef],
+    min: usize,
+    max: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<()> {
     if args.len() < min || args.len() > max {
         return Err(RuntimeError::at(
             span,
             E3230_NWORKSPACE_ARITY,
-            format!("{name}() expects {min}..={max} argument(s), got {}", args.len()),
+            format!(
+                "{name}() expects {min}..={max} argument(s), got {}",
+                args.len()
+            ),
         ));
     }
     Ok(())
@@ -591,8 +614,12 @@ fn nworkspace_run(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
             ));
         }
     };
-    let stdout = String::from_utf8_lossy(&output.stdout).trim_end().to_string();
-    let stderr = String::from_utf8_lossy(&output.stderr).trim_end().to_string();
+    let stdout = String::from_utf8_lossy(&output.stdout)
+        .trim_end()
+        .to_string();
+    let stderr = String::from_utf8_lossy(&output.stderr)
+        .trim_end()
+        .to_string();
     let code = output.status.code().unwrap_or(-1) as i64;
     Ok(run_result(stdout, stderr, code, output.status.success()))
 }
@@ -615,7 +642,11 @@ nworkspace_fns![
     ("nworkspace_members", "members", nworkspace_members),
     ("nworkspace_graph", "graph", nworkspace_graph),
     ("nworkspace_order", "order", nworkspace_order),
-    ("nworkspace_member_path", "member_path", nworkspace_member_path),
+    (
+        "nworkspace_member_path",
+        "member_path",
+        nworkspace_member_path
+    ),
     ("nworkspace_run", "run", nworkspace_run),
 ];
 

@@ -137,7 +137,11 @@ impl<S: Read + Write> WebSocket<S> {
         self.payload_to_message(opcode, frame.payload)
     }
 
-    fn payload_to_message(&mut self, opcode: u8, payload: Vec<u8>) -> Result<Option<Message>, WsError> {
+    fn payload_to_message(
+        &mut self,
+        opcode: u8,
+        payload: Vec<u8>,
+    ) -> Result<Option<Message>, WsError> {
         match opcode {
             OPCODE_TEXT => {
                 if !utf8::is_valid_utf8(&payload) {

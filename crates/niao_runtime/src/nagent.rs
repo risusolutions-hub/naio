@@ -124,12 +124,21 @@ fn arity(args: &[ValueRef], n: usize, name: &str, span: Span) -> NiaoResult<()> 
     Ok(())
 }
 
-fn arity_range(args: &[ValueRef], min: usize, max: usize, name: &str, span: Span) -> NiaoResult<()> {
+fn arity_range(
+    args: &[ValueRef],
+    min: usize,
+    max: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<()> {
     if args.len() < min || args.len() > max {
         return Err(RuntimeError::at(
             span,
             E2990_NAGENT_ARITY,
-            format!("{name}() expects {min}..={max} argument(s), got {}", args.len()),
+            format!(
+                "{name}() expects {min}..={max} argument(s), got {}",
+                args.len()
+            ),
         ));
     }
     Ok(())
@@ -369,7 +378,10 @@ fn nagent_run(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let handles = handle_array_arg(args, 0, "nagent_run", span)?;
     let kickoff = string_arg(args, 1, "nagent_run", span)?;
     if handles.is_empty() {
-        return Ok(nagent_err(span, "nagent_run() requires at least one agent handle"));
+        return Ok(nagent_err(
+            span,
+            "nagent_run() requires at least one agent handle",
+        ));
     }
     let max_steps = if args.len() > 2 {
         let n = int_arg(args, 2, "nagent_run", span)?;
@@ -414,13 +426,20 @@ nagent_fns![
     ("nagent_handoff", "handoff", nagent_handoff),
     ("nagent_name", "name", nagent_name),
     ("nagent_role", "role", nagent_role),
-    ("nagent_clear_messages", "clear_messages", nagent_clear_messages),
+    (
+        "nagent_clear_messages",
+        "clear_messages",
+        nagent_clear_messages
+    ),
     ("nagent_close", "close", nagent_close),
     ("nagent_run", "run", nagent_run),
 ];
 
 fn all_builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(flat, _, f)| (flat, f)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(flat, _, f)| (flat, f))
+        .collect()
 }
 
 pub fn namespace() -> Value {
@@ -550,21 +569,17 @@ mod tests {
                 assert_eq!(aa.len(), 1);
                 assert_eq!(bb.len(), 1);
                 assert_eq!(
-                    as_str(
-                        match &*aa[0].borrow() {
-                            Value::Object(m) => m.get("content").unwrap(),
-                            _ => panic!("obj"),
-                        }
-                    ),
+                    as_str(match &*aa[0].borrow() {
+                        Value::Object(m) => m.get("content").unwrap(),
+                        _ => panic!("obj"),
+                    }),
                     "handoff→beta: take over"
                 );
                 assert_eq!(
-                    as_str(
-                        match &*bb[0].borrow() {
-                            Value::Object(m) => m.get("content").unwrap(),
-                            _ => panic!("obj"),
-                        }
-                    ),
+                    as_str(match &*bb[0].borrow() {
+                        Value::Object(m) => m.get("content").unwrap(),
+                        _ => panic!("obj"),
+                    }),
                     "handoff←alpha: take over"
                 );
             }

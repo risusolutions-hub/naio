@@ -7,11 +7,11 @@
 //! Entities are represented as Niao `Value::Object` maps.
 
 use super::{auth, AzureConfig};
-use crate::{Value, ValueRef};
 use crate::error_value;
-use niao_errors::codes;
+use crate::{Value, ValueRef};
 use niao_ast::Span;
 use niao_bignum::BigInt;
+use niao_errors::codes;
 use niao_json_core::{Number as JNumber, Value as JValue};
 use std::collections::HashMap;
 
@@ -49,10 +49,7 @@ fn make_table_auth(
     } else if let (Some(tenant), Some(cid), Some(csec)) =
         (&cfg.tenant, &cfg.client_id, &cfg.client_secret)
     {
-        let scope = format!(
-            "https://{}.table.core.windows.net/.default",
-            cfg.account
-        );
+        let scope = format!("https://{}.table.core.windows.net/.default", cfg.account);
         let token = auth::fetch_bearer_token(tenant, cid, csec, &scope)?;
         Ok(Some(format!("Bearer {token}")))
     } else {
@@ -73,7 +70,8 @@ fn jval_to_niao(j: JValue) -> Value {
             JNumber::U64(u) if u <= i64::MAX as u64 => Value::Int(u as i64),
             JNumber::U64(u) => Value::BigInt(BigInt::from(u)),
             JNumber::F64(f) => {
-                if f.fract() == 0.0 && f.is_finite() && f >= i64::MIN as f64 && f <= i64::MAX as f64 {
+                if f.fract() == 0.0 && f.is_finite() && f >= i64::MIN as f64 && f <= i64::MAX as f64
+                {
                     Value::Int(f as i64)
                 } else {
                     Value::Float(f)
@@ -81,9 +79,11 @@ fn jval_to_niao(j: JValue) -> Value {
             }
         },
         JValue::String(s) => Value::String(s),
-        JValue::Array(arr) => {
-            Value::Array(arr.into_iter().map(|v| jval_to_niao(v).ref_cell()).collect())
-        }
+        JValue::Array(arr) => Value::Array(
+            arr.into_iter()
+                .map(|v| jval_to_niao(v).ref_cell())
+                .collect(),
+        ),
         JValue::Object(map) => {
             let mut out = HashMap::with_capacity(map.len());
             for (k, v) in map.iter() {
@@ -97,7 +97,10 @@ fn jval_to_niao(j: JValue) -> Value {
 fn parse_json_to_value(json: &str, span: Span) -> Result<Value, ValueRef> {
     match niao_json_core::parse(json) {
         Ok(j) => Ok(jval_to_niao(j)),
-        Err(e) => Err(table_error(span, format!("nazure: JSON parse error: {e:?}"))),
+        Err(e) => Err(table_error(
+            span,
+            format!("nazure: JSON parse error: {e:?}"),
+        )),
     }
 }
 
@@ -106,12 +109,7 @@ fn parse_json_to_value(json: &str, span: Span) -> Result<Value, ValueRef> {
 // ──────────────────────────────────────────────────────────────────────────────
 
 /// Insert a single entity. `entity_json` is the JSON-serialised entity object.
-pub fn table_insert(
-    cfg: &AzureConfig,
-    table: &str,
-    entity_json: &str,
-    span: Span,
-) -> ValueRef {
+pub fn table_insert(cfg: &AzureConfig, table: &str, entity_json: &str, span: Span) -> ValueRef {
     let date = auth::rfc1123_now();
     let canon = format!("/{}/{}", cfg.account, table);
     let auth_hdr = match make_table_auth(cfg, &date, &canon) {
@@ -155,12 +153,7 @@ pub fn table_insert(
 
 /// Query entities. Returns a `Value::Array` of entity objects.
 /// `filter` is an optional OData filter expression, e.g. `"PartitionKey eq 'Alice'"`.
-pub fn table_query(
-    cfg: &AzureConfig,
-    table: &str,
-    filter: Option<&str>,
-    span: Span,
-) -> ValueRef {
+pub fn table_query(cfg: &AzureConfig, table: &str, filter: Option<&str>, span: Span) -> ValueRef {
     let date = auth::rfc1123_now();
     let canon = format!("/{}/{}", cfg.account, table);
     let auth_hdr = match make_table_auth(cfg, &date, &canon) {
@@ -168,9 +161,9 @@ pub fn table_query(
         Err(e) => return auth_error(span, e),
     };
 
-    let query = filter.filter(|f| !f.is_empty()).map(|f| {
-        format!("$filter={}", niao_http::percent_encode(f.as_bytes()))
-    });
+    let query = filter
+        .filter(|f| !f.is_empty())
+        .map(|f| format!("$filter={}", niao_http::percent_encode(f.as_bytes())));
     let url = table_url(&cfg.account, table, query.as_deref());
     let mut req = niao_http::get(&url)
         .set("x-ms-date", &date)
@@ -259,7 +252,10 @@ mod tests {
     #[test]
     fn jval_to_niao_primitives() {
         assert!(matches!(jval_to_niao(JValue::Null), Value::Nil));
-        assert!(matches!(jval_to_niao(JValue::Bool(true)), Value::Bool(true)));
+        assert!(matches!(
+            jval_to_niao(JValue::Bool(true)),
+            Value::Bool(true)
+        ));
         assert!(matches!(
             jval_to_niao(JValue::Number(JNumber::I64(42))),
             Value::Int(42)

@@ -11,9 +11,7 @@ fn main() {
 
     let t0 = Instant::now();
     let mut gb = GroupBy::new(&left, &["k"]).unwrap();
-    let _ = gb
-        .agg(&[("v", AggOp::Sum), ("v", AggOp::Mean)])
-        .unwrap();
+    let _ = gb.agg(&[("v", AggOp::Sum), ("v", AggOp::Mean)]).unwrap();
     let gb_ms = t0.elapsed().as_secs_f64() * 1000.0;
 
     let t1 = Instant::now();

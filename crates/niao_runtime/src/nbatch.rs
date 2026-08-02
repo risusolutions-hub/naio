@@ -44,7 +44,10 @@ fn arity_range(
         return Err(RuntimeError::at(
             span,
             E3030_NBATCH_ARITY,
-            format!("{name}() expects {min}..{max} argument(s), got {}", args.len()),
+            format!(
+                "{name}() expects {min}..{max} argument(s), got {}",
+                args.len()
+            ),
         ));
     }
     Ok(())
@@ -144,10 +147,7 @@ fn suggest_batch(
         ));
     }
     if max < 1 {
-        return Err(batch_err(
-            span,
-            "nbatch_suggest() max must be >= 1",
-        ));
+        return Err(batch_err(span, "nbatch_suggest() max must be >= 1"));
     }
 
     let available_mb = match (vram_mb, ram_mb) {
@@ -167,16 +167,10 @@ fn suggest_batch(
 
 fn fit_steps(total: i64, batch: i64, span: Span) -> NiaoResult<i64> {
     if batch <= 0 {
-        return Err(batch_err(
-            span,
-            "nbatch_fit() batch must be >= 1",
-        ));
+        return Err(batch_err(span, "nbatch_fit() batch must be >= 1"));
     }
     if total < 0 {
-        return Err(batch_err(
-            span,
-            "nbatch_fit() total must be >= 0",
-        ));
+        return Err(batch_err(span, "nbatch_fit() total must be >= 0"));
     }
     if total == 0 {
         return Ok(0);
@@ -197,10 +191,7 @@ fn clamp_i64(n: i64, min: i64, max: i64, span: Span) -> NiaoResult<i64> {
 
 fn scale_i64(n: i64, factor: f64, span: Span) -> NiaoResult<i64> {
     if !factor.is_finite() {
-        return Err(batch_err(
-            span,
-            "nbatch_scale() factor must be finite",
-        ));
+        return Err(batch_err(span, "nbatch_scale() factor must be finite"));
     }
     let scaled = (n as f64) * factor;
     if !scaled.is_finite() {
@@ -230,8 +221,7 @@ fn nbatch_suggest(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity_range(args, 0, 4, "nbatch_suggest", span)?;
     let vram_mb = opt_number_arg(args, 0, "nbatch_suggest", span)?;
     let ram_mb = opt_number_arg(args, 1, "nbatch_suggest", span)?;
-    let item_bytes = opt_number_arg(args, 2, "nbatch_suggest", span)?
-        .unwrap_or(DEFAULT_ITEM_BYTES);
+    let item_bytes = opt_number_arg(args, 2, "nbatch_suggest", span)?.unwrap_or(DEFAULT_ITEM_BYTES);
     let max = match opt_number_arg(args, 3, "nbatch_suggest", span)? {
         Some(m) => {
             if m.fract() != 0.0 || m < 1.0 || !m.is_finite() {
@@ -301,7 +291,10 @@ nbatch_fns![
 ];
 
 fn all_builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(flat, _, f)| (flat, f)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(flat, _, f)| (flat, f))
+        .collect()
 }
 
 pub fn namespace() -> Value {
@@ -344,19 +337,12 @@ mod tests {
     #[test]
     fn suggest_defaults_and_vram() {
         // default available 1024 MB → budget 512 MiB / 1 byte → huge → clamp 4096
-        assert!(matches!(
-            call(nbatch_suggest, vec![]),
-            Value::Int(4096)
-        ));
+        assert!(matches!(call(nbatch_suggest, vec![]), Value::Int(4096)));
 
         // 8 GiB VRAM, 4 MiB items: budget = 8*1024^2*0.5 = 4 GiB → 1024 items
         let batch = call(
             nbatch_suggest,
-            vec![
-                Value::Int(8192),
-                Value::Nil,
-                Value::Int(4 * 1024 * 1024),
-            ],
+            vec![Value::Int(8192), Value::Nil, Value::Int(4 * 1024 * 1024)],
         );
         assert!(matches!(batch, Value::Int(1024)));
 
@@ -376,11 +362,7 @@ mod tests {
         // ram when vram unset
         let batch = call(
             nbatch_suggest,
-            vec![
-                Value::Nil,
-                Value::Int(4096),
-                Value::Int(1024 * 1024),
-            ],
+            vec![Value::Nil, Value::Int(4096), Value::Int(1024 * 1024)],
         );
         // budget = 4096*1024^2*0.5 / 1MiB = 2048
         assert!(matches!(batch, Value::Int(2048)));
@@ -390,12 +372,7 @@ mod tests {
     fn suggest_clamps_to_max_and_one() {
         let batch = call(
             nbatch_suggest,
-            vec![
-                Value::Int(8192),
-                Value::Nil,
-                Value::Int(1),
-                Value::Int(64),
-            ],
+            vec![Value::Int(8192), Value::Nil, Value::Int(1), Value::Int(64)],
         );
         assert!(matches!(batch, Value::Int(64)));
 
@@ -452,24 +429,15 @@ mod tests {
             Value::Int(15)
         ));
         assert!(matches!(
-            call(
-                nbatch_halve_on,
-                vec![Value::Bool(true), Value::Int(128)]
-            ),
+            call(nbatch_halve_on, vec![Value::Bool(true), Value::Int(128)]),
             Value::Int(128)
         ));
         assert!(matches!(
-            call(
-                nbatch_halve_on,
-                vec![Value::Bool(false), Value::Int(128)]
-            ),
+            call(nbatch_halve_on, vec![Value::Bool(false), Value::Int(128)]),
             Value::Int(64)
         ));
         assert!(matches!(
-            call(
-                nbatch_halve_on,
-                vec![Value::Bool(false), Value::Int(1)]
-            ),
+            call(nbatch_halve_on, vec![Value::Bool(false), Value::Int(1)]),
             Value::Int(1)
         ));
     }
@@ -480,24 +448,15 @@ mod tests {
             RuntimeError::Generic { code, .. } => assert_eq!(code, E3030_NBATCH_ARITY),
             other => panic!("expected arity error, got {other:?}"),
         }
-        match call_err(
-            nbatch_halve_on,
-            vec![Value::Int(1), Value::Int(8)],
-        ) {
+        match call_err(nbatch_halve_on, vec![Value::Int(1), Value::Int(8)]) {
             RuntimeError::Generic { code, .. } => assert_eq!(code, E3032_NBATCH_TYPE),
             other => panic!("expected type error, got {other:?}"),
         }
-        match call_err(
-            nbatch_fit,
-            vec![Value::Int(10), Value::Int(0)],
-        ) {
+        match call_err(nbatch_fit, vec![Value::Int(10), Value::Int(0)]) {
             RuntimeError::Generic { code, .. } => assert_eq!(code, E3031_NBATCH_ERROR),
             other => panic!("expected batch error, got {other:?}"),
         }
-        match call_err(
-            nbatch_suggest,
-            vec![Value::Nil, Value::Nil, Value::Int(0)],
-        ) {
+        match call_err(nbatch_suggest, vec![Value::Nil, Value::Nil, Value::Int(0)]) {
             RuntimeError::Generic { code, .. } => assert_eq!(code, E3031_NBATCH_ERROR),
             other => panic!("expected batch error, got {other:?}"),
         }

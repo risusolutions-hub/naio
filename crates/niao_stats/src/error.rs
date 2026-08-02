@@ -35,10 +35,9 @@ impl fmt::Display for StatsError {
             Self::Arity { expected, got } => {
                 write!(f, "expected {expected} argument(s), got {got}")
             }
-            Self::Error(msg)
-            | Self::Type(msg)
-            | Self::Domain(msg)
-            | Self::NonConvergence(msg) => f.write_str(msg),
+            Self::Error(msg) | Self::Type(msg) | Self::Domain(msg) | Self::NonConvergence(msg) => {
+                f.write_str(msg)
+            }
         }
     }
 }

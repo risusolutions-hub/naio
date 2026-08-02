@@ -1,7 +1,7 @@
 //! Regression summaries: OLS and logistic (IRLS).
 
 use crate::descriptive::{mean, std};
-use crate::dist::{F, StudentT};
+use crate::dist::{StudentT, F};
 use crate::error::{StatsError, StatsResult};
 use crate::special::norm_ppf;
 use niao_num::{from_slice, matmul, NdArray};
@@ -44,8 +44,7 @@ pub fn ols(x: &[Vec<f64>], y: &[f64]) -> StatsResult<OlsResult> {
             design[i * cols + j + 1] = x[i][j];
         }
     }
-    let x_mat = from_slice(&[n, cols], &design)
-        .map_err(|e| StatsError::Error(e.to_string()))?;
+    let x_mat = from_slice(&[n, cols], &design).map_err(|e| StatsError::Error(e.to_string()))?;
 
     let beta = lstsq_qr(&design, n, cols, y)?;
 
@@ -64,7 +63,9 @@ pub fn ols(x: &[Vec<f64>], y: &[f64]) -> StatsResult<OlsResult> {
     let mse = ss_res / df_resid;
 
     // (X'X)^{-1} via normal equations for SE
-    let xt = x_mat.transpose().map_err(|e| StatsError::Error(e.to_string()))?;
+    let xt = x_mat
+        .transpose()
+        .map_err(|e| StatsError::Error(e.to_string()))?;
     let xtx = matmul(&xt, &x_mat).map_err(|e| StatsError::Error(e.to_string()))?;
     let xtx_inv = invert(&xtx)?;
 
@@ -279,7 +280,9 @@ pub fn logistic(x: &[Vec<f64>], y: &[f64]) -> StatsResult<LogisticResult> {
     }
 
     if !converged {
-        return Err(StatsError::NonConvergence("logistic IRLS did not converge".into()));
+        return Err(StatsError::NonConvergence(
+            "logistic IRLS did not converge".into(),
+        ));
     }
 
     // final Hessian for SE

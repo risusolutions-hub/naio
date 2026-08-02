@@ -47,10 +47,7 @@ impl Object {
         if let Some(idx) = &self.index {
             idx.get(key).map(|&i| &self.pairs[i].1)
         } else {
-            self.pairs
-                .iter()
-                .find(|(k, _)| k == key)
-                .map(|(_, v)| v)
+            self.pairs.iter().find(|(k, _)| k == key).map(|(_, v)| v)
         }
     }
 
@@ -113,5 +110,15 @@ impl Object {
             map.insert(k.clone(), i);
         }
         self.index = Some(map);
+    }
+}
+
+impl IntoIterator for Object {
+    type Item = (String, Value);
+    type IntoIter = std::vec::IntoIter<(String, Value)>;
+
+    #[inline]
+    fn into_iter(self) -> Self::IntoIter {
+        self.pairs.into_iter()
     }
 }

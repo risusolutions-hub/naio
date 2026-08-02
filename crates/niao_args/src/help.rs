@@ -8,11 +8,7 @@ pub fn render_usage(cmd: &Command) -> String {
     }
     for arg in &cmd.args {
         if arg.long.as_deref() == Some("") || (arg.long.is_none() && arg.short.is_none()) {
-            let name = arg
-                .value_name
-                .as_deref()
-                .unwrap_or(&arg.id)
-                .to_uppercase();
+            let name = arg.value_name.as_deref().unwrap_or(&arg.id).to_uppercase();
             if arg.required {
                 parts.push(format!("<{name}>"));
             } else {

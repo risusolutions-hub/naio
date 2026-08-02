@@ -90,10 +90,7 @@ fn interactive_wizard(name: &str) -> Result<WizardAnswers, Box<dyn std::error::E
         "postgres" => vec![db_cfg(
             "primary",
             "postgres",
-            &prompt_default(
-                "PostgreSQL URL",
-                "postgres://user:pass@localhost:5432/app",
-            )?,
+            &prompt_default("PostgreSQL URL", "postgres://user:pass@localhost:5432/app")?,
             prompt_u32_default("Pool size", 10)?,
             Some("migrations".into()),
         )],
@@ -141,19 +138,14 @@ fn interactive_wizard(name: &str) -> Result<WizardAnswers, Box<dyn std::error::E
         config.auth.rbac_enabled = auth_mode == "rbac";
     }
     if auth_mode == "session" {
-        config.auth.session_secret =
-            Some(prompt_default("Session secret", "session-change-me")?);
+        config.auth.session_secret = Some(prompt_default("Session secret", "session-change-me")?);
     }
     if auth_mode == "api_key" {
         let key = prompt_default("API key", "dev-api-key")?;
         config.auth.api_keys = vec![key];
     }
 
-    let ws_mode = prompt_choice(
-        "WebSocket",
-        &["disabled", "global", "per_route"],
-        0,
-    )?;
+    let ws_mode = prompt_choice("WebSocket", &["disabled", "global", "per_route"], 0)?;
     config.websocket.mode = ws_mode.clone();
 
     config.security = SecurityConfig {
@@ -193,7 +185,12 @@ fn scaffold_project(answers: &WizardAnswers) -> Result<(), Box<dyn std::error::E
     fs::create_dir_all(root.join("migrations"))?;
     fs::create_dir_all(root.join("public"))?;
     fs::create_dir_all(root.join("tests/integration"))?;
-    if answers.config.databases.iter().any(|d| d.driver == "sqlite") {
+    if answers
+        .config
+        .databases
+        .iter()
+        .any(|d| d.driver == "sqlite")
+    {
         fs::create_dir_all(root.join("data"))?;
     }
 
@@ -212,7 +209,12 @@ fn scaffold_project(answers: &WizardAnswers) -> Result<(), Box<dyn std::error::E
     if !answers.config.databases.is_empty() {
         deps.push("nsqlite");
     }
-    if answers.config.databases.iter().any(|d| d.driver == "postgres") {
+    if answers
+        .config
+        .databases
+        .iter()
+        .any(|d| d.driver == "postgres")
+    {
         deps.push("npg");
     }
     let deps_json: String = deps
@@ -229,7 +231,10 @@ fn scaffold_project(answers: &WizardAnswers) -> Result<(), Box<dyn std::error::E
     fs::write(root.join("src/routes/health.niao"), render_health())?;
 
     if answers.include_users_api {
-        fs::write(root.join("src/routes/api/users.niao"), render_users(answers))?;
+        fs::write(
+            root.join("src/routes/api/users.niao"),
+            render_users(answers),
+        )?;
     }
 
     if !answers.config.databases.is_empty() {
@@ -241,7 +246,10 @@ fn scaffold_project(answers: &WizardAnswers) -> Result<(), Box<dyn std::error::E
 
     if answers.auth_mode != "none" {
         fs::create_dir_all(root.join("src/middleware"))?;
-        fs::write(root.join("src/middleware/auth.niao"), render_auth_middleware(answers))?;
+        fs::write(
+            root.join("src/middleware/auth.niao"),
+            render_auth_middleware(answers),
+        )?;
     }
 
     fs::write(
@@ -397,5 +405,8 @@ fn prompt_choice(
     }
     let s = prompt_default("Choice", &default_idx.to_string())?;
     let idx: usize = s.parse().unwrap_or(default_idx);
-    Ok(options.get(idx).unwrap_or(&options[default_idx]).to_string())
+    Ok(options
+        .get(idx)
+        .unwrap_or(&options[default_idx])
+        .to_string())
 }

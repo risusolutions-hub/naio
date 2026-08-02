@@ -1,9 +1,12 @@
-﻿//! Native ndoc standard library — extract and run doc-comment doctests
+//! Native ndoc standard library — extract and run doc-comment doctests
 //! (`// >>>` code, `// =>` expected) from Niao source.
 //!
 //! Import with `import "ndoc"` (or `import "std/ndoc"`).
 
-use crate::{apply_binop, error_value, values_equal, NativeFn, NiaoResult, RuntimeError, Value, ValueRef};
+use crate::{
+    apply_binop, builtin_environment, error_value, native_module_export_name, values_equal,
+    NativeFn, NiaoResult, RuntimeError, Value, ValueRef,
+};
 use niao_ast::*;
 use niao_parser::{parse, ParseError};
 use std::collections::HashMap;
@@ -132,7 +135,10 @@ fn extract_examples(source: &str) -> Vec<DocExample> {
 
 fn content_is_separator(line: &str) -> bool {
     let t = line.trim();
-    t.starts_with("// >>>") || t.starts_with("/// >>>") || t.starts_with("// =>") || t.starts_with("/// =>")
+    t.starts_with("// >>>")
+        || t.starts_with("/// >>>")
+        || t.starts_with("// =>")
+        || t.starts_with("/// =>")
 }
 
 fn example_obj(ex: &DocExample) -> ValueRef {
@@ -140,7 +146,13 @@ fn example_obj(ex: &DocExample) -> ValueRef {
     m.insert("line".to_string(), Value::Int(ex.line as i64).ref_cell());
     m.insert(
         "code".to_string(),
-        Value::Array(ex.code.iter().map(|c| Value::String(c.clone()).ref_cell()).collect()).ref_cell(),
+        Value::Array(
+            ex.code
+                .iter()
+                .map(|c| Value::String(c.clone()).ref_cell())
+                .collect(),
+        )
+        .ref_cell(),
     );
     if let Some(e) = &ex.expect {
         m.insert("expect".to_string(), Value::String(e.clone()).ref_cell());
@@ -162,6 +174,22 @@ impl DocEnv {
             vars: HashMap::new(),
         }
     }
+
+    fn resolve_name(&self, name: &str) -> Option<ValueRef> {
+        self.vars
+            .get(name)
+            .cloned()
+            .or_else(|| builtin_environment().get(name))
+    }
+
+    fn import_module(&mut self, path: &str) {
+        let path = path.trim_matches('"');
+        if let Some(export) = native_module_export_name(path) {
+            if let Some(val) = builtin_environment().get(export) {
+                self.vars.insert(export.to_string(), Rc::clone(&val));
+            }
+        }
+    }
 }
 
 fn eval_expr(expr: &Expr, env: &DocEnv, span: Span) -> NiaoResult<Value> {
@@ -175,8 +203,15 @@ fn eval_expr(expr: &Expr, env: &DocEnv, span: Span) -> NiaoResult<Value> {
             .vars
             .get(name)
             .map(|v| v.borrow().clone())
-            .ok_or_else(|| RuntimeError::at(*s, E3211_NDOC_ERROR, format!("undefined variable '{name}'"))),
-        Expr::Binary { left, op, right, span: s } => {
+            .ok_or_else(|| {
+                RuntimeError::at(*s, E3211_NDOC_ERROR, format!("undefined variable '{name}'"))
+            }),
+        Expr::Binary {
+            left,
+            op,
+            right,
+            span: s,
+        } => {
             let l = eval_expr(left, env, span)?;
             let r = eval_expr(right, env, span)?;
             apply_binop(*op, &l, &r, *s)
@@ -209,6 +244,50 @@ fn eval_expr(expr: &Expr, env: &DocEnv, span: Span) -> NiaoResult<Value> {
                 out.insert(k.clone(), eval_expr(e, env, span)?.ref_cell());
             }
             Ok(Value::Object(out))
+        }
+        Expr::Member {
+            object,
+            field,
+            span: s,
+        } => {
+            let val = eval_expr(object, env, span)?;
+            match val {
+                Value::Object(map) => map.get(field).map(|v| v.borrow().clone()).ok_or_else(|| {
+                    RuntimeError::at(*s, E3211_NDOC_ERROR, format!("undefined field '{field}'"))
+                }),
+                other => Err(RuntimeError::at(
+                    *s,
+                    E3212_NDOC_TYPE,
+                    format!("cannot access field on {}", other.type_name()),
+                )),
+            }
+        }
+        Expr::Call {
+            callee,
+            args,
+            span: s,
+        } => {
+            let callee_val = match &**callee {
+                Expr::Ident(name, _) => env.resolve_name(name).ok_or_else(|| {
+                    RuntimeError::at(*s, E3211_NDOC_ERROR, format!("undefined '{name}'"))
+                })?,
+                _ => eval_expr(callee, env, span)?.ref_cell(),
+            };
+            let arg_refs: Vec<ValueRef> = args
+                .iter()
+                .map(|a| eval_expr(a, env, span).map(|v| v.ref_cell()))
+                .collect::<Result<_, _>>()?;
+            let native = match &*callee_val.borrow() {
+                Value::NativeFunction(f) => Rc::clone(f),
+                other => {
+                    return Err(RuntimeError::at(
+                        *s,
+                        E3212_NDOC_TYPE,
+                        format!("cannot call {}", other.type_name()),
+                    ))
+                }
+            };
+            native(&arg_refs, *s).map(|v| v.borrow().clone())
         }
         other => Err(RuntimeError::at(
             other.span(),
@@ -266,6 +345,9 @@ fn run_snippets(snippets: &[String], span: Span) -> Result<ValueRef, String> {
         let program = parse_snippet_program(snippet, span)?;
         for item in &program.items {
             match item {
+                TopLevel::Import(imp) => {
+                    env.import_module(&imp.path);
+                }
                 TopLevel::Stmt(stmt) => {
                     last = eval_stmt(stmt, &mut env, span).map_err(|e| e.to_string())?;
                 }
@@ -361,7 +443,10 @@ fn run_examples(examples: &[DocExample], span: Span) -> ValueRef {
     }
 
     let mut summary = HashMap::new();
-    summary.insert("total".to_string(), Value::Int(examples.len() as i64).ref_cell());
+    summary.insert(
+        "total".to_string(),
+        Value::Int(examples.len() as i64).ref_cell(),
+    );
     summary.insert("passed".to_string(), Value::Int(passed).ref_cell());
     summary.insert("failed".to_string(), Value::Int(failed).ref_cell());
     summary.insert("ok".to_string(), Value::Bool(failed == 0).ref_cell());
@@ -392,7 +477,10 @@ fn ndoc_check(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let source = string_arg(args, 0, "ndoc_check", span)?;
     let examples = extract_examples(&source);
     if examples.is_empty() {
-        return Ok(doc_err(span, "no doctests found (use // >>> and optional // =>)"));
+        return Ok(doc_err(
+            span,
+            "no doctests found (use // >>> and optional // =>)",
+        ));
     }
     let result = run_examples(&examples, span);
     let ok = match &*result.borrow() {
@@ -425,7 +513,10 @@ ndoc_fns![
 ];
 
 fn all_builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(flat, _, f)| (flat, f)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(flat, _, f)| (flat, f))
+        .collect()
 }
 
 pub fn namespace() -> Value {

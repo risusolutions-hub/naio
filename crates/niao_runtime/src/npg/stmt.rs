@@ -43,7 +43,10 @@ pub fn npg_prepare(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let sql = string_arg(args, 1, "npg_prepare", span)?;
     let sql = rewrite_placeholders(&sql);
     let result = handles::with_conn_mut(conn_id, "npg_prepare", span, |handle| {
-        handle.client_mut().prepare(&sql).map_err(|e| e.to_string())?;
+        handle
+            .client_mut()
+            .prepare(&sql)
+            .map_err(|e| e.to_string())?;
         Ok(())
     });
     match result {
@@ -79,7 +82,10 @@ pub fn npg_stmt_exec(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
         }
         let boxes = bound_to_sql_params(&params);
         let refs = sql_param_refs(&boxes);
-        let n = conn.client_mut().execute(&sql, &refs).map_err(|e| e.to_string())?;
+        let n = conn
+            .client_mut()
+            .execute(&sql, &refs)
+            .map_err(|e| e.to_string())?;
         Ok(n as i64)
     })
     .map(ok_int)
@@ -105,7 +111,10 @@ pub fn npg_stmt_query(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
         }
         let boxes = bound_to_sql_params(&params);
         let refs = sql_param_refs(&boxes);
-        let rows = conn.client_mut().query(&sql, &refs).map_err(|e| e.to_string())?;
+        let rows = conn
+            .client_mut()
+            .query(&sql, &refs)
+            .map_err(|e| e.to_string())?;
         collect_rows(rows, format)
     })
     .map(|v| v.ref_cell())

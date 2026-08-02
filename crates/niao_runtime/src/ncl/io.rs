@@ -14,9 +14,7 @@ pub fn read_csv(path: &str) -> Result<DataFrame, String> {
 
 pub fn parse_csv(text: &str) -> Result<DataFrame, String> {
     let mut lines = text.lines().filter(|l| !l.is_empty());
-    let header = lines
-        .next()
-        .ok_or_else(|| "empty csv".to_string())?;
+    let header = lines.next().ok_or_else(|| "empty csv".to_string())?;
     let names: Vec<String> = parse_csv_line(header);
     let ncols = names.len();
     let mut cols: Vec<Vec<String>> = vec![Vec::new(); ncols];
@@ -44,11 +42,7 @@ pub fn to_csv(df: &DataFrame) -> String {
     out.push('\n');
     let n = df.len();
     for row in 0..n {
-        let cells: Vec<String> = df
-            .columns
-            .iter()
-            .map(|c| cell_str(&c.data, row))
-            .collect();
+        let cells: Vec<String> = df.columns.iter().map(|c| cell_str(&c.data, row)).collect();
         out.push_str(&cells.join(","));
         out.push('\n');
     }

@@ -37,9 +37,9 @@ pub fn with_index<F, R>(id: u64, name: &str, span: Span, f: F) -> Result<R, Runt
 where
     F: FnOnce(&RagIndex) -> Result<R, String>,
 {
-    let guard = indexes().lock().map_err(|e| {
-        RuntimeError::at(span, codes::E1981_NRAG_ERROR, format!("{name}(): {e}"))
-    })?;
+    let guard = indexes()
+        .lock()
+        .map_err(|e| RuntimeError::at(span, codes::E1981_NRAG_ERROR, format!("{name}(): {e}")))?;
     let idx = guard.get(&id).ok_or_else(|| {
         RuntimeError::at(
             span,
@@ -47,7 +47,8 @@ where
             format!("{name}(): invalid index handle {id}"),
         )
     })?;
-    f(idx).map_err(|msg| RuntimeError::at(span, codes::E1981_NRAG_ERROR, format!("{name}(): {msg}")))
+    f(idx)
+        .map_err(|msg| RuntimeError::at(span, codes::E1981_NRAG_ERROR, format!("{name}(): {msg}")))
 }
 
 pub fn with_embedder<F, R>(span: Span, f: F) -> Result<R, RuntimeError>
@@ -55,12 +56,15 @@ where
     F: FnOnce(&mut Embedder) -> Result<R, String>,
 {
     let mut guard = EMBEDDER.lock().map_err(|e| {
-        RuntimeError::at(span, codes::E1981_NRAG_ERROR, format!("nrag embedder lock: {e}"))
+        RuntimeError::at(
+            span,
+            codes::E1981_NRAG_ERROR,
+            format!("nrag embedder lock: {e}"),
+        )
     })?;
     if guard.is_none() {
-        let emb = Embedder::new().map_err(|e| {
-            RuntimeError::at(span, codes::E1981_NRAG_ERROR, e.to_string())
-        })?;
+        let emb = Embedder::new()
+            .map_err(|e| RuntimeError::at(span, codes::E1981_NRAG_ERROR, e.to_string()))?;
         *guard = Some(emb);
     }
     let emb = guard.as_mut().unwrap();

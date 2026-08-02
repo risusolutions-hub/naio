@@ -75,10 +75,12 @@ fn lint_program(program: &Program, issues: &mut Vec<LintIssue>) {
     }
     // Script-style files (top-level statements) don't need a main function.
     if !has_main
-        && !program
-            .items
-            .iter()
-            .any(|i| matches!(i, TopLevel::Server(_) | TopLevel::Route(_) | TopLevel::Stmt(_)))
+        && !program.items.iter().any(|i| {
+            matches!(
+                i,
+                TopLevel::Server(_) | TopLevel::Route(_) | TopLevel::Stmt(_)
+            )
+        })
     {
         issues.push(LintIssue {
             code: "W0003".into(),
@@ -109,7 +111,9 @@ fn lint_block(block: &Block, issues: &mut Vec<LintIssue>) {
 
 fn lint_stmt(stmt: &Stmt, issues: &mut Vec<LintIssue>) {
     match stmt {
-        Stmt::VarDecl { init: None, span, .. } => {
+        Stmt::VarDecl {
+            init: None, span, ..
+        } => {
             issues.push(LintIssue {
                 code: "W0005".into(),
                 message: "variable declared without initializer".into(),
@@ -117,7 +121,11 @@ fn lint_stmt(stmt: &Stmt, issues: &mut Vec<LintIssue>) {
                 col: span.col,
             });
         }
-        Stmt::If { then_block, else_block, .. } => {
+        Stmt::If {
+            then_block,
+            else_block,
+            ..
+        } => {
             lint_block(then_block, issues);
             if else_block.is_none() {
                 issues.push(LintIssue {
@@ -132,7 +140,11 @@ fn lint_stmt(stmt: &Stmt, issues: &mut Vec<LintIssue>) {
             }
         }
         Stmt::While { body, .. } | Stmt::For { body, .. } => lint_block(body, issues),
-        Stmt::Try { try_block, catch_block, .. } => {
+        Stmt::Try {
+            try_block,
+            catch_block,
+            ..
+        } => {
             lint_block(try_block, issues);
             lint_block(catch_block, issues);
         }

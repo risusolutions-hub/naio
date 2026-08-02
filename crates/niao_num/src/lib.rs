@@ -11,13 +11,14 @@ pub mod reductions;
 pub use array::NdArray;
 pub use creation::{arange, eye, from_slice, full, linspace, rand, randn};
 pub use elementwise::{
-    abs, add, clip, cos, div, exp, log, maximum, minimum, mul, pow, sin, sqrt, sub, tan, where_array,
+    abs, add, clip, cos, div, exp, log, maximum, minimum, mul, pow, sin, sqrt, sub, tan,
+    where_array,
 };
 pub use error::{NumError, NumResult};
 pub use fft::{fft, fft2, ifft, rfft, Complex};
 pub use linalg::{
-    cholesky, det, dot, eig_symmetric, inv, lstsq, matmul, norm, pinv, qr, rank, solve, svd,
-    trace, EigResult, NormKind, SvdResult,
+    cholesky, det, dot, eig_symmetric, inv, lstsq, matmul, norm, pinv, qr, rank, solve, svd, trace,
+    EigResult, NormKind, SvdResult,
 };
 pub use reductions::{argmax, argmin, cumsum, max, mean, min, prod, std, sum, var};
 

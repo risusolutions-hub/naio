@@ -128,14 +128,23 @@ impl Compiler {
                 out.extend(right.out);
                 Frag { start: split, out }
             }
-            Ast::Quant { inner, min, max, greedy } => {
-                self.compile_quant(inner, *min, *max, *greedy)
-            }
+            Ast::Quant {
+                inner,
+                min,
+                max,
+                greedy,
+            } => self.compile_quant(inner, *min, *max, *greedy),
             Ast::Cap { inner, index } => {
                 let open = self.emit(Inst::Save((index * 2) as usize));
                 let body = self.compile_ast(inner);
                 let close = self.emit(Inst::Save((index * 2 + 1) as usize));
-                let inner_frag = self.concat(Frag { start: open, out: vec![] }, body);
+                let inner_frag = self.concat(
+                    Frag {
+                        start: open,
+                        out: vec![],
+                    },
+                    body,
+                );
                 self.concat(
                     inner_frag,
                     Frag {
@@ -197,10 +206,13 @@ impl Compiler {
     fn optional_repeat(&mut self, inner: &Ast, greedy: bool) -> Frag {
         let body = self.compile_ast(inner);
         let tail = self.emit(Inst::Jmp(0));
-        let body = self.concat(body, Frag {
-            start: tail,
-            out: vec![tail],
-        });
+        let body = self.concat(
+            body,
+            Frag {
+                start: tail,
+                out: vec![tail],
+            },
+        );
         let split = self.emit(Inst::Split { x: 0, y: 0 });
         let exit = self.emit(Inst::Jmp(0));
         if greedy {
@@ -224,10 +236,13 @@ impl Compiler {
     fn optional_repeat_star(&mut self, inner: &Ast, min: u32, greedy: bool) -> Frag {
         let body = self.compile_ast(inner);
         let tail = self.emit(Inst::Jmp(0));
-        let body = self.concat(body, Frag {
-            start: tail,
-            out: vec![tail],
-        });
+        let body = self.concat(
+            body,
+            Frag {
+                start: tail,
+                out: vec![tail],
+            },
+        );
         let split = self.emit(Inst::Split { x: 0, y: 0 });
         let exit = self.emit(Inst::Jmp(0));
         if greedy {

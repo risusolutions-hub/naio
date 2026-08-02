@@ -52,10 +52,7 @@ impl ControlChannel {
                 let line = self.read_line()?;
                 lines.push(line);
                 let last = lines.last().unwrap();
-                if last.len() >= 4
-                    && parse_code(last)? == code
-                    && last.as_bytes()[3] == b' '
-                {
+                if last.len() >= 4 && parse_code(last)? == code && last.as_bytes()[3] == b' ' {
                     break;
                 }
             }

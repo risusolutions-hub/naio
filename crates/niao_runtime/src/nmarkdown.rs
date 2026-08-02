@@ -230,7 +230,9 @@ fn fence_close(line: &str) -> bool {
 
 fn blockquote_text(line: &str) -> Option<&str> {
     let trimmed = line.trim_start();
-    trimmed.strip_prefix('>').map(|rest| rest.strip_prefix(' ').unwrap_or(rest).trim())
+    trimmed
+        .strip_prefix('>')
+        .map(|rest| rest.strip_prefix(' ').unwrap_or(rest).trim())
 }
 
 fn ul_item(line: &str) -> Option<&str> {

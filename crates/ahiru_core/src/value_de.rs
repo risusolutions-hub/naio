@@ -113,10 +113,7 @@ impl<'de> de::Deserializer<'de> for KeyDe<'_> {
         visitor.visit_string(self.key.to_string())
     }
 
-    fn deserialize_identifier<V: Visitor<'de>>(
-        self,
-        visitor: V,
-    ) -> Result<V::Value, Self::Error> {
+    fn deserialize_identifier<V: Visitor<'de>>(self, visitor: V) -> Result<V::Value, Self::Error> {
         visitor.visit_str(self.key)
     }
 

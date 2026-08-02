@@ -3,11 +3,7 @@
 use crate::result::{OptimizeResult, RootScalarMethod, ScalarMethod};
 use crate::utils::fd_step;
 
-pub fn minimize_scalar<F>(
-    mut f: F,
-    bracket: (f64, f64),
-    method: ScalarMethod,
-) -> OptimizeResult
+pub fn minimize_scalar<F>(mut f: F, bracket: (f64, f64), method: ScalarMethod) -> OptimizeResult
 where
     F: FnMut(f64) -> f64,
 {
@@ -88,7 +84,14 @@ where
         }
     }
     let x = 0.5 * (a + b);
-    OptimizeResult::fail(vec![x], f(x), None, 200, nfev + 1, "maximum iterations exceeded")
+    OptimizeResult::fail(
+        vec![x],
+        f(x),
+        None,
+        200,
+        nfev + 1,
+        "maximum iterations exceeded",
+    )
 }
 
 fn brent_minimize<F>(f: &mut F, mut a: f64, mut b: f64) -> OptimizeResult
@@ -134,7 +137,11 @@ where
             e = if x >= xm { a - x } else { b - x };
             d = 0.381966 * e;
         }
-        let u = if d.abs() >= tol1 { x + d } else { x + tol1.copysign(d) };
+        let u = if d.abs() >= tol1 {
+            x + d
+        } else {
+            x + tol1.copysign(d)
+        };
         let fu = f(u);
         nfev += 1;
         if fu <= fx {
@@ -195,7 +202,14 @@ where
         }
     }
     let c = 0.5 * (a + b);
-    OptimizeResult::fail(vec![c], f(c), None, 200, nfev + 1, "maximum iterations exceeded")
+    OptimizeResult::fail(
+        vec![c],
+        f(c),
+        None,
+        200,
+        nfev + 1,
+        "maximum iterations exceeded",
+    )
 }
 
 fn brent_root<F>(f: &mut F, mut a: f64, mut b: f64) -> OptimizeResult
@@ -323,7 +337,14 @@ where
         }
         x -= fx / dfx;
     }
-    OptimizeResult::fail(vec![x], f(x), None, 100, nfev + 1, "maximum iterations exceeded")
+    OptimizeResult::fail(
+        vec![x],
+        f(x),
+        None,
+        100,
+        nfev + 1,
+        "maximum iterations exceeded",
+    )
 }
 
 fn newton_scalar_fd<F>(f: &mut F, mut x: f64) -> OptimizeResult
@@ -345,7 +366,14 @@ where
         }
         x -= fx / dfx;
     }
-    OptimizeResult::fail(vec![x], f(x), None, 100, nfev + 1, "maximum iterations exceeded")
+    OptimizeResult::fail(
+        vec![x],
+        f(x),
+        None,
+        100,
+        nfev + 1,
+        "maximum iterations exceeded",
+    )
 }
 
 #[cfg(test)]
@@ -356,7 +384,13 @@ mod tests {
     fn brent_root_cos() {
         // cos(x) - x = 0 at ~0.739085
         let f = |x: f64| x.cos() - x;
-        let res = root_scalar(f, (0.0, 1.0), RootScalarMethod::Brent, None::<fn(f64) -> f64>, None);
+        let res = root_scalar(
+            f,
+            (0.0, 1.0),
+            RootScalarMethod::Brent,
+            None::<fn(f64) -> f64>,
+            None,
+        );
         assert!(res.success);
         assert!((res.x[0] - 0.7390851332151607).abs() < 1e-8);
     }
@@ -364,7 +398,13 @@ mod tests {
     #[test]
     fn bisection_linear() {
         let f = |x: f64| x - 2.0;
-        let res = root_scalar(f, (0.0, 5.0), RootScalarMethod::Bisection, None::<fn(f64) -> f64>, None);
+        let res = root_scalar(
+            f,
+            (0.0, 5.0),
+            RootScalarMethod::Bisection,
+            None::<fn(f64) -> f64>,
+            None,
+        );
         assert!(res.success);
         assert!((res.x[0] - 2.0).abs() < 1e-10);
     }

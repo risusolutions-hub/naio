@@ -19,8 +19,8 @@ fn bench_niao() -> f64 {
 }
 
 fn bench_socket2() -> f64 {
-    let sock =
-        socket2::Socket::new(socket2::Domain::IPV4, socket2::Type::STREAM, None).expect("s2 socket");
+    let sock = socket2::Socket::new(socket2::Domain::IPV4, socket2::Type::STREAM, None)
+        .expect("s2 socket");
     let start = Instant::now();
     for i in 0..ITERS {
         let on = i % 2 == 0;

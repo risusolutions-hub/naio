@@ -33,8 +33,14 @@ pub fn matmul_ndarray(a: &NDArray, b: &NDArray) -> Result<NDArray, String> {
     if n != n2 {
         return Err("matmul inner dimension mismatch".into());
     }
-    let af = a.data_float.as_ref().ok_or_else(|| "matmul requires float data".to_string())?;
-    let bf = b.data_float.as_ref().ok_or_else(|| "matmul requires float data".to_string())?;
+    let af = a
+        .data_float
+        .as_ref()
+        .ok_or_else(|| "matmul requires float data".to_string())?;
+    let bf = b
+        .data_float
+        .as_ref()
+        .ok_or_else(|| "matmul requires float data".to_string())?;
     let out = matmul_f64(af, bf, m, n, k);
     NDArray::from_float(vec![m, k], out)
 }

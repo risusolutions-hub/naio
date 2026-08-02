@@ -2,8 +2,8 @@
 
 pub mod error;
 pub mod leastsq;
-pub mod linprog;
 pub mod linesearch;
+pub mod linprog;
 pub mod minimize;
 pub mod result;
 pub mod root;
@@ -30,7 +30,9 @@ pub use utils::approx_fprime;
 #[cfg(test)]
 mod integration_tests {
     use super::*;
-    use crate::test_problems::{beale, beale_grad, rosenbrock, rosenbrock_grad, sphere, sphere_grad};
+    use crate::test_problems::{
+        beale, beale_grad, rosenbrock, rosenbrock_grad, sphere, sphere_grad,
+    };
 
     #[test]
     fn fd_grad_vs_analytic() {
@@ -84,8 +86,18 @@ mod integration_tests {
                     ..Default::default()
                 },
             );
-            assert!((res.x[0] - 3.0).abs() < 1.2, "{method:?}: x={:?} fun={}", res.x, res.fun);
-            assert!((res.x[1] - 0.5).abs() < 0.8, "{method:?}: x={:?} fun={}", res.x, res.fun);
+            assert!(
+                (res.x[0] - 3.0).abs() < 1.2,
+                "{method:?}: x={:?} fun={}",
+                res.x,
+                res.fun
+            );
+            assert!(
+                (res.x[1] - 0.5).abs() < 0.8,
+                "{method:?}: x={:?} fun={}",
+                res.x,
+                res.fun
+            );
         }
     }
 }

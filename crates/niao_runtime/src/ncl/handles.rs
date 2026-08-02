@@ -95,23 +95,25 @@ where
     F: FnOnce(&NclHandle) -> Result<R, String>,
 {
     let h = HANDLES.with(|m| {
-        m.borrow()
-            .get(&id)
-            .cloned()
-            .ok_or_else(|| {
-                crate::RuntimeError::at(
-                    span,
-                    codes::E1962_NCL_INVALID_HANDLE,
-                    format!("{name}(): invalid NCL handle {id}"),
-                )
-            })
+        m.borrow().get(&id).cloned().ok_or_else(|| {
+            crate::RuntimeError::at(
+                span,
+                codes::E1962_NCL_INVALID_HANDLE,
+                format!("{name}(): invalid NCL handle {id}"),
+            )
+        })
     })?;
     f(&h).map_err(|msg| {
         crate::RuntimeError::at(span, codes::E1961_NCL_ERROR, format!("{name}(): {msg}"))
     })
 }
 
-pub fn with_handle_mut<F, R>(id: u64, name: &str, span: Span, f: F) -> Result<R, crate::RuntimeError>
+pub fn with_handle_mut<F, R>(
+    id: u64,
+    name: &str,
+    span: Span,
+    f: F,
+) -> Result<R, crate::RuntimeError>
 where
     F: FnOnce(&mut NclHandle) -> Result<R, String>,
 {

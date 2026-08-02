@@ -13,20 +13,27 @@ pub mod special;
 
 pub use correlation::{cov, cov_matrix, kendalltau, pearsonr, spearmanr, CorrResult};
 pub use descriptive::{
-    describe, iqr, kurtosis, max_val, mean, median, min_val, mode, percentile, quantile, skew,
-    std, trim_mean, var, zscore, DescribeResult,
+    describe, iqr, kurtosis, max_val, mean, median, min_val, mode, percentile, quantile, skew, std,
+    trim_mean, var, zscore, DescribeResult,
 };
 pub use dist::{
-    Bernoulli, Beta, Binomial, ChiSquare, Exponential, F, Gamma, LogNormal, Normal, Poisson,
-    StudentT, Uniform,
+    Bernoulli, Beta, Binomial, ChiSquare, Exponential, Gamma, LogNormal, Normal, Poisson, StudentT,
+    Uniform, F,
 };
-pub use error::{StatsError, StatsResult, E4020_NSTATS_ARITY, E4021_NSTATS_ERROR, E4022_NSTATS_TYPE, E4023_NSTATS_DOMAIN, E4024_NSTATS_NON_CONVERGENCE};
+pub use error::{
+    StatsError, StatsResult, E4020_NSTATS_ARITY, E4021_NSTATS_ERROR, E4022_NSTATS_TYPE,
+    E4023_NSTATS_DOMAIN, E4024_NSTATS_NON_CONVERGENCE,
+};
 pub use hypothesis::{
     anova, chi2_contingency, chi2_gof, ks_1samp, ks_2samp, levene, mannwhitneyu, normaltest,
     shapiro, ttest_1samp, ttest_ind, ttest_rel, wilcoxon, Alternative, TestResult,
 };
-pub use regression::{ci_diff_means, ci_mean, ci_proportion, logistic, ols, LogisticResult, OlsResult};
-pub use special::{betainc, beta, erf, erfc, gamma, gammainc, lgamma, norm_cdf, norm_pdf, norm_ppf};
+pub use regression::{
+    ci_diff_means, ci_mean, ci_proportion, logistic, ols, LogisticResult, OlsResult,
+};
+pub use special::{
+    beta, betainc, erf, erfc, gamma, gammainc, lgamma, norm_cdf, norm_pdf, norm_ppf,
+};
 
 /// Welch's t-test (unequal variances).
 pub fn ttest_welch(a: &[f64], b: &[f64], alt: Alternative) -> StatsResult<TestResult> {
@@ -50,7 +57,11 @@ mod scipy_fixtures {
         assert!(close(lgamma(2.5).unwrap(), 0.2846828704729192, 1e-10));
         assert!(close(beta(2.0, 3.0).unwrap(), 0.08333333333333333, 1e-10));
         assert!(close(betainc(2.0, 3.0, 0.5).unwrap(), 0.6875, 1e-10));
-        assert!(close(gammainc(5.0, 3.0).unwrap(), 0.1847367554762279, 1e-10));
+        assert!(close(
+            gammainc(5.0, 3.0).unwrap(),
+            0.1847367554762279,
+            1e-10
+        ));
     }
 
     #[test]
@@ -101,7 +112,10 @@ mod scipy_fixtures {
 
     #[test]
     fn domain_errors() {
-        assert_eq!(Normal::new(0.0, -1.0).unwrap_err().code(), E4023_NSTATS_DOMAIN);
+        assert_eq!(
+            Normal::new(0.0, -1.0).unwrap_err().code(),
+            E4023_NSTATS_DOMAIN
+        );
         let t = StudentT::new(5.0).unwrap();
         assert_eq!(t.ppf(1.5).unwrap_err().code(), E4023_NSTATS_DOMAIN);
     }

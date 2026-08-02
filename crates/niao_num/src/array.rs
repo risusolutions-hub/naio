@@ -223,7 +223,11 @@ fn broadcast_index(target_idx: &[usize], self_shape: &[usize]) -> Vec<usize> {
                 0
             } else {
                 let coord = target_idx[ti as usize];
-                if dim == 1 { 0 } else { coord }
+                if dim == 1 {
+                    0
+                } else {
+                    coord
+                }
             }
         })
         .collect()

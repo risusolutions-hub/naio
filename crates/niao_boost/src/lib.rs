@@ -35,19 +35,27 @@ pub use tree::{build_tree, Tree, TreeNode};
 mod tests {
     use super::*;
     use crate::fixtures;
-    use crate::histogram::{best_split_on_histogram, build_histogram, exact_best_split, split_gain, FeatureHistogram};
+    use crate::histogram::{
+        best_split_on_histogram, build_histogram, exact_best_split, split_gain, FeatureHistogram,
+    };
     use crate::params::GrowPolicy;
 
     fn assert_close(a: f64, b: f64, rtol: f64) {
         let diff = (a - b).abs();
         let tol = rtol * b.abs().max(1.0);
-        assert!(diff <= tol, "assert_close: {a} vs {b} (diff={diff}, tol={tol})");
+        assert!(
+            diff <= tol,
+            "assert_close: {a} vs {b} (diff={diff}, tol={tol})"
+        );
     }
 
     fn assert_within_pct(a: f64, b: f64, pct: f64) {
         let diff = (a - b).abs();
         let tol = pct * b.abs().max(1e-9);
-        assert!(diff <= tol, "within {pct}: {a} vs {b} (diff={diff}, tol={tol})");
+        assert!(
+            diff <= tol,
+            "within {pct}: {a} vs {b} (diff={diff}, tol={tol})"
+        );
     }
 
     fn reg_params() -> BoosterParams {
@@ -76,9 +84,7 @@ mod tests {
     #[test]
     fn error_not_fitted() {
         let model = GBRegressor::new(BoosterParams::default()).unwrap();
-        let err = model
-            .predict(&[1.0, 2.0], 1, 2)
-            .unwrap_err();
+        let err = model.predict(&[1.0, 2.0], 1, 2).unwrap_err();
         assert_eq!(err.code(), E4063_NBOOST_NOT_FITTED);
     }
 

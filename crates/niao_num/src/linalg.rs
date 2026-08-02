@@ -44,13 +44,9 @@ pub fn matmul_tensor(a: &NdArray, b: &NdArray) -> NumResult<NdArray> {
     }
     let af: Vec<f32> = a.to_vec().iter().map(|&x| x as f32).collect();
     let bf: Vec<f32> = b.to_vec().iter().map(|&x| x as f32).collect();
-    let ta = Tensor::from_float_slice(&[m, n], &af)
-        .map_err(|e| NumError::Error(e.to_string()))?;
-    let tb = Tensor::from_float_slice(&[n, k], &bf)
-        .map_err(|e| NumError::Error(e.to_string()))?;
-    let tc = ta
-        .matmul(&tb)
-        .map_err(|e| NumError::Error(e.to_string()))?;
+    let ta = Tensor::from_float_slice(&[m, n], &af).map_err(|e| NumError::Error(e.to_string()))?;
+    let tb = Tensor::from_float_slice(&[n, k], &bf).map_err(|e| NumError::Error(e.to_string()))?;
+    let tc = ta.matmul(&tb).map_err(|e| NumError::Error(e.to_string()))?;
     let out: Vec<f64> = tc
         .to_cpu()
         .map_err(|e| NumError::Error(e.to_string()))?
@@ -71,7 +67,9 @@ pub fn dot(a: &NdArray, b: &NdArray) -> NumResult<f64> {
 
 pub fn trace(a: &NdArray) -> NumResult<f64> {
     if a.ndim() != 2 || a.shape[0] != a.shape[1] {
-        return Err(NumError::ShapeMismatch("trace requires square 2-D array".into()));
+        return Err(NumError::ShapeMismatch(
+            "trace requires square 2-D array".into(),
+        ));
     }
     let n = a.shape[0];
     let mut t = 0.0;
@@ -200,9 +198,7 @@ pub fn cholesky(a: &NdArray) -> NumResult<NdArray> {
             }
             if i == j {
                 if sum <= 0.0 {
-                    return Err(NumError::Singular(
-                        "matrix is not positive definite".into(),
-                    ));
+                    return Err(NumError::Singular("matrix is not positive definite".into()));
                 }
                 l[i * n + j] = sum.sqrt();
             } else {

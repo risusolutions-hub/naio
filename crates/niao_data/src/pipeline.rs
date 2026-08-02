@@ -57,9 +57,7 @@ impl Pipeline {
                 },
                 PipelineStepSpec::Standardize => PipelineStep::Standardize,
                 PipelineStepSpec::Normalize => PipelineStep::Normalize,
-                PipelineStepSpec::OneHot { classes } => PipelineStep::OneHot {
-                    classes: *classes,
-                },
+                PipelineStepSpec::OneHot { classes } => PipelineStep::OneHot { classes: *classes },
             })
             .collect();
         Self {
@@ -68,7 +66,11 @@ impl Pipeline {
         }
     }
 
-    pub fn run(&mut self, x: &Tensor, y: &Tensor) -> Result<PipelineOutput, niao_tensor::TensorError> {
+    pub fn run(
+        &mut self,
+        x: &Tensor,
+        y: &Tensor,
+    ) -> Result<PipelineOutput, niao_tensor::TensorError> {
         let mut x_cur = x.clone();
         let mut y_cur = y.clone();
         let mut split_out = None;

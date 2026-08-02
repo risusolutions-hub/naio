@@ -72,9 +72,10 @@ fn check_email(s: &str) -> bool {
     if s.contains(' ') || s.contains("..") {
         return false;
     }
-    let local_ok = local.chars().all(|c| {
-        c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '%' | '+' | '-')
-    }) && !local.starts_with('.')
+    let local_ok = local
+        .chars()
+        .all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '%' | '+' | '-'))
+        && !local.starts_with('.')
         && !local.ends_with('.');
     if !local_ok {
         return false;
@@ -327,7 +328,10 @@ fn apply_rule(
                 errors.push(format!("{field}: must be one of [{}]", rendered.join(", ")));
             }
         } else {
-            return Err(schema_err(span, format!("{field}: one_of must be an array")));
+            return Err(schema_err(
+                span,
+                format!("{field}: one_of must be an array"),
+            ));
         }
     }
 
@@ -376,7 +380,10 @@ fn validate_impl(
                     other => {
                         return Err(schema_err(
                             span,
-                            format!("rule for '{name}' must be an object, got {}", other.type_name()),
+                            format!(
+                                "rule for '{name}' must be an object, got {}",
+                                other.type_name()
+                            ),
                         ))
                     }
                 };
@@ -395,7 +402,12 @@ fn validate_impl(
 // Builtins
 // ---------------------------------------------------------------------------
 
-fn schema_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> NiaoResult<HashMap<String, ValueRef>> {
+fn schema_arg(
+    args: &[ValueRef],
+    idx: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<HashMap<String, ValueRef>> {
     match &*args[idx].borrow() {
         Value::Object(map) => Ok(map.clone()),
         other => Err(type_err(
@@ -515,7 +527,10 @@ nvalid_fns![
 ];
 
 fn all_builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(flat, _, f)| (flat, f)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(flat, _, f)| (flat, f))
+        .collect()
 }
 
 pub fn namespace() -> Value {
@@ -582,7 +597,10 @@ mod tests {
 
         // schema: {name: {type string, min_len 2}, age: {type int, max 150}, email: {required}}
         let mut name_rule = HashMap::new();
-        name_rule.insert("type".to_string(), Value::String("string".into()).ref_cell());
+        name_rule.insert(
+            "type".to_string(),
+            Value::String("string".into()).ref_cell(),
+        );
         name_rule.insert("min_len".to_string(), Value::Int(2).ref_cell());
         let mut age_rule = HashMap::new();
         age_rule.insert("type".to_string(), Value::String("int".into()).ref_cell());
@@ -597,7 +615,10 @@ mod tests {
         let result = nvalid_check(&[value, Value::Object(schema).ref_cell()], span()).unwrap();
         match &*result.borrow() {
             Value::Object(map) => {
-                assert!(matches!(&*map.get("ok").unwrap().borrow(), Value::Bool(false)));
+                assert!(matches!(
+                    &*map.get("ok").unwrap().borrow(),
+                    Value::Bool(false)
+                ));
                 match &*map.get("errors").unwrap().borrow() {
                     Value::Array(errs) => assert_eq!(errs.len(), 3),
                     other => panic!("expected array, got {other:?}"),

@@ -315,7 +315,14 @@ pub fn threshold_adaptive(img: &Image, block: usize, c: i16) -> VisionResult<Ima
             let y1 = (y + r).min(h - 1);
             let x1 = (x + r).min(w - 1);
             let area = ((y1 - y0 + 1) * (x1 - x0 + 1)) as i32;
-            let sum = rect_sum(&integral, gray.width, x0 as usize, y0 as usize, x1 as usize, y1 as usize);
+            let sum = rect_sum(
+                &integral,
+                gray.width,
+                x0 as usize,
+                y0 as usize,
+                x1 as usize,
+                y1 as usize,
+            );
             let mean = sum / area;
             let v = gray.data[(y as usize) * gray.width + x as usize] as i32;
             out[(y as usize) * gray.width + x as usize] =

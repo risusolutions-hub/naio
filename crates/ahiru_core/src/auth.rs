@@ -34,7 +34,10 @@ impl AuthConfig {
         Self {
             mode,
             scope: f.scope.clone(),
-            jwt_secret: f.jwt_secret.clone().unwrap_or_else(|| "dev-secret-change-me".into()),
+            jwt_secret: f
+                .jwt_secret
+                .clone()
+                .unwrap_or_else(|| "dev-secret-change-me".into()),
             session_secret: f
                 .session_secret
                 .clone()
@@ -73,7 +76,9 @@ pub struct UserContext {
 
 impl AuthConfig {
     fn authenticate_jwt(&self, ctx: &RequestContext) -> Result<Option<UserContext>, String> {
-        let auth = ctx.header("authorization").ok_or("missing authorization header")?;
+        let auth = ctx
+            .header("authorization")
+            .ok_or("missing authorization header")?;
         let token = auth
             .strip_prefix("Bearer ")
             .or_else(|| auth.strip_prefix("bearer "))
@@ -89,9 +94,7 @@ impl AuthConfig {
     }
 
     fn authenticate_session(&self, ctx: &RequestContext) -> Result<Option<UserContext>, String> {
-        let cookie = ctx
-            .header("cookie")
-            .ok_or("missing session cookie")?;
+        let cookie = ctx.header("cookie").ok_or("missing session cookie")?;
         let session = cookie
             .split(';')
             .find_map(|p| {
@@ -104,9 +107,7 @@ impl AuthConfig {
     }
 
     fn authenticate_api_key(&self, ctx: &RequestContext) -> Result<Option<UserContext>, String> {
-        let key = ctx
-            .header("x-api-key")
-            .ok_or("missing X-API-Key header")?;
+        let key = ctx.header("x-api-key").ok_or("missing X-API-Key header")?;
         if !self.api_keys.contains(key) {
             return Err("invalid API key".into());
         }
@@ -117,7 +118,13 @@ impl AuthConfig {
         }))
     }
 
-    pub fn issue_jwt(&self, user_id: &str, roles: &[String], permissions: &[String], exp_secs: usize) -> Result<String, String> {
+    pub fn issue_jwt(
+        &self,
+        user_id: &str,
+        roles: &[String],
+        permissions: &[String],
+        exp_secs: usize,
+    ) -> Result<String, String> {
         let exp = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .map_err(|e| e.to_string())?
@@ -130,20 +137,34 @@ impl AuthConfig {
             exp,
         };
         let payload = claims_to_json(&claims)?;
-        jwt::sign_hs256(jwt::default_header_hs256(), &payload, self.jwt_secret.as_bytes())
-            .map_err(|e| e.to_string())
+        jwt::sign_hs256(
+            jwt::default_header_hs256(),
+            &payload,
+            self.jwt_secret.as_bytes(),
+        )
+        .map_err(|e| e.to_string())
     }
 
-    pub fn issue_session_cookie(&self, user_id: &str, roles: &[String], permissions: &[String]) -> Result<String, String> {
+    pub fn issue_session_cookie(
+        &self,
+        user_id: &str,
+        roles: &[String],
+        permissions: &[String],
+    ) -> Result<String, String> {
         let token = sign_session_token(user_id, roles, permissions, &self.session_secret)?;
-        Ok(format!("ahiru_session={token}; HttpOnly; Path=/; SameSite=Lax"))
+        Ok(format!(
+            "ahiru_session={token}; HttpOnly; Path=/; SameSite=Lax"
+        ))
     }
 }
 
 fn claims_to_json(claims: &JwtClaims) -> Result<String, String> {
     let mut obj = niao_json_core::object::Object::new();
     obj.insert("sub".into(), Value::String(claims.sub.clone()));
-    obj.insert("exp".into(), Value::Number(niao_json_core::Number::I64(claims.exp as i64)));
+    obj.insert(
+        "exp".into(),
+        Value::Number(niao_json_core::Number::I64(claims.exp as i64)),
+    );
     if !claims.roles.is_empty() {
         obj.insert(
             "roles".into(),
@@ -177,14 +198,11 @@ fn sign_session_token(
     permissions: &[String],
     secret: &str,
 ) -> Result<String, String> {
-    let payload = format!(
-        "{}|{}|{}",
-        user_id,
-        roles.join(","),
-        permissions.join(",")
-    );
+    let payload = format!("{}|{}|{}", user_id, roles.join(","), permissions.join(","));
     let sig = jwt::sha256_hex_secret_prefix(secret.as_bytes(), payload.as_bytes());
-    Ok(niao_codec::base64::encode_standard(format!("{payload}.{sig}").as_bytes()))
+    Ok(niao_codec::base64::encode_standard(
+        format!("{payload}.{sig}").as_bytes(),
+    ))
 }
 
 fn verify_session_token(token: &str, secret: &str) -> Result<UserContext, String> {

@@ -101,7 +101,10 @@ mod integration_tests {
     #[test]
     fn bad_save_path_error() {
         let fig = fixture_line();
-        let err = fig.save_svg("/nonexistent_dir_xyz/chart.svg").err().unwrap();
+        let err = fig
+            .save_svg("/nonexistent_dir_xyz/chart.svg")
+            .err()
+            .unwrap();
         assert_eq!(err.code(), E4044_NPLOT_RENDER);
     }
 
@@ -115,6 +118,9 @@ mod integration_tests {
         let t0 = std::time::Instant::now();
         let _svg = fig.to_svg_string();
         let ms = t0.elapsed().as_secs_f64() * 1000.0;
-        assert!(ms < 100.0, "10k line render took {ms:.2} ms (budget 100 ms)");
+        assert!(
+            ms < 100.0,
+            "10k line render took {ms:.2} ms (budget 100 ms)"
+        );
     }
 }

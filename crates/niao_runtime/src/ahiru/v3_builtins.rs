@@ -40,12 +40,10 @@ fn ahiru_app_group(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
         _ => None,
     });
     let scope_id = app::with_app_mut(app_id, "ahiru_app_group", span, |state| {
-        Ok(state.app.scopes_mut().create(
-            prefix,
-            Vec::new(),
-            RouteMeta::default(),
-            auth,
-        ))
+        Ok(state
+            .app
+            .scopes_mut()
+            .create(prefix, Vec::new(), RouteMeta::default(), auth))
     })?;
     Ok(Value::Int(scope_id as i64).ref_cell())
 }
@@ -87,8 +85,7 @@ fn ahiru_app_not_found(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
 fn ahiru_redirect(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity_range(args, 1, 2, "ahiru_redirect", span)?;
     let url = string_arg(args, 0, "ahiru_redirect", span)?;
-    let permanent = args.len() == 2
-        && matches!(&*args[1].borrow(), Value::Bool(true));
+    let permanent = args.len() == 2 && matches!(&*args[1].borrow(), Value::Bool(true));
     let resp = AhiruResponse::redirect(url, permanent);
     let mut map = HashMap::new();
     map.insert("status".into(), Value::Int(resp.status as i64).ref_cell());

@@ -1,4 +1,4 @@
-﻿//! Native nsnap standard library — fast binary value snapshots with content
+//! Native nsnap standard library — fast binary value snapshots with content
 //! fingerprints and staleness checks. Wire format magic `NSNP1`.
 //!
 //! Import with `import "nsnap"` (or `import "std/nsnap"`).
@@ -344,12 +344,21 @@ fn arity(args: &[ValueRef], n: usize, name: &str, span: Span) -> NiaoResult<()> 
     Ok(())
 }
 
-fn arity_range(args: &[ValueRef], min: usize, max: usize, name: &str, span: Span) -> NiaoResult<()> {
+fn arity_range(
+    args: &[ValueRef],
+    min: usize,
+    max: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<()> {
     if args.len() < min || args.len() > max {
         return Err(RuntimeError::at(
             span,
             E3420_NSNAP_ARITY,
-            format!("{name}() expects {min}..={max} argument(s), got {}", args.len()),
+            format!(
+                "{name}() expects {min}..={max} argument(s), got {}",
+                args.len()
+            ),
         ));
     }
     Ok(())
@@ -408,7 +417,10 @@ fn nsnap_format_err(span: Span, msg: impl Into<String>) -> ValueRef {
 
 fn header_to_info(header: &SnapshotHeader) -> HashMap<String, ValueRef> {
     let mut map = HashMap::new();
-    map.insert("magic".to_string(), Value::String("NSNP1".into()).ref_cell());
+    map.insert(
+        "magic".to_string(),
+        Value::String("NSNP1".into()).ref_cell(),
+    );
     map.insert("version".to_string(), Value::Int(VERSION as i64).ref_cell());
     map.insert(
         "created_ms".to_string(),
@@ -548,14 +560,21 @@ nsnap_fns![
     ("nsnap_info", "info", nsnap_info),
     ("nsnap_validate", "validate", nsnap_validate),
     ("nsnap_fingerprint", "fingerprint", nsnap_fingerprint),
-    ("nsnap_fingerprint_bytes", "fingerprint_bytes", nsnap_fingerprint_bytes),
+    (
+        "nsnap_fingerprint_bytes",
+        "fingerprint_bytes",
+        nsnap_fingerprint_bytes
+    ),
     ("nsnap_stale", "stale", nsnap_stale),
     ("nsnap_stale_since", "stale_since", nsnap_stale_since),
     ("nsnap_stale_hash", "stale_hash", nsnap_stale_hash),
 ];
 
 fn all_builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(flat, _, f)| (flat, f)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(flat, _, f)| (flat, f))
+        .collect()
 }
 
 pub fn namespace() -> Value {
@@ -585,7 +604,10 @@ mod tests {
     fn sample() -> ValueRef {
         let mut obj = HashMap::new();
         obj.insert("n".to_string(), Value::Int(42).ref_cell());
-        obj.insert("tags".to_string(), Value::StringArray(crate::StringArray::dense(vec!["a".into()])).ref_cell());
+        obj.insert(
+            "tags".to_string(),
+            Value::StringArray(crate::StringArray::dense(vec!["a".into()])).ref_cell(),
+        );
         Value::Object(obj).ref_cell()
     }
 

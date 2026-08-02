@@ -35,7 +35,12 @@ pub struct QdrantBackend {
 
 impl QdrantBackend {
     pub fn new(base_url: String, api_key: Option<String>, collection: String) -> Self {
-        QdrantBackend { base_url, api_key, collection, dim: 0 }
+        QdrantBackend {
+            base_url,
+            api_key,
+            collection,
+            dim: 0,
+        }
     }
 
     // -----------------------------------------------------------------------
@@ -48,8 +53,7 @@ impl QdrantBackend {
 
     fn apply_key(&self, rb: niao_http::RequestBuilder) -> niao_http::RequestBuilder {
         if let Some(ref key) = self.api_key {
-            rb.header("api-key", key)
-              .header("x-api-key", key)
+            rb.header("api-key", key).header("x-api-key", key)
         } else {
             rb
         }
@@ -117,14 +121,14 @@ impl QdrantBackend {
         }
 
         // Create collection.
-        let body = format!(
-            r#"{{"vectors":{{"size":{dim},"distance":"Cosine"}}}}"#
-        );
+        let body = format!(r#"{{"vectors":{{"size":{dim},"distance":"Cosine"}}}}"#);
         let (status, resp_body) = self.http_put(&path, &body)?;
         if status == 200 || status == 201 {
             Ok(())
         } else {
-            Err(format!("qdrant create_collection status={status}: {resp_body}"))
+            Err(format!(
+                "qdrant create_collection status={status}: {resp_body}"
+            ))
         }
     }
 
@@ -262,7 +266,11 @@ fn write_float32(s: &mut String, f: f32) {
         s.push_str(&format!("{f:.8}"));
         // Trim trailing zeros after decimal point for compactness.
         let trimmed = s.trim_end_matches('0');
-        let len = if trimmed.ends_with('.') { trimmed.len() + 1 } else { trimmed.len() };
+        let len = if trimmed.ends_with('.') {
+            trimmed.len() + 1
+        } else {
+            trimmed.len()
+        };
         s.truncate(len);
     }
 }
@@ -287,7 +295,13 @@ fn meta_to_json_object(meta: &HashMap<String, MetaVal>) -> String {
 fn meta_val_to_json(v: &MetaVal) -> String {
     match v {
         MetaVal::Nil => "null".to_string(),
-        MetaVal::Bool(b) => if *b { "true".to_string() } else { "false".to_string() },
+        MetaVal::Bool(b) => {
+            if *b {
+                "true".to_string()
+            } else {
+                "false".to_string()
+            }
+        }
         MetaVal::Int(n) => n.to_string(),
         MetaVal::Float(f) => format!("{f}"),
         MetaVal::Str(s) => json_string(s),
@@ -350,7 +364,11 @@ fn parse_search_response(body: &str) -> Result<Vec<SearchHit>, String> {
         } else {
             std::collections::HashMap::new()
         };
-        hits.push(SearchHit { id, score, metadata });
+        hits.push(SearchHit {
+            id,
+            score,
+            metadata,
+        });
     }
     Ok(hits)
 }
@@ -431,7 +449,9 @@ fn extract_json_str_or_uint(json: &str, key: &str) -> Result<String, String> {
     if let Some(n) = extract_json_uint(json, key) {
         return Ok(n.to_string());
     }
-    Err(format!("qdrant: cannot extract id field '{key}' from: {json}"))
+    Err(format!(
+        "qdrant: cannot extract id field '{key}' from: {json}"
+    ))
 }
 
 fn extract_json_f64(json: &str, key: &str) -> Option<f64> {

@@ -85,14 +85,20 @@ pub fn bind_named(
     .map_err(|e| e.to_string())
 }
 
-pub fn apply_params(stmt: &mut rusqlite::Statement<'_>, params: &[BoundValue]) -> Result<(), String> {
+pub fn apply_params(
+    stmt: &mut rusqlite::Statement<'_>,
+    params: &[BoundValue],
+) -> Result<(), String> {
     for (i, p) in params.iter().enumerate() {
         bind_positional(stmt, (i + 1) as i32, p)?;
     }
     Ok(())
 }
 
-pub fn apply_stmt_bindings(stmt: &mut rusqlite::Statement<'_>, handle: &super::handles::StmtHandle) -> Result<(), String> {
+pub fn apply_stmt_bindings(
+    stmt: &mut rusqlite::Statement<'_>,
+    handle: &super::handles::StmtHandle,
+) -> Result<(), String> {
     for (idx, val) in &handle.params {
         bind_positional(stmt, *idx, val)?;
     }
@@ -112,7 +118,9 @@ pub fn value_to_async(val: &Value) -> crate::async_tasks::AsyncValue {
         Value::String(s) => AsyncValue::String(s.clone()),
         Value::IntArray(v) => AsyncValue::IntArray(v.clone()),
         Value::ByteArray(v) => AsyncValue::ByteArray(v.clone()),
-        Value::Array(items) => AsyncValue::Array(items.iter().map(|v| value_to_async(&*v.borrow())).collect()),
+        Value::Array(items) => {
+            AsyncValue::Array(items.iter().map(|v| value_to_async(&*v.borrow())).collect())
+        }
         Value::Object(map) => {
             let mut out = std::collections::HashMap::with_capacity(map.len());
             for (k, v) in map {

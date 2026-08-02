@@ -52,7 +52,10 @@ fn parsed() -> &'static Value {
 fn main() {
     let bytes = doc_bytes();
     let _ = parsed();
-    println!("=== niao_json_core bench ({} bytes, release recommended) ===", bytes);
+    println!(
+        "=== niao_json_core bench ({} bytes, release recommended) ===",
+        bytes
+    );
     let parse_tp = bench("parse", bytes, || {
         std::hint::black_box(parse(doc()).unwrap());
     });
@@ -63,5 +66,7 @@ fn main() {
         let v = parse(doc()).unwrap();
         std::hint::black_box(to_string(&v));
     });
-    println!("summary: parse={parse_tp:.1} MiB/s serialize={ser_tp:.1} MiB/s round={round:.1} MiB/s");
+    println!(
+        "summary: parse={parse_tp:.1} MiB/s serialize={ser_tp:.1} MiB/s round={round:.1} MiB/s"
+    );
 }

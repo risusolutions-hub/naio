@@ -8,10 +8,10 @@ fn run_example(name: &str) {
         .join("..")
         .join("examples")
         .join(name);
-    let mut interp = Interpreter::new().with_base_dir(
-        path.parent().unwrap().to_path_buf(),
-    );
-    interp.run_file(&path).expect(&format!("failed to run {name}"));
+    let mut interp = Interpreter::new().with_base_dir(path.parent().unwrap().to_path_buf());
+    interp
+        .run_file(&path)
+        .expect(&format!("failed to run {name}"));
 }
 
 fn run_test(name: &str) {
@@ -20,10 +20,10 @@ fn run_test(name: &str) {
         .join("..")
         .join("tests")
         .join(name);
-    let mut interp = Interpreter::new().with_base_dir(
-        path.parent().unwrap().to_path_buf(),
-    );
-    interp.run_file(&path).expect(&format!("failed to run {name}"));
+    let mut interp = Interpreter::new().with_base_dir(path.parent().unwrap().to_path_buf());
+    interp
+        .run_file(&path)
+        .expect(&format!("failed to run {name}"));
 }
 
 #[test]
@@ -98,9 +98,7 @@ fn test_basic() {
         .join("..")
         .join("tests")
         .join("basic.niao");
-    let mut interp = Interpreter::new().with_base_dir(
-        path.parent().unwrap().to_path_buf(),
-    );
+    let mut interp = Interpreter::new().with_base_dir(path.parent().unwrap().to_path_buf());
     interp.run_file(&path).unwrap();
 }
 
@@ -147,6 +145,16 @@ fn test_npg() {
 }
 
 #[test]
+fn test_nmysql() {
+    run_test("nmysql_test.niao");
+}
+
+#[test]
+fn test_nmysql_doctest() {
+    run_test("nmysql_doctest.niao");
+}
+
+#[test]
 fn example_npg_demo() {
     run_example("npg_demo.niao");
 }
@@ -190,4 +198,9 @@ fn docs_generation() {
     let source = std::fs::read_to_string(&path).unwrap();
     let html = niao_docs::generate_docs(&source, &path).unwrap();
     assert!(html.contains("fn greet"));
+}
+
+#[test]
+fn test_ngeo() {
+    run_test("ngeo.niao");
 }

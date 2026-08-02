@@ -70,15 +70,27 @@ fn parse_bulk_ops(ops_arr: &[ValueRef], span: Span) -> Result<Vec<BulkOp>, Runti
         } else if let Some(uo) = map.get("update_one") {
             let um = obj_map(uo, span, "update_one")?;
             ops.push(BulkOp::UpdateOne {
-                filter: niao_to_bson(um.get("filter").ok_or_else(|| missing(span, "filter"))?, span)?,
-                update: niao_to_bson(um.get("update").ok_or_else(|| missing(span, "update"))?, span)?,
+                filter: niao_to_bson(
+                    um.get("filter").ok_or_else(|| missing(span, "filter"))?,
+                    span,
+                )?,
+                update: niao_to_bson(
+                    um.get("update").ok_or_else(|| missing(span, "update"))?,
+                    span,
+                )?,
                 upsert: bool_field(&um, "upsert", false),
             });
         } else if let Some(uo) = map.get("update_many") {
             let um = obj_map(uo, span, "update_many")?;
             ops.push(BulkOp::UpdateMany {
-                filter: niao_to_bson(um.get("filter").ok_or_else(|| missing(span, "filter"))?, span)?,
-                update: niao_to_bson(um.get("update").ok_or_else(|| missing(span, "update"))?, span)?,
+                filter: niao_to_bson(
+                    um.get("filter").ok_or_else(|| missing(span, "filter"))?,
+                    span,
+                )?,
+                update: niao_to_bson(
+                    um.get("update").ok_or_else(|| missing(span, "update"))?,
+                    span,
+                )?,
                 upsert: bool_field(&um, "upsert", false),
             });
         } else if let Some(do_) = map.get("delete_one") {
@@ -96,9 +108,13 @@ fn parse_bulk_ops(ops_arr: &[ValueRef], span: Span) -> Result<Vec<BulkOp>, Runti
         } else if let Some(ro) = map.get("replace_one") {
             let rm = obj_map(ro, span, "replace_one")?;
             ops.push(BulkOp::ReplaceOne {
-                filter: niao_to_bson(rm.get("filter").ok_or_else(|| missing(span, "filter"))?, span)?,
+                filter: niao_to_bson(
+                    rm.get("filter").ok_or_else(|| missing(span, "filter"))?,
+                    span,
+                )?,
                 replacement: niao_to_bson(
-                    rm.get("replacement").ok_or_else(|| missing(span, "replacement"))?,
+                    rm.get("replacement")
+                        .ok_or_else(|| missing(span, "replacement"))?,
                     span,
                 )?,
                 upsert: bool_field(&rm, "upsert", false),
@@ -207,9 +223,7 @@ fn bulk_op_to_write_model(op: BulkOp, ns: &Namespace) -> WriteModel {
 
 fn is_bulk_write_unsupported(err: &mongodb::error::Error) -> bool {
     let msg = err.to_string();
-    msg.contains("MongoDB 8.0")
-        || msg.contains("bulk write feature")
-        || msg.contains("bulkWrite")
+    msg.contains("MongoDB 8.0") || msg.contains("bulk write feature") || msg.contains("bulkWrite")
 }
 
 pub(crate) async fn bulk_write_async(
@@ -220,7 +234,12 @@ pub(crate) async fn bulk_write_async(
     ordered: bool,
 ) -> Result<(i64, i64, i64, i64), String> {
     let counts = execute_bulk_write(&client, db, coll, ops, ordered).await?;
-    Ok((counts.inserted, counts.matched, counts.modified, counts.deleted))
+    Ok((
+        counts.inserted,
+        counts.matched,
+        counts.modified,
+        counts.deleted,
+    ))
 }
 
 fn is_insert_then_delete(ops: &[BulkOp]) -> bool {
@@ -380,7 +399,10 @@ async fn execute_single_op(
 ) -> Result<(), String> {
     match op {
         BulkOp::InsertOne(doc) => {
-            collection.insert_one(doc).await.map_err(|e| e.to_string())?;
+            collection
+                .insert_one(doc)
+                .await
+                .map_err(|e| e.to_string())?;
             counts.inserted += 1;
         }
         BulkOp::UpdateOne {

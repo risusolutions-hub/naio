@@ -155,7 +155,10 @@ fn invalid_handle(span: Span, id: i64) -> ValueRef {
 
 fn event_to_value(ev: &Event) -> ValueRef {
     let mut map = HashMap::new();
-    map.insert("kind".to_string(), Value::String(ev.kind.clone()).ref_cell());
+    map.insert(
+        "kind".to_string(),
+        Value::String(ev.kind.clone()).ref_cell(),
+    );
     map.insert("data".to_string(), Rc::clone(&ev.data));
     map.insert("t_ms".to_string(), Value::Int(ev.t_ms).ref_cell());
     Value::Object(map).ref_cell()
@@ -168,7 +171,14 @@ fn data_to_string(v: &ValueRef) -> String {
 const SEP: &str = "|||";
 
 fn encode_line(ev: &Event) -> String {
-    format!("{}{}{}{}{}", ev.kind, SEP, data_to_string(&ev.data), SEP, ev.t_ms)
+    format!(
+        "{}{}{}{}{}",
+        ev.kind,
+        SEP,
+        data_to_string(&ev.data),
+        SEP,
+        ev.t_ms
+    )
 }
 
 fn parse_line(line: &str, span: Span, line_no: usize) -> Result<Event, ValueRef> {
@@ -183,9 +193,7 @@ fn parse_line(line: &str, span: Span, line_no: usize) -> Result<Event, ValueRef>
     if parts.len() != 3 {
         return Err(replay_err(
             span,
-            format!(
-                "nreplay_load() invalid line {line_no}: expected kind|||data|||t_ms"
-            ),
+            format!("nreplay_load() invalid line {line_no}: expected kind|||data|||t_ms"),
         ));
     }
     let kind = parts[0].to_string();
@@ -282,9 +290,7 @@ fn nreplay_play(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     if idx < 0 {
         return Ok(Value::Nil.ref_cell());
     }
-    match with_session(id, span, |s| {
-        s.events.get(idx as usize).map(event_to_value)
-    })? {
+    match with_session(id, span, |s| s.events.get(idx as usize).map(event_to_value))? {
         Ok(Some(v)) => Ok(v),
         Ok(None) => Ok(Value::Nil.ref_cell()),
         Err(e) => Ok(e),
@@ -407,7 +413,10 @@ nreplay_fns![
 ];
 
 fn all_builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(flat, _, f)| (flat, f)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(flat, _, f)| (flat, f))
+        .collect()
 }
 
 pub fn namespace() -> Value {

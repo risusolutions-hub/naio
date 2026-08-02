@@ -192,7 +192,11 @@ fn parse_hostport_path(s: &str) -> Result<(String, u16, Option<String>), String>
         _ => (s, None),
     };
     let (host, port) = match hostport.rsplit_once(':') {
-        Some((h, p)) => (h.to_string(), p.parse::<u16>().map_err(|e: std::num::ParseIntError| e.to_string())?),
+        Some((h, p)) => (
+            h.to_string(),
+            p.parse::<u16>()
+                .map_err(|e: std::num::ParseIntError| e.to_string())?,
+        ),
         None => (hostport.to_string(), 5432),
     };
     Ok((host, port, path))

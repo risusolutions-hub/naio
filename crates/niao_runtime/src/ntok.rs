@@ -1,4 +1,4 @@
-﻿//! Native ntok standard library — byte-level BPE tokenizer (GPT-2 style):
+//! Native ntok standard library — byte-level BPE tokenizer (GPT-2 style):
 //! encode/decode/count, per-word cache, approximate counting, chunking, and
 //! context-budget fitting.
 //!
@@ -167,9 +167,7 @@ impl BpeTokenizer {
         }
         let mut word: Vec<String> = token.chars().map(|c| c.to_string()).collect();
         let pairs = |w: &[String]| -> Vec<(String, String)> {
-            w.windows(2)
-                .map(|p| (p[0].clone(), p[1].clone()))
-                .collect()
+            w.windows(2).map(|p| (p[0].clone(), p[1].clone())).collect()
         };
         let mut current_pairs = pairs(&word);
         while !current_pairs.is_empty() {
@@ -201,7 +199,9 @@ impl BpeTokenizer {
             }
             current_pairs = pairs(&word);
         }
-        self.cache.borrow_mut().insert(token.to_string(), word.clone());
+        self.cache
+            .borrow_mut()
+            .insert(token.to_string(), word.clone());
         word
     }
 
@@ -1212,12 +1212,21 @@ fn arity(args: &[ValueRef], n: usize, name: &str, span: Span) -> NiaoResult<()> 
     Ok(())
 }
 
-fn arity_range(args: &[ValueRef], min: usize, max: usize, name: &str, span: Span) -> NiaoResult<()> {
+fn arity_range(
+    args: &[ValueRef],
+    min: usize,
+    max: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<()> {
     if args.len() < min || args.len() > max {
         return Err(RuntimeError::at(
             span,
             E2770_NTOK_ARITY,
-            format!("{name}() expects {min}..={max} argument(s), got {}", args.len()),
+            format!(
+                "{name}() expects {min}..={max} argument(s), got {}",
+                args.len()
+            ),
         ));
     }
     Ok(())
@@ -1320,10 +1329,7 @@ fn ntok_load(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
             None
         }
     };
-    match BpeTokenizer::from_files(
-        &vocab_path,
-        merges_path.as_deref(),
-    ) {
+    match BpeTokenizer::from_files(&vocab_path, merges_path.as_deref()) {
         Ok(tok) => {
             let id = new_handle();
             TOKENIZERS.with(|store| store.borrow_mut().insert(id, tok));
@@ -1430,7 +1436,10 @@ ntok_fns![
 ];
 
 fn all_builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(flat, _, f)| (flat, f)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(flat, _, f)| (flat, f))
+        .collect()
 }
 
 pub fn namespace() -> Value {
@@ -1475,12 +1484,18 @@ mod tests {
     fn builtin_roundtrip() {
         let h = handle(ntok_builtin(&[], span()));
         let text = "Hello, world!";
-        let ids_val = ntok_encode(&[i(h), s(text)], span()).unwrap().borrow().clone();
+        let ids_val = ntok_encode(&[i(h), s(text)], span())
+            .unwrap()
+            .borrow()
+            .clone();
         match ids_val {
             Value::IntArray(v) => assert!(!v.is_empty()),
             other => panic!("expected int_array, got {other:?}"),
         }
-        let count_val = ntok_count(&[i(h), s(text)], span()).unwrap().borrow().clone();
+        let count_val = ntok_count(&[i(h), s(text)], span())
+            .unwrap()
+            .borrow()
+            .clone();
         match count_val {
             Value::Int(n) => assert!(n > 0),
             other => panic!("expected int, got {other:?}"),
@@ -1498,16 +1513,25 @@ mod tests {
     fn chunk_and_fit() {
         let h = handle(ntok_builtin(&[], span()));
         let text = "one two three four five six seven eight nine ten";
-        let chunks_val = ntok_chunk(&[i(h), s(text), i(5)], span()).unwrap().borrow().clone();
+        let chunks_val = ntok_chunk(&[i(h), s(text), i(5)], span())
+            .unwrap()
+            .borrow()
+            .clone();
         match chunks_val {
             Value::StringArray(parts) => assert!(parts.len() > 0),
             other => panic!("expected string_array, got {other:?}"),
         }
-        let fitted_val = ntok_fit(&[i(h), s(text), i(8)], span()).unwrap().borrow().clone();
+        let fitted_val = ntok_fit(&[i(h), s(text), i(8)], span())
+            .unwrap()
+            .borrow()
+            .clone();
         match fitted_val {
             Value::String(s) => {
                 let fitted_count_val =
-                    ntok_count(&[i(h), Value::String(s.clone()).ref_cell()], span()).unwrap().borrow().clone();
+                    ntok_count(&[i(h), Value::String(s.clone()).ref_cell()], span())
+                        .unwrap()
+                        .borrow()
+                        .clone();
                 match fitted_count_val {
                     Value::Int(n) => assert!(n <= 8),
                     other => panic!("expected int, got {other:?}"),
@@ -1520,7 +1544,10 @@ mod tests {
 
     #[test]
     fn count_approx_positive() {
-        let n_val = ntok_count_approx(&[s("hello world from ntok")], span()).unwrap().borrow().clone();
+        let n_val = ntok_count_approx(&[s("hello world from ntok")], span())
+            .unwrap()
+            .borrow()
+            .clone();
         match n_val {
             Value::Int(v) => assert!(v > 0),
             other => panic!("expected int, got {other:?}"),

@@ -101,13 +101,14 @@ fn build_client_options(
     let password = str_field(opts, "password");
     let uri = build_uri(opts);
 
-    let mut client_opts = block_on(async move { ClientOptions::parse(&uri).await }).map_err(|e| {
-        RuntimeError::at(
-            span,
-            codes::E1921_NMONGO_ERROR,
-            redact_secrets(&e.to_string(), password.as_deref()),
-        )
-    })?;
+    let mut client_opts =
+        block_on(async move { ClientOptions::parse(&uri).await }).map_err(|e| {
+            RuntimeError::at(
+                span,
+                codes::E1921_NMONGO_ERROR,
+                redact_secrets(&e.to_string(), password.as_deref()),
+            )
+        })?;
 
     if let Some(db) = str_field(opts, "database") {
         validate_name(&db, "database", span)?;
@@ -206,13 +207,14 @@ pub fn nmongo_connect_uri(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef>
     arity(args, 1, "nmongo_connect_uri", span)?;
     let uri = string_arg(args, 0, "nmongo_connect_uri", span)?;
 
-    let mut client_opts = block_on(async move { ClientOptions::parse(&uri).await }).map_err(|e| {
-        RuntimeError::at(
-            span,
-            codes::E1921_NMONGO_ERROR,
-            redact_secrets(&e.to_string(), None),
-        )
-    })?;
+    let mut client_opts =
+        block_on(async move { ClientOptions::parse(&uri).await }).map_err(|e| {
+            RuntimeError::at(
+                span,
+                codes::E1921_NMONGO_ERROR,
+                redact_secrets(&e.to_string(), None),
+            )
+        })?;
     if client_opts.max_pool_size.is_none() {
         client_opts.max_pool_size = Some(200);
     }
@@ -223,10 +225,7 @@ pub fn nmongo_connect_uri(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef>
             let id = alloc_client(client, opts_clone);
             Ok(ok_int(id as i64))
         }
-        Err(e) => Ok(nmongo_error(
-            span,
-            redact_secrets(&e.to_string(), None),
-        )),
+        Err(e) => Ok(nmongo_error(span, redact_secrets(&e.to_string(), None))),
     }
 }
 
@@ -266,12 +265,21 @@ pub fn nmongo_list_databases(args: &[ValueRef], span: Span) -> NiaoResult<ValueR
     let id = client_arg(args, 0, "nmongo_list_databases", span)?;
     with_client(id, "nmongo_list_databases", span, |client| {
         block_on(async move {
-            let dbs = client.list_database_names().await.map_err(|e| e.to_string())?;
+            let dbs = client
+                .list_database_names()
+                .await
+                .map_err(|e| e.to_string())?;
             Ok(dbs)
         })
     })
     .map(|names| {
-        Value::Array(names.into_iter().map(|n| Value::String(n).ref_cell()).collect()).ref_cell()
+        Value::Array(
+            names
+                .into_iter()
+                .map(|n| Value::String(n).ref_cell())
+                .collect(),
+        )
+        .ref_cell()
     })
     .or_else(|e| Ok(crate::error_from_runtime(&e)))
 }

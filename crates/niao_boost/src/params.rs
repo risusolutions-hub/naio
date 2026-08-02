@@ -68,7 +68,9 @@ impl BoosterParams {
             return Err(BoostError::BadParam("colsample must be in (0, 1]".into()));
         }
         if self.max_depth == 0 || self.max_leaves == 0 {
-            return Err(BoostError::BadParam("max_depth and max_leaves must be >= 1".into()));
+            return Err(BoostError::BadParam(
+                "max_depth and max_leaves must be >= 1".into(),
+            ));
         }
         Ok(())
     }

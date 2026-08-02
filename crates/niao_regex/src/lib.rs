@@ -244,12 +244,15 @@ pub struct Captures<'h> {
 
 impl<'h> Captures<'h> {
     pub fn get(&self, i: usize) -> Option<Match<'h>> {
-        self.groups.get(i).and_then(|g| *g).map(|(start, end)| Match {
-            text: self.text,
-            start,
-            end,
-            groups: self.groups.clone(),
-        })
+        self.groups
+            .get(i)
+            .and_then(|g| *g)
+            .map(|(start, end)| Match {
+                text: self.text,
+                start,
+                end,
+                groups: self.groups.clone(),
+            })
     }
 
     pub fn iter(&self) -> impl Iterator<Item = Option<Match<'h>>> + '_ {

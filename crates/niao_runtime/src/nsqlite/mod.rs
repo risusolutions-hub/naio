@@ -10,30 +10,39 @@ mod stmt;
 pub(crate) mod types;
 
 use crate::{error_from_runtime, error_value, NativeFn, NiaoResult, RuntimeError, Value, ValueRef};
-use common::*;
-use connection::{
-    nsqlite_backup, nsqlite_begin, nsqlite_changes, nsqlite_close, nsqlite_commit, nsqlite_configure,
-    nsqlite_last_insert_rowid, nsqlite_open, nsqlite_open_abs, nsqlite_path, nsqlite_rollback,
-    nsqlite_vacuum, nsqlite_version,
-};
 use bg::{
     nsqlite_async_exec, nsqlite_async_query, nsqlite_task_cancel, nsqlite_task_done,
     nsqlite_task_result, nsqlite_task_wait,
 };
+use common::*;
+use connection::{
+    nsqlite_backup, nsqlite_begin, nsqlite_changes, nsqlite_close, nsqlite_commit,
+    nsqlite_configure, nsqlite_last_insert_rowid, nsqlite_open, nsqlite_open_abs, nsqlite_path,
+    nsqlite_rollback, nsqlite_vacuum, nsqlite_version,
+};
+use niao_ast::Span;
+use niao_errors::codes;
+use query::{
+    batch_on_conn, exec_on_conn, query_column_on_conn, query_on_conn, query_row_on_conn,
+    query_value_on_conn, RowFormat,
+};
+use schema::{
+    list_indexes, list_tables, parse_migrations, run_migrations, table_exists, table_info,
+};
+use std::collections::HashMap;
+use std::rc::Rc;
 use stmt::{
     nsqlite_bind, nsqlite_bind_named, nsqlite_finalize, nsqlite_prepare, nsqlite_stmt_exec,
     nsqlite_stmt_query, nsqlite_stmt_reset,
 };
-use niao_ast::Span;
-use niao_errors::codes;
-use query::{batch_on_conn, exec_on_conn, query_column_on_conn, query_on_conn, query_row_on_conn,
-    query_value_on_conn, RowFormat};
-use schema::{list_indexes, list_tables, parse_migrations, run_migrations, table_exists, table_info};
-use std::collections::HashMap;
-use std::rc::Rc;
 
 fn nsqlite_error(span: Span, msg: impl Into<String>) -> ValueRef {
-    error_value(codes::E1701_NSQLITE_ERROR, "nsqlite_error", msg.into(), span)
+    error_value(
+        codes::E1701_NSQLITE_ERROR,
+        "nsqlite_error",
+        msg.into(),
+        span,
+    )
 }
 
 fn ok_int(n: i64) -> ValueRef {
@@ -92,9 +101,11 @@ fn nsqlite_table_exists(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity(args, 2, "nsqlite_table_exists", span)?;
     let id = conn_arg(args, 0, "nsqlite_table_exists", span)?;
     let name = string_arg(args, 1, "nsqlite_table_exists", span)?;
-    handles::with_conn_mut(id, "nsqlite_table_exists", span, |handle| table_exists(handle, &name))
-        .map(ok_bool)
-        .or_else(|e| Ok(error_from_runtime(&e)))
+    handles::with_conn_mut(id, "nsqlite_table_exists", span, |handle| {
+        table_exists(handle, &name)
+    })
+    .map(ok_bool)
+    .or_else(|e| Ok(error_from_runtime(&e)))
 }
 
 fn nsqlite_list_tables(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
@@ -102,7 +113,12 @@ fn nsqlite_list_tables(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let id = conn_arg(args, 0, "nsqlite_list_tables", span)?;
     handles::with_conn_mut(id, "nsqlite_list_tables", span, |handle| {
         list_tables(handle).map(|names| {
-            Value::Array(names.into_iter().map(|n| Value::String(n).ref_cell()).collect())
+            Value::Array(
+                names
+                    .into_iter()
+                    .map(|n| Value::String(n).ref_cell())
+                    .collect(),
+            )
         })
     })
     .map(|v| v.ref_cell())
@@ -246,9 +262,11 @@ fn nsqlite_batch(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
             ));
         }
     };
-    handles::with_conn_mut(id, "nsqlite_batch", span, |handle| batch_on_conn(handle, &sql, &rows))
-        .map(ok_int)
-        .or_else(|e| Ok(error_from_runtime(&e)))
+    handles::with_conn_mut(id, "nsqlite_batch", span, |handle| {
+        batch_on_conn(handle, &sql, &rows)
+    })
+    .map(ok_int)
+    .or_else(|e| Ok(error_from_runtime(&e)))
 }
 
 fn nsqlite_insert(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
@@ -299,7 +317,10 @@ fn all_builtins() -> Vec<(&'static str, NativeFn)> {
         ("nsqlite_close", Rc::new(nsqlite_close)),
         ("nsqlite_configure", Rc::new(nsqlite_configure)),
         ("nsqlite_path", Rc::new(nsqlite_path)),
-        ("nsqlite_last_insert_rowid", Rc::new(nsqlite_last_insert_rowid)),
+        (
+            "nsqlite_last_insert_rowid",
+            Rc::new(nsqlite_last_insert_rowid),
+        ),
         ("nsqlite_changes", Rc::new(nsqlite_changes)),
         ("nsqlite_exec", Rc::new(nsqlite_exec)),
         ("nsqlite_exec_many", Rc::new(nsqlite_exec_many)),
@@ -346,7 +367,11 @@ pub fn namespace() -> Value {
     bind(&mut map, "close", Rc::new(nsqlite_close));
     bind(&mut map, "configure", Rc::new(nsqlite_configure));
     bind(&mut map, "path", Rc::new(nsqlite_path));
-    bind(&mut map, "last_insert_rowid", Rc::new(nsqlite_last_insert_rowid));
+    bind(
+        &mut map,
+        "last_insert_rowid",
+        Rc::new(nsqlite_last_insert_rowid),
+    );
     bind(&mut map, "changes", Rc::new(nsqlite_changes));
     bind(&mut map, "exec", Rc::new(nsqlite_exec));
     bind(&mut map, "exec_many", Rc::new(nsqlite_exec_many));

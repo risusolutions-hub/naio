@@ -14,10 +14,7 @@ pub fn net_url_parse(args: &[crate::ValueRef], span: Span) -> NetResult {
             let mut map = HashMap::new();
             map.insert("scheme".into(), ok_string(u.scheme));
             map.insert("host".into(), ok_string(u.host));
-            map.insert(
-                "port".into(),
-                crate::Value::Int(u.port as i64).ref_cell(),
-            );
+            map.insert("port".into(), crate::Value::Int(u.port as i64).ref_cell());
             map.insert("path".into(), ok_string(u.path));
             map.insert("query".into(), ok_string(u.query));
             map.insert("fragment".into(), ok_string(u.fragment));
@@ -25,12 +22,7 @@ pub fn net_url_parse(args: &[crate::ValueRef], span: Span) -> NetResult {
             map.insert("password".into(), ok_string(u.password));
             Ok(crate::Value::Object(map).ref_cell())
         }
-        Err(e) => Ok(net_error(
-            span,
-            codes::E1403_NET_URL,
-            "net_url_error",
-            e,
-        )),
+        Err(e) => Ok(net_error(span, codes::E1403_NET_URL, "net_url_error", e)),
     }
 }
 
@@ -45,12 +37,7 @@ pub fn net_url_decode(args: &[crate::ValueRef], span: Span) -> NetResult {
     let s = string_arg(args, 0, "net_url_decode", span)?;
     match percent_decode(&s) {
         Ok(decoded) => Ok(ok_string(decoded)),
-        Err(e) => Ok(net_error(
-            span,
-            codes::E1403_NET_URL,
-            "net_url_error",
-            e,
-        )),
+        Err(e) => Ok(net_error(span, codes::E1403_NET_URL, "net_url_error", e)),
     }
 }
 
@@ -60,12 +47,7 @@ pub fn net_url_join(args: &[crate::ValueRef], span: Span) -> NetResult {
     let reference = string_arg(args, 1, "net_url_join", span)?;
     match parse_url(&base).and_then(|b| join(&b, &reference)) {
         Ok(u) => Ok(ok_string(u.to_string_full())),
-        Err(e) => Ok(net_error(
-            span,
-            codes::E1403_NET_URL,
-            "net_url_error",
-            e,
-        )),
+        Err(e) => Ok(net_error(span, codes::E1403_NET_URL, "net_url_error", e)),
     }
 }
 
@@ -95,11 +77,6 @@ pub fn net_url_build(args: &[crate::ValueRef], span: Span) -> NetResult {
     }
     match parse_url(&built) {
         Ok(u) => Ok(ok_string(u.to_string_full())),
-        Err(e) => Ok(net_error(
-            span,
-            codes::E1403_NET_URL,
-            "net_url_error",
-            e,
-        )),
+        Err(e) => Ok(net_error(span, codes::E1403_NET_URL, "net_url_error", e)),
     }
 }

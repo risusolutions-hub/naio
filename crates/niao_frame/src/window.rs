@@ -18,7 +18,10 @@ impl<'a> Rolling<'a> {
     }
 
     pub fn mean(&self) -> FrameResult<Series> {
-        self.rolling_reduce(|slice| slice.iter().sum::<f64>() / slice.len() as f64, "mean")
+        self.rolling_reduce(
+            |slice| slice.iter().sum::<f64>() / slice.len() as f64,
+            "mean",
+        )
     }
 
     pub fn sum(&self) -> FrameResult<Series> {

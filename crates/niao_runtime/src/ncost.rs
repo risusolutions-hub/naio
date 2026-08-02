@@ -74,8 +74,7 @@ fn lookup_price(model: &str) -> Option<ModelPrice> {
 }
 
 fn token_usd(price: ModelPrice, tokens_in: f64, tokens_out: f64) -> f64 {
-    (tokens_in / 1_000_000.0) * price.in_per_mtok
-        + (tokens_out / 1_000_000.0) * price.out_per_mtok
+    (tokens_in / 1_000_000.0) * price.in_per_mtok + (tokens_out / 1_000_000.0) * price.out_per_mtok
 }
 
 fn s3_usd(gb: f64) -> f64 {
@@ -102,12 +101,21 @@ fn arity(args: &[ValueRef], n: usize, name: &str, span: Span) -> NiaoResult<()> 
     Ok(())
 }
 
-fn arity_range(args: &[ValueRef], min: usize, max: usize, name: &str, span: Span) -> NiaoResult<()> {
+fn arity_range(
+    args: &[ValueRef],
+    min: usize,
+    max: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<()> {
     if args.len() < min || args.len() > max {
         return Err(RuntimeError::at(
             span,
             E2950_NCOST_ARITY,
-            format!("{name}() expects {min}..={max} argument(s), got {}", args.len()),
+            format!(
+                "{name}() expects {min}..={max} argument(s), got {}",
+                args.len()
+            ),
         ));
     }
     Ok(())
@@ -166,7 +174,11 @@ fn object_arg(
     }
 }
 
-fn opt_num_field(map: &HashMap<String, ValueRef>, key: &str, span: Span) -> NiaoResult<Option<f64>> {
+fn opt_num_field(
+    map: &HashMap<String, ValueRef>,
+    key: &str,
+    span: Span,
+) -> NiaoResult<Option<f64>> {
     match map.get(key) {
         None => Ok(None),
         Some(v) => match &*v.borrow() {
@@ -295,10 +307,7 @@ fn ncost_estimate(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
                 let llm = token_usd(p, tokens_in, tokens_out);
                 total += llm;
                 breakdown.insert("llm".to_string(), Value::Float(llm).ref_cell());
-                breakdown.insert(
-                    "model".to_string(),
-                    Value::String(model_name).ref_cell(),
-                );
+                breakdown.insert("model".to_string(), Value::String(model_name).ref_cell());
             }
             None => {
                 return Ok(ncost_err(
@@ -354,10 +363,7 @@ fn ncost_set_price(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let in_per = num_arg(args, 1, "ncost_set_price", span)?;
     let out_per = num_arg(args, 2, "ncost_set_price", span)?;
     if in_per < 0.0 || out_per < 0.0 {
-        return Ok(ncost_err(
-            span,
-            "ncost_set_price() prices must be >= 0",
-        ));
+        return Ok(ncost_err(span, "ncost_set_price() prices must be >= 0"));
     }
     if model.is_empty() {
         return Ok(ncost_err(span, "ncost_set_price() model must be non-empty"));
@@ -611,7 +617,10 @@ mod tests {
     fn estimate_combines_parts() {
         clear_overrides();
         let mut obj = HashMap::new();
-        obj.insert("model".to_string(), Value::String("gpt-4o-mini".into()).ref_cell());
+        obj.insert(
+            "model".to_string(),
+            Value::String("gpt-4o-mini".into()).ref_cell(),
+        );
         obj.insert("tokens_in".to_string(), Value::Int(1_000_000).ref_cell());
         obj.insert("tokens_out".to_string(), Value::Int(0).ref_cell());
         obj.insert("s3_gb".to_string(), Value::Float(1.0).ref_cell());

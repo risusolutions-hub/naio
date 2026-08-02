@@ -1,8 +1,6 @@
 //! `niao ahiru db` — migrate, status, seed, rollback, reset.
 
-use ahiru_core::{
-    migration_status, rollback_last, run_migrations, AhiruConfig,
-};
+use ahiru_core::{migration_status, rollback_last, run_migrations, AhiruConfig};
 use std::path::{Path, PathBuf};
 
 pub fn run_db_migrate(project: &Path) -> Result<(), Box<dyn std::error::Error>> {

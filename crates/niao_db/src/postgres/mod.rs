@@ -58,10 +58,16 @@ impl Client {
                 "PostgreSQL SSL is not enabled in this build; use sslmode=disable",
             ));
         }
-        let host = config.get_hosts().first().cloned().unwrap_or_else(|| "localhost".into());
+        let host = config
+            .get_hosts()
+            .first()
+            .cloned()
+            .unwrap_or_else(|| "localhost".into());
         let port = config.get_ports().first().copied().unwrap_or(5432);
         let addr = format!("{host}:{port}");
-        let timeout = config.get_connect_timeout().unwrap_or(Duration::from_secs(30));
+        let timeout = config
+            .get_connect_timeout()
+            .unwrap_or(Duration::from_secs(30));
         let stream = TcpStream::connect(&addr).map_err(Error::io)?;
         stream.set_read_timeout(Some(timeout)).map_err(Error::io)?;
         stream.set_write_timeout(Some(timeout)).map_err(Error::io)?;
@@ -136,7 +142,9 @@ impl Client {
                 b'E' => return Err(Error::from_error_response(&msg.body)),
                 b'1' | b'2' | b'T' | b't' | b'C' | b'Z' | b'S' | b'K' | b'n' | b'N' => {}
                 other => {
-                    return Err(Error::msg(format!("unexpected message before COPY: {other}")));
+                    return Err(Error::msg(format!(
+                        "unexpected message before COPY: {other}"
+                    )));
                 }
             }
         }
@@ -197,7 +205,8 @@ impl Client {
             .map(|p| p.to_sql_opt())
             .collect::<Result<_, _>>()?;
         wire::write_bind(&mut self.stream, "", "", &encoded).map_err(Error::io)?;
-        wire::write_execute(&mut self.stream, "", if want_rows { 0 } else { 1 }).map_err(Error::io)?;
+        wire::write_execute(&mut self.stream, "", if want_rows { 0 } else { 1 })
+            .map_err(Error::io)?;
         wire::write_sync(&mut self.stream).map_err(Error::io)?;
         if want_rows {
             Ok(0)
@@ -323,7 +332,9 @@ mod tests {
     use super::*;
 
     fn pg_url() -> Option<String> {
-        std::env::var("NIAO_TEST_PG_URL").ok().filter(|s| !s.is_empty())
+        std::env::var("NIAO_TEST_PG_URL")
+            .ok()
+            .filter(|s| !s.is_empty())
     }
 
     #[test]
@@ -342,9 +353,7 @@ mod tests {
         let config: Config = url.parse().unwrap();
         let mut client = Client::connect(&config, tls::NoTls).unwrap();
         let n: i64 = 41;
-        let row = client
-            .query_one("SELECT $1::int4 + 1", &[&n])
-            .unwrap();
+        let row = client.query_one("SELECT $1::int4 + 1", &[&n]).unwrap();
         assert_eq!(row.try_get::<_, i32>(0).unwrap(), 42);
     }
 }

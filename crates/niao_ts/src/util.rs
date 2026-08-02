@@ -55,7 +55,9 @@ pub fn levinson(r: &[f64], p: usize) -> TsResult<(Vec<f64>, f64)> {
         phi = phi_new;
         sigma *= 1.0 - kk * kk;
         if sigma <= 0.0 {
-            return Err(TsError::NonStationary("non-positive innovation variance".into()));
+            return Err(TsError::NonStationary(
+                "non-positive innovation variance".into(),
+            ));
         }
     }
     Ok((phi, sigma))

@@ -15,8 +15,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 /// DOW starting from Thursday (epoch 1970-01-01 was a Thursday).
 const DOW: [&str; 7] = ["Thu", "Fri", "Sat", "Sun", "Mon", "Tue", "Wed"];
 const MONTHS: [&str; 12] = [
-    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 ];
 
 fn is_leap(y: u64) -> bool {
@@ -275,8 +274,26 @@ mod tests {
             ("x-ms-date".to_string(), date.to_string()),
             ("x-ms-version".to_string(), "2020-08-04".to_string()),
         ];
-        let a1 = shared_key_blob("acct", key, "PUT", "5", "text/plain", date, &ms, "/acct/c/b");
-        let a2 = shared_key_blob("acct", key, "PUT", "5", "text/plain", date, &ms, "/acct/c/b");
+        let a1 = shared_key_blob(
+            "acct",
+            key,
+            "PUT",
+            "5",
+            "text/plain",
+            date,
+            &ms,
+            "/acct/c/b",
+        );
+        let a2 = shared_key_blob(
+            "acct",
+            key,
+            "PUT",
+            "5",
+            "text/plain",
+            date,
+            &ms,
+            "/acct/c/b",
+        );
         assert_eq!(a1, a2);
         assert!(a1.starts_with("SharedKey acct:"));
     }
@@ -296,7 +313,10 @@ mod tests {
             extract_json_string(json, "access_token"),
             Some("eyABC123".to_string())
         );
-        assert_eq!(extract_json_string(json, "token_type"), Some("Bearer".to_string()));
+        assert_eq!(
+            extract_json_string(json, "token_type"),
+            Some("Bearer".to_string())
+        );
         assert!(extract_json_string(json, "missing").is_none());
     }
 }

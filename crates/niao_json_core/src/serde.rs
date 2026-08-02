@@ -81,7 +81,10 @@ impl<'de> de::Visitor<'de> for ValueSeed {
 impl<'de> de::DeserializeSeed<'de> for ValueSeed {
     type Value = Value;
 
-    fn deserialize<D: de::Deserializer<'de>>(self, deserializer: D) -> Result<Self::Value, D::Error> {
+    fn deserialize<D: de::Deserializer<'de>>(
+        self,
+        deserializer: D,
+    ) -> Result<Self::Value, D::Error> {
         deserializer.deserialize_any(ValueSeed)
     }
 }
@@ -234,10 +237,7 @@ impl<'de> de::Deserializer<'de> for KeyDe<'_> {
         visitor.visit_string(self.key.to_string())
     }
 
-    fn deserialize_identifier<V: Visitor<'de>>(
-        self,
-        visitor: V,
-    ) -> Result<V::Value, Self::Error> {
+    fn deserialize_identifier<V: Visitor<'de>>(self, visitor: V) -> Result<V::Value, Self::Error> {
         visitor.visit_str(self.key)
     }
 
@@ -313,7 +313,10 @@ impl Serializer for ValueSerializer {
     }
 
     fn serialize_bytes(self, v: &[u8]) -> Result<Self::Ok, Self::Error> {
-        let items = v.iter().map(|b| Value::Number(Number::U64(*b as u64))).collect();
+        let items = v
+            .iter()
+            .map(|b| Value::Number(Number::U64(*b as u64)))
+            .collect();
         Ok(Value::Array(items))
     }
 
@@ -358,7 +361,10 @@ impl Serializer for ValueSerializer {
         value: &T,
     ) -> Result<Self::Ok, Self::Error> {
         let mut map = Object::new();
-        map.insert(variant.to_string(), to_value(value).map_err(SerTrait::custom)?);
+        map.insert(
+            variant.to_string(),
+            to_value(value).map_err(SerTrait::custom)?,
+        );
         Ok(Value::Object(map))
     }
 
@@ -517,7 +523,8 @@ impl serde::ser::SerializeMap for SerializeMap {
             .next_key
             .take()
             .ok_or_else(|| SerError("serialize_value without key".to_string()))?;
-        self.map.insert(key, to_value(value).map_err(SerTrait::custom)?);
+        self.map
+            .insert(key, to_value(value).map_err(SerTrait::custom)?);
         Ok(())
     }
 
@@ -535,7 +542,8 @@ impl serde::ser::SerializeStruct for SerializeMap {
         key: &'static str,
         value: &T,
     ) -> Result<(), Self::Error> {
-        self.map.insert(key.to_string(), to_value(value).map_err(SerTrait::custom)?);
+        self.map
+            .insert(key.to_string(), to_value(value).map_err(SerTrait::custom)?);
         Ok(())
     }
 
@@ -560,7 +568,8 @@ impl serde::ser::SerializeStructVariant for SerializeStructVariant {
         key: &'static str,
         value: &T,
     ) -> Result<(), Self::Error> {
-        self.map.insert(key.to_string(), to_value(value).map_err(SerTrait::custom)?);
+        self.map
+            .insert(key.to_string(), to_value(value).map_err(SerTrait::custom)?);
         Ok(())
     }
 

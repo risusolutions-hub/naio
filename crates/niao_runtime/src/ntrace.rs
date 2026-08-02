@@ -1,4 +1,4 @@
-﻿//! Native ntrace standard library — distributed tracing spans with W3C
+//! Native ntrace standard library — distributed tracing spans with W3C
 //! `traceparent`, events, JSON export, and thread-local handle registry.
 //!
 //! Import with `import "ntrace"` (or `import "std/ntrace"`).
@@ -119,12 +119,21 @@ fn arity(args: &[ValueRef], n: usize, name: &str, span: Span) -> NiaoResult<()> 
     Ok(())
 }
 
-fn arity_range(args: &[ValueRef], min: usize, max: usize, name: &str, span: Span) -> NiaoResult<()> {
+fn arity_range(
+    args: &[ValueRef],
+    min: usize,
+    max: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<()> {
     if args.len() < min || args.len() > max {
         return Err(RuntimeError::at(
             span,
             E3180_NTRACE_ARITY,
-            format!("{name}() expects {min}..={max} argument(s), got {}", args.len()),
+            format!(
+                "{name}() expects {min}..={max} argument(s), got {}",
+                args.len()
+            ),
         ));
     }
     Ok(())
@@ -195,11 +204,23 @@ fn clone_object(map: &HashMap<String, ValueRef>) -> HashMap<String, ValueRef> {
 
 fn span_to_object(rec: &SpanRecord) -> HashMap<String, ValueRef> {
     let mut map = HashMap::new();
-    map.insert("name".to_string(), Value::String(rec.name.clone()).ref_cell());
-    map.insert("trace_id".to_string(), Value::String(rec.trace_id.clone()).ref_cell());
-    map.insert("span_id".to_string(), Value::String(rec.span_id.clone()).ref_cell());
+    map.insert(
+        "name".to_string(),
+        Value::String(rec.name.clone()).ref_cell(),
+    );
+    map.insert(
+        "trace_id".to_string(),
+        Value::String(rec.trace_id.clone()).ref_cell(),
+    );
+    map.insert(
+        "span_id".to_string(),
+        Value::String(rec.span_id.clone()).ref_cell(),
+    );
     if let Some(ref p) = rec.parent_span_id {
-        map.insert("parent_span_id".to_string(), Value::String(p.clone()).ref_cell());
+        map.insert(
+            "parent_span_id".to_string(),
+            Value::String(p.clone()).ref_cell(),
+        );
     } else {
         map.insert("parent_span_id".to_string(), Value::Nil.ref_cell());
     }
@@ -221,7 +242,10 @@ fn span_to_object(rec: &SpanRecord) -> HashMap<String, ValueRef> {
             let mut em = HashMap::new();
             em.insert("name".to_string(), Value::String(e.name.clone()).ref_cell());
             em.insert("t_ms".to_string(), Value::Int(e.t_ms).ref_cell());
-            em.insert("attrs".to_string(), Value::Object(clone_object(&e.attrs)).ref_cell());
+            em.insert(
+                "attrs".to_string(),
+                Value::Object(clone_object(&e.attrs)).ref_cell(),
+            );
             Value::Object(em).ref_cell()
         })
         .collect();
@@ -354,13 +378,8 @@ fn ntrace_current(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
 fn ntrace_export(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity_range(args, 0, 1, "ntrace_export", span)?;
     let as_json = args.len() == 1 && matches!(&*args[0].borrow(), Value::Bool(true));
-    let active: Vec<HashMap<String, ValueRef>> = SPANS.with(|spans| {
-        spans
-            .borrow()
-            .values()
-            .map(span_to_object)
-            .collect()
-    });
+    let active: Vec<HashMap<String, ValueRef>> =
+        SPANS.with(|spans| spans.borrow().values().map(span_to_object).collect());
     let finished: Vec<HashMap<String, ValueRef>> =
         FINISHED.with(|f| f.borrow().iter().map(span_to_object).collect());
     let mut root = HashMap::new();
@@ -373,7 +392,10 @@ fn ntrace_export(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
         .map(|m| Value::Object(m).ref_cell())
         .collect();
     root.insert("active".to_string(), Value::Array(active_arr).ref_cell());
-    root.insert("finished".to_string(), Value::Array(finished_arr).ref_cell());
+    root.insert(
+        "finished".to_string(),
+        Value::Array(finished_arr).ref_cell(),
+    );
     if as_json {
         Ok(Value::String(export_json_string(&root)).ref_cell())
     } else {
@@ -382,7 +404,8 @@ fn ntrace_export(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
 }
 
 fn export_json_string(root: &HashMap<String, ValueRef>) -> String {
-    serde_json::to_string(&value_to_json_value(&Value::Object(root.clone()))).unwrap_or_else(|_| "{}".into())
+    serde_json::to_string(&value_to_json_value(&Value::Object(root.clone())))
+        .unwrap_or_else(|_| "{}".into())
 }
 
 fn value_to_json_value(v: &Value) -> serde_json::Value {
@@ -394,9 +417,12 @@ fn value_to_json_value(v: &Value) -> serde_json::Value {
             .map(serde_json::Value::Number)
             .unwrap_or(serde_json::Value::Null),
         Value::String(s) => serde_json::Value::String(s.clone()),
-        Value::Array(items) => {
-            serde_json::Value::Array(items.iter().map(|i| value_to_json_value(&i.borrow())).collect())
-        }
+        Value::Array(items) => serde_json::Value::Array(
+            items
+                .iter()
+                .map(|i| value_to_json_value(&i.borrow()))
+                .collect(),
+        ),
         Value::Object(map) => {
             let mut obj = serde_json::Map::new();
             let mut keys: Vec<&String> = map.keys().collect();
@@ -452,7 +478,10 @@ ntrace_fns![
 ];
 
 fn all_builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(flat, _, f)| (flat, f)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(flat, _, f)| (flat, f))
+        .collect()
 }
 
 pub fn namespace() -> Value {
@@ -488,7 +517,8 @@ mod tests {
     #[test]
     fn span_lifecycle_and_traceparent() {
         let _ = ntrace_clear(&[], span());
-        let h = int_handle(ntrace_start(&[Value::String("root".into()).ref_cell()], span()).unwrap());
+        let h =
+            int_handle(ntrace_start(&[Value::String("root".into()).ref_cell()], span()).unwrap());
 
         let tp = match ntrace_traceparent(&[], span()).unwrap().borrow().clone() {
             Value::String(s) => s,
@@ -515,14 +545,16 @@ mod tests {
         )
         .unwrap();
 
-        let child = int_handle(ntrace_start(
-            &[
-                Value::String("child".into()).ref_cell(),
-                Value::Int(h).ref_cell(),
-            ],
-            span(),
-        )
-        .unwrap());
+        let child = int_handle(
+            ntrace_start(
+                &[
+                    Value::String("child".into()).ref_cell(),
+                    Value::Int(h).ref_cell(),
+                ],
+                span(),
+            )
+            .unwrap(),
+        );
 
         let ended_val = ntrace_end(&[Value::Int(child).ref_cell()], span())
             .unwrap()

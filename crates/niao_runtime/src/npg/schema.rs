@@ -24,7 +24,8 @@ pub fn ensure_migrations_table(conn: &mut ConnHandle) -> Result<(), String> {
 
 pub fn current_version(conn: &mut ConnHandle) -> Result<i64, String> {
     ensure_migrations_table(conn)?;
-    let rows = conn.client_mut()
+    let rows = conn
+        .client_mut()
         .query(
             &format!("SELECT version FROM {MIGRATIONS_TABLE} ORDER BY version DESC LIMIT 1"),
             &[],
@@ -70,7 +71,11 @@ pub fn list_tables(conn: &mut ConnHandle, schema: &str) -> Result<Vec<String>, S
     Ok(out)
 }
 
-pub fn table_info(conn: &mut ConnHandle, schema: &str, table: &str) -> Result<Vec<ValueRef>, String> {
+pub fn table_info(
+    conn: &mut ConnHandle,
+    schema: &str,
+    table: &str,
+) -> Result<Vec<ValueRef>, String> {
     let rows = conn.client_mut()
         .query(
             "SELECT column_name, data_type, is_nullable, column_default FROM information_schema.columns WHERE table_schema = $1 AND table_name = $2 ORDER BY ordinal_position",
@@ -150,7 +155,10 @@ pub struct Migration {
     pub sql: String,
 }
 
-pub fn parse_migrations(migrations_ref: &ValueRef, span: Span) -> Result<Vec<Migration>, crate::RuntimeError> {
+pub fn parse_migrations(
+    migrations_ref: &ValueRef,
+    span: Span,
+) -> Result<Vec<Migration>, crate::RuntimeError> {
     let migrations_val = &*migrations_ref.borrow();
     let items = match migrations_val {
         Value::Array(items) => items,

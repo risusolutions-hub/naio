@@ -83,7 +83,11 @@ pub fn try_load_cache(cache: &Path) -> Option<BytecodeModule> {
     Some(module)
 }
 
-pub fn write_cache_atomic(cache: &Path, module: &BytecodeModule, source_fp: u64) -> Result<(), Box<dyn Error>> {
+pub fn write_cache_atomic(
+    cache: &Path,
+    module: &BytecodeModule,
+    source_fp: u64,
+) -> Result<(), Box<dyn Error>> {
     if let Some(parent) = cache.parent() {
         fs::create_dir_all(parent)?;
     }
@@ -96,7 +100,10 @@ pub fn write_cache_atomic(cache: &Path, module: &BytecodeModule, source_fp: u64)
 
 pub fn write_cache(cache: &Path, module: &BytecodeModule, source_fp: u64) {
     if let Err(e) = write_cache_atomic(cache, module, source_fp) {
-        eprintln!("warning: failed to write bytecode cache {}: {e}", cache.display());
+        eprintln!(
+            "warning: failed to write bytecode cache {}: {e}",
+            cache.display()
+        );
     }
 }
 
@@ -199,10 +206,7 @@ pub fn clean_bytecode_cache(cache_dir: &Path, keep: usize, all: bool) -> CleanRe
     report
 }
 
-pub fn build_to_cache(
-    file: &Path,
-    output: &Path,
-) -> Result<PathBuf, Box<dyn Error>> {
+pub fn build_to_cache(file: &Path, output: &Path) -> Result<PathBuf, Box<dyn Error>> {
     let source = fs::read_to_string(file)?;
     let source_fp = source_fingerprint(source.as_bytes());
     let program = parse(&source).map_err(|e| e.to_string())?;
@@ -259,7 +263,11 @@ mod tests {
         assert!(module.functions.iter().any(|f| f.name == "main"));
 
         let cache_file = cache_path(source, &cache_dir);
-        assert!(cache_file.is_file(), "cache file missing at {}", cache_file.display());
+        assert!(
+            cache_file.is_file(),
+            "cache file missing at {}",
+            cache_file.display()
+        );
 
         std::env::set_current_dir(&prev).unwrap();
         let _ = fs::remove_dir_all(&tmp);

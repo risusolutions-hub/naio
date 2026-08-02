@@ -101,7 +101,9 @@ pub fn uninstall_libs(lib_names: &[String], opts: &InstallOptions) -> PkgResult<
     })
 }
 
-fn uninstall_targets(opts: &InstallOptions) -> PkgResult<(PathBuf, PathBuf, PathBuf, PathBuf, InstallMode)> {
+fn uninstall_targets(
+    opts: &InstallOptions,
+) -> PkgResult<(PathBuf, PathBuf, PathBuf, PathBuf, InstallMode)> {
     match opts.mode {
         InstallMode::Global => Ok((
             niao_libs_dir(),

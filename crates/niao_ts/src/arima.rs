@@ -112,7 +112,10 @@ impl ArimaModel {
         let y = prepare_series(endog, &self.order)?;
         let mut fit = if self.order.q == 0 && self.order.seasonal_q == 0 && self.order.p > 0 {
             fit_ar_yule_walker(&y, &self.order)?
-        } else if self.order.p == 0 && self.order.q == 0 && self.order.seasonal_p == 0 && self.order.seasonal_q == 0
+        } else if self.order.p == 0
+            && self.order.q == 0
+            && self.order.seasonal_p == 0
+            && self.order.seasonal_q == 0
         {
             fit_constant_only(&y, &self.order)?
         } else {
@@ -359,11 +362,7 @@ fn fit_arma_mle(y: &[f64], order: &ArimaOrder) -> TsResult<ArimaFit> {
         q: usize,
     }
 
-    let ctx = Ctx {
-        y: y_owned,
-        p,
-        q,
-    };
+    let ctx = Ctx { y: y_owned, p, q };
 
     let mut obj = |u: &[f64], grad: &mut [f64]| -> f64 {
         let c = u[0];
@@ -480,7 +479,11 @@ fn hr_init(y: &[f64], p: usize, q: usize) -> TsResult<ArmaParams> {
     } else {
         vec![]
     };
-    Ok(ArmaParams { ar, ma, constant: c })
+    Ok(ArmaParams {
+        ar,
+        ma,
+        constant: c,
+    })
 }
 
 #[inline]
@@ -627,7 +630,10 @@ mod tests {
     #[test]
     fn not_fitted_error() {
         let m = ArimaModel::arima(1, 0, 0);
-        assert_eq!(m.forecast(1, 0.05).unwrap_err().code(), E4073_NTS_NOT_FITTED);
+        assert_eq!(
+            m.forecast(1, 0.05).unwrap_err().code(),
+            E4073_NTS_NOT_FITTED
+        );
     }
 
     #[test]

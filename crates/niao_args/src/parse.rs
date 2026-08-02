@@ -75,7 +75,10 @@ where
     }
 
     if let Some((sub_name, sub_cmd, rest)) = match_subcommand(cmd, args) {
-        let child = parse_command(sub_cmd, std::iter::once(bin.clone()).chain(rest.iter().cloned()))?;
+        let child = parse_command(
+            sub_cmd,
+            std::iter::once(bin.clone()).chain(rest.iter().cloned()),
+        )?;
         let mut outer = ArgMatches {
             name: bin_name,
             ..Default::default()
@@ -177,10 +180,7 @@ fn parse_flat(cmd: &Command, bin_name: String, args: &[OsString]) -> Result<ArgM
                 (body, None)
             };
 
-            let arg_def = lookup
-                .by_long
-                .get(name)
-                .ok_or_else(|| unknown(&s))?;
+            let arg_def = lookup.by_long.get(name).ok_or_else(|| unknown(&s))?;
 
             idx = consume_option(arg_def, value, args, idx, &mut matches)?;
             if arg_def.trailing_var_arg {
@@ -244,8 +244,16 @@ fn parse_flat(cmd: &Command, bin_name: String, args: &[OsString]) -> Result<ArgM
 
         // additional values for ZeroOrMore / OneOrMore positionals
         if let Some(pdef) = lookup.positionals.last() {
-            if matches!(pdef.num_args, crate::arg::NumArgs::ZeroOrMore | crate::arg::NumArgs::OneOrMore) {
-                push_positional(&lookup, &mut matches, lookup.positionals.len() - 1, arg.clone())?;
+            if matches!(
+                pdef.num_args,
+                crate::arg::NumArgs::ZeroOrMore | crate::arg::NumArgs::OneOrMore
+            ) {
+                push_positional(
+                    &lookup,
+                    &mut matches,
+                    lookup.positionals.len() - 1,
+                    arg.clone(),
+                )?;
                 idx += 1;
                 continue;
             }
@@ -272,7 +280,11 @@ fn consume_option(
         }
         ArgAction::Count => {
             let n = matches.get_count(&arg_def.id) as usize + 1;
-            matches.set_values(&arg_def.id, vec![OsString::from(n.to_string())], ValueSource::CommandLine);
+            matches.set_values(
+                &arg_def.id,
+                vec![OsString::from(n.to_string())],
+                ValueSource::CommandLine,
+            );
             Ok(idx + 1)
         }
         ArgAction::Set | ArgAction::Append => {
@@ -322,7 +334,11 @@ fn apply_flag(arg_def: &Arg, matches: &mut ArgMatches) {
     match arg_def.action {
         ArgAction::Count => {
             let n = matches.get_count(&arg_def.id) as usize + 1;
-            matches.set_values(&arg_def.id, vec![OsString::from(n.to_string())], ValueSource::CommandLine);
+            matches.set_values(
+                &arg_def.id,
+                vec![OsString::from(n.to_string())],
+                ValueSource::CommandLine,
+            );
         }
         _ => {
             matches.set_flag(&arg_def.id, true, ValueSource::CommandLine);
@@ -336,17 +352,14 @@ fn push_positional(
     pos_idx: usize,
     value: OsString,
 ) -> Result<(), Error> {
-    let arg_def = lookup
-        .positionals
-        .get(pos_idx)
-        .ok_or_else(|| {
-            Error::new(
-                ErrorKind::TooManyValues {
-                    arg: "positional".to_string(),
-                },
-                "unexpected extra positional argument",
-            )
-        })?;
+    let arg_def = lookup.positionals.get(pos_idx).ok_or_else(|| {
+        Error::new(
+            ErrorKind::TooManyValues {
+                arg: "positional".to_string(),
+            },
+            "unexpected extra positional argument",
+        )
+    })?;
     matches.push_value(&arg_def.id, value, ValueSource::CommandLine);
     Ok(())
 }
@@ -356,7 +369,10 @@ fn apply_defaults(cmd: &Command, matches: &mut ArgMatches) {
         if let Some(ref env) = arg.env {
             if let Ok(val) = std::env::var(env.to_string_lossy().as_ref()) {
                 if arg.action == ArgAction::SetTrue {
-                    if val == "1" || val.eq_ignore_ascii_case("true") || val.eq_ignore_ascii_case("yes") {
+                    if val == "1"
+                        || val.eq_ignore_ascii_case("true")
+                        || val.eq_ignore_ascii_case("yes")
+                    {
                         matches.set_flag(&arg.id, true, ValueSource::EnvVariable);
                     }
                 } else if !arg.default_values.is_empty() {
@@ -395,7 +411,11 @@ fn apply_defaults(cmd: &Command, matches: &mut ArgMatches) {
     }
 }
 
-fn validate_required(cmd: &Command, lookup: &ArgLookup<'_>, matches: &ArgMatches) -> Result<(), Error> {
+fn validate_required(
+    cmd: &Command,
+    lookup: &ArgLookup<'_>,
+    matches: &ArgMatches,
+) -> Result<(), Error> {
     for arg in &cmd.args {
         if !arg.required {
             continue;
@@ -411,7 +431,10 @@ fn validate_required(cmd: &Command, lookup: &ArgLookup<'_>, matches: &ArgMatches
         if !has {
             return Err(Error::new(
                 ErrorKind::MissingRequiredArgument,
-                format!("the following required arguments were not provided: <{}>", arg.id),
+                format!(
+                    "the following required arguments were not provided: <{}>",
+                    arg.id
+                ),
             ));
         }
     }
@@ -517,11 +540,7 @@ mod unit {
 
     #[test]
     fn default_value() {
-        let cmd = Command::new("app").arg(
-            Arg::new("mode")
-                .long("mode")
-                .default_value("vm"),
-        );
+        let cmd = Command::new("app").arg(Arg::new("mode").long("mode").default_value("vm"));
         let m = cmd.try_get_matches_from(["app"]).unwrap();
         assert_eq!(m.get_one::<String>("mode").as_deref(), Some("vm"));
     }

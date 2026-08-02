@@ -1,6 +1,9 @@
 use crate::catalog::{standard_libs, LibSpec};
 use crate::error::{PkgError, PkgResult};
-use crate::package::{is_latest_request, latest_version, list_lib_versions, pick_version, read_lib_package, LibPackage};
+use crate::package::{
+    is_latest_request, latest_version, list_lib_versions, pick_version, read_lib_package,
+    LibPackage,
+};
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -73,7 +76,11 @@ fn walk_up_for_source(start: &Path) -> Option<PathBuf> {
     None
 }
 
-pub fn load_lib_from_source(source_root: &Path, name: &str, version_req: &str) -> PkgResult<(LibPackage, PathBuf)> {
+pub fn load_lib_from_source(
+    source_root: &Path,
+    name: &str,
+    version_req: &str,
+) -> PkgResult<(LibPackage, PathBuf)> {
     let libs = source_libs_dir(source_root);
     let package_path = libs.join(name).join("package.json");
     if package_path.is_file() {
@@ -199,7 +206,10 @@ pub fn list_source_lib_names(source_root: &Path) -> PkgResult<Vec<String>> {
 }
 
 pub fn all_standard_from_source(source_root: &Path) -> PkgResult<Vec<(LibPackage, PathBuf)>> {
-    let names: Vec<String> = crate::catalog::STANDARD_LIBS.iter().map(|s| s.to_string()).collect();
+    let names: Vec<String> = crate::catalog::STANDARD_LIBS
+        .iter()
+        .map(|s| s.to_string())
+        .collect();
     install_specs_from_source(source_root, &names, "*", None)
 }
 

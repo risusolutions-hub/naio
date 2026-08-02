@@ -164,11 +164,7 @@ impl DataFrame {
         }
         let bits = match &mask.data {
             ColumnData::Bool(v) => v.as_slice(),
-            _ => {
-                return Err(FrameError::Dtype(
-                    "filter mask must be bool series".into(),
-                ))
-            }
+            _ => return Err(FrameError::Dtype("filter mask must be bool series".into())),
         };
         let indices: Vec<usize> = bits
             .iter()
@@ -240,9 +236,7 @@ impl DataFrame {
         let mut idx: Vec<usize> = (0..nrows).collect();
         let mut state = seed;
         for i in (1..nrows).rev() {
-            state = state
-                .wrapping_mul(6364136223846793005)
-                .wrapping_add(1);
+            state = state.wrapping_mul(6364136223846793005).wrapping_add(1);
             let j = (state as usize) % (i + 1);
             idx.swap(i, j);
         }

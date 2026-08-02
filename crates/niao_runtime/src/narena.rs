@@ -1,4 +1,4 @@
-﻿//! Native narena standard library — pooled packed-buffer reuse arena.
+//! Native narena standard library — pooled packed-buffer reuse arena.
 //! Allocates `ByteArray` buffers from a thread-local pool to reduce allocation
 //! churn; `recycle` returns buffers and `reset` clears outstanding borrows.
 //!
@@ -123,12 +123,21 @@ fn arity(args: &[ValueRef], n: usize, name: &str, span: Span) -> NiaoResult<()> 
     Ok(())
 }
 
-fn arity_range(args: &[ValueRef], min: usize, max: usize, name: &str, span: Span) -> NiaoResult<()> {
+fn arity_range(
+    args: &[ValueRef],
+    min: usize,
+    max: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<()> {
     if args.len() < min || args.len() > max {
         return Err(RuntimeError::at(
             span,
             E3370_NARENA_ARITY,
-            format!("{name}() expects {min}..={max} argument(s), got {}", args.len()),
+            format!(
+                "{name}() expects {min}..={max} argument(s), got {}",
+                args.len()
+            ),
         ));
     }
     Ok(())
@@ -256,8 +265,14 @@ fn narena_stats(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     })? {
         Ok((block_size, pool_cap, pooled, outstanding, allocated, recycled, resets)) => {
             let mut map = HashMap::new();
-            map.insert("block_size".to_string(), Value::Int(block_size as i64).ref_cell());
-            map.insert("pool_cap".to_string(), Value::Int(pool_cap as i64).ref_cell());
+            map.insert(
+                "block_size".to_string(),
+                Value::Int(block_size as i64).ref_cell(),
+            );
+            map.insert(
+                "pool_cap".to_string(),
+                Value::Int(pool_cap as i64).ref_cell(),
+            );
             map.insert("pooled".to_string(), Value::Int(pooled as i64).ref_cell());
             map.insert(
                 "outstanding".to_string(),
@@ -271,7 +286,10 @@ fn narena_stats(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
                 "total_recycled".to_string(),
                 Value::Int(recycled as i64).ref_cell(),
             );
-            map.insert("reset_count".to_string(), Value::Int(resets as i64).ref_cell());
+            map.insert(
+                "reset_count".to_string(),
+                Value::Int(resets as i64).ref_cell(),
+            );
             Ok(Value::Object(map).ref_cell())
         }
         Err(e) => Ok(e),
@@ -308,7 +326,10 @@ narena_fns![
 ];
 
 fn all_builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(flat, _, f)| (flat, f)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(flat, _, f)| (flat, f))
+        .collect()
 }
 
 pub fn namespace() -> Value {
@@ -358,7 +379,9 @@ mod tests {
         let stats = narena_stats(&[h.clone()], span()).unwrap();
         match &*stats.borrow() {
             Value::Object(m) => {
-                assert!(matches!(&*m.get("total_allocated").unwrap().borrow(), Value::Int(n) if *n >= 2));
+                assert!(
+                    matches!(&*m.get("total_allocated").unwrap().borrow(), Value::Int(n) if *n >= 2)
+                );
                 assert!(matches!(&*m.get("pooled").unwrap().borrow(), Value::Int(n) if *n >= 1));
             }
             _ => panic!(),

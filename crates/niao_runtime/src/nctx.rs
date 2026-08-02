@@ -1,4 +1,4 @@
-﻿//! Native nctx standard library — token estimates, message trim strategies,
+//! Native nctx standard library — token estimates, message trim strategies,
 //! context budgets, and conversation stats for LLM prompt planning.
 //!
 //! Import with `import "nctx"` (or `import "std/nctx"`).
@@ -31,12 +31,21 @@ fn arity(args: &[ValueRef], n: usize, name: &str, span: Span) -> NiaoResult<()> 
     Ok(())
 }
 
-fn arity_range(args: &[ValueRef], min: usize, max: usize, name: &str, span: Span) -> NiaoResult<()> {
+fn arity_range(
+    args: &[ValueRef],
+    min: usize,
+    max: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<()> {
     if args.len() < min || args.len() > max {
         return Err(RuntimeError::at(
             span,
             E3340_NCTX_ARITY,
-            format!("{name}() expects {min}..={max} argument(s), got {}", args.len()),
+            format!(
+                "{name}() expects {min}..={max} argument(s), got {}",
+                args.len()
+            ),
         ));
     }
     Ok(())
@@ -70,7 +79,12 @@ fn int_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> NiaoResult<
     }
 }
 
-fn messages_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> NiaoResult<Vec<(String, String)>> {
+fn messages_arg(
+    args: &[ValueRef],
+    idx: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<Vec<(String, String)>> {
     match &*args[idx].borrow() {
         Value::Array(items) => {
             let mut out = Vec::with_capacity(items.len());
@@ -159,10 +173,7 @@ fn trim_messages(
     if budget <= 0 {
         return Ok(Vec::new());
     }
-    let total: i64 = messages
-        .iter()
-        .map(|(r, c)| message_tokens(r, c))
-        .sum();
+    let total: i64 = messages.iter().map(|(r, c)| message_tokens(r, c)).sum();
     if total <= budget {
         return Ok(messages.to_vec());
     }
@@ -196,10 +207,7 @@ fn trim_messages(
                 if take_right > 0 {
                     candidate.extend(messages.iter().skip(messages.len() - take_right).cloned());
                 }
-                let cost: i64 = candidate
-                    .iter()
-                    .map(|(r, c)| message_tokens(r, c))
-                    .sum();
+                let cost: i64 = candidate.iter().map(|(r, c)| message_tokens(r, c)).sum();
                 if cost <= budget {
                     best = candidate;
                     left += 1;
@@ -218,10 +226,7 @@ fn trim_messages(
                 .filter(|(r, _)| r == "system")
                 .cloned()
                 .collect();
-            let mut used: i64 = systems
-                .iter()
-                .map(|(r, c)| message_tokens(r, c))
-                .sum();
+            let mut used: i64 = systems.iter().map(|(r, c)| message_tokens(r, c)).sum();
             let mut rest: Vec<_> = messages
                 .iter()
                 .filter(|(r, _)| r != "system")
@@ -272,10 +277,7 @@ fn nctx_estimate(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
 fn nctx_estimate_messages(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity(args, 1, "nctx_estimate_messages", span)?;
     let messages = messages_arg(args, 0, "nctx_estimate_messages", span)?;
-    let total: i64 = messages
-        .iter()
-        .map(|(r, c)| message_tokens(r, c))
-        .sum();
+    let total: i64 = messages.iter().map(|(r, c)| message_tokens(r, c)).sum();
     Ok(Value::Int(total).ref_cell())
 }
 
@@ -313,7 +315,10 @@ fn nctx_stats(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
         role_map.insert(k, Value::Int(v).ref_cell());
     }
     let mut out = HashMap::new();
-    out.insert("messages".into(), Value::Int(messages.len() as i64).ref_cell());
+    out.insert(
+        "messages".into(),
+        Value::Int(messages.len() as i64).ref_cell(),
+    );
     out.insert("chars".into(), Value::Int(chars).ref_cell());
     out.insert("tokens".into(), Value::Int(tokens).ref_cell());
     out.insert("roles".into(), Value::Object(role_map).ref_cell());
@@ -368,10 +373,7 @@ fn nctx_fits(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
             _ => None,
         })
         .ok_or_else(|| type_err(span, "nctx.fits() budget missing int field 'available'"))?;
-    let tokens: i64 = messages
-        .iter()
-        .map(|(r, c)| message_tokens(r, c))
-        .sum();
+    let tokens: i64 = messages.iter().map(|(r, c)| message_tokens(r, c)).sum();
     Ok(Value::Bool(tokens <= available).ref_cell())
 }
 
@@ -389,7 +391,11 @@ macro_rules! nctx_fns {
 
 nctx_fns![
     ("nctx_estimate", "estimate", nctx_estimate),
-    ("nctx_estimate_messages", "estimate_messages", nctx_estimate_messages),
+    (
+        "nctx_estimate_messages",
+        "estimate_messages",
+        nctx_estimate_messages
+    ),
     ("nctx_trim", "trim", nctx_trim),
     ("nctx_stats", "stats", nctx_stats),
     ("nctx_budget", "budget", nctx_budget),
@@ -397,7 +403,10 @@ nctx_fns![
 ];
 
 fn all_builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(flat, _, f)| (flat, f)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(flat, _, f)| (flat, f))
+        .collect()
 }
 
 pub fn namespace() -> Value {
@@ -446,7 +455,11 @@ mod tests {
         ])
         .ref_cell();
         let trimmed = nctx_trim(
-            &[messages, Value::Int(12).ref_cell(), Value::String("tail".into()).ref_cell()],
+            &[
+                messages,
+                Value::Int(12).ref_cell(),
+                Value::String("tail".into()).ref_cell(),
+            ],
             span(),
         )
         .unwrap();
@@ -479,7 +492,11 @@ mod tests {
             }
             other => panic!("expected object, got {other:?}"),
         }
-        let b = nctx_budget(&[Value::Int(8192).ref_cell(), Value::Int(512).ref_cell()], span()).unwrap();
+        let b = nctx_budget(
+            &[Value::Int(8192).ref_cell(), Value::Int(512).ref_cell()],
+            span(),
+        )
+        .unwrap();
         let fits = nctx_fits(&[messages, b], span()).unwrap();
         assert!(matches!(&*fits.borrow(), Value::Bool(true)));
     }

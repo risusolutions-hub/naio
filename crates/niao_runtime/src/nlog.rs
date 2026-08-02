@@ -194,9 +194,9 @@ fn iso_timestamp() -> String {
 // ---------------------------------------------------------------------------
 
 fn emit(level: u8, msg: &str, fields: &[(String, FieldValue)], span: Span) -> NiaoResult<ValueRef> {
-    let mut st = state().lock().map_err(|_| {
-        RuntimeError::at(span, codes::E2641_NLOG_ERROR, "nlog state lock poisoned")
-    })?;
+    let mut st = state()
+        .lock()
+        .map_err(|_| RuntimeError::at(span, codes::E2641_NLOG_ERROR, "nlog state lock poisoned"))?;
     let mut line = String::with_capacity(64 + msg.len() + fields.len() * 16);
     if st.format_json {
         line.push('{');
@@ -286,7 +286,12 @@ fn nlog_error_val(span: Span, msg: impl Into<String>) -> ValueRef {
 }
 
 /// Collect trailing key/value varargs into owned field pairs.
-fn collect_fields(args: &[ValueRef], start: usize, name: &str, span: Span) -> NiaoResult<Vec<(String, FieldValue)>> {
+fn collect_fields(
+    args: &[ValueRef],
+    start: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<Vec<(String, FieldValue)>> {
     let rest = &args[start..];
     if rest.len() % 2 != 0 {
         return Err(RuntimeError::at(
@@ -302,7 +307,10 @@ fn collect_fields(args: &[ValueRef], start: usize, name: &str, span: Span) -> Ni
             other => {
                 return Err(type_err(
                     span,
-                    format!("{name}() field keys must be strings, got {}", other.type_name()),
+                    format!(
+                        "{name}() field keys must be strings, got {}",
+                        other.type_name()
+                    ),
                 ))
             }
         };
@@ -349,7 +357,10 @@ fn nlog_init(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
         string_arg(args, 0, "nlog_init", span)?
     };
     let Some(level) = level_from_str(&level_str) else {
-        return Ok(nlog_error_val(span, format!("unknown log level '{level_str}'")));
+        return Ok(nlog_error_val(
+            span,
+            format!("unknown log level '{level_str}'"),
+        ));
     };
     let opts: Option<HashMap<String, ValueRef>> = args.get(1).and_then(|v| match &*v.borrow() {
         Value::Object(map) => Some(map.clone()),
@@ -366,7 +377,10 @@ fn nlog_init(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
                     "json" => format_json = true,
                     "text" => format_json = false,
                     other => {
-                        return Ok(nlog_error_val(span, format!("unknown log format '{other}'")))
+                        return Ok(nlog_error_val(
+                            span,
+                            format!("unknown log format '{other}'"),
+                        ))
                     }
                 }
             }
@@ -391,7 +405,10 @@ fn nlog_init(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
         match OpenOptions::new().create(true).append(true).open(&path) {
             Ok(f) => Sink::File(f),
             Err(e) => {
-                return Ok(nlog_error_val(span, format!("cannot open log file '{path}': {e}")))
+                return Ok(nlog_error_val(
+                    span,
+                    format!("cannot open log file '{path}': {e}"),
+                ))
             }
         }
     } else if to_stdout {
@@ -399,9 +416,9 @@ fn nlog_init(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     } else {
         Sink::Stderr
     };
-    let mut st = state().lock().map_err(|_| {
-        RuntimeError::at(span, codes::E2641_NLOG_ERROR, "nlog state lock poisoned")
-    })?;
+    let mut st = state()
+        .lock()
+        .map_err(|_| RuntimeError::at(span, codes::E2641_NLOG_ERROR, "nlog state lock poisoned"))?;
     st.format_json = format_json;
     st.timestamps = timestamps;
     st.sink = sink;
@@ -423,7 +440,10 @@ fn nlog_set_level(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
             CURRENT_LEVEL.store(level, Ordering::Relaxed);
             Ok(Value::Nil.ref_cell())
         }
-        None => Ok(nlog_error_val(span, format!("unknown log level '{level_str}'"))),
+        None => Ok(nlog_error_val(
+            span,
+            format!("unknown log level '{level_str}'"),
+        )),
     }
 }
 
@@ -448,10 +468,11 @@ fn nlog_enabled(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     }
     let level_str = string_arg(args, 0, "nlog_enabled", span)?;
     match level_from_str(&level_str) {
-        Some(level) => {
-            Ok(Value::Bool(level >= CURRENT_LEVEL.load(Ordering::Relaxed)).ref_cell())
-        }
-        None => Ok(nlog_error_val(span, format!("unknown log level '{level_str}'"))),
+        Some(level) => Ok(Value::Bool(level >= CURRENT_LEVEL.load(Ordering::Relaxed)).ref_cell()),
+        None => Ok(nlog_error_val(
+            span,
+            format!("unknown log level '{level_str}'"),
+        )),
     }
 }
 
@@ -468,13 +489,16 @@ fn nlog_context(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
         other => {
             return Err(type_err(
                 span,
-                format!("nlog_context() expects an object, got {}", other.type_name()),
+                format!(
+                    "nlog_context() expects an object, got {}",
+                    other.type_name()
+                ),
             ))
         }
     };
-    let mut st = state().lock().map_err(|_| {
-        RuntimeError::at(span, codes::E2641_NLOG_ERROR, "nlog state lock poisoned")
-    })?;
+    let mut st = state()
+        .lock()
+        .map_err(|_| RuntimeError::at(span, codes::E2641_NLOG_ERROR, "nlog state lock poisoned"))?;
     let mut pairs: Vec<(String, FieldValue)> = map
         .iter()
         .map(|(k, v)| (k.clone(), FieldValue::from_value(&v.borrow())))
@@ -498,9 +522,9 @@ fn nlog_clear_context(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
             "nlog_clear_context() expects 0 arguments",
         ));
     }
-    let mut st = state().lock().map_err(|_| {
-        RuntimeError::at(span, codes::E2641_NLOG_ERROR, "nlog state lock poisoned")
-    })?;
+    let mut st = state()
+        .lock()
+        .map_err(|_| RuntimeError::at(span, codes::E2641_NLOG_ERROR, "nlog state lock poisoned"))?;
     st.context.clear();
     Ok(Value::Nil.ref_cell())
 }
@@ -552,7 +576,10 @@ nlog_fns![
 ];
 
 fn all_builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(flat, _, f)| (flat, f)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(flat, _, f)| (flat, f))
+        .collect()
 }
 
 pub fn namespace() -> Value {

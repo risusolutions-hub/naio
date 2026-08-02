@@ -76,9 +76,7 @@ fn validate_cap(cap: &str, span: Span) -> NiaoResult<()> {
         Err(RuntimeError::at(
             span,
             E2981_NCAP_ERROR,
-            format!(
-                "unknown capability '{cap}'; expected one of: net, fs, env, process, gpu, all"
-            ),
+            format!("unknown capability '{cap}'; expected one of: net, fs, env, process, gpu, all"),
         ))
     }
 }

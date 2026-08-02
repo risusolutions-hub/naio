@@ -1,4 +1,4 @@
-﻿//! Native ncolumnar standard library — column-major binary codec for tables.
+//! Native ncolumnar standard library — column-major binary codec for tables.
 //! Wire format magic `NCOL1`.
 //!
 //! Import with `import "ncolumnar"` (or `import "std/ncolumnar"`).
@@ -204,7 +204,9 @@ impl<'a> Decoder<'a> {
             COL_INT => {
                 let len = self.read_u32()? as usize;
                 if len != expected_rows {
-                    return Err(format!("int column row count {len} != table rows {expected_rows}"));
+                    return Err(format!(
+                        "int column row count {len} != table rows {expected_rows}"
+                    ));
                 }
                 let mut v = Vec::with_capacity(len);
                 for _ in 0..len {
@@ -228,7 +230,9 @@ impl<'a> Decoder<'a> {
             COL_BOOL => {
                 let len = self.read_u32()? as usize;
                 if len != expected_rows {
-                    return Err(format!("bool column row count {len} != table rows {expected_rows}"));
+                    return Err(format!(
+                        "bool column row count {len} != table rows {expected_rows}"
+                    ));
                 }
                 Ok(Column::Bool(self.read_exact(len)?.to_vec()))
             }
@@ -264,7 +268,9 @@ impl<'a> Decoder<'a> {
             COL_NIL => {
                 let len = self.read_u32()? as usize;
                 if len != expected_rows {
-                    return Err(format!("nil column row count {len} != table rows {expected_rows}"));
+                    return Err(format!(
+                        "nil column row count {len} != table rows {expected_rows}"
+                    ));
                 }
                 Ok(Column::Nil(len))
             }
@@ -432,7 +438,12 @@ fn arity(args: &[ValueRef], n: usize, name: &str, span: Span) -> NiaoResult<()> 
     Ok(())
 }
 
-fn object_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> NiaoResult<HashMap<String, ValueRef>> {
+fn object_arg(
+    args: &[ValueRef],
+    idx: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<HashMap<String, ValueRef>> {
     match &*args[idx].borrow() {
         Value::Object(map) => Ok(map.clone()),
         other => Err(type_err(
@@ -502,7 +513,10 @@ fn ncolumnar_info(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     match decode_table(&bytes) {
         Ok(table) => {
             let mut map = HashMap::new();
-            map.insert("magic".to_string(), Value::String("NCOL1".into()).ref_cell());
+            map.insert(
+                "magic".to_string(),
+                Value::String("NCOL1".into()).ref_cell(),
+            );
             map.insert("version".to_string(), Value::Int(VERSION as i64).ref_cell());
             map.insert("rows".to_string(), Value::Int(table.rows as i64).ref_cell());
             map.insert(
@@ -566,7 +580,10 @@ ncolumnar_fns![
 ];
 
 fn all_builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(flat, _, f)| (flat, f)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(flat, _, f)| (flat, f))
+        .collect()
 }
 
 pub fn namespace() -> Value {

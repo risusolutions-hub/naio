@@ -22,9 +22,7 @@ fn main() {
     let (mut client, _) = connect(&url).expect("connect");
     let start = Instant::now();
     for _ in 0..MSGS {
-        client
-            .send(Message::Text("ping".into()))
-            .expect("send");
+        client.send(Message::Text("ping".into())).expect("send");
         let _ = client.read().expect("recv");
     }
     let secs = start.elapsed().as_secs_f64();

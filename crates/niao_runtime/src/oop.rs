@@ -1,7 +1,5 @@
 use crate::{Environment, FunctionValue, Value, ValueRef};
-use niao_ast::{
-    ClassDef, ClassMember, FnDef, MethodSig, TraitDef, TypeName, Visibility,
-};
+use niao_ast::{ClassDef, ClassMember, FnDef, MethodSig, TraitDef, TypeName, Visibility};
 use niao_errors::{NiaoResult, RuntimeError};
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -57,11 +55,7 @@ pub fn with_class_registry<F, R>(f: F) -> Option<R>
 where
     F: FnOnce(&ClassRegistry) -> R,
 {
-    CLASS_REGISTRY.with(|r| {
-        r.borrow()
-            .as_ref()
-            .map(|reg| f(&reg.borrow()))
-    })
+    CLASS_REGISTRY.with(|r| r.borrow().as_ref().map(|reg| f(&reg.borrow())))
 }
 
 pub fn push_method_context(ctx: MethodContext) {
@@ -141,10 +135,7 @@ impl ClassRegistry {
                         ..
                     } = member
                     {
-                        fields.insert(
-                            name.clone(),
-                            (ty.clone(), *visibility, def.name.clone()),
-                        );
+                        fields.insert(name.clone(), (ty.clone(), *visibility, def.name.clone()));
                     }
                 }
                 let runtime = RuntimeClass {
@@ -202,12 +193,12 @@ impl ClassRegistry {
                     visibility,
                     ..
                 } => {
-                    fields.insert(
-                        name.clone(),
-                        (ty.clone(), *visibility, def.name.clone()),
-                    );
+                    fields.insert(name.clone(), (ty.clone(), *visibility, def.name.clone()));
                 }
-                ClassMember::Method { def: mdef, visibility } => {
+                ClassMember::Method {
+                    def: mdef,
+                    visibility,
+                } => {
                     if mdef.params.first().map(|p| p.name.as_str()) != Some("self") {
                         return Err(RuntimeError::at(
                             mdef.span,
@@ -228,10 +219,7 @@ impl ClassRegistry {
                     );
                 }
                 ClassMember::StaticMethod { def: mdef, .. } => {
-                    static_methods.insert(
-                        mdef.name.clone(),
-                        make_fn(mdef, Rc::clone(&globals)),
-                    );
+                    static_methods.insert(mdef.name.clone(), make_fn(mdef, Rc::clone(&globals)));
                 }
                 ClassMember::StaticField { name, .. } => {
                     static_fields.insert(name.clone(), Value::Nil.ref_cell());

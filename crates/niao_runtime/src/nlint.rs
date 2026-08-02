@@ -1,4 +1,4 @@
-﻿//! Native nlint standard library — AST-as-data via `niao_parser`, data-driven
+//! Native nlint standard library — AST-as-data via `niao_parser`, data-driven
 //! lint rules, and `nlint_check(source)` diagnostics.
 //!
 //! Import with `import "nlint"` (or `import "std/nlint"`).
@@ -29,12 +29,21 @@ fn arity(args: &[ValueRef], n: usize, name: &str, span: Span) -> NiaoResult<()> 
     Ok(())
 }
 
-fn arity_range(args: &[ValueRef], min: usize, max: usize, name: &str, span: Span) -> NiaoResult<()> {
+fn arity_range(
+    args: &[ValueRef],
+    min: usize,
+    max: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<()> {
     if args.len() < min || args.len() > max {
         return Err(RuntimeError::at(
             span,
             E3220_NLINT_ARITY,
-            format!("{name}() expects {min}..={max} argument(s), got {}", args.len()),
+            format!(
+                "{name}() expects {min}..={max} argument(s), got {}",
+                args.len()
+            ),
         ));
     }
     Ok(())
@@ -166,7 +175,9 @@ fn expr_val(e: &Expr) -> ValueRef {
             m.insert("kind".to_string(), str_val("Ident"));
             m.insert("name".to_string(), str_val(name));
         }
-        Expr::Binary { left, op, right, .. } => {
+        Expr::Binary {
+            left, op, right, ..
+        } => {
             m.insert("kind".to_string(), str_val("Binary"));
             m.insert("op".to_string(), str_val(binop_name(*op)));
             m.insert("left".to_string(), expr_val(left));
@@ -266,13 +277,18 @@ fn stmt_val(s: &Stmt) -> ValueRef {
                 m.insert("init".to_string(), expr_val(e));
             }
         }
-        Stmt::Assign { target, op, value, .. } => {
+        Stmt::Assign {
+            target, op, value, ..
+        } => {
             m.insert("kind".to_string(), str_val("Assign"));
-            m.insert("op".to_string(), str_val(match op {
-                AssignOp::Assign => "Assign",
-                AssignOp::AddAssign => "AddAssign",
-                AssignOp::SubAssign => "SubAssign",
-            }));
+            m.insert(
+                "op".to_string(),
+                str_val(match op {
+                    AssignOp::Assign => "Assign",
+                    AssignOp::AddAssign => "AddAssign",
+                    AssignOp::SubAssign => "SubAssign",
+                }),
+            );
             m.insert("value".to_string(), expr_val(value));
             match target {
                 AssignTarget::Name(n) => {
@@ -312,7 +328,9 @@ fn stmt_val(s: &Stmt) -> ValueRef {
             m.insert("cond".to_string(), expr_val(cond));
             m.insert("body".to_string(), block_val(body));
         }
-        Stmt::For { var, iter, body, .. } => {
+        Stmt::For {
+            var, iter, body, ..
+        } => {
             m.insert("kind".to_string(), str_val("For"));
             m.insert("var".to_string(), str_val(var));
             m.insert("iter".to_string(), expr_val(iter));
@@ -518,7 +536,9 @@ fn walk_exprs(expr: &Expr, f: &mut impl FnMut(&Expr)) {
                 walk_exprs(e, f);
             }
         }
-        Expr::Object { fields, .. } | Expr::StructInit { fields, .. } | Expr::ClassInit { fields, .. } => {
+        Expr::Object { fields, .. }
+        | Expr::StructInit { fields, .. }
+        | Expr::ClassInit { fields, .. } => {
             for (_, e) in fields {
                 walk_exprs(e, f);
             }
@@ -536,14 +556,22 @@ fn walk_stmts(stmts: &[Stmt], f: &mut impl FnMut(&Stmt)) {
     for s in stmts {
         f(s);
         match s {
-            Stmt::If { then_block, else_block, .. } => {
+            Stmt::If {
+                then_block,
+                else_block,
+                ..
+            } => {
                 walk_stmts(&then_block.stmts, f);
                 if let Some(eb) = else_block {
                     walk_stmts(&eb.stmts, f);
                 }
             }
             Stmt::While { body, .. } | Stmt::For { body, .. } => walk_stmts(&body.stmts, f),
-            Stmt::Try { try_block, catch_block, .. } => {
+            Stmt::Try {
+                try_block,
+                catch_block,
+                ..
+            } => {
                 walk_stmts(&try_block.stmts, f);
                 walk_stmts(&catch_block.stmts, f);
             }
@@ -639,7 +667,10 @@ fn apply_data_rule(program: &Program, rule: &HashMap<String, ValueRef>, issues: 
     if on.as_deref() == Some("Call") {
         let target = callee.as_deref().unwrap_or("print");
         let mut visit = |expr: &Expr| {
-            if let Expr::Call { callee: c, span, .. } = expr {
+            if let Expr::Call {
+                callee: c, span, ..
+            } = expr
+            {
                 if callee_name(c) == Some(target) {
                     issues.push(Issue {
                         rule: id.clone(),
@@ -810,7 +841,12 @@ fn default_rules() -> Vec<HashMap<String, ValueRef>> {
     ]
 }
 
-fn rule_obj(id: &str, on: &str, check: Option<&str>, callee: Option<&str>) -> HashMap<String, ValueRef> {
+fn rule_obj(
+    id: &str,
+    on: &str,
+    check: Option<&str>,
+    callee: Option<&str>,
+) -> HashMap<String, ValueRef> {
     let mut m = HashMap::new();
     m.insert("id".to_string(), str_val(id));
     m.insert("on".to_string(), str_val(on));
@@ -824,7 +860,11 @@ fn rule_obj(id: &str, on: &str, check: Option<&str>, callee: Option<&str>) -> Ha
     m
 }
 
-fn run_lint(program: &Program, rules: &[HashMap<String, ValueRef>], span: Span) -> NiaoResult<ValueRef> {
+fn run_lint(
+    program: &Program,
+    rules: &[HashMap<String, ValueRef>],
+    span: Span,
+) -> NiaoResult<ValueRef> {
     let mut issues = Vec::new();
     apply_builtin_rules(program, &mut issues);
 
@@ -832,9 +872,10 @@ fn run_lint(program: &Program, rules: &[HashMap<String, ValueRef>], span: Span) 
         if rule.contains_key("fn") {
             apply_custom_rule(program, rule, span, &mut issues)?;
         } else if rule_str(rule, "check").as_deref() == Some("missing_main") {
-            let has_main = program.items.iter().any(|i| {
-                matches!(i, TopLevel::Fn(f) if f.name == "main")
-            });
+            let has_main = program
+                .items
+                .iter()
+                .any(|i| matches!(i, TopLevel::Fn(f) if f.name == "main"));
             if !has_main {
                 let id = rule_str(rule, "id").unwrap_or_else(|| "require-main".into());
                 issues.push(Issue {
@@ -857,10 +898,7 @@ fn run_lint(program: &Program, rules: &[HashMap<String, ValueRef>], span: Span) 
     });
 
     let mut out = HashMap::new();
-    out.insert(
-        "ok".to_string(),
-        Value::Bool(issues.is_empty()).ref_cell(),
-    );
+    out.insert("ok".to_string(), Value::Bool(issues.is_empty()).ref_cell());
     out.insert(
         "issues".to_string(),
         Value::Array(issues.iter().map(issue_obj).collect()).ref_cell(),
@@ -899,7 +937,14 @@ fn nlint_check(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
 fn nlint_rules(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity(args, 0, "nlint_rules", span)?;
     let rules = default_rules();
-    Ok(Value::Array(rules.into_iter().map(Value::Object).map(|o| o.ref_cell()).collect()).ref_cell())
+    Ok(Value::Array(
+        rules
+            .into_iter()
+            .map(Value::Object)
+            .map(|o| o.ref_cell())
+            .collect(),
+    )
+    .ref_cell())
 }
 
 // ---------------------------------------------------------------------------
@@ -921,7 +966,10 @@ nlint_fns![
 ];
 
 fn all_builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(flat, _, f)| (flat, f)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(flat, _, f)| (flat, f))
+        .collect()
 }
 
 pub fn namespace() -> Value {

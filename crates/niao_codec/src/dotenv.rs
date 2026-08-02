@@ -33,7 +33,9 @@ pub fn parse_dotenv_reader<R: Read>(reader: R) -> Result<Vec<(String, String)>, 
     let mut line = String::new();
     loop {
         line.clear();
-        let n = buf.read_line(&mut line).map_err(|e| DotenvError::Io(e.to_string()))?;
+        let n = buf
+            .read_line(&mut line)
+            .map_err(|e| DotenvError::Io(e.to_string()))?;
         if n == 0 {
             break;
         }
@@ -195,7 +197,13 @@ mod tests {
     fn crlf() {
         let text = "X=1\r\nY=two\r\n";
         let pairs = parse_dotenv(text).unwrap();
-        assert_eq!(pairs, vec![("X".to_string(), "1".to_string()), ("Y".to_string(), "two".to_string())]);
+        assert_eq!(
+            pairs,
+            vec![
+                ("X".to_string(), "1".to_string()),
+                ("Y".to_string(), "two".to_string())
+            ]
+        );
     }
 
     #[test]

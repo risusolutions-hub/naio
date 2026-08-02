@@ -67,7 +67,11 @@ fn tokenize_doc(text: &str, opts: &VectorizerOptions) -> Vec<String> {
 
 fn apply_tf(raw: f64, opts: &VectorizerOptions) -> f64 {
     if opts.binary {
-        if raw > 0.0 { 1.0 } else { 0.0 }
+        if raw > 0.0 {
+            1.0
+        } else {
+            0.0
+        }
     } else if opts.sublinear_tf {
         if raw > 0.0 {
             1.0 + raw.ln()
@@ -217,7 +221,8 @@ impl CountVectorizer {
     }
 
     pub fn fit(&mut self, docs: &[&str]) -> NlpResult<&mut Self> {
-        let tokenized: Vec<Vec<String>> = docs.iter().map(|d| tokenize_doc(d, &self.opts)).collect();
+        let tokenized: Vec<Vec<String>> =
+            docs.iter().map(|d| tokenize_doc(d, &self.opts)).collect();
         let (vocab, idf) = build_vocab(&tokenized, &self.opts)?;
         self.vocab = Some(vocab);
         self.idf = idf;
@@ -226,10 +231,7 @@ impl CountVectorizer {
     }
 
     pub fn transform(&self, docs: &[&str]) -> NlpResult<CsrMatrix> {
-        let vocab = self
-            .vocab
-            .as_ref()
-            .ok_or(NlpError::NotFitted)?;
+        let vocab = self.vocab.as_ref().ok_or(NlpError::NotFitted)?;
         let n_cols = vocab.len();
         let row_counts: Vec<_> = docs
             .iter()
@@ -346,10 +348,7 @@ mod tests {
         (a - b).abs() <= rtol * b.abs().max(1.0) + 1e-12
     }
 
-    const DOCS: &[&str] = &[
-        "the cat sat on the mat",
-        "the dog sat on the log",
-    ];
+    const DOCS: &[&str] = &["the cat sat on the mat", "the dog sat on the log"];
 
     // sklearn 1.4 defaults on DOCS
     #[test]
@@ -359,10 +358,7 @@ mod tests {
         let vocab = cv.vocabulary().unwrap();
         let mut terms: Vec<_> = vocab.keys().cloned().collect();
         terms.sort();
-        assert_eq!(
-            terms,
-            vec!["cat", "dog", "log", "mat", "on", "sat", "the"]
-        );
+        assert_eq!(terms, vec!["cat", "dog", "log", "mat", "on", "sat", "the"]);
     }
 
     #[test]
@@ -377,9 +373,7 @@ mod tests {
         let row0: Vec<f64> = (0..7).map(|c| dense.index(&[0, c]).unwrap()).collect();
 
         // Expected from sklearn 1.4 (rtol 1e-8); columns sorted by vocab term order
-        let expected = [
-            0.445548, 0.0, 0.0, 0.445548, 0.317011, 0.317011, 0.634021,
-        ];
+        let expected = [0.445548, 0.0, 0.0, 0.445548, 0.317011, 0.317011, 0.634021];
         for (a, e) in row0.iter().zip(expected) {
             assert!(close(*a, e, 1e-6), "got {a} expected {e}");
         }

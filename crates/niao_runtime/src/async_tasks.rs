@@ -1,7 +1,5 @@
 //! Shared background task pool for `io_*` and `net_*` async builtins.
 
-
-
 use crate::{error_value, NiaoResult, RuntimeError, Value, ValueRef};
 
 use niao_ast::Span;
@@ -10,18 +8,15 @@ use niao_errors::codes;
 
 use std::collections::HashMap;
 
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 
 use std::sync::{mpsc, Arc, Condvar, Mutex, OnceLock};
-
-
 
 /// Result payload for a completed background task (all variants are `Send`).
 
 #[derive(Clone)]
 
 pub enum AsyncValue {
-
     Nil,
 
     Int(i64),
@@ -39,33 +34,19 @@ pub enum AsyncValue {
     Array(Vec<AsyncValue>),
 
     Object(HashMap<String, AsyncValue>),
-
 }
 
-
-
 impl AsyncValue {
-
     pub fn nil() -> Self {
-
         Self::Nil
-
     }
-
-
 
     pub fn int(n: i64) -> Self {
-
         Self::Int(n)
-
     }
 
-
-
     pub fn to_value(self) -> Value {
-
         match self {
-
             Self::Nil => Value::Nil,
 
             Self::Int(n) => Value::Int(n),
@@ -81,66 +62,44 @@ impl AsyncValue {
             Self::Float(f) => Value::Float(f),
 
             Self::Array(items) => {
-
                 Value::Array(items.into_iter().map(|v| v.to_value().ref_cell()).collect())
-
             }
 
             Self::Object(map) => {
-
                 let mut out = HashMap::with_capacity(map.len());
 
                 for (k, v) in map {
-
                     out.insert(k, v.to_value().ref_cell());
-
                 }
 
                 Value::Object(out)
-
             }
-
         }
-
     }
-
 }
 
-
-
 pub(crate) enum AsyncState {
-
     Pending,
 
     Done(Result<AsyncValue, String>),
 
     Cancelled,
-
 }
 
-
-
 struct AsyncTaskInner {
-
     state: Mutex<AsyncState>,
 
     done: Condvar,
 
+    shielded: AtomicBool,
 }
 
-
-
 pub(crate) struct AsyncTask {
-
     inner: Arc<AsyncTaskInner>,
 
     #[allow(dead_code)]
-
     cancel: Option<mpsc::Sender<()>>,
-
 }
-
-
 
 static ASYNC_TASKS: OnceLock<Mutex<HashMap<u64, AsyncTask>>> = OnceLock::new();
 
@@ -162,91 +121,61 @@ pub(crate) fn async_tasks() -> &'static Mutex<HashMap<u64, AsyncTask>> {
     ASYNC_TASKS.get_or_init(|| Mutex::new(HashMap::new()))
 }
 
-
-
 fn thread_pool() -> &'static niao_io::Executor {
     niao_io::Executor::global()
 }
 
-
-
 fn finish_task(inner: &AsyncTaskInner, state: AsyncState) {
-
     let mut guard = inner.state.lock().unwrap();
 
     if matches!(*guard, AsyncState::Pending) {
-
         *guard = state;
 
         inner.done.notify_all();
-
     }
-
 }
 
-
-
 pub fn spawn_async<F>(work: F) -> u64
-
 where
-
     F: FnOnce() -> Result<AsyncValue, String> + Send + 'static,
-
 {
-
     let id = NEXT_ASYNC_TASK.fetch_add(1, Ordering::Relaxed);
 
     let inner = Arc::new(AsyncTaskInner {
-
         state: Mutex::new(AsyncState::Pending),
 
         done: Condvar::new(),
 
+        shielded: AtomicBool::new(false),
     });
 
     let (cancel_tx, cancel_rx) = mpsc::channel();
 
     async_tasks().lock().unwrap().insert(
-
         id,
-
         AsyncTask {
-
             inner: Arc::clone(&inner),
 
             cancel: Some(cancel_tx),
-
         },
-
     );
-
-
 
     let job_inner = Arc::clone(&inner);
 
     let _ = thread_pool().spawn(move || {
-
         if cancel_rx.try_recv().is_ok() {
-
             finish_task(&job_inner, AsyncState::Cancelled);
 
             return;
-
         }
 
         let result = work();
 
         finish_task(&job_inner, AsyncState::Done(result));
-
     });
 
-
-
     id
-
 }
-
-
 
 /// Spawn an I/O-bound future on the shared Tokio runtime (no thread-pool cap).
 pub fn spawn_tokio<F>(future: F) -> u64
@@ -257,6 +186,7 @@ where
     let inner = Arc::new(AsyncTaskInner {
         state: Mutex::new(AsyncState::Pending),
         done: Condvar::new(),
+        shielded: AtomicBool::new(false),
     });
 
     async_tasks().lock().unwrap().insert(
@@ -276,10 +206,7 @@ where
     id
 }
 
-
-
 pub fn with_task<F>(
-
     id: u64,
 
     name: &str,
@@ -293,41 +220,26 @@ pub fn with_task<F>(
     _error_factory: impl Fn(Span, String) -> ValueRef,
 
     f: F,
-
 ) -> NiaoResult<ValueRef>
-
 where
-
     F: FnOnce(&AsyncState) -> NiaoResult<ValueRef>,
-
 {
-
     let guard = async_tasks().lock().unwrap();
 
     let task = guard.get(&id).ok_or_else(|| {
-
         RuntimeError::at(
-
             span,
-
             task_not_found_code,
-
             format!("{name}(): task {id} not found"),
-
         )
-
     })?;
 
     let state = task.inner.state.lock().unwrap();
 
     f(&state)
-
 }
 
-
-
 pub fn task_result_value(
-
     state: &AsyncState,
 
     span: Span,
@@ -335,11 +247,8 @@ pub fn task_result_value(
     cancelled_msg: &str,
 
     error_factory: impl Fn(Span, String) -> ValueRef,
-
 ) -> ValueRef {
-
     match state {
-
         AsyncState::Pending => Value::Nil.ref_cell(),
 
         AsyncState::Cancelled => error_factory(span, cancelled_msg.into()),
@@ -347,39 +256,29 @@ pub fn task_result_value(
         AsyncState::Done(Ok(v)) => v.clone().to_value().ref_cell(),
 
         AsyncState::Done(Err(msg)) => error_factory(span, msg.clone()),
-
     }
-
 }
 
-
-
 pub fn cancel_task(id: u64, span: Span, task_not_found_code: u32) -> NiaoResult<bool> {
-
     let mut guard = async_tasks().lock().unwrap();
 
     let task = guard.get_mut(&id).ok_or_else(|| {
-
         RuntimeError::at(
-
             span,
-
             task_not_found_code,
-
             format!("task_cancel(): task {id} not found"),
-
         )
-
     })?;
 
     let mut state = task.inner.state.lock().unwrap();
 
     if matches!(*state, AsyncState::Pending) {
+        if task.inner.shielded.load(Ordering::Relaxed) {
+            return Ok(false);
+        }
 
         if let Some(tx) = task.cancel.take() {
-
             let _ = tx.send(());
-
         }
 
         *state = AsyncState::Cancelled;
@@ -387,24 +286,14 @@ pub fn cancel_task(id: u64, span: Span, task_not_found_code: u32) -> NiaoResult<
         task.inner.done.notify_all();
 
         Ok(true)
-
     } else {
-
         Ok(false)
-
     }
-
 }
-
-
 
 pub fn task_done(state: &AsyncState) -> bool {
-
     matches!(state, AsyncState::Done(_) | AsyncState::Cancelled)
-
 }
-
-
 
 /// Block until all background tasks complete.
 pub fn task_wait_all(ids: &[u64]) {
@@ -413,53 +302,77 @@ pub fn task_wait_all(ids: &[u64]) {
     }
 }
 
-
-
 /// Block until a background task completes (Condvar — no busy spin).
 
 pub fn task_wait_loop(id: u64) {
-
     let inner = {
-
         let guard = async_tasks().lock().unwrap();
 
         guard.get(&id).map(|t| Arc::clone(&t.inner))
-
     };
 
     let Some(inner) = inner else {
-
         return;
-
     };
 
     let mut state = inner.state.lock().unwrap();
 
     while !task_done(&state) {
-
         state = inner.done.wait(state).unwrap();
-
     }
-
 }
 
+/// Mark a task so `cancel_task` is ignored until it completes.
+pub fn shield_task(id: u64) -> bool {
+    let guard = async_tasks().lock().unwrap();
+    let Some(task) = guard.get(&id) else {
+        return false;
+    };
+    task.inner.shielded.store(true, Ordering::Relaxed);
+    true
+}
 
+/// Block until any listed task completes; returns its index in `ids`.
+pub fn task_wait_any(ids: &[u64]) -> Option<usize> {
+    if ids.is_empty() {
+        return None;
+    }
+    loop {
+        let guard = async_tasks().lock().unwrap();
+        for (idx, id) in ids.iter().enumerate() {
+            if let Some(task) = guard.get(id) {
+                let state = task.inner.state.lock().unwrap();
+                if task_done(&state) {
+                    return Some(idx);
+                }
+            }
+        }
+        drop(guard);
+        std::thread::sleep(std::time::Duration::from_millis(1));
+    }
+}
+
+/// Wait up to `ms` for a task to complete. Returns `true` if still pending after the timeout.
+pub fn task_wait_timeout(id: u64, ms: u64) -> bool {
+    let inner = {
+        let guard = async_tasks().lock().unwrap();
+        guard.get(&id).map(|t| Arc::clone(&t.inner))
+    };
+    let Some(inner) = inner else {
+        return false;
+    };
+    let mut state = inner.state.lock().unwrap();
+    if task_done(&state) {
+        return false;
+    }
+    let timeout = std::time::Duration::from_millis(ms);
+    let (new_state, wait_result) = inner.done.wait_timeout(state, timeout).unwrap();
+    state = new_state;
+    wait_result.timed_out() && !task_done(&state)
+}
 
 /// Convert a recoverable async failure into an error value (io style).
 
 pub fn async_io_error(span: Span, msg: impl Into<String>) -> ValueRef {
-
-    error_value(
-
-        codes::E1201_IO_ERROR,
-
-        "io_error",
-
-        msg.into(),
-
-        span,
-
-    )
-
+    error_value(codes::E1201_IO_ERROR, "io_error", msg.into(), span)
 }
-

@@ -5,8 +5,8 @@ use crate::package::{
 };
 use crate::paths::niao_home;
 use niao_archive::tar::Archive;
-use serde::Deserialize;
 use niao_crypto::{hex, sha256};
+use serde::Deserialize;
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -99,7 +99,8 @@ pub fn fetch_bytes(url: &str) -> PkgResult<Vec<u8>> {
 pub fn fetch_catalog(base: &str) -> PkgResult<RegistryCatalog> {
     let url = format!("{base}/v1/catalog");
     let text = fetch_text(&url)?;
-    crate::json::parse_struct(&text).map_err(|e| PkgError::Message(format!("parse registry catalog: {e}")))
+    crate::json::parse_struct(&text)
+        .map_err(|e| PkgError::Message(format!("parse registry catalog: {e}")))
 }
 
 pub fn fetch_package_versions(base: &str, name: &str) -> PkgResult<Vec<String>> {
@@ -240,17 +241,13 @@ pub fn load_lib_from_registry(
     Ok((pkg, version_dir))
 }
 
-pub fn latest_lib_version_registry(
-    name: &str,
-    registry_base: Option<&str>,
-) -> PkgResult<String> {
+pub fn latest_lib_version_registry(name: &str, registry_base: Option<&str>) -> PkgResult<String> {
     let base = registry_base
         .map(|s| s.trim_end_matches('/').to_string())
         .unwrap_or_else(registry_url);
     let versions = fetch_package_versions(&base, name)?;
-    latest_version(&versions).ok_or_else(|| {
-        PkgError::NotFound(format!("no versions on registry for '{name}'"))
-    })
+    latest_version(&versions)
+        .ok_or_else(|| PkgError::NotFound(format!("no versions on registry for '{name}'")))
 }
 
 /// Resolve a library from local source, falling back to the online registry.

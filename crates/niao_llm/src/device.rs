@@ -119,7 +119,8 @@ fn pick_hybrid_strategy(
         }
         return "gpu_vulkan+cpu_layers".into();
     }
-    if nvidia_gpu && (!cuda_compiled || !cuda_available) && (!vulkan_compiled || !vulkan_available) {
+    if nvidia_gpu && (!cuda_compiled || !cuda_available) && (!vulkan_compiled || !vulkan_available)
+    {
         return "cpu_only_gpu_present_install_cuda_or_vulkan_sdk".into();
     }
     if npu_available {
@@ -186,7 +187,10 @@ fn probe_npu() -> (bool, String) {
         }
         // AMD Phoenix/Hawk Point NPU PCI id
         let reg = std::process::Command::new("reg")
-            .args(["query", r"HKLM\SYSTEM\CurrentControlSet\Enum\PCI\VEN_1022&DEV_1502"])
+            .args([
+                "query",
+                r"HKLM\SYSTEM\CurrentControlSet\Enum\PCI\VEN_1022&DEV_1502",
+            ])
             .output();
         if let Ok(o) = reg {
             if o.status.success() {
@@ -245,9 +249,7 @@ pub fn resolve_load_options(model_path: &Path, mut opts: LoadOptions) -> LoadOpt
 }
 
 fn suggest_ctx(model_path: &Path, dev: &DeviceInfo) -> u32 {
-    let file_gb = std::fs::metadata(model_path)
-        .map(|m| m.len())
-        .unwrap_or(0) as f64
+    let file_gb = std::fs::metadata(model_path).map(|m| m.len()).unwrap_or(0) as f64
         / (1024.0 * 1024.0 * 1024.0);
 
     let base = if dev.prefer_gpu() {

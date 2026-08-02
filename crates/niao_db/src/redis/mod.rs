@@ -25,8 +25,7 @@ impl Client {
     pub fn open(url: &str) -> Result<Self, RedisError> {
         let (host, port, password, db) = parse_url(url)?;
         let addr = format!("{host}:{port}");
-        let stream = TcpStream::connect(&addr)
-            .map_err(|e| RedisError(format!("connect: {e}")))?;
+        let stream = TcpStream::connect(&addr).map_err(|e| RedisError(format!("connect: {e}")))?;
         stream
             .set_read_timeout(Some(Duration::from_secs(30)))
             .map_err(|e| RedisError(e.to_string()))?;

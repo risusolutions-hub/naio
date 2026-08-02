@@ -36,12 +36,21 @@ fn arity(args: &[ValueRef], n: usize, name: &str, span: Span) -> NiaoResult<()> 
     Ok(())
 }
 
-fn arity_range(args: &[ValueRef], min: usize, max: usize, name: &str, span: Span) -> NiaoResult<()> {
+fn arity_range(
+    args: &[ValueRef],
+    min: usize,
+    max: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<()> {
     if args.len() < min || args.len() > max {
         return Err(RuntimeError::at(
             span,
             codes::E2600_NSTR_ARITY,
-            format!("{name}() expects {min}..={max} argument(s), got {}", args.len()),
+            format!(
+                "{name}() expects {min}..={max} argument(s), got {}",
+                args.len()
+            ),
         ));
     }
     Ok(())
@@ -116,7 +125,12 @@ fn int_val(n: i64) -> NiaoResult<ValueRef> {
 }
 
 /// Extract a list of strings from a Value::Array or Value::StringArray.
-fn string_list_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> NiaoResult<Vec<String>> {
+fn string_list_arg(
+    args: &[ValueRef],
+    idx: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<Vec<String>> {
     match &*args[idx].borrow() {
         Value::Array(items) => {
             let mut out = Vec::with_capacity(items.len());
@@ -297,12 +311,20 @@ fn nstr_trim(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
 
 fn nstr_trim_start(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity(args, 1, "nstr_trim_start", span)?;
-    str_val(string_arg(args, 0, "nstr_trim_start", span)?.trim_start().to_string())
+    str_val(
+        string_arg(args, 0, "nstr_trim_start", span)?
+            .trim_start()
+            .to_string(),
+    )
 }
 
 fn nstr_trim_end(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity(args, 1, "nstr_trim_end", span)?;
-    str_val(string_arg(args, 0, "nstr_trim_end", span)?.trim_end().to_string())
+    str_val(
+        string_arg(args, 0, "nstr_trim_end", span)?
+            .trim_end()
+            .to_string(),
+    )
 }
 
 fn nstr_trim_chars(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
@@ -353,7 +375,10 @@ fn nstr_center(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let fill = optional_string(args, 2).unwrap_or_else(|| " ".to_string());
     let fill_char = fill.chars().next().unwrap_or(' ');
     if width < 0 {
-        return Err(type_err(span, "nstr_center() width must be >= 0".to_string()));
+        return Err(type_err(
+            span,
+            "nstr_center() width must be >= 0".to_string(),
+        ));
     }
     let width = width as usize;
     if width > MAX_BUILD_BYTES {
@@ -376,7 +401,10 @@ fn nstr_repeat(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let s = string_arg(args, 0, "nstr_repeat", span)?;
     let n = int_arg(args, 1, "nstr_repeat", span)?;
     if n < 0 {
-        return Err(type_err(span, "nstr_repeat() count must be >= 0".to_string()));
+        return Err(type_err(
+            span,
+            "nstr_repeat() count must be >= 0".to_string(),
+        ));
     }
     let n = n as usize;
     if s.len().saturating_mul(n) > MAX_BUILD_BYTES {
@@ -397,7 +425,10 @@ fn nstr_truncate(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let max = int_arg(args, 1, "nstr_truncate", span)?;
     let suffix = optional_string(args, 2).unwrap_or_else(|| "...".to_string());
     if max < 0 {
-        return Err(type_err(span, "nstr_truncate() max must be >= 0".to_string()));
+        return Err(type_err(
+            span,
+            "nstr_truncate() max must be >= 0".to_string(),
+        ));
     }
     let max = max as usize;
     let len = s.chars().count();
@@ -799,7 +830,12 @@ fn nstr_similarity(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     Ok(Value::Float(sim).ref_cell())
 }
 
-fn check_all(args: &[ValueRef], name: &str, span: Span, pred: impl Fn(char) -> bool) -> NiaoResult<ValueRef> {
+fn check_all(
+    args: &[ValueRef],
+    name: &str,
+    span: Span,
+    pred: impl Fn(char) -> bool,
+) -> NiaoResult<ValueRef> {
     arity(args, 1, name, span)?;
     let s = string_arg(args, 0, name, span)?;
     bool_val(!s.is_empty() && s.chars().all(pred))
@@ -914,7 +950,10 @@ nstr_fns![
 ];
 
 fn all_builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(flat, _, f)| (flat, f)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(flat, _, f)| (flat, f))
+        .collect()
 }
 
 pub fn namespace() -> Value {
@@ -958,27 +997,63 @@ mod tests {
 
     #[test]
     fn case_conversions() {
-        assert_eq!(expect_str(nstr_snake(&[s("HelloWorldHTTP")], span())), "hello_world_http");
-        assert_eq!(expect_str(nstr_snake(&[s("hello-world test")], span())), "hello_world_test");
-        assert_eq!(expect_str(nstr_camel(&[s("hello_world_test")], span())), "helloWorldTest");
-        assert_eq!(expect_str(nstr_pascal(&[s("hello world")], span())), "HelloWorld");
-        assert_eq!(expect_str(nstr_kebab(&[s("HTTPServerV2")], span())), "http-server-v2");
-        assert_eq!(expect_str(nstr_constant(&[s("helloWorld")], span())), "HELLO_WORLD");
-        assert_eq!(expect_str(nstr_title(&[s("hello brave world")], span())), "Hello Brave World");
+        assert_eq!(
+            expect_str(nstr_snake(&[s("HelloWorldHTTP")], span())),
+            "hello_world_http"
+        );
+        assert_eq!(
+            expect_str(nstr_snake(&[s("hello-world test")], span())),
+            "hello_world_test"
+        );
+        assert_eq!(
+            expect_str(nstr_camel(&[s("hello_world_test")], span())),
+            "helloWorldTest"
+        );
+        assert_eq!(
+            expect_str(nstr_pascal(&[s("hello world")], span())),
+            "HelloWorld"
+        );
+        assert_eq!(
+            expect_str(nstr_kebab(&[s("HTTPServerV2")], span())),
+            "http-server-v2"
+        );
+        assert_eq!(
+            expect_str(nstr_constant(&[s("helloWorld")], span())),
+            "HELLO_WORLD"
+        );
+        assert_eq!(
+            expect_str(nstr_title(&[s("hello brave world")], span())),
+            "Hello Brave World"
+        );
     }
 
     #[test]
     fn pad_and_center() {
-        assert_eq!(expect_str(nstr_pad_start(&[s("7"), i(3), s("0")], span())), "007");
+        assert_eq!(
+            expect_str(nstr_pad_start(&[s("7"), i(3), s("0")], span())),
+            "007"
+        );
         assert_eq!(expect_str(nstr_pad_end(&[s("ab"), i(4)], span())), "ab  ");
-        assert_eq!(expect_str(nstr_center(&[s("hi"), i(6), s("-")], span())), "--hi--");
+        assert_eq!(
+            expect_str(nstr_center(&[s("hi"), i(6), s("-")], span())),
+            "--hi--"
+        );
     }
 
     #[test]
     fn substring_negative_indices() {
-        assert_eq!(expect_str(nstr_substring(&[s("hello"), i(1), i(3)], span())), "el");
-        assert_eq!(expect_str(nstr_substring(&[s("hello"), i(-3)], span())), "llo");
-        assert_eq!(expect_str(nstr_substring(&[s("héllo"), i(1), i(2)], span())), "é");
+        assert_eq!(
+            expect_str(nstr_substring(&[s("hello"), i(1), i(3)], span())),
+            "el"
+        );
+        assert_eq!(
+            expect_str(nstr_substring(&[s("hello"), i(-3)], span())),
+            "llo"
+        );
+        assert_eq!(
+            expect_str(nstr_substring(&[s("héllo"), i(1), i(2)], span())),
+            "é"
+        );
     }
 
     #[test]
@@ -1000,7 +1075,10 @@ mod tests {
 
     #[test]
     fn slugify_basic() {
-        assert_eq!(expect_str(nstr_slugify(&[s("Hello, World! 42")], span())), "hello-world-42");
+        assert_eq!(
+            expect_str(nstr_slugify(&[s("Hello, World! 42")], span())),
+            "hello-world-42"
+        );
     }
 
     #[test]

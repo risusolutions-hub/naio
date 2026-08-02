@@ -5,10 +5,10 @@
 //!
 //! Import: `import "naws"` or `import "std/naws"`.
 
-pub mod sigv4;
-mod s3;
 mod dynamodb;
 mod lambda;
+mod s3;
+pub mod sigv4;
 mod ssm;
 
 use crate::{error_value, NativeFn, NiaoResult, RuntimeError, Value, ValueRef};
@@ -50,11 +50,13 @@ fn alloc_config(cfg: AwsConfig) -> i64 {
 
 pub(super) fn get_config(id: i64, span: Span) -> NiaoResult<AwsConfig> {
     CONFIGS.with(|c| {
-        c.borrow()
-            .get(&id)
-            .cloned()
-            .ok_or_else(|| RuntimeError::at(span, codes::E2803_NAWS_AUTH,
-                format!("naws: invalid config handle {id}")))
+        c.borrow().get(&id).cloned().ok_or_else(|| {
+            RuntimeError::at(
+                span,
+                codes::E2803_NAWS_AUTH,
+                format!("naws: invalid config handle {id}"),
+            )
+        })
     })
 }
 
@@ -101,7 +103,11 @@ pub(super) fn int_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> 
     match &*args[idx].borrow() {
         Value::Int(n) => Ok(*n),
         other => Err(RuntimeError::TypeError {
-            message: format!("{name}() expects int at arg {}, got {}", idx + 1, other.type_name()),
+            message: format!(
+                "{name}() expects int at arg {}, got {}",
+                idx + 1,
+                other.type_name()
+            ),
             line: span.line,
             col: span.col,
         }),
@@ -112,7 +118,11 @@ pub(super) fn str_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> 
     match &*args[idx].borrow() {
         Value::String(s) => Ok(s.clone()),
         other => Err(RuntimeError::TypeError {
-            message: format!("{name}() expects string at arg {}, got {}", idx + 1, other.type_name()),
+            message: format!(
+                "{name}() expects string at arg {}, got {}",
+                idx + 1,
+                other.type_name()
+            ),
             line: span.line,
             col: span.col,
         }),
@@ -128,14 +138,23 @@ pub(super) fn obj_arg(
     match &*args[idx].borrow() {
         Value::Object(m) => Ok(m.clone()),
         other => Err(RuntimeError::TypeError {
-            message: format!("{name}() expects object at arg {}, got {}", idx + 1, other.type_name()),
+            message: format!(
+                "{name}() expects object at arg {}, got {}",
+                idx + 1,
+                other.type_name()
+            ),
             line: span.line,
             col: span.col,
         }),
     }
 }
 
-pub(super) fn bytes_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> NiaoResult<Vec<u8>> {
+pub(super) fn bytes_arg(
+    args: &[ValueRef],
+    idx: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<Vec<u8>> {
     match &*args[idx].borrow() {
         Value::String(s) => Ok(s.as_bytes().to_vec()),
         Value::ByteArray(b) => Ok(b.iter().map(|&x| x as u8).collect()),
@@ -144,16 +163,23 @@ pub(super) fn bytes_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -
             for v in arr {
                 match &*v.borrow() {
                     Value::Int(n) => out.push(*n as u8),
-                    _ => return Err(RuntimeError::TypeError {
-                        message: format!("{name}() byte array must contain integers"),
-                        line: span.line, col: span.col,
-                    }),
+                    _ => {
+                        return Err(RuntimeError::TypeError {
+                            message: format!("{name}() byte array must contain integers"),
+                            line: span.line,
+                            col: span.col,
+                        })
+                    }
                 }
             }
             Ok(out)
         }
         other => Err(RuntimeError::TypeError {
-            message: format!("{name}() expects string or bytes at arg {}, got {}", idx + 1, other.type_name()),
+            message: format!(
+                "{name}() expects string or bytes at arg {}, got {}",
+                idx + 1,
+                other.type_name()
+            ),
             line: span.line,
             col: span.col,
         }),
@@ -182,24 +208,54 @@ fn naws_config(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
 
     let region = map
         .get("region")
-        .and_then(|v| match &*v.borrow() { Value::String(s) => Some(s.clone()), _ => None })
-        .ok_or_else(|| RuntimeError::at(span, codes::E2802_NAWS_TYPE,
-            "naws_config: missing required field 'region'"))?;
+        .and_then(|v| match &*v.borrow() {
+            Value::String(s) => Some(s.clone()),
+            _ => None,
+        })
+        .ok_or_else(|| {
+            RuntimeError::at(
+                span,
+                codes::E2802_NAWS_TYPE,
+                "naws_config: missing required field 'region'",
+            )
+        })?;
     let access_key = map
         .get("access_key")
-        .and_then(|v| match &*v.borrow() { Value::String(s) => Some(s.clone()), _ => None })
-        .ok_or_else(|| RuntimeError::at(span, codes::E2802_NAWS_TYPE,
-            "naws_config: missing required field 'access_key'"))?;
+        .and_then(|v| match &*v.borrow() {
+            Value::String(s) => Some(s.clone()),
+            _ => None,
+        })
+        .ok_or_else(|| {
+            RuntimeError::at(
+                span,
+                codes::E2802_NAWS_TYPE,
+                "naws_config: missing required field 'access_key'",
+            )
+        })?;
     let secret_key = map
         .get("secret_key")
-        .and_then(|v| match &*v.borrow() { Value::String(s) => Some(s.clone()), _ => None })
-        .ok_or_else(|| RuntimeError::at(span, codes::E2802_NAWS_TYPE,
-            "naws_config: missing required field 'secret_key'"))?;
-    let session_token = map
-        .get("session_token")
-        .and_then(|v| match &*v.borrow() { Value::String(s) => Some(s.clone()), _ => None });
+        .and_then(|v| match &*v.borrow() {
+            Value::String(s) => Some(s.clone()),
+            _ => None,
+        })
+        .ok_or_else(|| {
+            RuntimeError::at(
+                span,
+                codes::E2802_NAWS_TYPE,
+                "naws_config: missing required field 'secret_key'",
+            )
+        })?;
+    let session_token = map.get("session_token").and_then(|v| match &*v.borrow() {
+        Value::String(s) => Some(s.clone()),
+        _ => None,
+    });
 
-    let id = alloc_config(AwsConfig { region, access_key, secret_key, session_token });
+    let id = alloc_config(AwsConfig {
+        region,
+        access_key,
+        secret_key,
+        session_token,
+    });
     Ok(Value::Int(id).ref_cell())
 }
 
@@ -243,17 +299,17 @@ pub fn namespace() -> Value {
     let bind = |map: &mut HashMap<String, ValueRef>, name: &str, f: NativeFn| {
         map.insert(name.to_string(), Value::NativeFunction(f).ref_cell());
     };
-    bind(&mut map, "config",           Rc::new(naws_config));
-    bind(&mut map, "s3_put",           Rc::new(naws_s3_put));
-    bind(&mut map, "s3_get",           Rc::new(naws_s3_get));
-    bind(&mut map, "s3_delete",        Rc::new(naws_s3_delete));
-    bind(&mut map, "s3_list",          Rc::new(naws_s3_list));
-    bind(&mut map, "dynamodb_put",     Rc::new(naws_dynamodb_put));
-    bind(&mut map, "dynamodb_get",     Rc::new(naws_dynamodb_get));
-    bind(&mut map, "dynamodb_delete",  Rc::new(naws_dynamodb_delete));
-    bind(&mut map, "dynamodb_query",   Rc::new(naws_dynamodb_query));
-    bind(&mut map, "lambda_invoke",    Rc::new(naws_lambda_invoke));
-    bind(&mut map, "ssm_get",          Rc::new(naws_ssm_get));
+    bind(&mut map, "config", Rc::new(naws_config));
+    bind(&mut map, "s3_put", Rc::new(naws_s3_put));
+    bind(&mut map, "s3_get", Rc::new(naws_s3_get));
+    bind(&mut map, "s3_delete", Rc::new(naws_s3_delete));
+    bind(&mut map, "s3_list", Rc::new(naws_s3_list));
+    bind(&mut map, "dynamodb_put", Rc::new(naws_dynamodb_put));
+    bind(&mut map, "dynamodb_get", Rc::new(naws_dynamodb_get));
+    bind(&mut map, "dynamodb_delete", Rc::new(naws_dynamodb_delete));
+    bind(&mut map, "dynamodb_query", Rc::new(naws_dynamodb_query));
+    bind(&mut map, "lambda_invoke", Rc::new(naws_lambda_invoke));
+    bind(&mut map, "ssm_get", Rc::new(naws_ssm_get));
     Value::Object(map)
 }
 
@@ -261,17 +317,17 @@ pub fn namespace() -> Value {
 
 pub fn builtins() -> Vec<(&'static str, NativeFn)> {
     vec![
-        ("naws_config",          Rc::new(naws_config)),
-        ("naws_s3_put",          Rc::new(naws_s3_put)),
-        ("naws_s3_get",          Rc::new(naws_s3_get)),
-        ("naws_s3_delete",       Rc::new(naws_s3_delete)),
-        ("naws_s3_list",         Rc::new(naws_s3_list)),
-        ("naws_dynamodb_put",    Rc::new(naws_dynamodb_put)),
-        ("naws_dynamodb_get",    Rc::new(naws_dynamodb_get)),
+        ("naws_config", Rc::new(naws_config)),
+        ("naws_s3_put", Rc::new(naws_s3_put)),
+        ("naws_s3_get", Rc::new(naws_s3_get)),
+        ("naws_s3_delete", Rc::new(naws_s3_delete)),
+        ("naws_s3_list", Rc::new(naws_s3_list)),
+        ("naws_dynamodb_put", Rc::new(naws_dynamodb_put)),
+        ("naws_dynamodb_get", Rc::new(naws_dynamodb_get)),
         ("naws_dynamodb_delete", Rc::new(naws_dynamodb_delete)),
-        ("naws_dynamodb_query",  Rc::new(naws_dynamodb_query)),
-        ("naws_lambda_invoke",   Rc::new(naws_lambda_invoke)),
-        ("naws_ssm_get",         Rc::new(naws_ssm_get)),
+        ("naws_dynamodb_query", Rc::new(naws_dynamodb_query)),
+        ("naws_lambda_invoke", Rc::new(naws_lambda_invoke)),
+        ("naws_ssm_get", Rc::new(naws_ssm_get)),
     ]
 }
 
@@ -282,9 +338,13 @@ mod tests {
     use super::*;
     use niao_ast::Span;
 
-    fn span() -> Span { Span::dummy() }
+    fn span() -> Span {
+        Span::dummy()
+    }
 
-    fn s(v: &str) -> ValueRef { Value::String(v.to_string()).ref_cell() }
+    fn s(v: &str) -> ValueRef {
+        Value::String(v.to_string()).ref_cell()
+    }
     fn config_obj(region: &str, ak: &str, sk: &str) -> ValueRef {
         let mut map = HashMap::new();
         map.insert("region".into(), s(region));
@@ -324,10 +384,22 @@ mod tests {
     #[test]
     fn namespace_has_all_keys() {
         let ns = namespace();
-        let Value::Object(map) = ns else { panic!("expected object"); };
-        for key in &["config", "s3_put", "s3_get", "s3_delete", "s3_list",
-                     "dynamodb_put", "dynamodb_get", "dynamodb_delete", "dynamodb_query",
-                     "lambda_invoke", "ssm_get"] {
+        let Value::Object(map) = ns else {
+            panic!("expected object");
+        };
+        for key in &[
+            "config",
+            "s3_put",
+            "s3_get",
+            "s3_delete",
+            "s3_list",
+            "dynamodb_put",
+            "dynamodb_get",
+            "dynamodb_delete",
+            "dynamodb_query",
+            "lambda_invoke",
+            "ssm_get",
+        ] {
             assert!(map.contains_key(*key), "missing key: {key}");
         }
     }

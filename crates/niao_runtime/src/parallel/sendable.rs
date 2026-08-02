@@ -88,7 +88,10 @@ pub fn value_to_sendable(val: &Value) -> Result<SendableValue, String> {
             "{} handles cannot be sent across threads",
             ds.borrow().kind_name()
         )),
-        Value::Error(e) => Err(format!("error values cannot be sent across threads: {}", e.message)),
+        Value::Error(e) => Err(format!(
+            "error values cannot be sent across threads: {}",
+            e.message
+        )),
         Value::NclHandle(_) => Err("NCL handles cannot be sent across threads".into()),
         Value::NmlHandle(_) => Err("NML handles cannot be sent across threads".into()),
         #[cfg(feature = "nmongo")]

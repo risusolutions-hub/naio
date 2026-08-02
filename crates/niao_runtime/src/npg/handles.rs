@@ -1,8 +1,8 @@
 //! Thread-local handle tables for PostgreSQL connections, pools, and statements.
 
+use niao_ast::Span;
 use niao_db::postgres::Client;
 use niao_db::PooledConnection;
-use niao_ast::Span;
 use niao_errors::codes;
 use std::cell::RefCell;
 use std::collections::HashMap as StdHashMap;
@@ -199,7 +199,12 @@ where
     })
 }
 
-pub fn with_stmt_and_conn<F, R>(stmt_id: u64, name: &str, span: Span, f: F) -> Result<R, crate::RuntimeError>
+pub fn with_stmt_and_conn<F, R>(
+    stmt_id: u64,
+    name: &str,
+    span: Span,
+    f: F,
+) -> Result<R, crate::RuntimeError>
 where
     F: FnOnce(&mut StmtHandle, &mut ConnHandle) -> Result<R, String>,
 {

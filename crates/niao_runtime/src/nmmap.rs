@@ -1,4 +1,4 @@
-﻿//! Native nmmap standard library — memory-mapped files via memmap2, lazy line
+//! Native nmmap standard library — memory-mapped files via memmap2, lazy line
 //! index, and byte search over mapped regions.
 //!
 //! Import with `import "nmmap"` (or `import "std/nmmap"`).
@@ -159,12 +159,21 @@ fn arity(args: &[ValueRef], n: usize, name: &str, span: Span) -> NiaoResult<()> 
     Ok(())
 }
 
-fn arity_range(args: &[ValueRef], min: usize, max: usize, name: &str, span: Span) -> NiaoResult<()> {
+fn arity_range(
+    args: &[ValueRef],
+    min: usize,
+    max: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<()> {
     if args.len() < min || args.len() > max {
         return Err(RuntimeError::at(
             span,
             E3360_NMMAP_ARITY,
-            format!("{name}() expects {min}..={max} argument(s), got {}", args.len()),
+            format!(
+                "{name}() expects {min}..={max} argument(s), got {}",
+                args.len()
+            ),
         ));
     }
     Ok(())
@@ -212,18 +221,29 @@ fn bytes_from_value(v: &Value, span: Span, name: &str) -> Result<Vec<u8>, Runtim
         Value::ByteArray(b) => Ok(b.clone()),
         other => Err(type_err(
             span,
-            format!("{name}() expects a string or byte_array needle, got {}", other.type_name()),
+            format!(
+                "{name}() expects a string or byte_array needle, got {}",
+                other.type_name()
+            ),
         )),
     }
 }
 
-fn clamp_range(len: usize, start: i64, end: Option<i64>, span: Span) -> Result<(usize, usize), ValueRef> {
+fn clamp_range(
+    len: usize,
+    start: i64,
+    end: Option<i64>,
+    span: Span,
+) -> Result<(usize, usize), ValueRef> {
     if start < 0 {
         return Err(nmmap_err(span, "start offset must be >= 0"));
     }
     let start = start as usize;
     if start > len {
-        return Err(nmmap_err(span, format!("start offset {start} exceeds mapped length {len}")));
+        return Err(nmmap_err(
+            span,
+            format!("start offset {start} exceeds mapped length {len}"),
+        ));
     }
     let end = match end {
         Some(e) if e < 0 => return Err(nmmap_err(span, "end offset must be >= 0")),
@@ -231,10 +251,16 @@ fn clamp_range(len: usize, start: i64, end: Option<i64>, span: Span) -> Result<(
         None => len,
     };
     if end > len {
-        return Err(nmmap_err(span, format!("end offset {end} exceeds mapped length {len}")));
+        return Err(nmmap_err(
+            span,
+            format!("end offset {end} exceeds mapped length {len}"),
+        ));
     }
     if end < start {
-        return Err(nmmap_err(span, format!("end offset {end} is before start {start}")));
+        return Err(nmmap_err(
+            span,
+            format!("end offset {end} is before start {start}"),
+        ));
     }
     Ok((start, end))
 }
@@ -249,21 +275,11 @@ fn nmmap_open(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let path = string_arg(args, 0, "nmmap_open", span)?;
     let file = match File::open(&path) {
         Ok(f) => f,
-        Err(e) => {
-            return Ok(nmmap_err(
-                span,
-                format!("failed to open '{}': {e}", path),
-            ))
-        }
+        Err(e) => return Ok(nmmap_err(span, format!("failed to open '{}': {e}", path))),
     };
     let mmap = match unsafe { Mmap::map(&file) } {
         Ok(m) => m,
-        Err(e) => {
-            return Ok(nmmap_err(
-                span,
-                format!("failed to mmap '{}': {e}", path),
-            ))
-        }
+        Err(e) => return Ok(nmmap_err(span, format!("failed to mmap '{}': {e}", path))),
     };
     let id = new_handle();
     MAPS.with(|maps| {
@@ -426,11 +442,11 @@ fn nmmap_stats(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
             let mut map = HashMap::new();
             map.insert("path".to_string(), Value::String(path).ref_cell());
             map.insert("len".to_string(), Value::Int(len as i64).ref_cell());
+            map.insert("lines_indexed".to_string(), Value::Bool(indexed).ref_cell());
             map.insert(
-                "lines_indexed".to_string(),
-                Value::Bool(indexed).ref_cell(),
+                "line_count".to_string(),
+                Value::Int(lines as i64).ref_cell(),
             );
-            map.insert("line_count".to_string(), Value::Int(lines as i64).ref_cell());
             Ok(Value::Object(map).ref_cell())
         }
         Err(e) => Ok(e),
@@ -462,7 +478,10 @@ nmmap_fns![
 ];
 
 fn all_builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(flat, _, f)| (flat, f)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(flat, _, f)| (flat, f))
+        .collect()
 }
 
 pub fn namespace() -> Value {
@@ -525,13 +544,18 @@ mod tests {
         );
         let text = nmmap_text(&[h.clone(), i(0), i(5)], span()).unwrap();
         assert!(matches!(&*text.borrow(), Value::String(s) if s == "hello"));
-        let off = match &*nmmap_find(&[h.clone(), s("world")], span()).unwrap().borrow() {
+        let off = match &*nmmap_find(&[h.clone(), s("world")], span())
+            .unwrap()
+            .borrow()
+        {
             Value::Int(n) => *n,
             _ => panic!(),
         };
         assert_eq!(off, 6);
         assert!(matches!(
-            &*nmmap_find(&[h.clone(), s("missing")], span()).unwrap().borrow(),
+            &*nmmap_find(&[h.clone(), s("missing")], span())
+                .unwrap()
+                .borrow(),
             Value::Int(-1)
         ));
         nmmap_close(&[h], span()).unwrap();

@@ -68,13 +68,13 @@ fn required_string(
     match config.get(field) {
         Some(v) => match &*v.borrow() {
             Value::String(s) if !s.is_empty() => Ok(s.clone()),
-            Value::String(_) => Err(config_err(span, format!("config.{field} must not be empty"))),
+            Value::String(_) => Err(config_err(
+                span,
+                format!("config.{field} must not be empty"),
+            )),
             other => Err(config_err(
                 span,
-                format!(
-                    "config.{field} must be a string, got {}",
-                    other.type_name()
-                ),
+                format!("config.{field} must be a string, got {}", other.type_name()),
             )),
         },
         None => Err(config_err(span, format!("config: missing field '{field}'"))),
@@ -337,7 +337,10 @@ nsmtp_fns![
 ];
 
 fn all_builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(flat, _, f)| (flat, f)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(flat, _, f)| (flat, f))
+        .collect()
 }
 
 pub fn namespace() -> Value {
@@ -366,11 +369,26 @@ mod tests {
 
     fn base_config() -> HashMap<String, ValueRef> {
         let mut cfg = HashMap::new();
-        cfg.insert("host".to_string(), Value::String("smtp.example.com".into()).ref_cell());
-        cfg.insert("from".to_string(), Value::String("from@example.com".into()).ref_cell());
-        cfg.insert("to".to_string(), Value::String("to@example.com".into()).ref_cell());
-        cfg.insert("subject".to_string(), Value::String("Hello".into()).ref_cell());
-        cfg.insert("body".to_string(), Value::String("Plain text".into()).ref_cell());
+        cfg.insert(
+            "host".to_string(),
+            Value::String("smtp.example.com".into()).ref_cell(),
+        );
+        cfg.insert(
+            "from".to_string(),
+            Value::String("from@example.com".into()).ref_cell(),
+        );
+        cfg.insert(
+            "to".to_string(),
+            Value::String("to@example.com".into()).ref_cell(),
+        );
+        cfg.insert(
+            "subject".to_string(),
+            Value::String("Hello".into()).ref_cell(),
+        );
+        cfg.insert(
+            "body".to_string(),
+            Value::String("Plain text".into()).ref_cell(),
+        );
         cfg
     }
 
@@ -431,8 +449,11 @@ mod tests {
     #[test]
     fn arity_errors() {
         let cfg = base_config();
-        let err = nsmtp_send(&[Value::Object(cfg.clone()).ref_cell(), Value::Nil.ref_cell()], span())
-            .unwrap_err();
+        let err = nsmtp_send(
+            &[Value::Object(cfg.clone()).ref_cell(), Value::Nil.ref_cell()],
+            span(),
+        )
+        .unwrap_err();
         assert!(err.to_string().contains("expects 1 argument"));
         let err = nsmtp_send(&[], span()).unwrap_err();
         assert!(err.to_string().contains("expects 1 argument"));

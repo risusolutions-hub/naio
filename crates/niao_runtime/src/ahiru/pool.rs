@@ -7,7 +7,8 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 use std::thread;
 
-type InvokeFn = Arc<dyn Fn(u64, HashMap<String, String>) -> Result<AhiruResponse, String> + Send + Sync>;
+type InvokeFn =
+    Arc<dyn Fn(u64, HashMap<String, String>) -> Result<AhiruResponse, String> + Send + Sync>;
 
 struct PoolJob {
     handler_id: u64,
@@ -31,16 +32,14 @@ impl HandlerWorkerPool {
         for _ in 0..workers {
             let rx = Arc::clone(&rx);
             let invoke = Arc::clone(&invoke);
-            handles.push(thread::spawn(move || {
-                loop {
-                    let job = {
-                        let guard = rx.lock().unwrap();
-                        guard.recv()
-                    };
-                    let Ok(job) = job else { break };
-                    let result = (invoke)(job.handler_id, job.fields);
-                    let _ = job.result_tx.send(result);
-                }
+            handles.push(thread::spawn(move || loop {
+                let job = {
+                    let guard = rx.lock().unwrap();
+                    guard.recv()
+                };
+                let Ok(job) = job else { break };
+                let result = (invoke)(job.handler_id, job.fields);
+                let _ = job.result_tx.send(result);
             }));
         }
         Self {

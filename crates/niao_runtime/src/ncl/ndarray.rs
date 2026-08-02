@@ -15,7 +15,10 @@ impl NDArray {
     pub fn from_int(shape: Vec<usize>, data: Vec<i64>) -> Result<Self, String> {
         let n: usize = shape.iter().product();
         if data.len() != n {
-            return Err(format!("data length {} does not match shape product {n}", data.len()));
+            return Err(format!(
+                "data length {} does not match shape product {n}",
+                data.len()
+            ));
         }
         let strides = row_major_strides(&shape);
         Ok(Self {
@@ -30,7 +33,10 @@ impl NDArray {
     pub fn from_float(shape: Vec<usize>, data: Vec<f64>) -> Result<Self, String> {
         let n: usize = shape.iter().product();
         if data.len() != n {
-            return Err(format!("data length {} does not match shape product {n}", data.len()));
+            return Err(format!(
+                "data length {} does not match shape product {n}",
+                data.len()
+            ));
         }
         let strides = row_major_strides(&shape);
         Ok(Self {

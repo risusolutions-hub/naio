@@ -97,12 +97,8 @@ impl DataFrame {
             .iter()
             .map(|c| {
                 let data = match &c.data {
-                    Column::Int(v) => {
-                        Column::Int(indices.iter().map(|&i| v[i]).collect())
-                    }
-                    Column::Float(v) => {
-                        Column::Float(indices.iter().map(|&i| v[i]).collect())
-                    }
+                    Column::Int(v) => Column::Int(indices.iter().map(|&i| v[i]).collect()),
+                    Column::Float(v) => Column::Float(indices.iter().map(|&i| v[i]).collect()),
                     Column::Bool(v) => Column::Bool(indices.iter().map(|&i| v[i]).collect()),
                     Column::String(s) => {
                         let dense: Vec<String> = indices

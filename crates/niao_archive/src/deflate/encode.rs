@@ -92,11 +92,23 @@ pub fn deflate(input: &[u8]) -> Result<Vec<u8>> {
     while i < input.len() {
         let best_len = (0..=258.min(input.len() - i))
             .rev()
-            .find(|&len| len >= 3 && input[i..i + len].len() == len && find_match(&input[..i], &input[i..i + len]).is_some())
+            .find(|&len| {
+                len >= 3
+                    && input[i..i + len].len() == len
+                    && find_match(&input[..i], &input[i..i + len]).is_some()
+            })
             .unwrap_or(1);
         if best_len >= 3 {
             if let Some((dist, len)) = find_match(&input[..i], &input[i..i + best_len]) {
-                write_len_dist(&mut out, &mut st, len, dist, &lit_codes, &dist_codes, &lit_len);
+                write_len_dist(
+                    &mut out,
+                    &mut st,
+                    len,
+                    dist,
+                    &lit_codes,
+                    &dist_codes,
+                    &lit_len,
+                );
                 i += len;
                 continue;
             }
@@ -147,23 +159,28 @@ fn write_len_dist(
     lit_len: &[u8; 288],
 ) {
     const LENS: [u16; 29] = [
-        3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 15, 17, 19, 23, 27, 31, 35, 43, 51, 59, 67, 83, 99,
-        115, 131, 163, 195, 227, 258,
+        3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 15, 17, 19, 23, 27, 31, 35, 43, 51, 59, 67, 83, 99, 115,
+        131, 163, 195, 227, 258,
     ];
     const LEN_EXTRA: [u8; 29] = [
         0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 0,
     ];
     const DISTS: [u16; 30] = [
-        1, 2, 3, 4, 5, 7, 9, 13, 17, 25, 33, 49, 65, 97, 129, 193, 257, 385, 513, 769, 1025,
-        1537, 2049, 3073, 4097, 6145, 8193, 12289, 16385, 24577,
+        1, 2, 3, 4, 5, 7, 9, 13, 17, 25, 33, 49, 65, 97, 129, 193, 257, 385, 513, 769, 1025, 1537,
+        2049, 3073, 4097, 6145, 8193, 12289, 16385, 24577,
     ];
     const DIST_EXTRA: [u8; 30] = [
-        0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12,
-        12, 13, 13,
+        0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12,
+        13, 13,
     ];
     let mut sym = 257usize;
     for (idx, &base) in LENS.iter().enumerate() {
-        let max = base as usize + if LEN_EXTRA[idx] == 0 { 0 } else { (1 << LEN_EXTRA[idx]) - 1 };
+        let max = base as usize
+            + if LEN_EXTRA[idx] == 0 {
+                0
+            } else {
+                (1 << LEN_EXTRA[idx]) - 1
+            };
         if len >= base as usize && len <= max {
             sym = 257 + idx;
             break;
@@ -177,7 +194,12 @@ fn write_len_dist(
     }
     let mut dsym = 0usize;
     for (idx, &base) in DISTS.iter().enumerate() {
-        let max = base as usize + if DIST_EXTRA[idx] == 0 { 0 } else { (1 << DIST_EXTRA[idx]) - 1 };
+        let max = base as usize
+            + if DIST_EXTRA[idx] == 0 {
+                0
+            } else {
+                (1 << DIST_EXTRA[idx]) - 1
+            };
         if dist as usize >= base as usize && dist as usize <= max {
             dsym = idx;
             break;

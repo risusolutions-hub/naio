@@ -41,12 +41,7 @@ impl WinPoller {
         })
     }
 
-    pub fn register(
-        &mut self,
-        token: usize,
-        raw: RawSocket,
-        interest: Interest,
-    ) -> io::Result<()> {
+    pub fn register(&mut self, token: usize, raw: RawSocket, interest: Interest) -> io::Result<()> {
         let sock = raw.as_raw_socket() as usize;
         self.remove_socket(sock);
         let events = match interest {
@@ -76,7 +71,7 @@ impl WinPoller {
     pub fn poll(&mut self, timeout_ms: Option<u32>) -> io::Result<Vec<usize>> {
         if self.fds.is_empty() {
             std::thread::sleep(std::time::Duration::from_millis(
-                timeout_ms.unwrap_or(100) as u64,
+                timeout_ms.unwrap_or(100) as u64
             ));
             return Ok(Vec::new());
         }

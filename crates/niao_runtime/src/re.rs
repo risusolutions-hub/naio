@@ -37,12 +37,21 @@ fn arity(args: &[ValueRef], n: usize, name: &str, span: Span) -> NiaoResult<()> 
     Ok(())
 }
 
-fn arity_range(args: &[ValueRef], min: usize, max: usize, name: &str, span: Span) -> NiaoResult<()> {
+fn arity_range(
+    args: &[ValueRef],
+    min: usize,
+    max: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<()> {
     if args.len() < min || args.len() > max {
         return Err(RuntimeError::at(
             span,
             codes::E1300_RE_ARITY,
-            format!("{name}() expects {min}..={max} argument(s), got {}", args.len()),
+            format!(
+                "{name}() expects {min}..={max} argument(s), got {}",
+                args.len()
+            ),
         ));
     }
     Ok(())
@@ -81,7 +90,10 @@ fn handle_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> NiaoResu
     if id <= 0 {
         return Err(type_err(
             span,
-            format!("{name}() expects a positive regex handle as argument {}", idx + 1),
+            format!(
+                "{name}() expects a positive regex handle as argument {}",
+                idx + 1
+            ),
         ));
     }
     Ok(id as u64)
@@ -136,7 +148,8 @@ fn compile_pattern(pattern: &str, flags: Option<&str>, span: Span) -> NiaoResult
         if let Some(re) = map.get(&full) {
             return Ok(re.clone());
         }
-        let re = Regex::new(&full).map_err(|e| pattern_err(span, format!("invalid regex pattern: {e}")))?;
+        let re = Regex::new(&full)
+            .map_err(|e| pattern_err(span, format!("invalid regex pattern: {e}")))?;
         if map.len() >= RE_CACHE_CAP {
             if let Some(k) = map.keys().next().cloned() {
                 map.remove(&k);
@@ -156,9 +169,7 @@ fn match_object(caps: &Captures<'_>) -> Value {
     let end = caps.get(0).map(|m| m.end() as i64).unwrap_or(-1);
     let groups: Vec<ValueRef> = caps
         .iter()
-        .map(|m| {
-            Value::String(m.map(|x| x.as_str().to_string()).unwrap_or_default()).ref_cell()
-        })
+        .map(|m| Value::String(m.map(|x| x.as_str().to_string()).unwrap_or_default()).ref_cell())
         .collect();
 
     let mut map = HashMap::new();
@@ -336,13 +347,11 @@ fn re_replace_n(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     }
     let flags = optional_flags(args, 4);
     let re = compile_pattern(&pattern, flags.as_deref(), span)?;
-    Ok(
-        Value::String(
-            re.replacen(&text, count as usize, replacement.as_str())
-                .into_owned(),
-        )
-        .ref_cell(),
+    Ok(Value::String(
+        re.replacen(&text, count as usize, replacement.as_str())
+            .into_owned(),
     )
+    .ref_cell())
 }
 
 fn re_split(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
@@ -375,7 +384,9 @@ fn re_test_h(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity(args, 2, "re_test_h", span)?;
     let id = handle_arg(args, 0, "re_test_h", span)?;
     let text = string_arg(args, 1, "re_test_h", span)?;
-    with_regex(id, "re_test_h", span, |re| Ok(Value::Bool(re.is_match(&text)).ref_cell()))
+    with_regex(id, "re_test_h", span, |re| {
+        Ok(Value::Bool(re.is_match(&text)).ref_cell())
+    })
 }
 
 fn re_match_h(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
@@ -436,10 +447,7 @@ fn re_replace_h(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let text = string_arg(args, 1, "re_replace_h", span)?;
     let replacement = string_arg(args, 2, "re_replace_h", span)?;
     with_regex(id, "re_replace_h", span, |re| {
-        Ok(
-            Value::String(re.replace_all(&text, replacement.as_str()).into_owned())
-                .ref_cell(),
-        )
+        Ok(Value::String(re.replace_all(&text, replacement.as_str()).into_owned()).ref_cell())
     })
 }
 
@@ -456,13 +464,11 @@ fn re_replace_n_h(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
         ));
     }
     with_regex(id, "re_replace_n_h", span, |re| {
-        Ok(
-            Value::String(
-                re.replacen(&text, count as usize, replacement.as_str())
-                    .into_owned(),
-            )
-            .ref_cell(),
+        Ok(Value::String(
+            re.replacen(&text, count as usize, replacement.as_str())
+                .into_owned(),
         )
+        .ref_cell())
     })
 }
 
@@ -539,7 +545,11 @@ pub fn namespace() -> Value {
     bind(&mut map, "match_h", Rc::new(re_match_h));
     bind(&mut map, "search_h", Rc::new(re_search_h));
     bind(&mut map, "find_all_h", Rc::new(re_find_all_h));
-    bind(&mut map, "find_all_strings_h", Rc::new(re_find_all_strings_h));
+    bind(
+        &mut map,
+        "find_all_strings_h",
+        Rc::new(re_find_all_strings_h),
+    );
     bind(&mut map, "replace_h", Rc::new(re_replace_h));
     bind(&mut map, "replace_n_h", Rc::new(re_replace_n_h));
     bind(&mut map, "split_h", Rc::new(re_split_h));

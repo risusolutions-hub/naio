@@ -29,7 +29,10 @@ pub struct Mnist {
 }
 
 impl Mnist {
-    pub fn load(images_path: impl AsRef<Path>, labels_path: impl AsRef<Path>) -> VisionResult<Self> {
+    pub fn load(
+        images_path: impl AsRef<Path>,
+        labels_path: impl AsRef<Path>,
+    ) -> VisionResult<Self> {
         let images = read_file(images_path.as_ref())?;
         let labels = read_file(labels_path.as_ref())?;
         if images.len() < 16 || labels.len() < 8 {
@@ -47,7 +50,9 @@ impl Mnist {
         let cols = u32::from_be_bytes(images[12..16].try_into().unwrap()) as usize;
         let n_l = u32::from_be_bytes(labels[4..8].try_into().unwrap()) as usize;
         if n != n_l {
-            return Err(VisionError::Shape("MNIST image/label count mismatch".into()));
+            return Err(VisionError::Shape(
+                "MNIST image/label count mismatch".into(),
+            ));
         }
         let expect = 16 + n * rows * cols;
         if images.len() < expect || labels.len() < 8 + n {
@@ -62,7 +67,10 @@ impl Mnist {
         })
     }
 
-    pub fn fashion(images_path: impl AsRef<Path>, labels_path: impl AsRef<Path>) -> VisionResult<Self> {
+    pub fn fashion(
+        images_path: impl AsRef<Path>,
+        labels_path: impl AsRef<Path>,
+    ) -> VisionResult<Self> {
         Self::load(images_path, labels_path)
     }
 }

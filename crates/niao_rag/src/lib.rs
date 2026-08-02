@@ -176,8 +176,11 @@ impl Embedder {
     pub fn embed_one(&mut self, text: &str) -> Result<Vec<f32>> {
         if let EmbedBackend::Sidecar(base) = &self.backend {
             let base = base.clone();
-            return sidecar_embed(&base, &[text])
-                .and_then(|v| v.into_iter().next().ok_or_else(|| RagError::Msg("empty embedding".into())));
+            return sidecar_embed(&base, &[text]).and_then(|v| {
+                v.into_iter()
+                    .next()
+                    .ok_or_else(|| RagError::Msg("empty embedding".into()))
+            });
         }
         let EmbedBackend::Local(model) = &mut self.backend else {
             unreachable!();
@@ -230,7 +233,9 @@ fn sidecar_embed(base: &str, texts: &[&str]) -> Result<Vec<Vec<f32>>> {
     let body: serde_json::Value = resp
         .into_string()
         .map_err(|e| RagError::Embed(format!("sidecar body: {e}")))
-        .and_then(|s| serde_json::from_str(&s).map_err(|e| RagError::Embed(format!("sidecar json: {e}"))))?;
+        .and_then(|s| {
+            serde_json::from_str(&s).map_err(|e| RagError::Embed(format!("sidecar json: {e}")))
+        })?;
     let arr = body
         .get("embeddings")
         .and_then(|v| v.as_array())
@@ -415,7 +420,12 @@ impl RagIndex {
             .collect()
     }
 
-    pub fn write_binary(path: &Path, chunks: &[Chunk], embeddings: &[f32], dim: usize) -> Result<()> {
+    pub fn write_binary(
+        path: &Path,
+        chunks: &[Chunk],
+        embeddings: &[f32],
+        dim: usize,
+    ) -> Result<()> {
         if chunks.is_empty() {
             return Err(RagError::Msg("no chunks".into()));
         }
@@ -512,7 +522,8 @@ pub fn build_index_from_json(json_path: &Path, out_path: &Path) -> Result<usize>
     }
 
     for (chunk, emb) in pending {
-        let emb = emb.ok_or_else(|| RagError::Msg(format!("missing embedding for {}", chunk.id)))?;
+        let emb =
+            emb.ok_or_else(|| RagError::Msg(format!("missing embedding for {}", chunk.id)))?;
         flat.extend_from_slice(&emb);
         chunks.push(chunk);
     }

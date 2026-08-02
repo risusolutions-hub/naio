@@ -87,7 +87,11 @@ where
             if let Value::Error(e) = &*v.borrow() {
                 crate::RuntimeError::at(span, e.code, e.message.clone())
             } else {
-                crate::RuntimeError::at(span, codes::E1505_PARALLEL_NOT_FOUND, "thread operation failed")
+                crate::RuntimeError::at(
+                    span,
+                    codes::E1505_PARALLEL_NOT_FOUND,
+                    "thread operation failed",
+                )
             }
         })
     })
@@ -116,11 +120,9 @@ pub fn parallel_thread_join(args: &[ValueRef], span: Span) -> ParallelResult {
     if should_use_poll_mode() || !THREADS.with(|m| m.borrow().contains_key(&id)) {
         return match wait_poll_job(id) {
             PollJobResult::Done(Ok(v)) => Ok(sendable_result(v)),
-            PollJobResult::Done(Err(msg)) => Ok(parallel_error(
-                span,
-                codes::E1505_PARALLEL_NOT_FOUND,
-                msg,
-            )),
+            PollJobResult::Done(Err(msg)) => {
+                Ok(parallel_error(span, codes::E1505_PARALLEL_NOT_FOUND, msg))
+            }
             PollJobResult::Pending => Ok(parallel_error(
                 span,
                 codes::E1505_PARALLEL_NOT_FOUND,

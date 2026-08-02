@@ -3,15 +3,17 @@
 use niao_args::{Arg, Command, NumArgs};
 
 pub fn niao_command(version: &str) -> Command {
-    let ahiru_db = Command::new("db").about("Database operations").subcommands(vec![
-        Command::new("migrate").arg(project_arg()),
-        Command::new("status").arg(project_arg()),
-        Command::new("seed").arg(project_arg()),
-        Command::new("rollback").arg(project_arg()),
-        Command::new("reset")
-            .arg(project_arg())
-            .arg(Arg::long_flag("force", "force")),
-    ]);
+    let ahiru_db = Command::new("db")
+        .about("Database operations")
+        .subcommands(vec![
+            Command::new("migrate").arg(project_arg()),
+            Command::new("status").arg(project_arg()),
+            Command::new("seed").arg(project_arg()),
+            Command::new("rollback").arg(project_arg()),
+            Command::new("reset")
+                .arg(project_arg())
+                .arg(Arg::long_flag("force", "force")),
+        ]);
 
     let ahiru_gen = Command::new("generate").subcommand(
         Command::new("resource")
@@ -31,7 +33,12 @@ pub fn niao_command(version: &str) -> Command {
                 .arg(Arg::new("mode").long("mode").default_value("vm"))
                 .arg(Arg::long_flag("dev", "dev"))
                 .arg(Arg::long_flag("net", "net"))
-                .arg(Arg::new("port").long("port").short('p').num_args(NumArgs::ZeroOrOne)),
+                .arg(
+                    Arg::new("port")
+                        .long("port")
+                        .short('p')
+                        .num_args(NumArgs::ZeroOrOne),
+                ),
             Command::new("bench")
                 .arg(
                     Arg::new("routes")
@@ -39,8 +46,16 @@ pub fn niao_command(version: &str) -> Command {
                         .value_delimiter(',')
                         .default_value("health"),
                 )
-                .arg(Arg::new("concurrency").long("concurrency").default_value("32"))
-                .arg(Arg::new("iterations").long("iterations").default_value("5000")),
+                .arg(
+                    Arg::new("concurrency")
+                        .long("concurrency")
+                        .default_value("32"),
+                )
+                .arg(
+                    Arg::new("iterations")
+                        .long("iterations")
+                        .default_value("5000"),
+                ),
             Command::new("migrate").arg(project_arg()),
             Command::new("routes").arg(project_arg()),
             ahiru_db,
@@ -80,20 +95,34 @@ pub fn niao_command(version: &str) -> Command {
                 .arg(Arg::positional("file"))
                 .arg(Arg::long_flag("write", "write")),
             Command::new("lint").arg(Arg::positional("file")),
-            Command::new("docs")
-                .arg(Arg::positional("file"))
-                .arg(Arg::new("output").long("output").short('o').default_value("docs-output")),
-            Command::new("build")
-                .arg(Arg::positional("file"))
-                .arg(Arg::new("output").long("output").short('o').default_value(".niao-build")),
-            Command::new("serve")
-                .arg(Arg::positional("file"))
-                .arg(Arg::new("port").long("port").short('p').default_value("3000")),
+            Command::new("docs").arg(Arg::positional("file")).arg(
+                Arg::new("output")
+                    .long("output")
+                    .short('o')
+                    .default_value("docs-output"),
+            ),
+            Command::new("build").arg(Arg::positional("file")).arg(
+                Arg::new("output")
+                    .long("output")
+                    .short('o')
+                    .default_value(".niao-build"),
+            ),
+            Command::new("serve").arg(Arg::positional("file")).arg(
+                Arg::new("port")
+                    .long("port")
+                    .short('p')
+                    .default_value("3000"),
+            ),
             Command::new("bench")
                 .arg(Arg::positional("file"))
                 .arg(Arg::new("runs").long("runs").short('r').default_value("5")),
             Command::new("clean")
-                .arg(Arg::new("cache_dir").long("cache-dir").short('c').default_value(".niao-build"))
+                .arg(
+                    Arg::new("cache_dir")
+                        .long("cache-dir")
+                        .short('c')
+                        .default_value(".niao-build"),
+                )
                 .arg(Arg::new("keep").long("keep").default_value("16"))
                 .arg(Arg::long_flag("all", "all")),
             Command::new("uninstall"),
@@ -158,7 +187,11 @@ pub fn nm_command(version: &str) -> Command {
                         .num_args(NumArgs::ZeroOrMore),
                 )
                 .arg(Arg::long_flag("toolchain", "toolchain"))
-                .arg(Arg::new("toolchain_version").long("toolchain-version").value_name("VERSION"))
+                .arg(
+                    Arg::new("toolchain_version")
+                        .long("toolchain-version")
+                        .value_name("VERSION"),
+                )
                 .arg(Arg::long_flag("venv", "venv"))
                 .arg(project_arg())
                 .arg(Arg::long_flag("force", "force"))
@@ -218,8 +251,19 @@ fn walk_matches(matches: &niao_args::ArgMatches, snap: &mut Snapshot) {
     }
 
     for id in [
-        "time", "write", "all", "force", "dev", "net", "yes", "serve", "global", "venv",
-        "installed", "available", "toolchain",
+        "time",
+        "write",
+        "all",
+        "force",
+        "dev",
+        "net",
+        "yes",
+        "serve",
+        "global",
+        "venv",
+        "installed",
+        "available",
+        "toolchain",
     ] {
         if matches.get_flag(id) {
             snap.flags.push(id.to_string());
@@ -227,9 +271,29 @@ fn walk_matches(matches: &niao_args::ArgMatches, snap: &mut Snapshot) {
     }
 
     for id in [
-        "file", "name", "dir", "output", "mode", "port", "runs", "cache_dir", "keep", "version",
-        "project", "feature", "source", "registry", "niao_bin", "nm_bin", "routes", "concurrency",
-        "iterations", "toolchain_version", "query", "libs", "args",
+        "file",
+        "name",
+        "dir",
+        "output",
+        "mode",
+        "port",
+        "runs",
+        "cache_dir",
+        "keep",
+        "version",
+        "project",
+        "feature",
+        "source",
+        "registry",
+        "niao_bin",
+        "nm_bin",
+        "routes",
+        "concurrency",
+        "iterations",
+        "toolchain_version",
+        "query",
+        "libs",
+        "args",
     ] {
         if let Some(vals) = matches.get_many::<String>(id) {
             let collected: Vec<String> = vals.collect();

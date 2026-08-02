@@ -1,4 +1,4 @@
-﻿//! Native nsoa standard library — columnar struct-of-arrays tables with typed
+//! Native nsoa standard library — columnar struct-of-arrays tables with typed
 //! columns (int, float, bool, string).
 //!
 //! Import with `import "nsoa"` (or `import "std/nsoa"`).
@@ -95,9 +95,7 @@ impl Column {
         match self {
             Column::Int(v) => v.get(row).map(|&n| Value::Int(n).ref_cell()),
             Column::Float(v) => v.get(row).map(|&f| Value::Float(f).ref_cell()),
-            Column::Bool(v) => v
-                .get(row)
-                .map(|&b| Value::Bool(b != 0).ref_cell()),
+            Column::Bool(v) => v.get(row).map(|&b| Value::Bool(b != 0).ref_cell()),
             Column::String(v) => v.get(row).map(|s| Value::String(s.clone()).ref_cell()),
         }
     }
@@ -116,7 +114,10 @@ fn type_col_err(span: Span, expected: &str, other: &Value) -> ValueRef {
     error_value(
         E3382_NSOA_TYPE,
         "nsoa_error",
-        format!("expected {expected} column value, got {}", other.type_name()),
+        format!(
+            "expected {expected} column value, got {}",
+            other.type_name()
+        ),
         span,
     )
 }
@@ -225,12 +226,21 @@ fn arity(args: &[ValueRef], n: usize, name: &str, span: Span) -> NiaoResult<()> 
     Ok(())
 }
 
-fn arity_range(args: &[ValueRef], min: usize, max: usize, name: &str, span: Span) -> NiaoResult<()> {
+fn arity_range(
+    args: &[ValueRef],
+    min: usize,
+    max: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<()> {
     if args.len() < min || args.len() > max {
         return Err(RuntimeError::at(
             span,
             E3380_NSOA_ARITY,
-            format!("{name}() expects {min}..={max} argument(s), got {}", args.len()),
+            format!(
+                "{name}() expects {min}..={max} argument(s), got {}",
+                args.len()
+            ),
         ));
     }
     Ok(())
@@ -268,12 +278,14 @@ fn string_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> NiaoResu
     }
 }
 
-fn object_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> NiaoResult<HashMap<String, ValueRef>> {
+fn object_arg(
+    args: &[ValueRef],
+    idx: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<HashMap<String, ValueRef>> {
     match &*args[idx].borrow() {
-        Value::Object(map) => Ok(map
-            .iter()
-            .map(|(k, v)| (k.clone(), Rc::clone(v)))
-            .collect()),
+        Value::Object(map) => Ok(map.iter().map(|(k, v)| (k.clone(), Rc::clone(v))).collect()),
         other => Err(type_err(
             span,
             format!(
@@ -312,7 +324,10 @@ fn parse_schema(
             other => {
                 return Err(type_err(
                     span,
-                    format!("schema.{name} must be a type string, got {}", other.type_name()),
+                    format!(
+                        "schema.{name} must be a type string, got {}",
+                        other.type_name()
+                    ),
                 ));
             }
         };
@@ -500,7 +515,10 @@ nsoa_fns![
 ];
 
 fn all_builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(flat, _, f)| (flat, f)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(flat, _, f)| (flat, f))
+        .collect()
 }
 
 pub fn namespace() -> Value {
@@ -534,9 +552,18 @@ mod tests {
     fn schema() -> ValueRef {
         let mut m = HashMap::new();
         m.insert("id".to_string(), Value::String("int".into()).ref_cell());
-        m.insert("score".to_string(), Value::String("float".into()).ref_cell());
-        m.insert("active".to_string(), Value::String("bool".into()).ref_cell());
-        m.insert("name".to_string(), Value::String("string".into()).ref_cell());
+        m.insert(
+            "score".to_string(),
+            Value::String("float".into()).ref_cell(),
+        );
+        m.insert(
+            "active".to_string(),
+            Value::String("bool".into()).ref_cell(),
+        );
+        m.insert(
+            "name".to_string(),
+            Value::String("string".into()).ref_cell(),
+        );
         Value::Object(m).ref_cell()
     }
 
@@ -557,11 +584,7 @@ mod tests {
         let col = nsoa_column(&[h.clone(), Value::String("id".into()).ref_cell()], span()).unwrap();
         assert!(matches!(&*col.borrow(), Value::IntArray(v) if v == &[1, 2]));
         let cell = nsoa_get(
-            &[
-                h.clone(),
-                i(0),
-                Value::String("name".into()).ref_cell(),
-            ],
+            &[h.clone(), i(0), Value::String("name".into()).ref_cell()],
             span(),
         )
         .unwrap();

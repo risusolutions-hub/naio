@@ -3,7 +3,7 @@
 use super::{net_error, ok_string, parse_http_opts, string_arg, HttpOpts, NetResult};
 use niao_ast::Span;
 use niao_errors::codes;
-use niao_http::{get, head, post, put, delete, request, Method, RequestBuilder};
+use niao_http::{delete, get, head, post, put, request, Method, RequestBuilder};
 use std::collections::HashMap;
 use std::fs;
 use std::time::Duration;

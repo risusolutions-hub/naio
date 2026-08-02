@@ -13,8 +13,14 @@ pub enum RuntimeError {
         line: usize,
         col: usize,
     },
-    Simple { code: u32, message: String },
-    DivisionByZero { line: usize, col: usize },
+    Simple {
+        code: u32,
+        message: String,
+    },
+    DivisionByZero {
+        line: usize,
+        col: usize,
+    },
     UndefinedVar {
         name: String,
         line: usize,
@@ -30,8 +36,12 @@ pub enum RuntimeError {
         line: usize,
         col: usize,
     },
-    ModuleNotFound { path: String },
-    ImportCycle { path: String },
+    ModuleNotFound {
+        path: String,
+    },
+    ImportCycle {
+        path: String,
+    },
     /// User `throw` with a structured error value.
     Thrown(NiaoErrorValue),
     Break,

@@ -21,7 +21,9 @@ pub fn ctx_to_niao(ctx: &mut RequestContext) -> ValueRef {
         &ctx.query,
         &ctx.headers,
         &ctx.state,
-        ctx.user.as_ref().map(|u| (u.id.as_str(), u.roles.as_slice())),
+        ctx.user
+            .as_ref()
+            .map(|u| (u.id.as_str(), u.roles.as_slice())),
     )
 }
 
@@ -49,10 +51,7 @@ pub fn fields_to_niao(fields: &HashMap<String, String>) -> ValueRef {
         fields.get("method").map(String::as_str).unwrap_or("GET"),
         fields.get("path").map(String::as_str).unwrap_or("/"),
         fields.get("body").map(String::as_str).unwrap_or(""),
-        fields
-            .get("request_id")
-            .map(String::as_str)
-            .unwrap_or(""),
+        fields.get("request_id").map(String::as_str).unwrap_or(""),
         &params,
         &query,
         &headers,

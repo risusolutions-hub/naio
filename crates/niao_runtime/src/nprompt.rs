@@ -22,12 +22,21 @@ fn type_err(span: Span, msg: impl Into<String>) -> RuntimeError {
     RuntimeError::at(span, E2922_NPROMPT_TYPE, msg.into())
 }
 
-fn arity_range(args: &[ValueRef], min: usize, max: usize, name: &str, span: Span) -> NiaoResult<()> {
+fn arity_range(
+    args: &[ValueRef],
+    min: usize,
+    max: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<()> {
     if args.len() < min || args.len() > max {
         return Err(RuntimeError::at(
             span,
             E2920_NPROMPT_ARITY,
-            format!("{name}() expects {min}..={max} argument(s), got {}", args.len()),
+            format!(
+                "{name}() expects {min}..={max} argument(s), got {}",
+                args.len()
+            ),
         ));
     }
     Ok(())
@@ -70,7 +79,12 @@ fn optional_object_arg(
     }
 }
 
-fn string_array_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> NiaoResult<Vec<String>> {
+fn string_array_arg(
+    args: &[ValueRef],
+    idx: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<Vec<String>> {
     fn collect_strings(items: &[ValueRef], name: &str, span: Span) -> NiaoResult<Vec<String>> {
         let mut out = Vec::with_capacity(items.len());
         for (i, item) in items.iter().enumerate() {
@@ -233,10 +247,15 @@ fn confirm_hint(default: Option<bool>) -> &'static str {
 }
 
 /// Resolve a select response in non-TTY mode: numeric input → index, else matching choice string.
-fn parse_select_pipe(input: &str, choices: &[String], default_index: Option<usize>) -> Option<ValueRef> {
+fn parse_select_pipe(
+    input: &str,
+    choices: &[String],
+    default_index: Option<usize>,
+) -> Option<ValueRef> {
     let t = input.trim();
     if t.is_empty() {
-        return default_index.and_then(|i| choices.get(i).map(|s| Value::String(s.clone()).ref_cell()));
+        return default_index
+            .and_then(|i| choices.get(i).map(|s| Value::String(s.clone()).ref_cell()));
     }
     if let Ok(n) = t.parse::<i64>() {
         if n >= 0 && (n as usize) < choices.len() {
@@ -250,7 +269,11 @@ fn parse_select_pipe(input: &str, choices: &[String], default_index: Option<usiz
 }
 
 /// Resolve a 1-based menu selection in TTY mode.
-fn parse_select_tty(input: &str, choices: &[String], default_index: Option<usize>) -> Option<String> {
+fn parse_select_tty(
+    input: &str,
+    choices: &[String],
+    default_index: Option<usize>,
+) -> Option<String> {
     let t = input.trim();
     if t.is_empty() {
         return default_index.and_then(|i| choices.get(i).cloned());
@@ -376,7 +399,10 @@ fn nprompt_select(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let label = string_arg(args, 0, "nprompt_select", span)?;
     let choices = string_array_arg(args, 1, "nprompt_select", span)?;
     if choices.is_empty() {
-        return Ok(prompt_err(span, "nprompt_select() requires at least one choice"));
+        return Ok(prompt_err(
+            span,
+            "nprompt_select() requires at least one choice",
+        ));
     }
     let opts = optional_object_arg(args, 2, "nprompt_select", span)?;
     let default_index = opts_usize(opts.as_ref(), "default_index");
@@ -421,7 +447,10 @@ fn nprompt_select(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     }
     Ok(prompt_err(
         span,
-        format!("invalid selection '{line}'; expected index 0..={} or a choice label", choices.len() - 1),
+        format!(
+            "invalid selection '{line}'; expected index 0..={} or a choice label",
+            choices.len() - 1
+        ),
     ))
 }
 
@@ -460,7 +489,10 @@ nprompt_fns![
 ];
 
 fn all_builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(flat, _, f)| (flat, f)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(flat, _, f)| (flat, f))
+        .collect()
 }
 
 pub fn namespace() -> Value {
@@ -525,7 +557,10 @@ mod tests {
         let choices = vec!["red".into(), "green".into(), "blue".into()];
         assert_eq!(parse_select_tty("2", &choices, None), Some("green".into()));
         assert_eq!(parse_select_tty("", &choices, Some(0)), Some("red".into()));
-        assert_eq!(parse_select_tty("blue", &choices, None), Some("blue".into()));
+        assert_eq!(
+            parse_select_tty("blue", &choices, None),
+            Some("blue".into())
+        );
         assert_eq!(parse_select_tty("9", &choices, None), None);
         assert_eq!(parse_select_tty("purple", &choices, None), None);
     }

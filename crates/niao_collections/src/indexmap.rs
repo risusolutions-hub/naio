@@ -31,20 +31,29 @@ impl Hasher for FxHasher {
         let mut i = 0;
         while i + 8 <= bytes.len() {
             let chunk = u64::from_ne_bytes(bytes[i..i + 8].try_into().unwrap());
-            self.hash = self.hash.wrapping_add(chunk).wrapping_mul(0x517cc1b727220a95);
+            self.hash = self
+                .hash
+                .wrapping_add(chunk)
+                .wrapping_mul(0x517cc1b727220a95);
             i += 8;
         }
         if i < bytes.len() {
             let mut tail = [0u8; 8];
             tail[..bytes.len() - i].copy_from_slice(&bytes[i..]);
             let chunk = u64::from_ne_bytes(tail);
-            self.hash = self.hash.wrapping_add(chunk).wrapping_mul(0x517cc1b727220a95);
+            self.hash = self
+                .hash
+                .wrapping_add(chunk)
+                .wrapping_mul(0x517cc1b727220a95);
         }
     }
 
     #[inline]
     fn write_u8(&mut self, i: u8) {
-        self.hash = self.hash.wrapping_add(u64::from(i)).wrapping_mul(0x517cc1b727220a95);
+        self.hash = self
+            .hash
+            .wrapping_add(u64::from(i))
+            .wrapping_mul(0x517cc1b727220a95);
     }
 
     #[inline]
@@ -184,7 +193,13 @@ impl<K, V, S> IndexMap<K, V, S> {
         self.dibs.resize(new_len, 0);
         let mask = new_len - 1;
         for (idx, entry) in self.entries.iter().enumerate() {
-            insert_index(&mut self.indices, &mut self.dibs, mask, entry.hash, idx as u32);
+            insert_index(
+                &mut self.indices,
+                &mut self.dibs,
+                mask,
+                entry.hash,
+                idx as u32,
+            );
         }
     }
 
@@ -234,7 +249,8 @@ where
     fn reserve(&mut self, additional: usize) {
         let needed = self.entries.len().saturating_add(additional);
         self.reserve_entries(additional);
-        if self.indices.is_empty() || needed.saturating_mul(LOAD_DEN) > self.indices.len().saturating_mul(LOAD_NUM)
+        if self.indices.is_empty()
+            || needed.saturating_mul(LOAD_DEN) > self.indices.len().saturating_mul(LOAD_NUM)
         {
             let n = indices_for(needed.max(1));
             self.rehash_to(n.max(self.indices.len() * 2).max(MIN_INDICES));
@@ -272,7 +288,8 @@ where
         Q: ?Sized + Hash + Eq,
     {
         let hash = self.hash_key(key);
-        self.find_index(hash, key).map(|i| &mut self.entries[i].value)
+        self.find_index(hash, key)
+            .map(|i| &mut self.entries[i].value)
     }
 
     #[inline]

@@ -38,7 +38,9 @@ impl NlpError {
 impl fmt::Display for NlpError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Arity { expected, got } => write!(f, "expected {expected} argument(s), got {got}"),
+            Self::Arity { expected, got } => {
+                write!(f, "expected {expected} argument(s), got {got}")
+            }
             Self::Error(msg) | Self::Type(msg) | Self::Shape(msg) | Self::Oov(msg) => {
                 f.write_str(msg)
             }

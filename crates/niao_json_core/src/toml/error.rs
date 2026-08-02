@@ -19,7 +19,11 @@ impl TomlError {
 
 impl fmt::Display for TomlError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "TOML parse error at {}:{}: {}", self.line, self.col, self.message)
+        write!(
+            f,
+            "TOML parse error at {}:{}: {}",
+            self.line, self.col, self.message
+        )
     }
 }
 

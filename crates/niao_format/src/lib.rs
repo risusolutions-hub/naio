@@ -111,7 +111,11 @@ fn format_class(c: &ClassDef) -> String {
                 visibility,
                 ..
             } => {
-                out.push_str(&format!("    {}static let {}", vis_prefix(*visibility), name));
+                out.push_str(&format!(
+                    "    {}static let {}",
+                    vis_prefix(*visibility),
+                    name
+                ));
                 if let Some(expr) = init {
                     out.push_str(&format!(" = {}", format_expr(expr)));
                 }
@@ -196,7 +200,11 @@ fn format_fn(f: &FnDef) -> String {
 fn format_struct(s: &StructDef) -> String {
     let mut out = format!("struct {} {{\n", s.name);
     for field in &s.fields {
-        out.push_str(&format!("    {}: {};\n", field.name, format_type(&field.ty)));
+        out.push_str(&format!(
+            "    {}: {};\n",
+            field.name,
+            format_type(&field.ty)
+        ));
     }
     out.push('}');
     out
@@ -205,7 +213,11 @@ fn format_struct(s: &StructDef) -> String {
 fn format_server(s: &ServerBlock) -> String {
     let mut out = "server {\n".to_string();
     for field in &s.fields {
-        out.push_str(&format!("    {} = {};\n", field.name, format_expr(&field.value)));
+        out.push_str(&format!(
+            "    {} = {};\n",
+            field.name,
+            format_expr(&field.value)
+        ));
     }
     out.push('}');
     out
@@ -219,12 +231,7 @@ fn format_route(r: &RouteBlock) -> String {
         HttpMethod::Delete => "DELETE",
         HttpMethod::Patch => "PATCH",
     };
-    format!(
-        "{} \"{}\" {}",
-        method,
-        r.path,
-        format_block(&r.body, 0)
-    )
+    format!("{} \"{}\" {}", method, r.path, format_block(&r.body, 0))
 }
 
 fn format_block(block: &Block, indent: usize) -> String {
@@ -251,7 +258,9 @@ fn format_stmt(stmt: &Stmt, indent: usize) -> String {
             out.push(';');
             out
         }
-        Stmt::Assign { target, op, value, .. } => {
+        Stmt::Assign {
+            target, op, value, ..
+        } => {
             let target_str = match target {
                 AssignTarget::Name(n) => n.clone(),
                 AssignTarget::Member { object, field } => {
@@ -280,7 +289,11 @@ fn format_stmt(stmt: &Stmt, indent: usize) -> String {
             else_block,
             ..
         } => {
-            let mut out = format!("if {} {}", format_expr(cond), format_block(then_block, indent));
+            let mut out = format!(
+                "if {} {}",
+                format_expr(cond),
+                format_block(then_block, indent)
+            );
             if let Some(else_blk) = else_block {
                 out.push_str(" else ");
                 out.push_str(&format_block(else_blk, indent));
@@ -288,13 +301,11 @@ fn format_stmt(stmt: &Stmt, indent: usize) -> String {
             out
         }
         Stmt::While { cond, body, .. } => {
-            format!(
-                "while {} {}",
-                format_expr(cond),
-                format_block(body, indent)
-            )
+            format!("while {} {}", format_expr(cond), format_block(body, indent))
         }
-        Stmt::For { var, iter, body, .. } => {
+        Stmt::For {
+            var, iter, body, ..
+        } => {
             format!(
                 "for {} in {} {}",
                 var,
@@ -336,7 +347,9 @@ fn format_expr(expr: &Expr) -> String {
         Expr::Bool(v, _) => v.to_string(),
         Expr::Nil(_) => "nil".into(),
         Expr::Ident(name, _) => name.clone(),
-        Expr::Binary { left, op, right, .. } => {
+        Expr::Binary {
+            left, op, right, ..
+        } => {
             format!(
                 "{} {} {}",
                 format_expr(left),

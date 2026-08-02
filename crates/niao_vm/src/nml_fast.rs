@@ -22,12 +22,7 @@ impl NmlFastPath {
         }
     }
 
-    pub fn try_execute(
-        self,
-        stack: &[FastVal],
-        heap: &[ValueRef],
-        argc: usize,
-    ) -> Option<u64> {
+    pub fn try_execute(self, stack: &[FastVal], heap: &[ValueRef], argc: usize) -> Option<u64> {
         if stack.len() < argc {
             return None;
         }

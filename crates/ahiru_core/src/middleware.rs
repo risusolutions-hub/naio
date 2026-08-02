@@ -29,16 +29,25 @@ pub enum CompressionAlgo {
 
 #[derive(Debug, Clone)]
 pub enum MiddlewareKind {
-    RequestId { enabled: bool },
+    RequestId {
+        enabled: bool,
+    },
     Logging(LoggingOptions),
-    SecureHeaders { csp_policy: Option<String> },
+    SecureHeaders {
+        csp_policy: Option<String>,
+    },
     Cors(Vec<String>),
-    RateLimit { rps: u32 },
+    RateLimit {
+        rps: u32,
+    },
     BodyLimitMb(u64),
     Auth(AuthConfig),
     Compression(CompressionAlgo),
     Etag,
-    IpFilter { allow: Vec<String>, deny: Vec<String> },
+    IpFilter {
+        allow: Vec<String>,
+        deny: Vec<String>,
+    },
     Csrf,
     Custom,
 }
@@ -204,7 +213,8 @@ pub fn apply_pre_middleware(
                 if let Some(handler) = &mw.custom_handler {
                     let ctx_clone = ctx.clone();
                     let result = tokio::task::block_in_place(|| {
-                        tokio::runtime::Handle::current().block_on(async { handler(ctx_clone).await })
+                        tokio::runtime::Handle::current()
+                            .block_on(async { handler(ctx_clone).await })
                     });
                     match result {
                         Ok(resp) if resp.status >= 400 => return Some(resp),
@@ -221,7 +231,11 @@ pub fn apply_pre_middleware(
     None
 }
 
-pub fn check_permission(ctx: &RequestContext, permission: &str, rbac: bool) -> Option<AhiruResponse> {
+pub fn check_permission(
+    ctx: &RequestContext,
+    permission: &str,
+    rbac: bool,
+) -> Option<AhiruResponse> {
     if !rbac {
         return None;
     }
@@ -244,11 +258,13 @@ pub fn middleware_from_config(
         enabled: logging.request_id,
     })];
     if logging.access_log {
-        chain.push(MiddlewareEntry::builtin(MiddlewareKind::Logging(LoggingOptions {
-            enabled: true,
-            json: Some(logging.json_logs),
-            skip_paths: logging.skip_paths.clone(),
-        })));
+        chain.push(MiddlewareEntry::builtin(MiddlewareKind::Logging(
+            LoggingOptions {
+                enabled: true,
+                json: Some(logging.json_logs),
+                skip_paths: logging.skip_paths.clone(),
+            },
+        )));
     }
     if security.secure_headers {
         chain.push(MiddlewareEntry::builtin(MiddlewareKind::SecureHeaders {
@@ -305,4 +321,3 @@ pub fn request_id_enabled_in_chain(middleware: &[MiddlewareEntry]) -> bool {
         _ => false,
     })
 }
-

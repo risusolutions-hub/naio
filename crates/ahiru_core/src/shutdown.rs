@@ -2,47 +2,27 @@ use std::sync::OnceLock;
 
 use tokio::sync::watch;
 
-
-
 static SHUTDOWN_TX: OnceLock<watch::Sender<bool>> = OnceLock::new();
 
-
-
 pub fn shutdown_receiver() -> watch::Receiver<bool> {
-
     let (tx, rx) = watch::channel(false);
 
     let _ = SHUTDOWN_TX.set(tx);
 
     rx
-
 }
-
-
 
 pub fn reset_shutdown() {
-
     if let Some(tx) = SHUTDOWN_TX.get() {
-
         let _ = tx.send(false);
-
     }
-
 }
-
-
 
 pub fn trigger_shutdown() {
-
     if let Some(tx) = SHUTDOWN_TX.get() {
-
         let _ = tx.send(true);
-
     }
-
 }
-
-
 
 pub async fn wait_for_shutdown(rx: watch::Receiver<bool>, drain_secs: u64) {
     #[cfg(unix)]
@@ -56,7 +36,6 @@ pub async fn wait_for_shutdown(rx: watch::Receiver<bool>, drain_secs: u64) {
 
 #[cfg(not(unix))]
 async fn wait_for_shutdown_common(mut rx: watch::Receiver<bool>, drain_secs: u64) {
-
     tokio::select! {
 
         _ = tokio::signal::ctrl_c() => {},
@@ -84,19 +63,13 @@ async fn wait_for_shutdown_common(mut rx: watch::Receiver<bool>, drain_secs: u64
     }
 
     if drain_secs > 0 {
-
         tokio::time::sleep(std::time::Duration::from_secs(drain_secs)).await;
-
     }
-
 }
-
-
 
 #[cfg(unix)]
 
 pub async fn wait_for_shutdown_signal(mut rx: watch::Receiver<bool>, drain_secs: u64) {
-
     use tokio::signal::unix::{signal, SignalKind};
 
     let mut term = signal(SignalKind::terminate()).ok();
@@ -134,10 +107,6 @@ pub async fn wait_for_shutdown_signal(mut rx: watch::Receiver<bool>, drain_secs:
     }
 
     if drain_secs > 0 {
-
         tokio::time::sleep(std::time::Duration::from_secs(drain_secs)).await;
-
     }
-
 }
-

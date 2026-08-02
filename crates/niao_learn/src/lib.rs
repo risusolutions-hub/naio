@@ -46,7 +46,6 @@ pub use tree::{Criterion, DecisionTreeClassifier, DecisionTreeRegressor};
 use niao_frame as _;
 use niao_stats as _;
 
-
 #[cfg(test)]
 mod sklearn_parity_tests {
     use super::*;
@@ -135,7 +134,11 @@ mod sklearn_parity_tests {
 
     #[test]
     fn standard_scaler_parity() {
-        let x = mat(fixtures::IRIS_X_ROWS, fixtures::IRIS_X_COLS, fixtures::IRIS_X);
+        let x = mat(
+            fixtures::IRIS_X_ROWS,
+            fixtures::IRIS_X_COLS,
+            fixtures::IRIS_X,
+        );
         let mut sc = StandardScaler::new();
         sc.fit(&x, None).unwrap();
         assert!(rel_close(
@@ -157,7 +160,11 @@ mod sklearn_parity_tests {
 
     #[test]
     fn minmax_scaler_parity() {
-        let x = mat(fixtures::IRIS_X_ROWS, fixtures::IRIS_X_COLS, fixtures::IRIS_X);
+        let x = mat(
+            fixtures::IRIS_X_ROWS,
+            fixtures::IRIS_X_COLS,
+            fixtures::IRIS_X,
+        );
         let mut sc = MinMaxScaler::new();
         sc.fit(&x, None).unwrap();
         let row = mat(1, 4, &fixtures::IRIS_X[..4]);
@@ -176,7 +183,11 @@ mod sklearn_parity_tests {
 
     #[test]
     fn logistic_binary_accuracy() {
-        let x = mat(fixtures::IRIS_X_ROWS, fixtures::IRIS_X_COLS, fixtures::IRIS_X);
+        let x = mat(
+            fixtures::IRIS_X_ROWS,
+            fixtures::IRIS_X_COLS,
+            fixtures::IRIS_X,
+        );
         let y = vec1(fixtures::LOG_BINARY_Y);
         let mut m = LogisticRegression::new();
         m.fit(&x, Some(&y)).unwrap();
@@ -190,7 +201,11 @@ mod sklearn_parity_tests {
 
     #[test]
     fn logistic_multiclass_accuracy() {
-        let x = mat(fixtures::IRIS_X_ROWS, fixtures::IRIS_X_COLS, fixtures::IRIS_X);
+        let x = mat(
+            fixtures::IRIS_X_ROWS,
+            fixtures::IRIS_X_COLS,
+            fixtures::IRIS_X,
+        );
         let y = vec1(fixtures::IRIS_Y);
         let mut m = LogisticRegression::new();
         m.fit(&x, Some(&y)).unwrap();
@@ -204,7 +219,11 @@ mod sklearn_parity_tests {
 
     #[test]
     fn pca_up_to_sign() {
-        let x = mat(fixtures::IRIS_X_ROWS, fixtures::IRIS_X_COLS, fixtures::IRIS_X);
+        let x = mat(
+            fixtures::IRIS_X_ROWS,
+            fixtures::IRIS_X_COLS,
+            fixtures::IRIS_X,
+        );
         let mut pca = PCA::new(2);
         pca.fit(&x, None).unwrap();
         let comps = pca.components.as_ref().unwrap();
@@ -212,11 +231,15 @@ mod sklearn_parity_tests {
         // compare each component up to sign
         for c in 0..2 {
             let ours = &comps[c * 4..(c + 1) * 4];
-            let theirs = &refc[c * fixtures::PCA_COMPONENTS_COLS..(c + 1) * fixtures::PCA_COMPONENTS_COLS];
+            let theirs =
+                &refc[c * fixtures::PCA_COMPONENTS_COLS..(c + 1) * fixtures::PCA_COMPONENTS_COLS];
             let same = rel_close(ours, theirs, 1e-5, 1e-6);
             let flipped: Vec<f64> = theirs.iter().map(|v| -v).collect();
             let opp = rel_close(ours, &flipped, 1e-5, 1e-6);
-            assert!(same || opp, "PCA component {c} mismatch: {ours:?} vs {theirs:?}");
+            assert!(
+                same || opp,
+                "PCA component {c} mismatch: {ours:?} vs {theirs:?}"
+            );
         }
     }
 
@@ -242,28 +265,41 @@ mod sklearn_parity_tests {
 
     #[test]
     fn kmeans_labels_up_to_permutation() {
-        let x = mat(fixtures::IRIS_X_ROWS, fixtures::IRIS_X_COLS, fixtures::IRIS_X);
+        let x = mat(
+            fixtures::IRIS_X_ROWS,
+            fixtures::IRIS_X_COLS,
+            fixtures::IRIS_X,
+        );
         let mut km = KMeans::new(3, 42);
         km.n_init = 1;
         km.fit(&x, None).unwrap();
         let labels = km.labels.as_ref().unwrap();
         assert!(
-            labels_match_up_to_perm(fixtures::KMEANS_LABELS, labels)
-                || {
-                    // our k-means++ may differ; check silhouette-free accuracy via inertia sanity
-                    labels.iter().all(|&l| l < 3) && km.inertia.is_finite()
-                }
+            labels_match_up_to_perm(fixtures::KMEANS_LABELS, labels) || {
+                // our k-means++ may differ; check silhouette-free accuracy via inertia sanity
+                labels.iter().all(|&l| l < 3) && km.inertia.is_finite()
+            }
         );
     }
 
     #[test]
     fn knn_parity() {
-        let x = mat(fixtures::IRIS_X_ROWS, fixtures::IRIS_X_COLS, fixtures::IRIS_X);
+        let x = mat(
+            fixtures::IRIS_X_ROWS,
+            fixtures::IRIS_X_COLS,
+            fixtures::IRIS_X,
+        );
         let y = vec1(fixtures::IRIS_Y);
         let mut m = KNeighborsClassifier::new(5);
         m.fit(&x, Some(&y)).unwrap();
-        let pred = m.predict(&mat(10, 4, &fixtures::IRIS_X[..40])).unwrap().to_vec();
-        let pref: Vec<f64> = fixtures::KNN_PRED_FIRST10.iter().map(|&v| v as f64).collect();
+        let pred = m
+            .predict(&mat(10, 4, &fixtures::IRIS_X[..40]))
+            .unwrap()
+            .to_vec();
+        let pref: Vec<f64> = fixtures::KNN_PRED_FIRST10
+            .iter()
+            .map(|&v| v as f64)
+            .collect();
         assert!(rel_close(&pred, &pref, 0.0, 1e-12));
         let acc = m.score(&x, &y).unwrap();
         assert!((acc - fixtures::KNN_ACC).abs() < 0.01);
@@ -271,7 +307,11 @@ mod sklearn_parity_tests {
 
     #[test]
     fn gaussian_nb_parity() {
-        let x = mat(fixtures::IRIS_X_ROWS, fixtures::IRIS_X_COLS, fixtures::IRIS_X);
+        let x = mat(
+            fixtures::IRIS_X_ROWS,
+            fixtures::IRIS_X_COLS,
+            fixtures::IRIS_X,
+        );
         let y = vec1(fixtures::IRIS_Y);
         let mut m = GaussianNB::new();
         m.fit(&x, Some(&y)).unwrap();
@@ -287,7 +327,11 @@ mod sklearn_parity_tests {
 
     #[test]
     fn decision_tree_accuracy() {
-        let x = mat(fixtures::IRIS_X_ROWS, fixtures::IRIS_X_COLS, fixtures::IRIS_X);
+        let x = mat(
+            fixtures::IRIS_X_ROWS,
+            fixtures::IRIS_X_COLS,
+            fixtures::IRIS_X,
+        );
         let y = vec1(fixtures::IRIS_Y);
         let mut m = DecisionTreeClassifier::new(3);
         m.fit(&x, Some(&y)).unwrap();
@@ -301,7 +345,11 @@ mod sklearn_parity_tests {
 
     #[test]
     fn random_forest_accuracy() {
-        let x = mat(fixtures::IRIS_X_ROWS, fixtures::IRIS_X_COLS, fixtures::IRIS_X);
+        let x = mat(
+            fixtures::IRIS_X_ROWS,
+            fixtures::IRIS_X_COLS,
+            fixtures::IRIS_X,
+        );
         let y = vec1(fixtures::IRIS_Y);
         let mut m = RandomForestClassifier::new(10, 3, 42);
         m.fit(&x, Some(&y)).unwrap();
@@ -315,7 +363,11 @@ mod sklearn_parity_tests {
 
     #[test]
     fn pipeline_matches_manual() {
-        let x = mat(fixtures::IRIS_X_ROWS, fixtures::IRIS_X_COLS, fixtures::IRIS_X);
+        let x = mat(
+            fixtures::IRIS_X_ROWS,
+            fixtures::IRIS_X_COLS,
+            fixtures::IRIS_X,
+        );
         let y = vec1(fixtures::LOG_BINARY_Y);
         let mut pipe = Pipeline::new(vec![
             ("sc".into(), Step::StandardScaler(StandardScaler::new())),

@@ -177,7 +177,9 @@ fn gammainc_series(a: f64, x: f64) -> StatsResult<f64> {
             return Ok(sum * (-x + a * x.ln() - lgamma(a)?).exp());
         }
     }
-    Err(StatsError::NonConvergence("gammainc series did not converge".into()))
+    Err(StatsError::NonConvergence(
+        "gammainc series did not converge".into(),
+    ))
 }
 
 fn gammainc_cf(a: f64, x: f64) -> StatsResult<f64> {
@@ -203,7 +205,9 @@ fn gammainc_cf(a: f64, x: f64) -> StatsResult<f64> {
             return Ok((-x + a * x.ln() - lgamma(a)?).exp() * h);
         }
     }
-    Err(StatsError::NonConvergence("gammainc cf did not converge".into()))
+    Err(StatsError::NonConvergence(
+        "gammainc cf did not converge".into(),
+    ))
 }
 
 /// Standard normal CDF.
@@ -326,7 +330,11 @@ mod tests {
 
     #[test]
     fn lgamma_vs_scipy() {
-        let cases = [(0.5, 0.5723649429247), (1.0, 0.0), (2.5, 0.2846828704729192)];
+        let cases = [
+            (0.5, 0.5723649429247),
+            (1.0, 0.0),
+            (2.5, 0.2846828704729192),
+        ];
         for (x, want) in cases {
             assert!(close(lgamma(x).unwrap(), want, 1e-9), "lgamma({x})");
         }
@@ -340,7 +348,11 @@ mod tests {
 
     #[test]
     fn gammainc_vs_scipy() {
-        assert!(close(gammainc(2.0, 0.5).unwrap(), 0.09020401043104986, 1e-9));
+        assert!(close(
+            gammainc(2.0, 0.5).unwrap(),
+            0.09020401043104986,
+            1e-9
+        ));
         assert!(close(gammainc(5.0, 3.0).unwrap(), 0.1847367554762279, 1e-9));
     }
 

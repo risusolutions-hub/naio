@@ -10,8 +10,7 @@ pub fn lowercase(s: &str) -> String {
 pub fn strip_accents(s: &str) -> String {
     let nfkd: String = s.nfd().collect();
     nfkd.chars()
-        .filter(|c| !unicode_general_category::get_general_category(*c)
-            .is_mark())
+        .filter(|c| !unicode_general_category::get_general_category(*c).is_mark())
         .collect()
 }
 
@@ -80,7 +79,9 @@ pub fn mask_patterns(s: &str) -> String {
     let bytes = s.as_bytes();
     let mut i = 0;
     while i < bytes.len() {
-        if let Some(rest) = s[i..].strip_prefix("http://").or_else(|| s[i..].strip_prefix("https://"))
+        if let Some(rest) = s[i..]
+            .strip_prefix("http://")
+            .or_else(|| s[i..].strip_prefix("https://"))
         {
             out.push_str("<URL>");
             i += s.len() - rest.len();
@@ -93,7 +94,11 @@ pub fn mask_patterns(s: &str) -> String {
             && i > 0
             && s[..i]
                 .rfind(|c: char| c.is_whitespace())
-                .map(|start| s[start + 1..i].chars().all(|c| c.is_alphanumeric() || c == '.' || c == '_' || c == '-'))
+                .map(|start| {
+                    s[start + 1..i]
+                        .chars()
+                        .all(|c| c.is_alphanumeric() || c == '.' || c == '_' || c == '-')
+                })
                 .unwrap_or(false)
         {
             out.push_str("<EMAIL>");
@@ -104,7 +109,9 @@ pub fn mask_patterns(s: &str) -> String {
         }
         if bytes[i].is_ascii_digit() {
             out.push_str("<NUM>");
-            while i < bytes.len() && (bytes[i].is_ascii_digit() || bytes[i] == b'.' || bytes[i] == b',') {
+            while i < bytes.len()
+                && (bytes[i].is_ascii_digit() || bytes[i] == b'.' || bytes[i] == b',')
+            {
                 i += 1;
             }
             continue;
@@ -170,8 +177,11 @@ mod unicode_general_category {
         }
         // Combining marks in Latin-1 supplement / Latin Extended-A ranges used by strip_accents.
         match c {
-            '\u{0300}'..='\u{036F}' | '\u{1AB0}'..='\u{1AFF}' | '\u{1DC0}'..='\u{1DFF}'
-            | '\u{20D0}'..='\u{20FF}' | '\u{FE20}'..='\u{FE2F}' => Category::Mark,
+            '\u{0300}'..='\u{036F}'
+            | '\u{1AB0}'..='\u{1AFF}'
+            | '\u{1DC0}'..='\u{1DFF}'
+            | '\u{20D0}'..='\u{20FF}'
+            | '\u{FE20}'..='\u{FE2F}' => Category::Mark,
             _ => Category::Other,
         }
     }

@@ -129,15 +129,9 @@ pub struct TrainTestSplit {
 }
 
 /// Shuffle-split rows. `test_size` in (0,1). Seeded LCG (ntune-compatible contract).
-pub fn train_test_split(
-    df: &DataFrame,
-    test_size: f64,
-    seed: u64,
-) -> FrameResult<TrainTestSplit> {
+pub fn train_test_split(df: &DataFrame, test_size: f64, seed: u64) -> FrameResult<TrainTestSplit> {
     if !(test_size > 0.0 && test_size < 1.0) {
-        return Err(FrameError::Error(
-            "test_size must be in (0, 1)".into(),
-        ));
+        return Err(FrameError::Error("test_size must be in (0, 1)".into()));
     }
     let n = df.nrows();
     if n < 2 {
@@ -148,9 +142,7 @@ pub fn train_test_split(
     let mut idx: Vec<usize> = (0..n).collect();
     let mut state = seed;
     for i in (1..n).rev() {
-        state = state
-            .wrapping_mul(6364136223846793005)
-            .wrapping_add(1);
+        state = state.wrapping_mul(6364136223846793005).wrapping_add(1);
         let j = (state as usize) % (i + 1);
         idx.swap(i, j);
     }

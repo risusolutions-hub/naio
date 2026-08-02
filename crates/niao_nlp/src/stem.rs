@@ -271,14 +271,11 @@ impl StemBuf {
             b'e' => self.ends("er"),
             b'i' => self.ends("ic"),
             b'l' => self.ends("able") || self.ends("ible"),
-            b'n' => {
-                self.ends("ant")
-                    || self.ends("ement")
-                    || self.ends("ment")
-                    || self.ends("ent")
-            }
+            b'n' => self.ends("ant") || self.ends("ement") || self.ends("ment") || self.ends("ent"),
             b'o' => {
-                (self.ends("ion") && self.j >= self.k0 && (self.b[self.j] == b's' || self.b[self.j] == b't'))
+                (self.ends("ion")
+                    && self.j >= self.k0
+                    && (self.b[self.j] == b's' || self.b[self.j] == b't'))
                     || self.ends("ou")
             }
             b's' => self.ends("ism"),
@@ -386,10 +383,7 @@ impl DictLemmatizer {
 
     pub fn lemmatize(&self, word: &str) -> String {
         let lower = word.to_lowercase();
-        self.map
-            .get(&lower)
-            .cloned()
-            .unwrap_or_else(|| lower)
+        self.map.get(&lower).cloned().unwrap_or_else(|| lower)
     }
 }
 

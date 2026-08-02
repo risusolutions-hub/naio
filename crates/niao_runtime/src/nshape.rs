@@ -144,11 +144,7 @@ fn check_against_string(value: &Value, expected: &str, errors: &mut Vec<String>)
     if type_name_matches(expected, value) {
         return;
     }
-    errors.push(format!(
-        "expected {}, got {}",
-        expected,
-        shape_of(value)
-    ));
+    errors.push(format!("expected {}, got {}", expected, shape_of(value)));
 }
 
 fn check_against_schema(
@@ -358,10 +354,7 @@ mod tests {
         let mut map = HashMap::new();
         map.insert("age".to_string(), Value::Int(27).ref_cell());
         map.insert("name".to_string(), Value::String("vivek".into()).ref_cell());
-        assert_eq!(
-            shape_of(&Value::Object(map)),
-            "{age: int, name: string}"
-        );
+        assert_eq!(shape_of(&Value::Object(map)), "{age: int, name: string}");
     }
 
     fn ok_flag(result: &ValueRef) -> bool {
@@ -407,11 +400,7 @@ mod tests {
 
     #[test]
     fn match_compares_shapes() {
-        let a = Value::Array(vec![
-            Value::Int(1).ref_cell(),
-            Value::Int(2).ref_cell(),
-        ])
-        .ref_cell();
+        let a = Value::Array(vec![Value::Int(1).ref_cell(), Value::Int(2).ref_cell()]).ref_cell();
         let b = Value::Array(vec![
             Value::String("x".into()).ref_cell(),
             Value::String("y".into()).ref_cell(),
@@ -428,8 +417,11 @@ mod tests {
     #[test]
     fn check_type_string() {
         let v = Value::Int(3).ref_cell();
-        let ok = nshape_check(&[Rc::clone(&v), Value::String("int".into()).ref_cell()], span())
-            .unwrap();
+        let ok = nshape_check(
+            &[Rc::clone(&v), Value::String("int".into()).ref_cell()],
+            span(),
+        )
+        .unwrap();
         assert!(ok_flag(&ok));
 
         let bad = nshape_check(&[v, Value::String("string".into()).ref_cell()], span()).unwrap();
@@ -445,12 +437,17 @@ mod tests {
         let value = Value::Object(fields).ref_cell();
 
         let mut schema = HashMap::new();
-        schema.insert("name".to_string(), Value::String("string".into()).ref_cell());
+        schema.insert(
+            "name".to_string(),
+            Value::String("string".into()).ref_cell(),
+        );
         schema.insert("age".to_string(), Value::String("int".into()).ref_cell());
-        schema.insert("email".to_string(), Value::String("string".into()).ref_cell());
+        schema.insert(
+            "email".to_string(),
+            Value::String("string".into()).ref_cell(),
+        );
 
-        let result =
-            nshape_check(&[value, Value::Object(schema).ref_cell()], span()).unwrap();
+        let result = nshape_check(&[value, Value::Object(schema).ref_cell()], span()).unwrap();
         assert!(!ok_flag(&result));
         assert_eq!(error_count(&result), 1);
         match &*result.borrow() {
@@ -468,10 +465,7 @@ mod tests {
     fn check_array_type_name() {
         let arr = Value::IntArray(vec![1, 2, 3]).ref_cell();
         let r = nshape_check(
-            &[
-                Rc::clone(&arr),
-                Value::String("array".into()).ref_cell(),
-            ],
+            &[Rc::clone(&arr), Value::String("array".into()).ref_cell()],
             span(),
         )
         .unwrap();

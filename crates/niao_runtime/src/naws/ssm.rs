@@ -43,7 +43,10 @@ pub fn ssm_get(args: &[ValueRef], span: Span) -> AwsResult {
     let (amz_dt, amz_d) = now_amz();
 
     let ct = "application/x-amz-json-1.1";
-    let extra = [("content-type", ct), ("x-amz-target", "AmazonSSM.GetParameter")];
+    let extra = [
+        ("content-type", ct),
+        ("x-amz-target", "AmazonSSM.GetParameter"),
+    ];
     let inp = SignInput {
         method: "POST",
         host: &host,

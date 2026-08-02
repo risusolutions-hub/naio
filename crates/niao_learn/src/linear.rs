@@ -133,7 +133,9 @@ impl Estimator for Ridge {
         }
         // (X'X + α I) β = X'y
         let x_arr = matrix_from((n, d), xv)?;
-        let xt = x_arr.transpose().map_err(|e| LearnError::Error(e.to_string()))?;
+        let xt = x_arr
+            .transpose()
+            .map_err(|e| LearnError::Error(e.to_string()))?;
         let mut xtx = matmul(&xt, &x_arr).map_err(|e| LearnError::Error(e.to_string()))?;
         let mut g = xtx.to_vec();
         for i in 0..d {
@@ -142,8 +144,13 @@ impl Estimator for Ridge {
         xtx = matrix_from((d, d), g)?;
         let y_arr = vector_from(yv)?;
         // X'y as column
-        let xty = matmul(&xt, &y_arr.reshape(vec![n, 1]).map_err(|e| LearnError::Error(e.to_string()))?)
-            .map_err(|e| LearnError::Error(e.to_string()))?;
+        let xty = matmul(
+            &xt,
+            &y_arr
+                .reshape(vec![n, 1])
+                .map_err(|e| LearnError::Error(e.to_string()))?,
+        )
+        .map_err(|e| LearnError::Error(e.to_string()))?;
         let beta = solve(&xtx, &xty).map_err(|e| LearnError::Error(e.to_string()))?;
         let coef = beta.to_vec();
         if self.fit_intercept {
@@ -300,16 +307,7 @@ impl Estimator for Lasso {
                 }
             }
         }
-        let coef = coordinate_descent(
-            &xv,
-            &yv,
-            n,
-            d,
-            self.alpha,
-            1.0,
-            self.max_iter,
-            self.tol,
-        )?;
+        let coef = coordinate_descent(&xv, &yv, n, d, self.alpha, 1.0, self.max_iter, self.tol)?;
         if self.fit_intercept {
             let mut intercept = y_mean;
             for j in 0..d {

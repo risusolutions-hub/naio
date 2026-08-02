@@ -11,7 +11,7 @@
 //! - Budgets/throttle are plain atomics: one load on the hot path.
 
 use std::process::Command;
-use std::sync::atomic::{AtomicBool, AtomicI64, AtomicU8, AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicI64, AtomicU64, AtomicU8, Ordering};
 use std::sync::{Mutex, OnceLock};
 use std::time::{Duration, Instant};
 
@@ -47,7 +47,9 @@ pub fn run_cmd_timeout(program: &str, args: &[&str], timeout_ms: u64) -> Option<
         });
         let _ = tx.send(out);
     });
-    rx.recv_timeout(Duration::from_millis(timeout_ms)).ok().flatten()
+    rx.recv_timeout(Duration::from_millis(timeout_ms))
+        .ok()
+        .flatten()
 }
 
 // ===========================================================================
@@ -373,7 +375,12 @@ pub fn ram_stats_mb() -> (i64, i64) {
         if cfg!(windows) {
             if let Some(out) = run_cmd(
                 "wmic",
-                &["OS", "get", "FreePhysicalMemory,TotalVisibleMemorySize", "/value"],
+                &[
+                    "OS",
+                    "get",
+                    "FreePhysicalMemory,TotalVisibleMemorySize",
+                    "/value",
+                ],
             ) {
                 let mut free_kb = -1i64;
                 let mut total_kb = -1i64;
@@ -411,8 +418,7 @@ pub fn ram_stats_mb() -> (i64, i64) {
                     out.lines()
                         .find(|l| l.starts_with(key))
                         .map(|l| {
-                            let digits: String =
-                                l.chars().filter(|c| c.is_ascii_digit()).collect();
+                            let digits: String = l.chars().filter(|c| c.is_ascii_digit()).collect();
                             digits.parse().unwrap_or(0)
                         })
                         .unwrap_or(0)
@@ -532,7 +538,10 @@ fn probe_rocm() -> Option<Vec<GpuInfo>> {
 fn probe_generic() -> Vec<GpuInfo> {
     let mut gpus = Vec::new();
     if cfg!(windows) {
-        if let Some(out) = run_cmd("wmic", &["path", "win32_VideoController", "get", "Name", "/value"]) {
+        if let Some(out) = run_cmd(
+            "wmic",
+            &["path", "win32_VideoController", "get", "Name", "/value"],
+        ) {
             for line in out.lines() {
                 if let Some(name) = line.trim().strip_prefix("Name=") {
                     let name = name.trim();

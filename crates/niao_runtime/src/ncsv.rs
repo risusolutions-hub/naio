@@ -27,12 +27,21 @@ fn type_err(span: Span, msg: impl Into<String>) -> RuntimeError {
     }
 }
 
-fn arity_range(args: &[ValueRef], min: usize, max: usize, name: &str, span: Span) -> NiaoResult<()> {
+fn arity_range(
+    args: &[ValueRef],
+    min: usize,
+    max: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<()> {
     if args.len() < min || args.len() > max {
         return Err(RuntimeError::at(
             span,
             E2850_NCSV_ARITY,
-            format!("{name}() expects {min}..={max} argument(s), got {}", args.len()),
+            format!(
+                "{name}() expects {min}..={max} argument(s), got {}",
+                args.len()
+            ),
         ));
     }
     Ok(())
@@ -52,10 +61,7 @@ fn string_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> NiaoResu
     }
 }
 
-fn optional_object_arg(
-    args: &[ValueRef],
-    idx: usize,
-) -> Option<HashMap<String, ValueRef>> {
+fn optional_object_arg(args: &[ValueRef], idx: usize) -> Option<HashMap<String, ValueRef>> {
     if args.len() <= idx {
         return None;
     }
@@ -78,11 +84,7 @@ fn bool_field(map: Option<&HashMap<String, ValueRef>>, key: &str, default: bool)
     }
 }
 
-fn string_field(
-    map: Option<&HashMap<String, ValueRef>>,
-    key: &str,
-    default: &str,
-) -> String {
+fn string_field(map: Option<&HashMap<String, ValueRef>>, key: &str, default: &str) -> String {
     let Some(map) = map else {
         return default.to_string();
     };
@@ -100,9 +102,9 @@ fn char_field(
 ) -> Result<char, RuntimeError> {
     let s = string_field(map, key, &default.to_string());
     let mut chars = s.chars();
-    let first = chars.next().ok_or_else(|| {
-        type_err(span, format!("opts.{key} must be a non-empty string"))
-    })?;
+    let first = chars
+        .next()
+        .ok_or_else(|| type_err(span, format!("opts.{key} must be a non-empty string")))?;
     if chars.next().is_some() {
         return Err(type_err(
             span,
@@ -131,7 +133,11 @@ fn names_field(
                     other => {
                         return Err(type_err(
                             span,
-                            format!("opts.names[{}] must be a string, got {}", i, other.type_name()),
+                            format!(
+                                "opts.names[{}] must be a string, got {}",
+                                i,
+                                other.type_name()
+                            ),
                         ))
                     }
                 }
@@ -140,7 +146,10 @@ fn names_field(
         }
         other => Err(type_err(
             span,
-            format!("opts.names must be an array of strings, got {}", other.type_name()),
+            format!(
+                "opts.names must be an array of strings, got {}",
+                other.type_name()
+            ),
         )),
     }
 }
@@ -380,7 +389,9 @@ fn rows_to_records(
                         records.push(cells.iter().map(|c| value_to_cell(&c.borrow())).collect());
                     }
                     Value::Object(map) => {
-                        let cols = columns.map(|c| c.to_vec()).unwrap_or_else(|| object_columns(map));
+                        let cols = columns
+                            .map(|c| c.to_vec())
+                            .unwrap_or_else(|| object_columns(map));
                         records.push(object_row(map, &cols));
                     }
                     other => {
@@ -497,7 +508,10 @@ ncsv_fns![
 ];
 
 fn all_builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(flat, _, f)| (flat, f)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(flat, _, f)| (flat, f))
+        .collect()
 }
 
 pub fn namespace() -> Value {
@@ -562,10 +576,7 @@ mod tests {
                 assert_eq!(items.len(), 2);
                 match &*items[0].borrow() {
                     Value::Object(map) => {
-                        assert_eq!(
-                            value_to_cell(&map.get("name").unwrap().borrow()),
-                            "alice"
-                        );
+                        assert_eq!(value_to_cell(&map.get("name").unwrap().borrow()), "alice");
                         assert_eq!(value_to_cell(&map.get("age").unwrap().borrow()), "30");
                     }
                     other => panic!("expected object, got {other:?}"),

@@ -162,11 +162,7 @@ impl LlmSession {
             }
         }
 
-        let sess = candle_backend::CandleSession::load(
-            model_path,
-            opts.tokenizer_path,
-            opts.cpu,
-        )?;
+        let sess = candle_backend::CandleSession::load(model_path, opts.tokenizer_path, opts.cpu)?;
         let device_label = sess.device_label();
         Ok(Self {
             engine: Engine::Candle(sess),

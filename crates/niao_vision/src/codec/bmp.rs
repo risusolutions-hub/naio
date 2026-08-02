@@ -70,8 +70,7 @@ pub fn decode(bytes: &[u8]) -> VisionResult<Image> {
             for y in 0..height {
                 let src_y = if bottom_up { height - 1 - y } else { y };
                 let row = pixel_offset + src_y * row_bytes;
-                data[y * width..(y + 1) * width]
-                    .copy_from_slice(&bytes[row..row + width]);
+                data[y * width..(y + 1) * width].copy_from_slice(&bytes[row..row + width]);
             }
             Image::new(height, width, ColorMode::Gray, data)
         }
@@ -137,8 +136,7 @@ pub fn encode(img: &Image) -> VisionResult<Vec<u8>> {
         let src_y = h - 1 - y;
         let dst_row = pixel_offset + y * row_bytes;
         let src = src_y * w * bytes_pp;
-        out[dst_row..dst_row + w * bytes_pp]
-            .copy_from_slice(&mode_data[src..src + w * bytes_pp]);
+        out[dst_row..dst_row + w * bytes_pp].copy_from_slice(&mode_data[src..src + w * bytes_pp]);
     }
     Ok(out)
 }

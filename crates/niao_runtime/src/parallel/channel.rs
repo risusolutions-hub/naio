@@ -86,7 +86,11 @@ where
             if let Value::Error(e) = &*v.borrow() {
                 crate::RuntimeError::at(span, e.code, e.message.clone())
             } else {
-                crate::RuntimeError::at(span, codes::E1502_PARALLEL_CHANNEL, "channel operation failed")
+                crate::RuntimeError::at(
+                    span,
+                    codes::E1502_PARALLEL_CHANNEL,
+                    "channel operation failed",
+                )
             }
         })
     })
@@ -272,5 +276,7 @@ pub fn parallel_channel_recv_timeout(args: &[ValueRef], span: Span) -> ParallelR
 pub fn parallel_channel_is_closed(args: &[ValueRef], span: Span) -> ParallelResult {
     arity(args, 1, "parallel_channel_is_closed", span)?;
     let id = handle_arg(args, 0, "parallel_channel_is_closed", span)?;
-    with_channel(id, "parallel_channel_is_closed", span, |ch| Ok(ok_bool(ch.closed.get())))
+    with_channel(id, "parallel_channel_is_closed", span, |ch| {
+        Ok(ok_bool(ch.closed.get()))
+    })
 }

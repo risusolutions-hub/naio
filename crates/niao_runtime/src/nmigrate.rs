@@ -1,4 +1,4 @@
-﻿//! Native nmigrate standard library — schema diff from nmodel-style struct
+//! Native nmigrate standard library — schema diff from nmodel-style struct
 //! definitions to SQL migration statements (SQLite / PostgreSQL).
 //!
 //! Import with `import "nmigrate"` (or `import "std/nmigrate"`).
@@ -205,13 +205,19 @@ fn parse_schema(val: &ValueRef, span: Span) -> Result<SchemaHandle, RuntimeError
             other => {
                 return Err(schema_err(
                     span,
-                    format!("model \"{model_name}\" must be object, got {}", other.type_name()),
+                    format!(
+                        "model \"{model_name}\" must be object, got {}",
+                        other.type_name()
+                    ),
                 ))
             }
         };
-        let fields_ref = model_obj
-            .get("fields")
-            .ok_or_else(|| schema_err(span, format!("model \"{model_name}\" missing \"fields\" key")))?;
+        let fields_ref = model_obj.get("fields").ok_or_else(|| {
+            schema_err(
+                span,
+                format!("model \"{model_name}\" missing \"fields\" key"),
+            )
+        })?;
         let fields_borrow = fields_ref.borrow();
         let fields_obj = match &*fields_borrow {
             Value::Object(m) => m,
@@ -308,12 +314,21 @@ fn arity(args: &[ValueRef], n: usize, name: &str, span: Span) -> NiaoResult<()> 
     Ok(())
 }
 
-fn arity_range(args: &[ValueRef], min: usize, max: usize, name: &str, span: Span) -> NiaoResult<()> {
+fn arity_range(
+    args: &[ValueRef],
+    min: usize,
+    max: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<()> {
     if args.len() < min || args.len() > max {
         return Err(RuntimeError::at(
             span,
             E3260_NMIGRATE_ARITY,
-            format!("{name}() expects {min}..={max} argument(s), got {}", args.len()),
+            format!(
+                "{name}() expects {min}..={max} argument(s), got {}",
+                args.len()
+            ),
         ));
     }
     Ok(())
@@ -526,7 +541,12 @@ fn diff_schemas(old: &SchemaHandle, new: &SchemaHandle) -> (Vec<Change>, HashMap
     (changes, summary)
 }
 
-fn sql_for_changes(changes: &[Change], old: &SchemaHandle, new: &SchemaHandle, dialect: Dialect) -> Vec<String> {
+fn sql_for_changes(
+    changes: &[Change],
+    old: &SchemaHandle,
+    new: &SchemaHandle,
+    dialect: Dialect,
+) -> Vec<String> {
     let mut out = Vec::new();
     for ch in changes {
         match ch.kind {
@@ -555,12 +575,18 @@ fn change_to_value(ch: &Change) -> ValueRef {
         ChangeKind::AlterColumn => "alter_column",
     };
     map.insert("kind".to_string(), Value::String(kind.into()).ref_cell());
-    map.insert("table".to_string(), Value::String(ch.table.clone()).ref_cell());
+    map.insert(
+        "table".to_string(),
+        Value::String(ch.table.clone()).ref_cell(),
+    );
     if let Some(ref col) = ch.column {
         map.insert("column".to_string(), Value::String(col.clone()).ref_cell());
     }
     if let Some(ref from) = ch.from_type {
-        map.insert("from_type".to_string(), Value::String(from.clone()).ref_cell());
+        map.insert(
+            "from_type".to_string(),
+            Value::String(from.clone()).ref_cell(),
+        );
     }
     if let Some(ref to) = ch.to_type {
         map.insert("to_type".to_string(), Value::String(to.clone()).ref_cell());
@@ -568,7 +594,10 @@ fn change_to_value(ch: &Change) -> ValueRef {
     if let Some(ref field) = ch.field {
         if ch.kind != ChangeKind::CreateTable {
             let mut fmap = HashMap::new();
-            fmap.insert("name".to_string(), Value::String(field.name.clone()).ref_cell());
+            fmap.insert(
+                "name".to_string(),
+                Value::String(field.name.clone()).ref_cell(),
+            );
             let ty = match field.ty {
                 FieldType::Int => "int",
                 FieldType::Float => "float",
@@ -604,8 +633,7 @@ fn nmigrate_diff(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let mut out = HashMap::new();
     out.insert(
         "changes".to_string(),
-        Value::Array(changes.iter().map(change_to_value).collect())
-            .ref_cell(),
+        Value::Array(changes.iter().map(change_to_value).collect()).ref_cell(),
     );
     out.insert("summary".to_string(), summary_to_value(&summary));
     Ok(Value::Object(out).ref_cell())
@@ -638,8 +666,7 @@ fn nmigrate_plan(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let mut out = HashMap::new();
     out.insert(
         "changes".to_string(),
-        Value::Array(changes.iter().map(change_to_value).collect())
-            .ref_cell(),
+        Value::Array(changes.iter().map(change_to_value).collect()).ref_cell(),
     );
     out.insert("summary".to_string(), summary_to_value(&summary));
     out.insert(
@@ -685,7 +712,10 @@ nmigrate_fns![
 ];
 
 fn all_builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(flat, _, f)| (flat, f)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(flat, _, f)| (flat, f))
+        .collect()
 }
 
 pub fn namespace() -> Value {

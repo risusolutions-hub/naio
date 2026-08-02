@@ -1,6 +1,4 @@
-pub(crate) const TRANS_UTC: &[(i64, i32)] = &[
-    (946684800, 0),
-];
+pub(crate) const TRANS_UTC: &[(i64, i32)] = &[(946684800, 0)];
 
 pub(crate) const TRANS_AMERICA_NEW_YORK: &[(i64, i32)] = &[
     (946684800, -18000),
@@ -446,13 +444,9 @@ pub(crate) const TRANS_EUROPE_PARIS: &[(i64, i32)] = &[
     (2045696400, 3600),
 ];
 
-pub(crate) const TRANS_ASIA_KOLKATA: &[(i64, i32)] = &[
-    (946684800, 19800),
-];
+pub(crate) const TRANS_ASIA_KOLKATA: &[(i64, i32)] = &[(946684800, 19800)];
 
-pub(crate) const TRANS_ASIA_TOKYO: &[(i64, i32)] = &[
-    (946684800, 32400),
-];
+pub(crate) const TRANS_ASIA_TOKYO: &[(i64, i32)] = &[(946684800, 32400)];
 
 pub(crate) const TRANS_AUSTRALIA_SYDNEY: &[(i64, i32)] = &[
     (946684800, 39600),

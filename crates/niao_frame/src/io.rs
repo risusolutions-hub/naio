@@ -71,7 +71,13 @@ pub fn to_csv(df: &DataFrame, opts: CsvOptions) -> FrameResult<String> {
     let mut out = String::new();
     if opts.header {
         let names = df.column_names();
-        out.push_str(&names.iter().map(|n| escape_csv(n, delim)).collect::<Vec<_>>().join(&delim.to_string()));
+        out.push_str(
+            &names
+                .iter()
+                .map(|n| escape_csv(n, delim))
+                .collect::<Vec<_>>()
+                .join(&delim.to_string()),
+        );
         out.push('\n');
     }
     for r in 0..df.nrows() {
@@ -219,9 +225,7 @@ fn infer_series(name: String, raw: &[String]) -> FrameResult<Series> {
     if all_bool && nulls.len() < raw.len() {
         // only bool if every non-null is bool
         let non_null_bool = raw.iter().enumerate().all(|(i, s)| {
-            nulls.contains(&i)
-                || s.eq_ignore_ascii_case("true")
-                || s.eq_ignore_ascii_case("false")
+            nulls.contains(&i) || s.eq_ignore_ascii_case("true") || s.eq_ignore_ascii_case("false")
         });
         if non_null_bool {
             return Series::from_bool(name, bools).with_validity(validity);
@@ -310,9 +314,7 @@ fn escape_json_str(s: &str) -> String {
 pub fn parse_json_records(text: &str) -> FrameResult<DataFrame> {
     let text = text.trim();
     if !text.starts_with('[') || !text.ends_with(']') {
-        return Err(FrameError::Error(
-            "JSON must be an array of objects".into(),
-        ));
+        return Err(FrameError::Error("JSON must be an array of objects".into()));
     }
     let inner = &text[1..text.len() - 1];
     let objects = split_top_level(inner, ',')?;

@@ -28,7 +28,13 @@ impl GBRegressor {
         })
     }
 
-    pub fn fit(&mut self, x: &[f64], n_rows: usize, n_features: usize, y: &[f64]) -> BoostResult<()> {
+    pub fn fit(
+        &mut self,
+        x: &[f64],
+        n_rows: usize,
+        n_features: usize,
+        y: &[f64],
+    ) -> BoostResult<()> {
         self.fit_with_eval(x, n_rows, n_features, y, None)
     }
 
@@ -53,8 +59,12 @@ impl GBRegressor {
             (ds, ey)
         });
         let objective = SquaredError;
-        self.booster
-            .fit(&objective, &train, y, eval_set.as_ref().map(|(d, y)| (d, *y)))
+        self.booster.fit(
+            &objective,
+            &train,
+            y,
+            eval_set.as_ref().map(|(d, y)| (d, *y)),
+        )
     }
 
     pub fn predict(&self, x: &[f64], n_rows: usize, n_features: usize) -> BoostResult<Vec<f64>> {
@@ -65,7 +75,13 @@ impl GBRegressor {
         self.booster.predict(&data)
     }
 
-    pub fn score(&self, x: &[f64], n_rows: usize, n_features: usize, y: &[f64]) -> BoostResult<f64> {
+    pub fn score(
+        &self,
+        x: &[f64],
+        n_rows: usize,
+        n_features: usize,
+        y: &[f64],
+    ) -> BoostResult<f64> {
         let preds = self.predict(x, n_rows, n_features)?;
         Ok(r2_score(&preds, y))
     }
@@ -94,10 +110,6 @@ pub fn r2_score(preds: &[f64], labels: &[f64]) -> f64 {
     if ss_tot <= 0.0 {
         return 1.0;
     }
-    let ss_res: f64 = preds
-        .iter()
-        .zip(labels)
-        .map(|(p, y)| (y - p).powi(2))
-        .sum();
+    let ss_res: f64 = preds.iter().zip(labels).map(|(p, y)| (y - p).powi(2)).sum();
     1.0 - ss_res / ss_tot
 }

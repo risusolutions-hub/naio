@@ -69,12 +69,21 @@ fn arity(args: &[ValueRef], n: usize, name: &str, span: Span) -> NiaoResult<()> 
     Ok(())
 }
 
-fn arity_range(args: &[ValueRef], min: usize, max: usize, name: &str, span: Span) -> NiaoResult<()> {
+fn arity_range(
+    args: &[ValueRef],
+    min: usize,
+    max: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<()> {
     if args.len() < min || args.len() > max {
         return Err(RuntimeError::at(
             span,
             codes::E4000_NNUM_ARITY,
-            format!("{name}() expects {min}..={max} argument(s), got {}", args.len()),
+            format!(
+                "{name}() expects {min}..={max} argument(s), got {}",
+                args.len()
+            ),
         ));
     }
     Ok(())
@@ -278,12 +287,18 @@ fn nnum_matmul(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity(args, 2, "nnum_matmul", span)?;
     let a_id = handle_arg(args, 0, "nnum_matmul", span)?;
     let b_id = handle_arg(args, 1, "nnum_matmul", span)?;
-    let a = HANDLES.with(|h| h.borrow().get(&a_id).cloned().ok_or_else(|| {
-        RuntimeError::at(span, codes::E4001_NNUM_ERROR, "invalid handle")
-    }))?;
-    let b = HANDLES.with(|h| h.borrow().get(&b_id).cloned().ok_or_else(|| {
-        RuntimeError::at(span, codes::E4001_NNUM_ERROR, "invalid handle")
-    }))?;
+    let a = HANDLES.with(|h| {
+        h.borrow()
+            .get(&a_id)
+            .cloned()
+            .ok_or_else(|| RuntimeError::at(span, codes::E4001_NNUM_ERROR, "invalid handle"))
+    })?;
+    let b = HANDLES.with(|h| {
+        h.borrow()
+            .get(&b_id)
+            .cloned()
+            .ok_or_else(|| RuntimeError::at(span, codes::E4001_NNUM_ERROR, "invalid handle"))
+    })?;
     let out = niao_num::matmul(&a, &b).map_err(num_err(span))?;
     Ok(ok_handle(alloc_handle(out)))
 }
@@ -296,9 +311,12 @@ fn nnum_sum(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     } else {
         None
     };
-    let a = HANDLES.with(|h| h.borrow().get(&id).cloned().ok_or_else(|| {
-        RuntimeError::at(span, codes::E4001_NNUM_ERROR, "invalid handle")
-    }))?;
+    let a = HANDLES.with(|h| {
+        h.borrow()
+            .get(&id)
+            .cloned()
+            .ok_or_else(|| RuntimeError::at(span, codes::E4001_NNUM_ERROR, "invalid handle"))
+    })?;
     let out = niao_num::sum(&a, axis).map_err(num_err(span))?;
     Ok(ok_handle(alloc_handle(out)))
 }
@@ -306,9 +324,12 @@ fn nnum_sum(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
 fn nnum_inv(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity(args, 1, "nnum_inv", span)?;
     let id = handle_arg(args, 0, "nnum_inv", span)?;
-    let a = HANDLES.with(|h| h.borrow().get(&id).cloned().ok_or_else(|| {
-        RuntimeError::at(span, codes::E4001_NNUM_ERROR, "invalid handle")
-    }))?;
+    let a = HANDLES.with(|h| {
+        h.borrow()
+            .get(&id)
+            .cloned()
+            .ok_or_else(|| RuntimeError::at(span, codes::E4001_NNUM_ERROR, "invalid handle"))
+    })?;
     let out = niao_num::inv(&a).map_err(num_err(span))?;
     Ok(ok_handle(alloc_handle(out)))
 }
@@ -321,9 +342,12 @@ fn nnum_mean(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     } else {
         None
     };
-    let a = HANDLES.with(|h| h.borrow().get(&id).cloned().ok_or_else(|| {
-        RuntimeError::at(span, codes::E4001_NNUM_ERROR, "invalid handle")
-    }))?;
+    let a = HANDLES.with(|h| {
+        h.borrow()
+            .get(&id)
+            .cloned()
+            .ok_or_else(|| RuntimeError::at(span, codes::E4001_NNUM_ERROR, "invalid handle"))
+    })?;
     let out = niao_num::mean(&a, axis).map_err(num_err(span))?;
     Ok(ok_handle(alloc_handle(out)))
 }
@@ -332,12 +356,18 @@ fn nnum_solve(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity(args, 2, "nnum_solve", span)?;
     let a_id = handle_arg(args, 0, "nnum_solve", span)?;
     let b_id = handle_arg(args, 1, "nnum_solve", span)?;
-    let a = HANDLES.with(|h| h.borrow().get(&a_id).cloned().ok_or_else(|| {
-        RuntimeError::at(span, codes::E4001_NNUM_ERROR, "invalid handle")
-    }))?;
-    let b = HANDLES.with(|h| h.borrow().get(&b_id).cloned().ok_or_else(|| {
-        RuntimeError::at(span, codes::E4001_NNUM_ERROR, "invalid handle")
-    }))?;
+    let a = HANDLES.with(|h| {
+        h.borrow()
+            .get(&a_id)
+            .cloned()
+            .ok_or_else(|| RuntimeError::at(span, codes::E4001_NNUM_ERROR, "invalid handle"))
+    })?;
+    let b = HANDLES.with(|h| {
+        h.borrow()
+            .get(&b_id)
+            .cloned()
+            .ok_or_else(|| RuntimeError::at(span, codes::E4001_NNUM_ERROR, "invalid handle"))
+    })?;
     let out = niao_num::solve(&a, &b).map_err(num_err(span))?;
     Ok(ok_handle(alloc_handle(out)))
 }
@@ -369,12 +399,18 @@ fn nnum_dot(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity(args, 2, "nnum_dot", span)?;
     let a_id = handle_arg(args, 0, "nnum_dot", span)?;
     let b_id = handle_arg(args, 1, "nnum_dot", span)?;
-    let a = HANDLES.with(|h| h.borrow().get(&a_id).cloned().ok_or_else(|| {
-        RuntimeError::at(span, codes::E4001_NNUM_ERROR, "invalid handle")
-    }))?;
-    let b = HANDLES.with(|h| h.borrow().get(&b_id).cloned().ok_or_else(|| {
-        RuntimeError::at(span, codes::E4001_NNUM_ERROR, "invalid handle")
-    }))?;
+    let a = HANDLES.with(|h| {
+        h.borrow()
+            .get(&a_id)
+            .cloned()
+            .ok_or_else(|| RuntimeError::at(span, codes::E4001_NNUM_ERROR, "invalid handle"))
+    })?;
+    let b = HANDLES.with(|h| {
+        h.borrow()
+            .get(&b_id)
+            .cloned()
+            .ok_or_else(|| RuntimeError::at(span, codes::E4001_NNUM_ERROR, "invalid handle"))
+    })?;
     let d = niao_num::dot(&a, &b).map_err(num_err(span))?;
     Ok(ok_float(d))
 }
@@ -382,9 +418,12 @@ fn nnum_dot(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
 fn nnum_transpose(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity(args, 1, "nnum_transpose", span)?;
     let id = handle_arg(args, 0, "nnum_transpose", span)?;
-    let a = HANDLES.with(|h| h.borrow().get(&id).cloned().ok_or_else(|| {
-        RuntimeError::at(span, codes::E4001_NNUM_ERROR, "invalid handle")
-    }))?;
+    let a = HANDLES.with(|h| {
+        h.borrow()
+            .get(&id)
+            .cloned()
+            .ok_or_else(|| RuntimeError::at(span, codes::E4001_NNUM_ERROR, "invalid handle"))
+    })?;
     let out = a.transpose().map_err(num_err(span))?;
     Ok(ok_handle(alloc_handle(out)))
 }
@@ -399,12 +438,18 @@ fn nnum_add(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity(args, 2, "nnum_add", span)?;
     let a_id = handle_arg(args, 0, "nnum_add", span)?;
     let b_id = handle_arg(args, 1, "nnum_add", span)?;
-    let a = HANDLES.with(|h| h.borrow().get(&a_id).cloned().ok_or_else(|| {
-        RuntimeError::at(span, codes::E4001_NNUM_ERROR, "invalid handle")
-    }))?;
-    let b = HANDLES.with(|h| h.borrow().get(&b_id).cloned().ok_or_else(|| {
-        RuntimeError::at(span, codes::E4001_NNUM_ERROR, "invalid handle")
-    }))?;
+    let a = HANDLES.with(|h| {
+        h.borrow()
+            .get(&a_id)
+            .cloned()
+            .ok_or_else(|| RuntimeError::at(span, codes::E4001_NNUM_ERROR, "invalid handle"))
+    })?;
+    let b = HANDLES.with(|h| {
+        h.borrow()
+            .get(&b_id)
+            .cloned()
+            .ok_or_else(|| RuntimeError::at(span, codes::E4001_NNUM_ERROR, "invalid handle"))
+    })?;
     let out = niao_num::add(&a, &b).map_err(num_err(span))?;
     Ok(ok_handle(alloc_handle(out)))
 }
@@ -443,7 +488,10 @@ pub const MODULE_NAME: &str = "nnum";
 pub const MODULE_PATHS: &[&str] = &["nnum", "std/nnum"];
 
 pub fn builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(f, _, fn_)| (f, fn_)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(f, _, fn_)| (f, fn_))
+        .collect()
 }
 
 pub fn namespace() -> Value {

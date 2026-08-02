@@ -1,4 +1,4 @@
-﻿//! Native nconfig standard library — layered configuration:
+//! Native nconfig standard library — layered configuration:
 //! defaults → file (json/toml) → env → args, with typed schema validation.
 //!
 //! Import with `import "nconfig"` (or `import "std/nconfig"`).
@@ -78,12 +78,21 @@ fn arity(args: &[ValueRef], n: usize, name: &str, span: Span) -> NiaoResult<()> 
     Ok(())
 }
 
-fn arity_range(args: &[ValueRef], min: usize, max: usize, name: &str, span: Span) -> NiaoResult<()> {
+fn arity_range(
+    args: &[ValueRef],
+    min: usize,
+    max: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<()> {
     if args.len() < min || args.len() > max {
         return Err(RuntimeError::at(
             span,
             E3160_NCONFIG_ARITY,
-            format!("{name}() expects {min}..={max} argument(s), got {}", args.len()),
+            format!(
+                "{name}() expects {min}..={max} argument(s), got {}",
+                args.len()
+            ),
         ));
     }
     Ok(())
@@ -233,9 +242,13 @@ fn parse_file_text(path: &str, text: &str, span: Span) -> NiaoResult<Value> {
         parse_json_text(text, span)
     } else {
         parse_json_text(text, span).or_else(|_| {
-            parse_to_value(text)
-                .map(json_to_value)
-                .map_err(|e| RuntimeError::at(span, E3161_NCONFIG_ERROR, format!("invalid config file: {e}")))
+            parse_to_value(text).map(json_to_value).map_err(|e| {
+                RuntimeError::at(
+                    span,
+                    E3161_NCONFIG_ERROR,
+                    format!("invalid config file: {e}"),
+                )
+            })
         })
     }
 }
@@ -245,9 +258,7 @@ fn parse_file_text(path: &str, text: &str, span: Span) -> NiaoResult<Value> {
 // ---------------------------------------------------------------------------
 
 fn clone_object(map: &HashMap<String, ValueRef>) -> HashMap<String, ValueRef> {
-    map.iter()
-        .map(|(k, v)| (k.clone(), Rc::clone(v)))
-        .collect()
+    map.iter().map(|(k, v)| (k.clone(), Rc::clone(v))).collect()
 }
 
 fn deep_merge(base: &mut HashMap<String, ValueRef>, overlay: &HashMap<String, ValueRef>) {
@@ -351,7 +362,11 @@ fn parse_args_layer(argv: &[String]) -> HashMap<String, ValueRef> {
     while i < argv.len() {
         let arg = &argv[i];
         if arg == "--" {
-            positionals.extend(argv[i + 1..].iter().map(|s| Value::String(s.clone()).ref_cell()));
+            positionals.extend(
+                argv[i + 1..]
+                    .iter()
+                    .map(|s| Value::String(s.clone()).ref_cell()),
+            );
             break;
         }
         if let Some(rest) = arg.strip_prefix("--") {
@@ -360,7 +375,10 @@ fn parse_args_layer(argv: &[String]) -> HashMap<String, ValueRef> {
                 continue;
             }
             if let Some((k, v)) = rest.split_once('=') {
-                let path = k.trim_start_matches('-').to_ascii_lowercase().replace('-', ".");
+                let path = k
+                    .trim_start_matches('-')
+                    .to_ascii_lowercase()
+                    .replace('-', ".");
                 set_path(&mut out, &path, coerce_env_value(v));
                 i += 1;
                 continue;
@@ -425,8 +443,12 @@ fn value_type_name(v: &Value) -> &'static str {
         Value::Float(_) => "float",
         Value::String(_) => "string",
         Value::Bool(_) => "bool",
-        Value::Array(_) | Value::IntArray(_) | Value::FloatArray(_) | Value::BoolArray(_)
-        | Value::ByteArray(_) | Value::StringArray(_) => "array",
+        Value::Array(_)
+        | Value::IntArray(_)
+        | Value::FloatArray(_)
+        | Value::BoolArray(_)
+        | Value::ByteArray(_)
+        | Value::StringArray(_) => "array",
         Value::Object(_) => "object",
         Value::Nil => "nil",
         _ => "unknown",
@@ -539,10 +561,7 @@ fn validate_field(
     Ok(())
 }
 
-fn apply_defaults(
-    values: &mut HashMap<String, ValueRef>,
-    schema: &HashMap<String, ValueRef>,
-) {
+fn apply_defaults(values: &mut HashMap<String, ValueRef>, schema: &HashMap<String, ValueRef>) {
     for (k, rule) in schema {
         let Value::Object(rule_map) = &*rule.borrow() else {
             continue;
@@ -596,10 +615,7 @@ fn validate_config(cfg: &mut Config, span: Span) -> Result<(), ValueRef> {
         match cfg.values.get(k) {
             Some(v) => validate_field(k, &v.borrow(), rule_map, span)?,
             None if required => {
-                return Err(missing_err(
-                    span,
-                    format!("config field '{k}' is required"),
-                ));
+                return Err(missing_err(span, format!("config field '{k}' is required")));
             }
             None => {}
         }
@@ -726,10 +742,7 @@ fn nconfig_get(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
         if let Some(k) = key {
             match get_path(&cfg.values, &k) {
                 Some(v) => Ok(v),
-                None => Err(missing_err(
-                    span,
-                    format!("config key '{k}' not found"),
-                )),
+                None => Err(missing_err(span, format!("config key '{k}' not found"))),
             }
         } else {
             Ok(Value::Object(clone_object(&cfg.values)).ref_cell())
@@ -794,7 +807,10 @@ nconfig_fns![
 ];
 
 fn all_builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(flat, _, f)| (flat, f)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(flat, _, f)| (flat, f))
+        .collect()
 }
 
 pub fn namespace() -> Value {
@@ -839,18 +855,28 @@ mod tests {
     #[test]
     fn layered_defaults_file_env_args() {
         let h = handle(nconfig_new(
-            &[obj(&[("port", Value::Int(8080)), ("host", Value::String("localhost".into()))])],
+            &[obj(&[
+                ("port", Value::Int(8080)),
+                ("host", Value::String("localhost".into())),
+            ])],
             span(),
         ));
 
         let path = std::env::temp_dir().join("nconfig_test_layer.json");
         fs::write(&path, r#"{"port": 3000, "debug": true}"#).unwrap();
         let path = path.to_string_lossy().to_string();
-        nconfig_file(&[Value::Int(h).ref_cell(), Value::String(path).ref_cell()], span()).unwrap();
+        nconfig_file(
+            &[Value::Int(h).ref_cell(), Value::String(path).ref_cell()],
+            span(),
+        )
+        .unwrap();
 
         std::env::set_var("APP_HOST", "prod.example");
         nconfig_env(
-            &[Value::Int(h).ref_cell(), Value::String("APP_".into()).ref_cell()],
+            &[
+                Value::Int(h).ref_cell(),
+                Value::String("APP_".into()).ref_cell(),
+            ],
             span(),
         )
         .unwrap();
@@ -910,11 +936,7 @@ mod tests {
                 }),
             ),
         ]);
-        nconfig_schema(
-            &[Value::Int(h).ref_cell(), schema],
-            span(),
-        )
-        .unwrap();
+        nconfig_schema(&[Value::Int(h).ref_cell(), schema], span()).unwrap();
         let ok = nconfig_validate(&[Value::Int(h).ref_cell()], span()).unwrap();
         assert!(matches!(&*ok.borrow(), Value::Bool(true)));
 
@@ -933,7 +955,10 @@ mod tests {
     fn missing_key_error() {
         let h = handle(nconfig_new(&[], span()));
         let v = nconfig_get(
-            &[Value::Int(h).ref_cell(), Value::String("nope".into()).ref_cell()],
+            &[
+                Value::Int(h).ref_cell(),
+                Value::String("nope".into()).ref_cell(),
+            ],
             span(),
         )
         .unwrap();
@@ -950,10 +975,7 @@ mod tests {
             "42".into(),
             "pos".into(),
         ]);
-        assert!(matches!(
-            &*layer["verbose"].borrow(),
-            Value::Bool(true)
-        ));
+        assert!(matches!(&*layer["verbose"].borrow(), Value::Bool(true)));
         assert!(matches!(&*layer["x"].borrow(), Value::Bool(true)));
         assert!(matches!(&*layer["port"].borrow(), Value::Int(42)));
         assert!(matches!(&*layer["_args"].borrow(), Value::Array(a) if a.len() == 1));

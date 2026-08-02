@@ -1,7 +1,7 @@
 //! Columnar epoch training bridge.
 
-use niao_data::ColumnarEpoch;
 use crate::trainer::Trainer;
+use niao_data::ColumnarEpoch;
 use niao_tensor::TensorResult;
 
 impl Trainer {
@@ -13,6 +13,10 @@ impl Trainer {
             total += self.train_batch(&x, &y)?;
             batches += 1;
         }
-        Ok(if batches > 0 { total / batches as f32 } else { 0.0 })
+        Ok(if batches > 0 {
+            total / batches as f32
+        } else {
+            0.0
+        })
     }
 }

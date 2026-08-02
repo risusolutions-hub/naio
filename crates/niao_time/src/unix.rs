@@ -39,10 +39,7 @@ pub fn utc_parts_to_ms(p: &UtcParts) -> Option<i64> {
         return None;
     }
     let days = days_from_civil(p.year, p.month, p.day) as i64;
-    let secs = days * 86_400
-        + p.hour as i64 * 3600
-        + p.minute as i64 * 60
-        + p.second as i64;
+    let secs = days * 86_400 + p.hour as i64 * 3600 + p.minute as i64 * 60 + p.second as i64;
     Some(secs * 1000 + p.millisecond as i64)
 }
 
@@ -66,10 +63,8 @@ pub fn civil_to_ms(civil: &CivilDateTime, tz: &Timezone) -> Result<i64, String> 
         return Err("invalid date".into());
     }
     let days = days_from_civil(civil.year, civil.month, civil.day) as i64;
-    let local_secs = days * 86_400
-        + civil.hour as i64 * 3600
-        + civil.minute as i64 * 60
-        + civil.second as i64;
+    let local_secs =
+        days * 86_400 + civil.hour as i64 * 3600 + civil.minute as i64 * 60 + civil.second as i64;
     let local_ms = local_secs * 1000 + civil.millisecond as i64;
 
     // UTC = local - offset; offset depends on instant — iterate once for DST edges.

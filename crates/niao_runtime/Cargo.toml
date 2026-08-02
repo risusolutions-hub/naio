@@ -13,6 +13,8 @@ niao_regex = { workspace = true }
 niao_time = { workspace = true }
 niao_http = { workspace = true }
 niao_ws = { workspace = true }
+niao_mqtt = { workspace = true }
+niao_grpc = { workspace = true }
 niao_io = { workspace = true }
 niao_db = { workspace = true }
 niao_archive = { workspace = true }
@@ -29,6 +31,7 @@ rustls-native-certs = "0.8"
 rustls-pki-types = "1"
 lettre = { version = "0.11", default-features = false, features = ["rustls-tls", "smtp-transport", "builder"] }
 rusqlite = { version = "0.32", features = ["bundled", "backup", "blob", "functions", "limits"] }
+mysql = "25"
 rayon = "1"
 mongodb = { version = "3.1", optional = true }
 bson = { version = "2.13", optional = true }
@@ -45,8 +48,87 @@ niao_llm = { path = "../niao_llm", optional = true }
 niao_num = { workspace = true }
 niao_stats = { workspace = true }
 niao_frame = { workspace = true }
+niao_dataset = { workspace = true }
 niao_optim = { workspace = true }
 niao_plot = { workspace = true }
+niao_mail = { workspace = true }
+niao_mdns = { workspace = true }
+niao_imap = { workspace = true }
+niao_graphql = { workspace = true }
+niao_openapi = { workspace = true }
+
+niao_binary = { workspace = true }
+niao_cal = { workspace = true }
+niao_cbor = { workspace = true }
+niao_compress = { workspace = true }
+niao_decimal = { workspace = true }
+niao_dsp = { workspace = true }
+niao_encoding = { workspace = true }
+niao_event = { workspace = true }
+niao_expr = { workspace = true }
+niao_feed = { workspace = true }
+niao_fin = { workspace = true }
+niao_fsm = { workspace = true }
+niao_geo = { workspace = true }
+niao_hub = { workspace = true }
+niao_glob = { workspace = true }
+niao_hdf5 = { workspace = true }
+niao_html = { workspace = true }
+niao_ical = { workspace = true }
+niao_id = { workspace = true }
+niao_ipaddr = { workspace = true }
+niao_jpath = { workspace = true }
+niao_jwt = { workspace = true }
+niao_mime = { workspace = true }
+niao_msgpack = { workspace = true }
+niao_ncrypt = { workspace = true }
+niao_oauth = { workspace = true }
+niao_onnx = { workspace = true }
+niao_auth = { workspace = true }
+niao_otp = { workspace = true }
+niao_parallel = { workspace = true }
+niao_parquet = { workspace = true }
+niao_pass = { workspace = true }
+niao_pdf = { workspace = true }
+niao_proto = { workspace = true }
+niao_rand = { workspace = true }
+niao_reflect = { workspace = true }
+niao_req = { workspace = true }
+niao_scrape = { workspace = true }
+niao_search = { workspace = true }
+niao_retry = { workspace = true }
+niao_tune = { workspace = true }
+niao_rpc = { workspace = true }
+niao_sanitize = { workspace = true }
+niao_sign = { workspace = true }
+niao_speech = { workspace = true }
+niao_tts = { workspace = true }
+niao_signal = { workspace = true }
+niao_sorted = { workspace = true }
+niao_docstore = { workspace = true }
+niao_tar = { workspace = true }
+niao_textdiff = { workspace = true }
+niao_unicode = { workspace = true }
+niao_units = { workspace = true }
+niao_view = { workspace = true }
+niao_webhook = { workspace = true }
+niao_when = { workspace = true }
+niao_xlsx = { workspace = true }
+niao_xml = { workspace = true }
+niao_yaml = { workspace = true }
+niao_zip = { workspace = true }
+niao_flock = { workspace = true }
+niao_fts = { workspace = true }
+niao_nblob = { workspace = true }
+niao_nfs = { workspace = true }
+niao_keyring = { workspace = true }
+niao_kv = { workspace = true }
+niao_proc = { workspace = true }
+niao_mmap = { workspace = true }
+niao_ssh = { workspace = true }
+niao_browser = { workspace = true }
+rsa = { version = "0.9", features = ["sha2", "pem"] }
+rand = "0.8"
 
 [features]
 default = []

@@ -1,6 +1,4 @@
-use crate::{
-    fill_os_random, Pcg64, Rng, SeedableRng, SliceRandom, StdRng, Xoshiro256StarStar,
-};
+use crate::{fill_os_random, Pcg64, Rng, SeedableRng, SliceRandom, StdRng, Xoshiro256StarStar};
 
 #[test]
 fn reproducibility_xoshiro_seed() {

@@ -360,7 +360,10 @@ impl<'de> serde::Deserialize<'de> for OpCode {
             let v: u16 = inner.parse().map_err(serde::de::Error::custom)?;
             return Ok(OpCode::Store(v));
         }
-        if let Some(inner) = s.strip_prefix("BindGlobal(").and_then(|t| t.strip_suffix(')')) {
+        if let Some(inner) = s
+            .strip_prefix("BindGlobal(")
+            .and_then(|t| t.strip_suffix(')'))
+        {
             let v: u16 = inner.parse().map_err(serde::de::Error::custom)?;
             return Ok(OpCode::BindGlobal(v));
         }
@@ -375,18 +378,27 @@ impl<'de> serde::Deserialize<'de> for OpCode {
             let v: u32 = inner.parse().map_err(serde::de::Error::custom)?;
             return Ok(OpCode::JumpIfFalse(v));
         }
-        if let Some(inner) = s.strip_prefix("MakeArray(").and_then(|t| t.strip_suffix(')')) {
+        if let Some(inner) = s
+            .strip_prefix("MakeArray(")
+            .and_then(|t| t.strip_suffix(')'))
+        {
             let v: u16 = inner.parse().map_err(serde::de::Error::custom)?;
             return Ok(OpCode::MakeArray(v));
         }
-        if let Some(inner) = s.strip_prefix("MakeObject(").and_then(|t| t.strip_suffix(')')) {
+        if let Some(inner) = s
+            .strip_prefix("MakeObject(")
+            .and_then(|t| t.strip_suffix(')'))
+        {
             if let Ok(v) = inner.parse::<u16>() {
                 return Ok(OpCode::MakeObject((0..v).collect()));
             }
             let fields = parse_u16_list(inner)?;
             return Ok(OpCode::MakeObject(fields));
         }
-        if let Some(inner) = s.strip_prefix("SetField(").and_then(|t| t.strip_suffix(')')) {
+        if let Some(inner) = s
+            .strip_prefix("SetField(")
+            .and_then(|t| t.strip_suffix(')'))
+        {
             let v: u16 = inner.parse().map_err(serde::de::Error::custom)?;
             return Ok(OpCode::SetField(v));
         }
@@ -438,11 +450,17 @@ impl<'de> serde::Deserialize<'de> for OpCode {
                 .map_err(serde::de::Error::custom)?;
             return Ok(OpCode::CallSuper { method, argc });
         }
-        if let Some(inner) = s.strip_prefix("GetField(").and_then(|t| t.strip_suffix(')')) {
+        if let Some(inner) = s
+            .strip_prefix("GetField(")
+            .and_then(|t| t.strip_suffix(')'))
+        {
             let v: u16 = inner.parse().map_err(serde::de::Error::custom)?;
             return Ok(OpCode::GetField(v));
         }
-        if let Some(inner) = s.strip_prefix("SetField(").and_then(|t| t.strip_suffix(')')) {
+        if let Some(inner) = s
+            .strip_prefix("SetField(")
+            .and_then(|t| t.strip_suffix(')'))
+        {
             let v: u16 = inner.parse().map_err(serde::de::Error::custom)?;
             return Ok(OpCode::SetField(v));
         }
@@ -478,7 +496,10 @@ impl<'de> serde::Deserialize<'de> for OpCode {
                 .map_err(serde::de::Error::custom)?;
             return Ok(OpCode::Call { func, argc });
         }
-        if let Some(inner) = s.strip_prefix("TryBegin(").and_then(|t| t.strip_suffix(')')) {
+        if let Some(inner) = s
+            .strip_prefix("TryBegin(")
+            .and_then(|t| t.strip_suffix(')'))
+        {
             let v: u32 = inner.parse().map_err(serde::de::Error::custom)?;
             return Ok(OpCode::TryBegin(v));
         }
@@ -646,7 +667,9 @@ pub fn detect_fast_path(
         .iter()
         .position(|n| n == "print_super_boom_math");
     let print_idx = call_targets.iter().position(|n| n == "print");
-    let factorial_idx = call_targets.iter().position(|n| n == "super_boom_factorial");
+    let factorial_idx = call_targets
+        .iter()
+        .position(|n| n == "super_boom_factorial");
     let math_idx = call_targets.iter().position(|n| n == "super_boom_math");
     let main = functions.iter().find(|f| f.name == "main")?;
     let code = &main.code;
@@ -706,8 +729,10 @@ pub fn detect_fast_path(
 
         if let Some(print_idx) = print_idx {
             for window in code.windows(4) {
-                let [OpCode::Const(cidx), OpCode::Call { func, argc: 1 }, OpCode::Call { func: pfunc, argc: 1 }, tail] =
-                    window
+                let [OpCode::Const(cidx), OpCode::Call { func, argc: 1 }, OpCode::Call {
+                    func: pfunc,
+                    argc: 1,
+                }, tail] = window
                 else {
                     continue;
                 };
@@ -726,8 +751,10 @@ pub fn detect_fast_path(
 
     if let (Some(print_idx), Some(factorial_idx)) = (print_idx, factorial_idx) {
         for window in code.windows(4) {
-            let [OpCode::Const(cidx), OpCode::Call { func, argc: 1 }, OpCode::Call { func: pfunc, argc: 1 }, tail] =
-                window
+            let [OpCode::Const(cidx), OpCode::Call { func, argc: 1 }, OpCode::Call {
+                func: pfunc,
+                argc: 1,
+            }, tail] = window
             else {
                 continue;
             };
@@ -895,7 +922,11 @@ fn lower_instr(
             field: *field as u16,
             argc: *argc as u8,
         },
-        IrInstr::CallStatic { class, method, argc } => {
+        IrInstr::CallStatic {
+            class,
+            method,
+            argc,
+        } => {
             let name = format!("__CS__{class}__{method}");
             OpCode::Call {
                 func: *calls
@@ -924,10 +955,7 @@ mod tests {
         let src = "fn main() { print_super_boom_factorial(50) }";
         let program = parse(src).unwrap();
         let bc = compile_to_bytecode(&program).unwrap();
-        assert_eq!(
-            bc.fast_path,
-            Some(FastPath::PrintSuperBoomFactorial(50))
-        );
+        assert_eq!(bc.fast_path, Some(FastPath::PrintSuperBoomFactorial(50)));
     }
 
     #[test]
@@ -935,10 +963,7 @@ mod tests {
         let src = "fn main() { print(super_boom_factorial(50)) }";
         let program = parse(src).unwrap();
         let bc = compile_to_bytecode(&program).unwrap();
-        assert_eq!(
-            bc.fast_path,
-            Some(FastPath::PrintSuperBoomFactorial(50))
-        );
+        assert_eq!(bc.fast_path, Some(FastPath::PrintSuperBoomFactorial(50)));
     }
 
     #[test]
@@ -946,10 +971,7 @@ mod tests {
         let src = "fn main() { print_super_boom_math(10000000) }";
         let program = parse(src).unwrap();
         let bc = compile_to_bytecode(&program).unwrap();
-        assert_eq!(
-            bc.fast_path,
-            Some(FastPath::PrintSuperBoomMath(10_000_000))
-        );
+        assert_eq!(bc.fast_path, Some(FastPath::PrintSuperBoomMath(10_000_000)));
     }
 
     #[test]
@@ -957,10 +979,7 @@ mod tests {
         let src = "fn main() { let x = super_boom_math(10000000) }";
         let program = parse(src).unwrap();
         let bc = compile_to_bytecode(&program).unwrap();
-        assert_eq!(
-            bc.fast_path,
-            Some(FastPath::SuperBoomMath(10_000_000))
-        );
+        assert_eq!(bc.fast_path, Some(FastPath::SuperBoomMath(10_000_000)));
     }
 
     #[test]
@@ -985,7 +1004,10 @@ mod tests {
         assert!(bytes.starts_with(wire::MAGIC));
         let loaded = BytecodeModule::deserialize(&bytes).unwrap();
         assert_eq!(loaded.cache_version, BYTECODE_CACHE_VERSION);
-        assert_eq!(loaded.builtin_fingerprint, niao_runtime::builtin_fingerprint());
+        assert_eq!(
+            loaded.builtin_fingerprint,
+            niao_runtime::builtin_fingerprint()
+        );
         assert!(loaded.is_cache_valid());
     }
 

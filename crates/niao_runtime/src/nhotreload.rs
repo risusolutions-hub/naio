@@ -1,4 +1,4 @@
-﻿//! Native nhotreload standard library — file watch + per-function body diff via
+//! Native nhotreload standard library — file watch + per-function body diff via
 //! `niao_parser`. Live VM swap is a roadmap item (see docs/NHOTRELOAD.md).
 //!
 //! Import with `import "nhotreload"` (or `import "std/nhotreload"`).
@@ -159,8 +159,14 @@ fn changes_value(changes: &[FnChange]) -> Value {
         .map(|c| {
             let mut map = HashMap::new();
             map.insert("name".to_string(), Value::String(c.name.clone()).ref_cell());
-            map.insert("old".to_string(), Value::String(c.old_body.clone()).ref_cell());
-            map.insert("new".to_string(), Value::String(c.new_body.clone()).ref_cell());
+            map.insert(
+                "old".to_string(),
+                Value::String(c.old_body.clone()).ref_cell(),
+            );
+            map.insert(
+                "new".to_string(),
+                Value::String(c.new_body.clone()).ref_cell(),
+            );
             Value::Object(map).ref_cell()
         })
         .collect();
@@ -415,7 +421,11 @@ nhotreload_fns![
     ("nhotreload_diff", "diff", nhotreload_diff),
     ("nhotreload_functions", "functions", nhotreload_functions),
     ("nhotreload_parse", "parse", nhotreload_parse),
-    ("nhotreload_diff_sources", "diff_sources", nhotreload_diff_sources),
+    (
+        "nhotreload_diff_sources",
+        "diff_sources",
+        nhotreload_diff_sources
+    ),
     ("nhotreload_path", "path", nhotreload_path),
     ("nhotreload_close", "close", nhotreload_close),
 ];
@@ -577,8 +587,15 @@ fn main() { foo() }
         match namespace() {
             Value::Object(map) => {
                 for key in [
-                    "watch", "changed", "poll", "diff", "functions", "parse", "diff_sources",
-                    "path", "close",
+                    "watch",
+                    "changed",
+                    "poll",
+                    "diff",
+                    "functions",
+                    "parse",
+                    "diff_sources",
+                    "path",
+                    "close",
                 ] {
                     assert!(map.contains_key(key), "missing {key}");
                 }

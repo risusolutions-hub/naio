@@ -13,7 +13,10 @@ pub struct ParamGrad {
 }
 
 pub fn clip_grads(grads: &mut [Vec<f32>], max_norm: f32) {
-    let total: f32 = grads.iter().map(|g| g.iter().map(|x| x * x).sum::<f32>()).sum();
+    let total: f32 = grads
+        .iter()
+        .map(|g| g.iter().map(|x| x * x).sum::<f32>())
+        .sum();
     let norm = total.sqrt();
     if norm > max_norm && norm > 0.0 {
         let scale = max_norm / norm;
@@ -76,12 +79,9 @@ impl Layer {
                 *stride,
                 *padding,
             ),
-            LayerKind::BatchNorm2d { channels } => backward_batch_norm(
-                cache,
-                grad_output,
-                self.gamma.as_ref().unwrap(),
-                *channels,
-            ),
+            LayerKind::BatchNorm2d { channels } => {
+                backward_batch_norm(cache, grad_output, self.gamma.as_ref().unwrap(), *channels)
+            }
         }
     }
 }
@@ -195,20 +195,7 @@ fn backward_conv2d(
     let x = input.to_cpu()?;
     let w = weight.to_cpu()?;
     let (grad_input, grad_weight) = cpu::conv2d_backward(
-        &x,
-        &w,
-        grad_out,
-        batch,
-        in_c,
-        in_h,
-        in_w,
-        out_c,
-        k_h,
-        k_w,
-        stride,
-        padding,
-        out_h,
-        out_w,
+        &x, &w, grad_out, batch, in_c, in_h, in_w, out_c, k_h, k_w, stride, padding, out_h, out_w,
     );
     let grad_bias = if bias.is_some() {
         let mut gb = vec![0.0f32; out_c];
@@ -296,8 +283,7 @@ fn backward_batch_norm(
             for s in 0..spatial {
                 let idx = (b * channels + c) * spatial + s;
                 let xhat = (x[idx] - mean[c]) * inv_std;
-                grad_input[idx] =
-                    (grad_out[idx] * g[c] - sum1 / n - xhat * sum2 / n) * inv_std;
+                grad_input[idx] = (grad_out[idx] * g[c] - sum1 / n - xhat * sum2 / n) * inv_std;
             }
         }
     }

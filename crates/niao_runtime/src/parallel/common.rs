@@ -35,7 +35,10 @@ pub(crate) fn arity_range(
         return Err(RuntimeError::at(
             span,
             codes::E1500_PARALLEL_ARITY,
-            format!("{name}() expects {min}..={max} argument(s), got {}", args.len()),
+            format!(
+                "{name}() expects {min}..={max} argument(s), got {}",
+                args.len()
+            ),
         ));
     }
     Ok(())
@@ -46,7 +49,10 @@ pub(crate) fn arity_min(args: &[ValueRef], min: usize, name: &str, span: Span) -
         return Err(RuntimeError::at(
             span,
             codes::E1500_PARALLEL_ARITY,
-            format!("{name}() expects at least {min} argument(s), got {}", args.len()),
+            format!(
+                "{name}() expects at least {min} argument(s), got {}",
+                args.len()
+            ),
         ));
     }
     Ok(())
@@ -146,7 +152,12 @@ pub(crate) fn sendable_result(val: SendableValue) -> ValueRef {
     sendable_to_value_ref(val)
 }
 
-pub(crate) fn function_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> NiaoResult<ValueRef> {
+pub(crate) fn function_arg(
+    args: &[ValueRef],
+    idx: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<ValueRef> {
     let is_fn = matches!(&*args[idx].borrow(), Value::Function(_));
     if is_fn {
         Ok(args[idx].clone())

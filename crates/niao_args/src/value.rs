@@ -27,9 +27,7 @@ impl FromArgValue for String {
 
 impl FromArgValue for PathBuf {
     fn from_matches(matches: &ArgMatches, id: &str) -> Result<Self, Error> {
-        let raw = matches
-            .get_one::<String>(id)
-            .ok_or_else(|| missing(id))?;
+        let raw = matches.get_one::<String>(id).ok_or_else(|| missing(id))?;
         Ok(PathBuf::from(raw.as_str()))
     }
 }
@@ -76,13 +74,8 @@ impl FromArgValue for Vec<String> {
     }
 }
 
-pub(crate) fn parse_value<T: std::str::FromStr>(
-    arg: &str,
-    value: &str,
-) -> Result<T, Error> {
-    value
-        .parse::<T>()
-        .map_err(|_| invalid(arg, value))
+pub(crate) fn parse_value<T: std::str::FromStr>(arg: &str, value: &str) -> Result<T, Error> {
+    value.parse::<T>().map_err(|_| invalid(arg, value))
 }
 
 pub(crate) fn missing(arg: &str) -> Error {

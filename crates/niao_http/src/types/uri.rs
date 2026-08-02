@@ -58,9 +58,7 @@ impl Uri {
         match (self.scheme_end, self.authority_end) {
             (Some(_), Some(auth_end)) => {
                 let rest = &self.bytes[auth_end..];
-                rest.split_once('?')
-                    .map(|(p, _)| p)
-                    .unwrap_or(rest)
+                rest.split_once('?').map(|(p, _)| p).unwrap_or(rest)
             }
             _ => self
                 .bytes

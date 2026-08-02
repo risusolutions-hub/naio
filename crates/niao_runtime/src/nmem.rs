@@ -295,12 +295,21 @@ fn arity(args: &[ValueRef], n: usize, name: &str, span: Span) -> NiaoResult<()> 
     Ok(())
 }
 
-fn arity_range(args: &[ValueRef], min: usize, max: usize, name: &str, span: Span) -> NiaoResult<()> {
+fn arity_range(
+    args: &[ValueRef],
+    min: usize,
+    max: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<()> {
     if args.len() < min || args.len() > max {
         return Err(RuntimeError::at(
             span,
             E3050_NMEM_ARITY,
-            format!("{name}() expects {min}..={max} argument(s), got {}", args.len()),
+            format!(
+                "{name}() expects {min}..={max} argument(s), got {}",
+                args.len()
+            ),
         ));
     }
     Ok(())
@@ -343,10 +352,7 @@ fn object_arg(
     span: Span,
 ) -> NiaoResult<HashMap<String, ValueRef>> {
     match &*args[idx].borrow() {
-        Value::Object(map) => Ok(map
-            .iter()
-            .map(|(k, v)| (k.clone(), Rc::clone(v)))
-            .collect()),
+        Value::Object(map) => Ok(map.iter().map(|(k, v)| (k.clone(), Rc::clone(v))).collect()),
         other => Err(RuntimeError::at(
             span,
             E3052_NMEM_TYPE,
@@ -483,10 +489,7 @@ fn nmem_tag(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let now = now_ms();
     match with_mem(id, span, |m| m.tag(&key, tag, now))? {
         Ok(Ok(())) => Ok(Value::Bool(true).ref_cell()),
-        Ok(Err(())) => Ok(nmem_err(
-            span,
-            format!("nmem_tag() key not found: {key}"),
-        )),
+        Ok(Err(())) => Ok(nmem_err(span, format!("nmem_tag() key not found: {key}"))),
         Err(e) => Ok(e),
     }
 }

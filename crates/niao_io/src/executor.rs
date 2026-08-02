@@ -101,7 +101,10 @@ fn worker_loop(worker_id: usize, inner: Arc<ExecutorInner>, local: Arc<Worker>) 
         }
         let _ = local
             .notify
-            .wait_timeout(local.queue.lock().unwrap(), std::time::Duration::from_millis(100))
+            .wait_timeout(
+                local.queue.lock().unwrap(),
+                std::time::Duration::from_millis(100),
+            )
             .unwrap();
     }
 }

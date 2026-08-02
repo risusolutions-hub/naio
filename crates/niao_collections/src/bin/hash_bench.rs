@@ -13,7 +13,9 @@ const REPEATS: u32 = 7;
 const MAP_N: usize = 1_000_000;
 
 fn payload(n: usize) -> Vec<u8> {
-    (0..n).map(|i| (i as u8).wrapping_mul(31).wrapping_add(7)).collect()
+    (0..n)
+        .map(|i| (i as u8).wrapping_mul(31).wrapping_add(7))
+        .collect()
 }
 
 /// One timed pass of `ITERS` hashes; returns elapsed seconds.

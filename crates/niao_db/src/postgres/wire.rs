@@ -131,7 +131,10 @@ pub fn write_sasl_final(stream: &mut impl Write, data: &str) -> io::Result<()> {
 
 pub fn parse_command_complete(body: &[u8]) -> u64 {
     let s = std::str::from_utf8(body).unwrap_or("");
-    s.split_whitespace().nth(1).and_then(|n| n.parse().ok()).unwrap_or(0)
+    s.split_whitespace()
+        .nth(1)
+        .and_then(|n| n.parse().ok())
+        .unwrap_or(0)
 }
 
 pub fn parse_row_description(body: &[u8]) -> Vec<String> {

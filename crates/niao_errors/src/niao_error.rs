@@ -24,9 +24,8 @@ pub enum LexError {
 impl LexError {
     pub fn span(&self) -> Span {
         let (line, col) = match self {
-            LexError::UnexpectedChar { line, col, .. } | LexError::UnterminatedString { line, col } => {
-                (*line, *col)
-            }
+            LexError::UnexpectedChar { line, col, .. }
+            | LexError::UnterminatedString { line, col } => (*line, *col),
         };
         Span {
             start: 0,

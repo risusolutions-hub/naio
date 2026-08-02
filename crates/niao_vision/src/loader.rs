@@ -87,7 +87,11 @@ impl<'a, D: VisionDataset> VisionDataLoader<'a, D> {
     }
 
     /// Flatten CHW features and build an `niao_ml::DataLoader` for training loops.
-    pub fn to_ml_loader(&mut self, mean: Option<&[f32]>, std: Option<&[f32]>) -> VisionResult<MlDataLoader> {
+    pub fn to_ml_loader(
+        &mut self,
+        mean: Option<&[f32]>,
+        std: Option<&[f32]>,
+    ) -> VisionResult<MlDataLoader> {
         self.reset();
         let mut all_x = Vec::new();
         let mut all_y = Vec::new();
@@ -125,11 +129,7 @@ impl<'a, D: VisionDataset> VisionDataLoader<'a, D> {
     }
 }
 
-pub fn collate_normalize(
-    batch_x: &Tensor,
-    mean: &[f32],
-    std: &[f32],
-) -> VisionResult<Tensor> {
+pub fn collate_normalize(batch_x: &Tensor, mean: &[f32], std: &[f32]) -> VisionResult<Tensor> {
     // Expect NCHW
     if batch_x.shape.len() != 4 {
         return Err(VisionError::Shape("collate_normalize expects NCHW".into()));

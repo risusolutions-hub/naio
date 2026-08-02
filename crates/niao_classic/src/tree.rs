@@ -6,7 +6,10 @@ use rayon::prelude::*;
 
 #[derive(Clone, Debug)]
 enum Node {
-    Leaf { _value: f32, class: usize },
+    Leaf {
+        _value: f32,
+        class: usize,
+    },
     Split {
         feature: usize,
         threshold: f32,
@@ -136,10 +139,8 @@ fn build_tree(
         values.sort_by(|a, b| a.partial_cmp(b).unwrap());
         for thr in values.windows(2) {
             let t = (thr[0] + thr[1]) / 2.0;
-            let (left, right): (Vec<_>, Vec<_>) = indices
-                .iter()
-                .copied()
-                .partition(|&i| x[i * dims + f] <= t);
+            let (left, right): (Vec<_>, Vec<_>) =
+                indices.iter().copied().partition(|&i| x[i * dims + f] <= t);
             if left.is_empty() || right.is_empty() {
                 continue;
             }

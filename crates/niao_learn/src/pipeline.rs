@@ -63,9 +63,7 @@ impl Step {
             Step::OrdinalEncoder(s) => s.transform(x),
             Step::LabelEncoder(s) => s.transform(x),
             Step::PolynomialFeatures(s) => s.transform(x),
-            _ => Err(LearnError::Error(
-                "final estimator has no transform".into(),
-            )),
+            _ => Err(LearnError::Error("final estimator has no transform".into())),
         }
     }
 

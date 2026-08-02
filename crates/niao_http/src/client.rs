@@ -248,8 +248,8 @@ fn single_request(
     let mut buf = Vec::with_capacity(4096);
     if url.scheme == "https" {
         let cfg = tls_config()?;
-        let sni = ServerName::try_from(url.host.clone())
-            .map_err(|_| Error::Tls("invalid sni".into()))?;
+        let sni =
+            ServerName::try_from(url.host.clone()).map_err(|_| Error::Tls("invalid sni".into()))?;
         let conn =
             ClientConnection::new(Arc::new(cfg), sni).map_err(|e| Error::Tls(e.to_string()))?;
         let mut tls = StreamOwned::new(conn, stream);
@@ -280,14 +280,20 @@ fn single_request(
 }
 
 fn read_http_message_tcp(tcp: &mut TcpStream, buf: &mut Vec<u8>) -> Result<(), Error> {
-    read_http_message_impl(|tmp| tcp.read(tmp).map_err(|e| Error::Io(e.to_string())), buf)
+    read_http_message_impl(
+        |tmp| tcp.read(tmp).map_err(|e| Error::Io(e.to_string())),
+        buf,
+    )
 }
 
 fn read_http_message_tls(
     tls: &mut StreamOwned<ClientConnection, TcpStream>,
     buf: &mut Vec<u8>,
 ) -> Result<(), Error> {
-    read_http_message_impl(|tmp| tls.read(tmp).map_err(|e| Error::Io(e.to_string())), buf)
+    read_http_message_impl(
+        |tmp| tls.read(tmp).map_err(|e| Error::Io(e.to_string())),
+        buf,
+    )
 }
 
 fn read_http_message_impl(

@@ -187,7 +187,12 @@ fn append_scalar(v: &Value, out: &mut String, span: Span) -> NiaoResult<()> {
 fn is_scalar_value(v: &Value) -> bool {
     matches!(
         v,
-        Value::Nil | Value::Bool(_) | Value::Int(_) | Value::BigInt(_) | Value::Float(_) | Value::String(_)
+        Value::Nil
+            | Value::Bool(_)
+            | Value::Int(_)
+            | Value::BigInt(_)
+            | Value::Float(_)
+            | Value::String(_)
     )
 }
 
@@ -198,10 +203,9 @@ fn is_inline_array(v: &Value) -> bool {
         | Value::BoolArray(_)
         | Value::ByteArray(_)
         | Value::StringArray(_) => true,
-        Value::Array(items) => !items.is_empty()
-            && items
-                .iter()
-                .all(|slot| is_scalar_value(&slot.borrow())),
+        Value::Array(items) => {
+            !items.is_empty() && items.iter().all(|slot| is_scalar_value(&slot.borrow()))
+        }
         _ => false,
     }
 }
@@ -350,8 +354,7 @@ fn emit_table_rows(
         out.push('\n');
     }
 
-    let needs_section_gap =
-        pretty && (!scalars.is_empty() || !inline_arrays.is_empty());
+    let needs_section_gap = pretty && (!scalars.is_empty() || !inline_arrays.is_empty());
 
     for (i, key) in nested_tables.iter().copied().enumerate() {
         if needs_section_gap && i == 0 {
@@ -410,7 +413,9 @@ fn stringify_toml(v: &Value, pretty: bool, span: Span) -> NiaoResult<String> {
     let mut out = String::with_capacity(estimate_toml_len(v));
     match v {
         Value::Object(map) => emit_table_rows(map, &[], &mut out, pretty, span)?,
-        Value::Array(items) if !items.is_empty() && items.iter().all(|s| is_scalar_value(&s.borrow())) => {
+        Value::Array(items)
+            if !items.is_empty() && items.iter().all(|s| is_scalar_value(&s.borrow())) =>
+        {
             append_inline_array(v, &mut out, span)?;
             out.push('\n');
         }
@@ -485,11 +490,18 @@ ntoml_fns![
     ("ntoml_parse", "parse", ntoml_parse),
     ("ntoml_parse_file", "parse_file", ntoml_parse_file),
     ("ntoml_stringify", "stringify", ntoml_stringify),
-    ("ntoml_stringify_pretty", "stringify_pretty", ntoml_stringify_pretty),
+    (
+        "ntoml_stringify_pretty",
+        "stringify_pretty",
+        ntoml_stringify_pretty
+    ),
 ];
 
 fn all_builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(flat, _, f)| (flat, f)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(flat, _, f)| (flat, f))
+        .collect()
 }
 
 pub fn namespace() -> Value {

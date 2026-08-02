@@ -1,4 +1,4 @@
-﻿//! Native npar standard library — explicit rayon parallel ops on packed
+//! Native npar standard library — explicit rayon parallel ops on packed
 //! `FloatArray` / `IntArray`, plus `set_threads` for pool sizing.
 //!
 //! Import with `import "npar"` (or `import "std/npar"`).
@@ -106,7 +106,11 @@ fn string_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> NiaoResu
 
 #[inline]
 fn par_sum_i64(v: &[i64]) -> i64 {
-    install(|| v.par_chunks(CHUNK).map(|c| c.iter().map(|&x| x as i128).sum::<i128>() as i64).sum())
+    install(|| {
+        v.par_chunks(CHUNK)
+            .map(|c| c.iter().map(|&x| x as i128).sum::<i128>() as i64)
+            .sum()
+    })
 }
 
 #[inline]
@@ -126,7 +130,12 @@ fn par_add_i64(a: &[i64], b: &[i64]) -> Vec<i64> {
 
 #[inline]
 fn par_add_f64(a: &[f64], b: &[f64]) -> Vec<f64> {
-    install(|| a.par_iter().zip(b.par_iter()).map(|(&x, &y)| x + y).collect())
+    install(|| {
+        a.par_iter()
+            .zip(b.par_iter())
+            .map(|(&x, &y)| x + y)
+            .collect()
+    })
 }
 
 #[inline]
@@ -141,7 +150,12 @@ fn par_mul_i64(a: &[i64], b: &[i64]) -> Vec<i64> {
 
 #[inline]
 fn par_mul_f64(a: &[f64], b: &[f64]) -> Vec<f64> {
-    install(|| a.par_iter().zip(b.par_iter()).map(|(&x, &y)| x * y).collect())
+    install(|| {
+        a.par_iter()
+            .zip(b.par_iter())
+            .map(|(&x, &y)| x * y)
+            .collect()
+    })
 }
 
 #[inline]
@@ -370,7 +384,10 @@ npar_fns![
 ];
 
 fn all_builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(flat, _, f)| (flat, f)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(flat, _, f)| (flat, f))
+        .collect()
 }
 
 pub fn namespace() -> Value {
@@ -415,7 +432,10 @@ mod tests {
     #[test]
     fn parallel_sum_and_add() {
         let data: Vec<i64> = (0..10_000).collect();
-        assert_eq!(expect_int(npar_sum(&[ia(data.clone())], span())), 49_995_000);
+        assert_eq!(
+            expect_int(npar_sum(&[ia(data.clone())], span())),
+            49_995_000
+        );
         let ones = vec![1_i64; 1000];
         let out = npar_add(&[ia(data[..1000].to_vec()), ia(ones)], span()).unwrap();
         match &*out.borrow() {
@@ -438,7 +458,10 @@ mod tests {
     fn set_threads_positive() {
         let before = expect_int(npar_threads(&[], span()));
         assert!(before >= 1);
-        assert_eq!(expect_int(npar_set_threads(&[Value::Int(2).ref_cell()], span())), 2);
+        assert_eq!(
+            expect_int(npar_set_threads(&[Value::Int(2).ref_cell()], span())),
+            2
+        );
         assert_eq!(expect_int(npar_threads(&[], span())), 2);
     }
 

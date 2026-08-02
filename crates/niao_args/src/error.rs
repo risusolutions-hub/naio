@@ -33,7 +33,9 @@ impl Error {
 
     pub fn exit_code(&self) -> i32 {
         match self.kind {
-            ErrorKind::DisplayHelp | ErrorKind::DisplayHelpOnMissing | ErrorKind::DisplayVersion => 0,
+            ErrorKind::DisplayHelp
+            | ErrorKind::DisplayHelpOnMissing
+            | ErrorKind::DisplayVersion => 0,
             _ => 2,
         }
     }

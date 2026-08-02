@@ -26,7 +26,10 @@ pub fn model_to_json(booster: &Booster) -> BoostResult<String> {
     out.push_str(&format!("\"task\":\"{:?}\",", booster.task));
     out.push_str(&format!("\"num_class\":{},", booster.num_class));
     out.push_str(&format!("\"best_iteration\":{},", booster.best_iteration));
-    out.push_str(&format!("\"learning_rate\":{},", booster.params.learning_rate));
+    out.push_str(&format!(
+        "\"learning_rate\":{},",
+        booster.params.learning_rate
+    ));
     out.push_str(&format!("\"lambda_l2\":{},", booster.params.lambda_l2));
     out.push_str("\"trees\":[");
     for (i, tree) in booster.trees.iter().enumerate() {
@@ -91,10 +94,12 @@ pub fn model_from_json(text: &str) -> BoostResult<Booster> {
     params.learning_rate = learning_rate;
     params.lambda_l2 = lambda_l2;
 
-    let trees_start = text.find("\"trees\":[")
+    let trees_start = text
+        .find("\"trees\":[")
         .ok_or_else(|| BoostError::Io("missing trees".into()))?
         + 9;
-    let trees_end = text.rfind("],\"thresholds\"")
+    let trees_end = text
+        .rfind("],\"thresholds\"")
         .ok_or_else(|| BoostError::Io("bad trees".into()))?;
     let trees_json = &text[trees_start..trees_end];
 
@@ -160,11 +165,13 @@ fn parse_tree_node(s: &str, start: usize) -> BoostResult<(TreeNode, usize)> {
         let bin = extract_usize(rest, "\"b\":").unwrap_or(0) as u8;
         let default_left = rest.contains("\"d\":true");
         let gain = extract_f64(rest, "\"g\":").unwrap_or(0.0);
-        let lpos = rest.find("\"l\":")
+        let lpos = rest
+            .find("\"l\":")
             .ok_or_else(|| BoostError::Io("missing l".into()))?
             + 4;
         let (left, mid) = parse_tree_node(s, start + lpos)?;
-        let rpos = s[mid..].find("\"r\":")
+        let rpos = s[mid..]
+            .find("\"r\":")
             .ok_or_else(|| BoostError::Io("missing r".into()))?
             + mid
             + 4;
@@ -206,10 +213,13 @@ fn find_matching_brace(s: &str, start: usize) -> BoostResult<usize> {
 }
 
 fn parse_thresholds(text: &str) -> BoostResult<Vec<Vec<f64>>> {
-    let start = text.find("\"thresholds\":[")
+    let start = text
+        .find("\"thresholds\":[")
         .ok_or_else(|| BoostError::Io("missing thresholds".into()))?
         + 14;
-    let end = text.rfind(']').ok_or_else(|| BoostError::Io("bad thresholds".into()))?;
+    let end = text
+        .rfind(']')
+        .ok_or_else(|| BoostError::Io("bad thresholds".into()))?;
     let inner = &text[start..end];
     let mut out = Vec::new();
     let mut i = 0;
@@ -236,7 +246,9 @@ fn parse_thresholds(text: &str) -> BoostResult<Vec<Vec<f64>>> {
                             .map_err(|e| BoostError::Io(e.to_string()))?,
                     );
                 }
-                while i < inner.len() && (inner.as_bytes()[i] == b',' || inner.as_bytes()[i] == b' ') {
+                while i < inner.len()
+                    && (inner.as_bytes()[i] == b',' || inner.as_bytes()[i] == b' ')
+                {
                     i += 1;
                 }
             }

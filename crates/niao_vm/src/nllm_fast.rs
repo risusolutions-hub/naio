@@ -4,8 +4,8 @@ use crate::fast_val::{FastVal, HeapAlloc};
 use niao_ast::Span;
 use niao_llm::{ChatMessage, GenerateOptions};
 use niao_runtime::nllm::{
-    backend_name_handles, chat_handles, complete_handles, count_tokens_handles, reset_handles, session_ready,
-    unload_handles,
+    backend_name_handles, chat_handles, complete_handles, count_tokens_handles, reset_handles,
+    session_ready, unload_handles,
 };
 use niao_runtime::{Value, ValueRef};
 use std::collections::HashMap;
@@ -163,7 +163,11 @@ fn read_string(v: FastVal, heap: &[ValueRef], native_refs: &[ValueRef]) -> Optio
     }
 }
 
-fn read_messages(v: FastVal, heap: &[ValueRef], native_refs: &[ValueRef]) -> Option<Vec<ChatMessage>> {
+fn read_messages(
+    v: FastVal,
+    heap: &[ValueRef],
+    native_refs: &[ValueRef],
+) -> Option<Vec<ChatMessage>> {
     let items = match v {
         FastVal::Heap(idx) => match &*heap[idx as usize].borrow() {
             Value::Array(items) => items.clone(),

@@ -42,7 +42,9 @@ pub fn decode(bytes: &[u8]) -> VisionResult<Image> {
                 let depth = chunk_data[8];
                 color_type = chunk_data[9];
                 if chunk_data[10] != 0 || chunk_data[12] != 0 {
-                    return Err(VisionError::Codec("unsupported PNG compression/interlace".into()));
+                    return Err(VisionError::Codec(
+                        "unsupported PNG compression/interlace".into(),
+                    ));
                 }
                 if depth != 8 {
                     return Err(VisionError::Codec("only 8-bit PNG supported".into()));

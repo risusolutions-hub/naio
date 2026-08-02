@@ -30,12 +30,21 @@ fn arity(args: &[ValueRef], n: usize, name: &str, span: Span) -> NiaoResult<()> 
     Ok(())
 }
 
-fn arity_range(args: &[ValueRef], min: usize, max: usize, name: &str, span: Span) -> NiaoResult<()> {
+fn arity_range(
+    args: &[ValueRef],
+    min: usize,
+    max: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<()> {
     if args.len() < min || args.len() > max {
         return Err(RuntimeError::at(
             span,
             E3010_NEXPLAIN_ARITY,
-            format!("{name}() expects {min}..={max} argument(s), got {}", args.len()),
+            format!(
+                "{name}() expects {min}..={max} argument(s), got {}",
+                args.len()
+            ),
         ));
     }
     Ok(())
@@ -134,22 +143,23 @@ const DEFAULT_FIX: &str = "Read the message carefully and inspect the surroundin
 
 fn find_rule(message: &str) -> Option<HintRule> {
     let lower = message.to_ascii_lowercase();
-    CUSTOM_RULES.with(|rules| {
-        for rule in rules.borrow().iter() {
-            if lower.contains(&rule.pattern.to_ascii_lowercase()) {
-                return Some(rule.clone());
+    CUSTOM_RULES
+        .with(|rules| {
+            for rule in rules.borrow().iter() {
+                if lower.contains(&rule.pattern.to_ascii_lowercase()) {
+                    return Some(rule.clone());
+                }
             }
-        }
-        None
-    })
-    .or_else(|| {
-        for rule in builtin_rules() {
-            if lower.contains(&rule.pattern.to_ascii_lowercase()) {
-                return Some(rule);
+            None
+        })
+        .or_else(|| {
+            for rule in builtin_rules() {
+                if lower.contains(&rule.pattern.to_ascii_lowercase()) {
+                    return Some(rule);
+                }
             }
-        }
-        None
-    })
+            None
+        })
 }
 
 struct Explained {
@@ -175,7 +185,11 @@ fn explain_message(message: String, code: Option<u32>) -> Explained {
     }
 }
 
-fn extract_msg_or_error(arg: &ValueRef, name: &str, span: Span) -> NiaoResult<(String, Option<u32>)> {
+fn extract_msg_or_error(
+    arg: &ValueRef,
+    name: &str,
+    span: Span,
+) -> NiaoResult<(String, Option<u32>)> {
     match &*arg.borrow() {
         Value::String(s) => Ok((s.clone(), None)),
         Value::Error(e) => Ok((e.message.clone(), Some(e.code))),
@@ -219,7 +233,10 @@ fn format_explained(e: &Explained) -> String {
 
 fn rule_to_object(rule: &HintRule) -> ValueRef {
     let mut map = HashMap::new();
-    map.insert("pattern".into(), Value::String(rule.pattern.clone()).ref_cell());
+    map.insert(
+        "pattern".into(),
+        Value::String(rule.pattern.clone()).ref_cell(),
+    );
     map.insert("hint".into(), Value::String(rule.hint.clone()).ref_cell());
     map.insert("fix".into(), Value::String(rule.fix.clone()).ref_cell());
     Value::Object(map).ref_cell()
@@ -254,11 +271,7 @@ fn nexplain_register(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
         ));
     }
     CUSTOM_RULES.with(|rules| {
-        rules.borrow_mut().push(HintRule {
-            pattern,
-            hint,
-            fix,
-        });
+        rules.borrow_mut().push(HintRule { pattern, hint, fix });
     });
     Ok(Value::Bool(true).ref_cell())
 }
@@ -310,11 +323,18 @@ nexplain_fns![
     ("nexplain_register", "register", nexplain_register),
     ("nexplain_hints", "hints", nexplain_hints),
     ("nexplain_format", "format", nexplain_format),
-    ("nexplain_clear_custom", "clear_custom", nexplain_clear_custom),
+    (
+        "nexplain_clear_custom",
+        "clear_custom",
+        nexplain_clear_custom
+    ),
 ];
 
 fn all_builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(flat, _, f)| (flat, f)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(flat, _, f)| (flat, f))
+        .collect()
 }
 
 pub fn namespace() -> Value {
@@ -353,9 +373,15 @@ mod tests {
         let r = nexplain_of(&[msg], span()).unwrap();
         match &*r.borrow() {
             Value::Object(map) => {
-                assert!(matches!(&*map.get("message").unwrap().borrow(), Value::String(s) if s.contains("undefined")));
-                assert!(matches!(&*map.get("hint").unwrap().borrow(), Value::String(s) if s.contains("defined")));
-                assert!(matches!(&*map.get("fix").unwrap().borrow(), Value::String(s) if !s.is_empty()));
+                assert!(
+                    matches!(&*map.get("message").unwrap().borrow(), Value::String(s) if s.contains("undefined"))
+                );
+                assert!(
+                    matches!(&*map.get("hint").unwrap().borrow(), Value::String(s) if s.contains("defined"))
+                );
+                assert!(
+                    matches!(&*map.get("fix").unwrap().borrow(), Value::String(s) if !s.is_empty())
+                );
                 assert!(!map.contains_key("code"));
             }
             other => panic!("expected object, got {other:?}"),
@@ -369,8 +395,13 @@ mod tests {
         let r = nexplain_of(&[err], span()).unwrap();
         match &*r.borrow() {
             Value::Object(map) => {
-                assert!(matches!(&*map.get("code").unwrap().borrow(), Value::Int(1503)));
-                assert!(matches!(&*map.get("hint").unwrap().borrow(), Value::String(s) if s.contains("handle")));
+                assert!(matches!(
+                    &*map.get("code").unwrap().borrow(),
+                    Value::Int(1503)
+                ));
+                assert!(
+                    matches!(&*map.get("hint").unwrap().borrow(), Value::String(s) if s.contains("handle"))
+                );
             }
             other => panic!("expected object, got {other:?}"),
         }
@@ -388,19 +419,33 @@ mod tests {
             span(),
         )
         .unwrap();
-        let r = nexplain_of(&[Value::String("operation timeout".into()).ref_cell()], span()).unwrap();
+        let r = nexplain_of(
+            &[Value::String("operation timeout".into()).ref_cell()],
+            span(),
+        )
+        .unwrap();
         match &*r.borrow() {
             Value::Object(map) => {
-                assert!(matches!(&*map.get("hint").unwrap().borrow(), Value::String(s) if s == "custom timeout hint"));
-                assert!(matches!(&*map.get("fix").unwrap().borrow(), Value::String(s) if s == "custom fix"));
+                assert!(
+                    matches!(&*map.get("hint").unwrap().borrow(), Value::String(s) if s == "custom timeout hint")
+                );
+                assert!(
+                    matches!(&*map.get("fix").unwrap().borrow(), Value::String(s) if s == "custom fix")
+                );
             }
             other => panic!("expected object, got {other:?}"),
         }
         nexplain_clear_custom(&[], span()).unwrap();
-        let r2 = nexplain_of(&[Value::String("operation timeout".into()).ref_cell()], span()).unwrap();
+        let r2 = nexplain_of(
+            &[Value::String("operation timeout".into()).ref_cell()],
+            span(),
+        )
+        .unwrap();
         match &*r2.borrow() {
             Value::Object(map) => {
-                assert!(matches!(&*map.get("hint").unwrap().borrow(), Value::String(s) if s.contains("timed out")));
+                assert!(
+                    matches!(&*map.get("hint").unwrap().borrow(), Value::String(s) if s.contains("timed out"))
+                );
             }
             other => panic!("expected object, got {other:?}"),
         }
@@ -423,7 +468,9 @@ mod tests {
                 assert!(items.len() >= 11); // 1 custom + 10 builtins
                 match &*items[0].borrow() {
                     Value::Object(map) => {
-                        assert!(matches!(&*map.get("pattern").unwrap().borrow(), Value::String(s) if s == "boom"));
+                        assert!(
+                            matches!(&*map.get("pattern").unwrap().borrow(), Value::String(s) if s == "boom")
+                        );
                     }
                     other => panic!("expected object, got {other:?}"),
                 }
@@ -459,7 +506,9 @@ mod tests {
             let r = nexplain_of(&[Value::String(msg.into()).ref_cell()], span()).unwrap();
             match &*r.borrow() {
                 Value::Object(map) => {
-                    assert!(matches!(&*map.get("hint").unwrap().borrow(), Value::String(s) if s.contains("denied")));
+                    assert!(
+                        matches!(&*map.get("hint").unwrap().borrow(), Value::String(s) if s.contains("denied"))
+                    );
                 }
                 other => panic!("expected object, got {other:?}"),
             }
@@ -476,8 +525,12 @@ mod tests {
         .unwrap();
         match &*r.borrow() {
             Value::Object(map) => {
-                assert!(matches!(&*map.get("hint").unwrap().borrow(), Value::String(s) if s == DEFAULT_HINT));
-                assert!(matches!(&*map.get("fix").unwrap().borrow(), Value::String(s) if s == DEFAULT_FIX));
+                assert!(
+                    matches!(&*map.get("hint").unwrap().borrow(), Value::String(s) if s == DEFAULT_HINT)
+                );
+                assert!(
+                    matches!(&*map.get("fix").unwrap().borrow(), Value::String(s) if s == DEFAULT_FIX)
+                );
             }
             other => panic!("expected object, got {other:?}"),
         }

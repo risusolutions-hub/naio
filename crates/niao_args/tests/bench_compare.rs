@@ -46,7 +46,17 @@ fn niao_cmd() -> Command {
 
 #[test]
 fn bench_parse_throughput() {
-    let argv = ["niao", "run", "bench.niao", "--mode", "vm", "-t", "--", "x", "-y"];
+    let argv = [
+        "niao",
+        "run",
+        "bench.niao",
+        "--mode",
+        "vm",
+        "-t",
+        "--",
+        "x",
+        "-y",
+    ];
     let cmd = niao_cmd();
 
     let start = Instant::now();
@@ -68,5 +78,8 @@ fn bench_parse_throughput() {
     println!(
         "args_parse_{ITERS}: niao_args {niao_rate:.0} parses/s, clap {clap_rate:.0} parses/s (ratio {ratio:.2}x)"
     );
-    assert!(ratio > 0.25, "niao_args should stay within 4x of clap on parse-once workload");
+    assert!(
+        ratio > 0.25,
+        "niao_args should stay within 4x of clap on parse-once workload"
+    );
 }

@@ -39,19 +39,20 @@ pub struct LibPackage {
 
 pub fn read_project_package(path: &Path) -> PkgResult<ProjectPackage> {
     let data = read_json_text(path)?;
-    crate::json::parse_struct(&data).map_err(|e| {
-        PkgError::Message(format!("parse {}: {e}", path.display()))
-    })
+    crate::json::parse_struct(&data)
+        .map_err(|e| PkgError::Message(format!("parse {}: {e}", path.display())))
 }
 
 pub fn read_lib_package(path: &Path) -> PkgResult<LibPackage> {
     let data = read_json_text(path)?;
     if data.trim().is_empty() {
-        return Err(PkgError::Message(format!("empty json file: {}", path.display())));
+        return Err(PkgError::Message(format!(
+            "empty json file: {}",
+            path.display()
+        )));
     }
-    crate::json::parse_struct(&data).map_err(|e| {
-        PkgError::Message(format!("parse {}: {e}", path.display()))
-    })
+    crate::json::parse_struct(&data)
+        .map_err(|e| PkgError::Message(format!("parse {}: {e}", path.display())))
 }
 
 pub(crate) fn read_json_text(path: &Path) -> PkgResult<String> {
@@ -127,9 +128,7 @@ pub fn pick_version(requested: &str, available: &[String]) -> PkgResult<String> 
     }
     if is_latest_request(requested) {
         return latest_version(available).ok_or_else(|| {
-            PkgError::NotFound(format!(
-                "no versions available for requested '{requested}'"
-            ))
+            PkgError::NotFound(format!("no versions available for requested '{requested}'"))
         });
     }
     if let Some(v) = available.iter().find(|v| version_matches(requested, v)) {

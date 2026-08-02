@@ -35,10 +35,8 @@ fn ahiru_app_new(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     } else {
         match &*args[0].borrow() {
             Value::Object(map) => object_to_config(map, span)?,
-            Value::String(path) => {
-                ahiru_core::AhiruConfig::from_file(std::path::Path::new(path))
-                    .map_err(|e| runtime_err(span, &e))?
-            }
+            Value::String(path) => ahiru_core::AhiruConfig::from_file(std::path::Path::new(path))
+                .map_err(|e| runtime_err(span, &e))?,
             other => {
                 return Err(type_err(
                     span,
@@ -94,9 +92,7 @@ fn register_route(
     }
     let handler_fn = app::make_niao_handler(handler, span);
     app::with_app_mut(app_id, name, span, |state| {
-        state
-            .app
-            .route(method, &path, handler_fn, meta);
+        state.app.route(method, &path, handler_fn, meta);
         Ok(())
     })?;
     ok_nil()
@@ -115,7 +111,12 @@ fn ahiru_app_put(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
 }
 
 fn ahiru_app_delete(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
-    register_route(args, span, ahiru_core::HttpMethod::Delete, "ahiru_app_delete")
+    register_route(
+        args,
+        span,
+        ahiru_core::HttpMethod::Delete,
+        "ahiru_app_delete",
+    )
 }
 
 fn ahiru_app_patch(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
@@ -144,11 +145,11 @@ fn ahiru_app_ws(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
 }
 
 fn ahiru_app_use(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
-  if args.len() >= 2 {
-    if let Value::Function(_) = &*args[1].borrow() {
-      return v3_builtins::ahiru_app_use_custom(args, span);
+    if args.len() >= 2 {
+        if let Value::Function(_) = &*args[1].borrow() {
+            return v3_builtins::ahiru_app_use_custom(args, span);
+        }
     }
-  }
     arity_range(args, 2, 3, "ahiru_app_use", span)?;
     let app_id = int_arg(args, 0, "ahiru_app_use", span)? as u64;
     let mw_name = string_arg(args, 1, "ahiru_app_use", span)?;
@@ -159,7 +160,9 @@ fn ahiru_app_use(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     };
     let mw = middleware_from_name(&mw_name, &opts, span)?;
     app::with_app_mut(app_id, "ahiru_app_use", span, |state| {
-        state.app.use_middleware(ahiru_core::MiddlewareEntry::builtin(mw));
+        state
+            .app
+            .use_middleware(ahiru_core::MiddlewareEntry::builtin(mw));
         Ok(())
     })?;
     ok_nil()
@@ -200,18 +203,12 @@ fn ahiru_app_routes(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
         .iter()
         .map(|r| {
             let mut m = HashMap::new();
-            m.insert(
-                "method".into(),
-                Value::String(r.method.clone()).ref_cell(),
-            );
+            m.insert("method".into(), Value::String(r.method.clone()).ref_cell());
             m.insert("path".into(), Value::String(r.path.clone()).ref_cell());
             if let Some(p) = &r.permission {
                 m.insert("permission".into(), Value::String(p.clone()).ref_cell());
             }
-            m.insert(
-                "websocket".into(),
-                Value::Bool(r.websocket).ref_cell(),
-            );
+            m.insert("websocket".into(), Value::Bool(r.websocket).ref_cell());
             Value::Object(m).ref_cell()
         })
         .collect();
@@ -270,7 +267,10 @@ fn ahiru_sse_write(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
                 _ => None,
             })
             .ok_or_else(|| {
-                runtime_err(span, "ahiru_sse_write(): expected stream handle or response object")
+                runtime_err(
+                    span,
+                    "ahiru_sse_write(): expected stream handle or response object",
+                )
             })?,
         other => {
             return Err(type_err(
@@ -336,38 +336,49 @@ fn ahiru_app_set_logging(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> 
         Value::Bool(b) => Some(*b),
         _ => None,
     });
-    let json_logs = opts.get("json_logs").or_else(|| opts.get("json")).and_then(|v| match &*v.borrow() {
-        Value::Bool(b) => Some(*b),
-        _ => None,
-    });
+    let json_logs = opts
+        .get("json_logs")
+        .or_else(|| opts.get("json"))
+        .and_then(|v| match &*v.borrow() {
+            Value::Bool(b) => Some(*b),
+            _ => None,
+        });
     let startup_banner = opts.get("startup_banner").and_then(|v| match &*v.borrow() {
         Value::Bool(b) => Some(*b),
         _ => None,
     });
-    let quiet_handlers = opts.get("quiet_handlers").or_else(|| opts.get("quiet")).and_then(|v| match &*v.borrow() {
-        Value::Bool(b) => Some(*b),
-        _ => None,
-    });
+    let quiet_handlers = opts
+        .get("quiet_handlers")
+        .or_else(|| opts.get("quiet"))
+        .and_then(|v| match &*v.borrow() {
+            Value::Bool(b) => Some(*b),
+            _ => None,
+        });
     let request_id = opts.get("request_id").and_then(|v| match &*v.borrow() {
         Value::Bool(b) => Some(*b),
         _ => None,
     });
-    let slow_request_ms = opts.get("slow_request_ms").and_then(|v| match &*v.borrow() {
-        Value::Int(n) => Some(*n as f64),
-        _ => None,
-    });
-    let skip_paths = opts.get("skip_paths").or_else(|| opts.get("skip")).and_then(|v| match &*v.borrow() {
-        Value::Array(items) => Some(
-            items
-                .iter()
-                .filter_map(|i| match &*i.borrow() {
-                    Value::String(s) => Some(s.clone()),
-                    _ => None,
-                })
-                .collect::<Vec<_>>(),
-        ),
-        _ => None,
-    });
+    let slow_request_ms = opts
+        .get("slow_request_ms")
+        .and_then(|v| match &*v.borrow() {
+            Value::Int(n) => Some(*n as f64),
+            _ => None,
+        });
+    let skip_paths = opts
+        .get("skip_paths")
+        .or_else(|| opts.get("skip"))
+        .and_then(|v| match &*v.borrow() {
+            Value::Array(items) => Some(
+                items
+                    .iter()
+                    .filter_map(|i| match &*i.borrow() {
+                        Value::String(s) => Some(s.clone()),
+                        _ => None,
+                    })
+                    .collect::<Vec<_>>(),
+            ),
+            _ => None,
+        });
     app::with_app_mut(app_id, "ahiru_app_set_logging", span, |state| {
         state.app.logging().apply_runtime_opts(
             access_log,
@@ -398,7 +409,11 @@ fn ahiru_native_mount_health(args: &[ValueRef], span: Span) -> NiaoResult<ValueR
     arity_range(args, 2, 3, "ahiru_native_mount_health", span)?;
     let app_id = int_arg(args, 0, "ahiru_native_mount_health", span)? as u64;
     let path = string_arg(args, 1, "ahiru_native_mount_health", span)?;
-    let path = if path.is_empty() { "/health".into() } else { path };
+    let path = if path.is_empty() {
+        "/health".into()
+    } else {
+        path
+    };
     app::mount_native_health(app_id, &path, span)?;
     ok_nil()
 }
@@ -407,7 +422,11 @@ fn ahiru_native_mount_ping(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef
     arity_range(args, 2, 3, "ahiru_native_mount_ping", span)?;
     let app_id = int_arg(args, 0, "ahiru_native_mount_ping", span)? as u64;
     let path = string_arg(args, 1, "ahiru_native_mount_ping", span)?;
-    let path = if path.is_empty() { "/ping".into() } else { path };
+    let path = if path.is_empty() {
+        "/ping".into()
+    } else {
+        path
+    };
     app::mount_native_ping(app_id, &path, span)?;
     ok_nil()
 }
@@ -428,7 +447,10 @@ pub fn builtins() -> Vec<(&'static str, NativeFn)> {
         ("ahiru_app_routes", Rc::new(ahiru_app_routes)),
         ("ahiru_app_init_db", Rc::new(ahiru_app_init_db)),
         ("ahiru_native_routes", Rc::new(ahiru_native_routes)),
-        ("ahiru_native_mount_health", Rc::new(ahiru_native_mount_health)),
+        (
+            "ahiru_native_mount_health",
+            Rc::new(ahiru_native_mount_health),
+        ),
         ("ahiru_native_mount_ping", Rc::new(ahiru_native_mount_ping)),
         ("ahiru_response", Rc::new(ahiru_response)),
         ("ahiru_sse_start", Rc::new(ahiru_sse_start)),

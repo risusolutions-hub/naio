@@ -43,11 +43,10 @@ fn render_html(title: &str, program: &Program) -> String {
                 if !f.params.is_empty() {
                     body.push_str("<h3>Parameters</h3><ul>");
                     for p in &f.params {
-                        let ty = p
-                            .ty
-                            .as_ref()
-                            .map(format_type)
-                            .unwrap_or_else(|| "any".into());
+                        let ty =
+                            p.ty.as_ref()
+                                .map(format_type)
+                                .unwrap_or_else(|| "any".into());
                         body.push_str(&format!("<li><code>{}</code>: {}</li>", p.name, ty));
                     }
                     body.push_str("</ul>");

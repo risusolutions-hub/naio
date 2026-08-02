@@ -6,12 +6,7 @@ use niao_errors::codes;
 use std::collections::HashMap;
 
 #[inline]
-pub fn arity(
-    args: &[ValueRef],
-    n: usize,
-    name: &str,
-    span: Span,
-) -> Result<(), RuntimeError> {
+pub fn arity(args: &[ValueRef], n: usize, name: &str, span: Span) -> Result<(), RuntimeError> {
     if args.len() != n {
         return Err(RuntimeError::at(
             span,
@@ -86,12 +81,7 @@ pub fn string_arg(
 }
 
 #[inline]
-pub fn int_arg(
-    args: &[ValueRef],
-    idx: usize,
-    name: &str,
-    span: Span,
-) -> Result<i64, RuntimeError> {
+pub fn int_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> Result<i64, RuntimeError> {
     match &*args[idx].borrow() {
         Value::Int(n) => Ok(*n),
         other => Err(RuntimeError::at(

@@ -2,9 +2,9 @@
 
 use crate::Value;
 use niao_ast::Span;
-use niao_errors::codes;
 use niao_db::postgres::types::ToSql;
 use niao_db::postgres::Row;
+use niao_errors::codes;
 use serde_json::Value as JsonValue;
 use std::collections::HashMap;
 
@@ -150,7 +150,12 @@ pub fn pg_to_niao(row: &Row, i: usize) -> Value {
     if let Ok(v) = row.try_get::<_, Option<Vec<String>>>(i) {
         return v
             .map(|items| {
-                Value::Array(items.into_iter().map(|s| Value::String(s).ref_cell()).collect())
+                Value::Array(
+                    items
+                        .into_iter()
+                        .map(|s| Value::String(s).ref_cell())
+                        .collect(),
+                )
             })
             .unwrap_or(Value::Nil);
     }

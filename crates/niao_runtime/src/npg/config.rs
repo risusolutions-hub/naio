@@ -33,7 +33,9 @@ pub fn parse_ssl_mode(s: &str) -> Result<SslMode, String> {
     match s.to_lowercase().as_str() {
         "disable" => Ok(SslMode::Disable),
         "prefer" => Ok(SslMode::Prefer),
-        "require" | "verify-ca" | "verify_ca" | "verify-full" | "verify_full" => Ok(SslMode::Require),
+        "require" | "verify-ca" | "verify_ca" | "verify-full" | "verify_full" => {
+            Ok(SslMode::Require)
+        }
         other => Err(format!("unknown sslmode \"{other}\"")),
     }
 }
@@ -97,7 +99,12 @@ pub fn config_from_opts(opts: &HashMap<String, ValueRef>) -> Result<(Config, Str
     if let Some(pw_ref) = opts.get("password") {
         let pw = match &*pw_ref.borrow() {
             Value::String(s) => s.clone(),
-            other => return Err(format!("password must be string, got {}", other.type_name())),
+            other => {
+                return Err(format!(
+                    "password must be string, got {}",
+                    other.type_name()
+                ))
+            }
         };
         config.password(&pw);
         display_parts.push("password=***".to_string());
@@ -106,7 +113,12 @@ pub fn config_from_opts(opts: &HashMap<String, ValueRef>) -> Result<(Config, Str
     if let Some(db_ref) = opts.get("database").or_else(|| opts.get("dbname")) {
         let db = match &*db_ref.borrow() {
             Value::String(s) => s.clone(),
-            other => return Err(format!("database must be string, got {}", other.type_name())),
+            other => {
+                return Err(format!(
+                    "database must be string, got {}",
+                    other.type_name()
+                ))
+            }
         };
         config.dbname(&db);
         display_parts.push(format!("database={db}"));
@@ -154,7 +166,10 @@ pub fn config_from_opts(opts: &HashMap<String, ValueRef>) -> Result<(Config, Str
     Ok((config, display_parts.join(" ")))
 }
 
-pub fn parse_connect_opts(opts_ref: &ValueRef, span: Span) -> Result<(Config, String), RuntimeError> {
+pub fn parse_connect_opts(
+    opts_ref: &ValueRef,
+    span: Span,
+) -> Result<(Config, String), RuntimeError> {
     let opts = match &*opts_ref.borrow() {
         Value::Object(map) => map.clone(),
         other => {
@@ -188,7 +203,10 @@ pub fn pool_opts_from_map(
         .get("max_size")
         .map(|v| match &*v.borrow() {
             Value::Int(n) if *n > 0 => Ok(*n as u32),
-            other => Err(format!("max_size must be positive int, got {}", other.type_name())),
+            other => Err(format!(
+                "max_size must be positive int, got {}",
+                other.type_name()
+            )),
         })
         .transpose()?
         .unwrap_or(10);
@@ -196,7 +214,10 @@ pub fn pool_opts_from_map(
         .get("min_idle")
         .map(|v| match &*v.borrow() {
             Value::Int(n) if *n >= 0 => Ok(*n as u32),
-            other => Err(format!("min_idle must be non-negative int, got {}", other.type_name())),
+            other => Err(format!(
+                "min_idle must be non-negative int, got {}",
+                other.type_name()
+            )),
         })
         .transpose()?
         .unwrap_or(0);
@@ -204,26 +225,29 @@ pub fn pool_opts_from_map(
         .get("max_lifetime_secs")
         .map(|v| match &*v.borrow() {
             Value::Int(n) if *n > 0 => Ok(Duration::from_secs(*n as u64)),
-            other => {
-                Err(format!(
-                    "max_lifetime_secs must be positive int, got {}",
-                    other.type_name()
-                ))
-            }
+            other => Err(format!(
+                "max_lifetime_secs must be positive int, got {}",
+                other.type_name()
+            )),
         })
         .transpose()?;
     let connection_timeout = opts
         .get("connection_timeout_secs")
         .map(|v| match &*v.borrow() {
             Value::Int(n) if *n > 0 => Ok(Duration::from_secs(*n as u64)),
-            other => {
-                Err(format!(
-                    "connection_timeout_secs must be positive int, got {}",
-                    other.type_name()
-                ))
-            }
+            other => Err(format!(
+                "connection_timeout_secs must be positive int, got {}",
+                other.type_name()
+            )),
         })
         .transpose()?
         .unwrap_or(Duration::from_secs(30));
-    Ok((config, display, max_size, min_idle, max_lifetime, connection_timeout))
+    Ok((
+        config,
+        display,
+        max_size,
+        min_idle,
+        max_lifetime,
+        connection_timeout,
+    ))
 }

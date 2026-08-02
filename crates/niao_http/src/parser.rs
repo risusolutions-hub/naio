@@ -100,7 +100,11 @@ fn validate_smuggling(headers: &HeaderMap) -> Result<(), ParseError> {
     Ok(())
 }
 
-fn parse_headers(buf: &[u8], after_request_line: usize, header_end: usize) -> Result<HeaderMap, ParseError> {
+fn parse_headers(
+    buf: &[u8],
+    after_request_line: usize,
+    header_end: usize,
+) -> Result<HeaderMap, ParseError> {
     if header_end > MAX_HEADER_BYTES {
         return Err(ParseError::HeaderTooLarge);
     }
@@ -261,7 +265,11 @@ pub fn decode_chunked(data: &[u8]) -> Result<(Vec<u8>, usize), ParseError> {
     }
 }
 
-pub fn read_body(mode: BodyMode, buf: &[u8], offset: usize) -> Result<(Vec<u8>, usize), ParseError> {
+pub fn read_body(
+    mode: BodyMode,
+    buf: &[u8],
+    offset: usize,
+) -> Result<(Vec<u8>, usize), ParseError> {
     match mode {
         BodyMode::None => Ok((Vec::new(), offset)),
         BodyMode::Fixed(n) => {

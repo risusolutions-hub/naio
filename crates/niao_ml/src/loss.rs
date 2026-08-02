@@ -22,7 +22,9 @@ fn mse(pred: &Tensor, target: &Tensor) -> TensorResult<Tensor> {
     let p = pred.to_cpu()?;
     let t = target.to_cpu()?;
     if p.len() != t.len() {
-        return Err(niao_tensor::TensorError::Shape("mse: length mismatch".into()));
+        return Err(niao_tensor::TensorError::Shape(
+            "mse: length mismatch".into(),
+        ));
     }
     let mut sum = 0.0f32;
     for i in 0..p.len() {

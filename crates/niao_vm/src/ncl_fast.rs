@@ -18,7 +18,12 @@ impl NclFastPath {
         }
     }
 
-    pub fn try_execute(stack: &mut Vec<FastVal>, heap: &[ValueRef], argc: usize, path: Self) -> bool {
+    pub fn try_execute(
+        stack: &mut Vec<FastVal>,
+        heap: &[ValueRef],
+        argc: usize,
+        path: Self,
+    ) -> bool {
         if argc != 1 || stack.len() < argc {
             return false;
         }

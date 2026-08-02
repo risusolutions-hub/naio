@@ -64,7 +64,9 @@ pub fn try_alloc(len: usize) -> Result<Vec<f32>, String> {
         let need = len * std::mem::size_of::<f32>();
         let used = MEMORY_USED.load(std::sync::atomic::Ordering::Relaxed);
         if used + need > budget {
-            return Err(format!("memory budget exceeded (E1976): need {need}, used {used}, budget {budget}"));
+            return Err(format!(
+                "memory budget exceeded (E1976): need {need}, used {used}, budget {budget}"
+            ));
         }
         MEMORY_USED.fetch_add(need, std::sync::atomic::Ordering::Relaxed);
     }

@@ -3,8 +3,8 @@ use crate::device::Device;
 use crate::dtype::DType;
 use crate::error::{TensorError, TensorResult};
 use crate::shape::{numel, row_major_strides, validate_shape};
-use rand::SeedableRng;
 use rand::rngs::StdRng;
+use rand::SeedableRng;
 use rand_distr::{Distribution, Normal};
 use std::cell::RefCell;
 use std::sync::Arc;
@@ -52,9 +52,7 @@ impl Tensor {
         let normal = Normal::new(0.0, 1.0).map_err(|e| TensorError::Op(e.to_string()))?;
         let data: Vec<f32> = TENSOR_RNG.with(|rng| {
             let mut r = rng.borrow_mut();
-            (0..n)
-                .map(|_| normal.sample(&mut *r) as f32)
-                .collect()
+            (0..n).map(|_| normal.sample(&mut *r) as f32).collect()
         });
         Self::from_cpu_data(shape, data, device)
     }
@@ -229,7 +227,9 @@ impl Tensor {
 
     pub fn softmax(&self, dim: usize) -> TensorResult<Self> {
         if self.shape.len() != 2 || dim != 1 {
-            return Err(TensorError::Op("softmax supports 2D tensors along dim 1".into()));
+            return Err(TensorError::Op(
+                "softmax supports 2D tensors along dim 1".into(),
+            ));
         }
         let rows = self.shape[0];
         let cols = self.shape[1];

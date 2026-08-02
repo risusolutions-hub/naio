@@ -6,10 +6,10 @@
 //! Auth priority: SharedKey (account key) → SAS token → anonymous.
 
 use super::{auth, AzureConfig};
-use crate::{Value, ValueRef};
-use niao_errors::codes;
-use niao_ast::Span;
 use crate::error_value;
+use crate::{Value, ValueRef};
+use niao_ast::Span;
+use niao_errors::codes;
 use std::collections::HashMap;
 
 const BLOB_VERSION: &str = "2020-08-04";
@@ -64,12 +64,8 @@ fn make_blob_auth(
     } else if let (Some(tenant), Some(cid), Some(csec)) =
         (&cfg.tenant, &cfg.client_id, &cfg.client_secret)
     {
-        let scope = format!(
-            "https://{}.blob.core.windows.net/.default",
-            cfg.account
-        );
-        let token =
-            auth::fetch_bearer_token(tenant, cid, csec, &scope)?;
+        let scope = format!("https://{}.blob.core.windows.net/.default", cfg.account);
+        let token = auth::fetch_bearer_token(tenant, cid, csec, &scope)?;
         Ok((Some(format!("Bearer {token}")), String::new()))
     } else {
         // Anonymous — no auth.
@@ -99,14 +95,22 @@ pub fn blob_put(
     ];
     ms_hdrs.sort_by(|a, b| a.0.cmp(&b.0));
 
-    let (auth_hdr, sas_qs) = match make_blob_auth(
-        cfg, "PUT", &cl, content_type, &date, &ms_hdrs, &canon,
-    ) {
-        Ok(v) => v,
-        Err(e) => return auth_error(span, e),
-    };
+    let (auth_hdr, sas_qs) =
+        match make_blob_auth(cfg, "PUT", &cl, content_type, &date, &ms_hdrs, &canon) {
+            Ok(v) => v,
+            Err(e) => return auth_error(span, e),
+        };
 
-    let url = blob_url(&cfg.account, container, blob, if sas_qs.is_empty() { None } else { Some(&sas_qs) });
+    let url = blob_url(
+        &cfg.account,
+        container,
+        blob,
+        if sas_qs.is_empty() {
+            None
+        } else {
+            Some(&sas_qs)
+        },
+    );
     let mut req = niao_http::put(&url)
         .set("x-ms-blob-type", "BlockBlob")
         .set("x-ms-date", &date)
@@ -138,12 +142,7 @@ pub fn blob_put(
 // Blob GET
 // ──────────────────────────────────────────────────────────────────────────────
 
-pub fn blob_get(
-    cfg: &AzureConfig,
-    container: &str,
-    blob: &str,
-    span: Span,
-) -> ValueRef {
+pub fn blob_get(cfg: &AzureConfig, container: &str, blob: &str, span: Span) -> ValueRef {
     let date = auth::rfc1123_now();
     let canon = format!("/{}/{}/{}", cfg.account, container, blob);
     let mut ms_hdrs = vec![
@@ -152,14 +151,21 @@ pub fn blob_get(
     ];
     ms_hdrs.sort_by(|a, b| a.0.cmp(&b.0));
 
-    let (auth_hdr, sas_qs) = match make_blob_auth(
-        cfg, "GET", "", "", &date, &ms_hdrs, &canon,
-    ) {
+    let (auth_hdr, sas_qs) = match make_blob_auth(cfg, "GET", "", "", &date, &ms_hdrs, &canon) {
         Ok(v) => v,
         Err(e) => return auth_error(span, e),
     };
 
-    let url = blob_url(&cfg.account, container, blob, if sas_qs.is_empty() { None } else { Some(&sas_qs) });
+    let url = blob_url(
+        &cfg.account,
+        container,
+        blob,
+        if sas_qs.is_empty() {
+            None
+        } else {
+            Some(&sas_qs)
+        },
+    );
     let mut req = niao_http::get(&url)
         .set("x-ms-date", &date)
         .set("x-ms-version", BLOB_VERSION);
@@ -187,12 +193,7 @@ pub fn blob_get(
 // Blob DELETE
 // ──────────────────────────────────────────────────────────────────────────────
 
-pub fn blob_delete(
-    cfg: &AzureConfig,
-    container: &str,
-    blob: &str,
-    span: Span,
-) -> ValueRef {
+pub fn blob_delete(cfg: &AzureConfig, container: &str, blob: &str, span: Span) -> ValueRef {
     let date = auth::rfc1123_now();
     let canon = format!("/{}/{}/{}", cfg.account, container, blob);
     let mut ms_hdrs = vec![
@@ -201,14 +202,21 @@ pub fn blob_delete(
     ];
     ms_hdrs.sort_by(|a, b| a.0.cmp(&b.0));
 
-    let (auth_hdr, sas_qs) = match make_blob_auth(
-        cfg, "DELETE", "", "", &date, &ms_hdrs, &canon,
-    ) {
+    let (auth_hdr, sas_qs) = match make_blob_auth(cfg, "DELETE", "", "", &date, &ms_hdrs, &canon) {
         Ok(v) => v,
         Err(e) => return auth_error(span, e),
     };
 
-    let url = blob_url(&cfg.account, container, blob, if sas_qs.is_empty() { None } else { Some(&sas_qs) });
+    let url = blob_url(
+        &cfg.account,
+        container,
+        blob,
+        if sas_qs.is_empty() {
+            None
+        } else {
+            Some(&sas_qs)
+        },
+    );
     let mut req = niao_http::delete(&url)
         .set("x-ms-date", &date)
         .set("x-ms-version", BLOB_VERSION);
@@ -234,12 +242,7 @@ pub fn blob_delete(
 // Blob LIST
 // ──────────────────────────────────────────────────────────────────────────────
 
-pub fn blob_list(
-    cfg: &AzureConfig,
-    container: &str,
-    prefix: Option<&str>,
-    span: Span,
-) -> ValueRef {
+pub fn blob_list(cfg: &AzureConfig, container: &str, prefix: Option<&str>, span: Span) -> ValueRef {
     let date = auth::rfc1123_now();
 
     // Canonicalized resource for list: /{account}/{container}\ncomp:list[\nprefix:{p}]\nrestype:container
@@ -251,12 +254,7 @@ pub fn blob_list(
     }
     canon_parts.push("restype:container".to_string());
     canon_parts.sort_unstable();
-    let canon = format!(
-        "/{}/{}\n{}",
-        cfg.account,
-        container,
-        canon_parts.join("\n")
-    );
+    let canon = format!("/{}/{}\n{}", cfg.account, container, canon_parts.join("\n"));
 
     let mut ms_hdrs = vec![
         ("x-ms-date".to_string(), date.clone()),
@@ -264,21 +262,19 @@ pub fn blob_list(
     ];
     ms_hdrs.sort_by(|a, b| a.0.cmp(&b.0));
 
-    let (auth_hdr, sas_qs) = match make_blob_auth(
-        cfg, "GET", "", "", &date, &ms_hdrs, &canon,
-    ) {
+    let (auth_hdr, sas_qs) = match make_blob_auth(cfg, "GET", "", "", &date, &ms_hdrs, &canon) {
         Ok(v) => v,
         Err(e) => return auth_error(span, e),
     };
 
     // Build query string
-    let mut qparams = vec![
-        "restype=container".to_string(),
-        "comp=list".to_string(),
-    ];
+    let mut qparams = vec!["restype=container".to_string(), "comp=list".to_string()];
     if let Some(p) = prefix {
         if !p.is_empty() {
-            qparams.push(format!("prefix={}", niao_http::percent_encode(p.as_bytes())));
+            qparams.push(format!(
+                "prefix={}",
+                niao_http::percent_encode(p.as_bytes())
+            ));
         }
     }
     let mut qs_parts = qparams.join("&");
@@ -348,12 +344,18 @@ mod tests {
     #[test]
     fn extract_xml_tags_basic() {
         let xml = r#"<Blobs><Blob><Name>foo.txt</Name></Blob><Blob><Name>bar/baz.json</Name></Blob></Blobs>"#;
-        assert_eq!(extract_xml_tags(xml, "Name"), vec!["foo.txt", "bar/baz.json"]);
+        assert_eq!(
+            extract_xml_tags(xml, "Name"),
+            vec!["foo.txt", "bar/baz.json"]
+        );
     }
 
     #[test]
     fn extract_xml_tags_empty() {
-        assert_eq!(extract_xml_tags("<Blobs></Blobs>", "Name"), Vec::<String>::new());
+        assert_eq!(
+            extract_xml_tags("<Blobs></Blobs>", "Name"),
+            Vec::<String>::new()
+        );
     }
 
     #[test]

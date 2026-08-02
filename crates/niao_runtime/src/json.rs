@@ -5,10 +5,10 @@
 
 use crate::{NativeFn, NiaoResult, RuntimeError, Value, ValueRef};
 use niao_ast::Span;
-use niao_errors::codes;
 use niao_bignum::BigInt;
-use niao_json_core::{Number as JNumber, Object as JObject, Value as JsonValue};
+use niao_errors::codes;
 use niao_json_core::{is_valid, parse as parse_json, to_string_pretty as json_pretty};
+use niao_json_core::{Number as JNumber, Object as JObject, Value as JsonValue};
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -35,12 +35,21 @@ fn arity(args: &[ValueRef], n: usize, name: &str, span: Span) -> NiaoResult<()> 
     Ok(())
 }
 
-fn arity_range(args: &[ValueRef], min: usize, max: usize, name: &str, span: Span) -> NiaoResult<()> {
+fn arity_range(
+    args: &[ValueRef],
+    min: usize,
+    max: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<()> {
     if args.len() < min || args.len() > max {
         return Err(RuntimeError::at(
             span,
             codes::E1012_JSON_ARITY,
-            format!("{name}() expects {min}..={max} argument(s), got {}", args.len()),
+            format!(
+                "{name}() expects {min}..={max} argument(s), got {}",
+                args.len()
+            ),
         ));
     }
     Ok(())
@@ -233,13 +242,20 @@ fn json_type_name(v: &Value) -> &'static str {
         Value::Bool(_) => "bool",
         Value::Int(_) | Value::BigInt(_) | Value::Float(_) => "number",
         Value::String(_) => "string",
-        Value::IntArray(_) | Value::FloatArray(_) | Value::BoolArray(_) | Value::ByteArray(_) | Value::StringArray(_) | Value::Array(_) => "array",
+        Value::IntArray(_)
+        | Value::FloatArray(_)
+        | Value::BoolArray(_)
+        | Value::ByteArray(_)
+        | Value::StringArray(_)
+        | Value::Array(_) => "array",
         Value::Object(_) => "object",
         #[cfg(feature = "nmongo")]
         Value::BsonDoc(_) => "object",
         Value::Instance(_) => "object",
         Value::Function(_) | Value::NativeFunction(_) => "unsupported",
-        Value::Native(_) | Value::Error(_) | Value::NclHandle(_) | Value::NmlHandle(_) => "unsupported",
+        Value::Native(_) | Value::Error(_) | Value::NclHandle(_) | Value::NmlHandle(_) => {
+            "unsupported"
+        }
     }
 }
 
@@ -323,9 +339,7 @@ enum PathToken {
 }
 
 fn path_has_syntax(path: &str) -> bool {
-    path.as_bytes()
-        .iter()
-        .any(|&b| b == b'.' || b == b'[')
+    path.as_bytes().iter().any(|&b| b == b'.' || b == b'[')
 }
 
 fn get_object_key(map: &HashMap<String, ValueRef>, key: &str, span: Span) -> NiaoResult<ValueRef> {
@@ -344,10 +358,8 @@ fn get_at_path_rc(val: &ValueRef, tokens: &[PathToken], span: Span) -> NiaoResul
         if is_last {
             return match (&*cur.borrow(), token) {
                 (Value::Object(map), PathToken::Key(key)) => get_object_key(map, key, span),
-                (Value::Array(arr), PathToken::Index(idx)) => arr
-                    .get(*idx)
-                    .map(Rc::clone)
-                    .ok_or_else(|| {
+                (Value::Array(arr), PathToken::Index(idx)) => {
+                    arr.get(*idx).map(Rc::clone).ok_or_else(|| {
                         type_err(
                             span,
                             format!(
@@ -355,44 +367,25 @@ fn get_at_path_rc(val: &ValueRef, tokens: &[PathToken], span: Span) -> NiaoResul
                                 arr.len()
                             ),
                         )
-                    }),
+                    })
+                }
                 (Value::IntArray(arr), PathToken::Index(idx)) => {
                     let idx = *idx;
-                    Ok(Value::Int(
-                        *arr.get(idx).ok_or_else(|| {
-                            type_err(
-                                span,
-                                format!(
-                                    "json_get: array index {idx} out of bounds (len {})",
-                                    arr.len()
-                                ),
-                            )
-                        })?,
-                    )
+                    Ok(Value::Int(*arr.get(idx).ok_or_else(|| {
+                        type_err(
+                            span,
+                            format!(
+                                "json_get: array index {idx} out of bounds (len {})",
+                                arr.len()
+                            ),
+                        )
+                    })?)
                     .ref_cell())
                 }
                 (Value::ByteArray(arr), PathToken::Index(idx)) => {
                     let idx = *idx;
-                    Ok(Value::Int(
-                        arr.get(idx)
-                            .copied()
-                            .map(|b| b as i64)
-                            .ok_or_else(|| {
-                                type_err(
-                                    span,
-                                    format!(
-                                        "json_get: array index {idx} out of bounds (len {})",
-                                        arr.len()
-                                    ),
-                                )
-                            })?,
-                    )
-                    .ref_cell())
-                }
-                (Value::StringArray(arr), PathToken::Index(idx)) => {
-                    let idx = *idx;
-                    Ok(Value::String(
-                        arr.get(idx).ok_or_else(|| {
+                    Ok(
+                        Value::Int(arr.get(idx).copied().map(|b| b as i64).ok_or_else(|| {
                             type_err(
                                 span,
                                 format!(
@@ -400,8 +393,21 @@ fn get_at_path_rc(val: &ValueRef, tokens: &[PathToken], span: Span) -> NiaoResul
                                     arr.len()
                                 ),
                             )
-                        })?,
+                        })?)
+                        .ref_cell(),
                     )
+                }
+                (Value::StringArray(arr), PathToken::Index(idx)) => {
+                    let idx = *idx;
+                    Ok(Value::String(arr.get(idx).ok_or_else(|| {
+                        type_err(
+                            span,
+                            format!(
+                                "json_get: array index {idx} out of bounds (len {})",
+                                arr.len()
+                            ),
+                        )
+                    })?)
                     .ref_cell())
                 }
                 (other, PathToken::Key(key)) => Err(type_err(
@@ -413,22 +419,20 @@ fn get_at_path_rc(val: &ValueRef, tokens: &[PathToken], span: Span) -> NiaoResul
                 )),
                 (other, PathToken::Index(idx)) => Err(type_err(
                     span,
-                    format!(
-                        "json_get: cannot index {} at [{idx}]",
-                        other.type_name()
-                    ),
+                    format!("json_get: cannot index {} at [{idx}]", other.type_name()),
                 )),
             };
         }
         cur = {
             let borrowed = cur.borrow();
             match (&*borrowed, token) {
-                (Value::Object(map), PathToken::Key(key)) => Rc::clone(
-                    map.get(key)
-                        .ok_or_else(|| type_err(span, format!("json_get: key '{key}' not found")))?,
-                ),
-                (Value::Array(arr), PathToken::Index(idx)) => Rc::clone(
-                    arr.get(*idx).ok_or_else(|| {
+                (Value::Object(map), PathToken::Key(key)) => {
+                    Rc::clone(map.get(key).ok_or_else(|| {
+                        type_err(span, format!("json_get: key '{key}' not found"))
+                    })?)
+                }
+                (Value::Array(arr), PathToken::Index(idx)) => {
+                    Rc::clone(arr.get(*idx).ok_or_else(|| {
                         type_err(
                             span,
                             format!(
@@ -436,8 +440,8 @@ fn get_at_path_rc(val: &ValueRef, tokens: &[PathToken], span: Span) -> NiaoResul
                                 arr.len()
                             ),
                         )
-                    })?,
-                ),
+                    })?)
+                }
                 (Value::IntArray(_), PathToken::Index(idx)) => {
                     return Err(type_err(
                         span,
@@ -468,10 +472,7 @@ fn get_at_path_rc(val: &ValueRef, tokens: &[PathToken], span: Span) -> NiaoResul
                 (other, PathToken::Index(idx)) => {
                     return Err(type_err(
                         span,
-                        format!(
-                            "json_get: cannot index {} at [{idx}]",
-                            other.type_name()
-                        ),
+                        format!("json_get: cannot index {} at [{idx}]", other.type_name()),
                     ));
                 }
             }
@@ -480,7 +481,12 @@ fn get_at_path_rc(val: &ValueRef, tokens: &[PathToken], span: Span) -> NiaoResul
     unreachable!("non-empty tokens always return from loop")
 }
 
-fn set_at_leaf(target: &mut Value, token: &PathToken, new_val: ValueRef, span: Span) -> NiaoResult<()> {
+fn set_at_leaf(
+    target: &mut Value,
+    token: &PathToken,
+    new_val: ValueRef,
+    span: Span,
+) -> NiaoResult<()> {
     match (target, token) {
         (Value::Object(map), PathToken::Key(key)) => {
             map.insert(key.clone(), new_val);
@@ -491,7 +497,10 @@ fn set_at_leaf(target: &mut Value, token: &PathToken, new_val: ValueRef, span: S
             if idx >= arr.len() {
                 return Err(type_err(
                     span,
-                    format!("json_set: array index {idx} out of bounds (len {})", arr.len()),
+                    format!(
+                        "json_set: array index {idx} out of bounds (len {})",
+                        arr.len()
+                    ),
                 ));
             }
             arr[idx] = new_val;
@@ -503,12 +512,20 @@ fn set_at_leaf(target: &mut Value, token: &PathToken, new_val: ValueRef, span: S
         )),
         (other, PathToken::Index(idx)) => Err(type_err(
             span,
-            format!("json_set: cannot set index [{idx}] on {}", other.type_name()),
+            format!(
+                "json_set: cannot set index [{idx}] on {}",
+                other.type_name()
+            ),
         )),
     }
 }
 
-fn set_at_path(target: &ValueRef, tokens: &[PathToken], new_val: ValueRef, span: Span) -> NiaoResult<()> {
+fn set_at_path(
+    target: &ValueRef,
+    tokens: &[PathToken],
+    new_val: ValueRef,
+    span: Span,
+) -> NiaoResult<()> {
     if tokens.is_empty() {
         return Err(type_err(span, "json_set: path must not be empty"));
     }
@@ -534,7 +551,10 @@ fn set_at_path(target: &ValueRef, tokens: &[PathToken], new_val: ValueRef, span:
                 if *idx >= arr.len() {
                     return Err(type_err(
                         span,
-                        format!("json_set: array index {idx} out of bounds (len {})", arr.len()),
+                        format!(
+                            "json_set: array index {idx} out of bounds (len {})",
+                            arr.len()
+                        ),
                     ));
                 }
                 Rc::clone(&arr[*idx])
@@ -542,10 +562,7 @@ fn set_at_path(target: &ValueRef, tokens: &[PathToken], new_val: ValueRef, span:
             other => {
                 return Err(type_err(
                     span,
-                    format!(
-                        "json_set: cannot traverse path on {}",
-                        other.type_name()
-                    ),
+                    format!("json_set: cannot traverse path on {}", other.type_name()),
                 ));
             }
         }
@@ -646,13 +663,9 @@ fn json_core_to_niao(j: JsonValue) -> Value {
 }
 
 fn parse_json_text(text: &str, span: Span) -> NiaoResult<Value> {
-    parse_json(text).map(json_core_to_niao).map_err(|e| {
-        RuntimeError::at(
-            span,
-            codes::E1013_JSON_PARSE,
-            format!("json_parse: {e}"),
-        )
-    })
+    parse_json(text)
+        .map(json_core_to_niao)
+        .map_err(|e| RuntimeError::at(span, codes::E1013_JSON_PARSE, format!("json_parse: {e}")))
 }
 
 // ---------------------------------------------------------------------------
@@ -916,7 +929,6 @@ fn estimate_json_len(v: &Value) -> usize {
     }
 }
 
-
 pub fn json_parse(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity(args, 1, "json_parse", span)?;
     let borrowed = args[0].borrow();
@@ -1043,9 +1055,8 @@ fn json_get(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
                 return match &*args[0].borrow() {
                     Value::Object(map) => get_object_key(map, path, span),
                     #[cfg(feature = "nmongo")]
-                    Value::BsonDoc(buf) => bson_field_from_raw(buf, path).ok_or_else(|| {
-                        type_err(span, format!("json_get: key '{path}' not found"))
-                    }),
+                    Value::BsonDoc(buf) => bson_field_from_raw(buf, path)
+                        .ok_or_else(|| type_err(span, format!("json_get: key '{path}' not found"))),
                     other => Err(type_err(
                         span,
                         format!(
@@ -1112,9 +1123,7 @@ fn json_clone(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
 
 fn json_equal(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity(args, 2, "json_equal", span)?;
-    Ok(
-        Value::Bool(json_deep_equal(&args[0].borrow(), &args[1].borrow())).ref_cell(),
-    )
+    Ok(Value::Bool(json_deep_equal(&args[0].borrow(), &args[1].borrow())).ref_cell())
 }
 
 fn json_array_len(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
@@ -1140,7 +1149,10 @@ fn json_object_len(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
         Value::Object(map) => Ok(Value::Int(map.len() as i64).ref_cell()),
         other => Err(type_err(
             span,
-            format!("json_object_len() expects object, got {}", other.type_name()),
+            format!(
+                "json_object_len() expects object, got {}",
+                other.type_name()
+            ),
         )),
     }
 }

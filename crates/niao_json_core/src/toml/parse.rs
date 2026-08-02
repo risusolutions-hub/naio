@@ -171,12 +171,7 @@ impl<'a> TomlParser<'a> {
     }
 }
 
-fn insert_dotted_into(
-    obj: &mut Object,
-    key: &str,
-    value: Value,
-    line_no: usize,
-) -> TomlResult<()> {
+fn insert_dotted_into(obj: &mut Object, key: &str, value: Value, line_no: usize) -> TomlResult<()> {
     let parts: Vec<&str> = key.split('.').collect();
     if parts.is_empty() {
         return Err(TomlError::new(line_no, 1, "empty key"));
@@ -274,7 +269,10 @@ fn parse_scalar(s: &str, line_no: usize) -> TomlResult<Value> {
             .map_err(|_| TomlError::new(line_no, 1, format!("invalid float '{s}'")))?;
         return Ok(Value::Number(Number::F64(f)));
     }
-    if s.chars().all(|c| c.is_ascii_digit() || c == '_' || c == '-') || (s.starts_with('-') && s.len() > 1) {
+    if s.chars()
+        .all(|c| c.is_ascii_digit() || c == '_' || c == '-')
+        || (s.starts_with('-') && s.len() > 1)
+    {
         let n: i64 = s
             .replace('_', "")
             .parse()
@@ -317,9 +315,10 @@ fn parse_string(s: &str, line_no: usize) -> TomlResult<Value> {
     let quote = s.as_bytes()[0];
     if s.starts_with("\"\"\"") || s.starts_with("'''") {
         let q = &s[..3];
-        let end = s.rfind(q).filter(|&i| i > 0).ok_or_else(|| {
-            TomlError::new(line_no, 1, "unterminated multiline string")
-        })?;
+        let end = s
+            .rfind(q)
+            .filter(|&i| i > 0)
+            .ok_or_else(|| TomlError::new(line_no, 1, "unterminated multiline string"))?;
         return Ok(Value::String(s[3..end].to_string()));
     }
     if s.as_bytes()[s.len() - 1] != quote {
@@ -330,9 +329,9 @@ fn parse_string(s: &str, line_no: usize) -> TomlResult<Value> {
     let mut chars = inner.chars();
     while let Some(c) = chars.next() {
         if c == '\\' {
-            let e = chars.next().ok_or_else(|| {
-                TomlError::new(line_no, 1, "invalid string escape")
-            })?;
+            let e = chars
+                .next()
+                .ok_or_else(|| TomlError::new(line_no, 1, "invalid string escape"))?;
             match e {
                 'n' => out.push('\n'),
                 't' => out.push('\t'),
@@ -422,12 +421,18 @@ mod tests {
     fn ahiru_sample() {
         let src = include_str!("../../../../examples/ahiru.config.toml");
         let v = parse(src).expect("parse");
-        assert_eq!(v.get("server").and_then(|s| s.get("port")).and_then(|p| p.as_i64()), Some(3001));
+        assert_eq!(
+            v.get("server")
+                .and_then(|s| s.get("port"))
+                .and_then(|p| p.as_i64()),
+            Some(3001)
+        );
     }
 
     #[test]
     fn niao_manifest() {
-        let v = parse("name = \"niao-demo\"\nversion = \"0.1.0\"\nentry = \"src/main.niao\"\n").unwrap();
+        let v = parse("name = \"niao-demo\"\nversion = \"0.1.0\"\nentry = \"src/main.niao\"\n")
+            .unwrap();
         assert_eq!(v.get("name").and_then(|v| v.as_str()), Some("niao-demo"));
     }
 

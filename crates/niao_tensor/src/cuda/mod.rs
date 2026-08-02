@@ -1,10 +1,10 @@
 //! CUDA backend via candle-core (optional feature).
 
 use crate::device::Device;
+use crate::dtype::DType;
 use crate::error::{TensorError, TensorResult};
 use crate::shape::row_major_strides;
 use crate::tensor::{Tensor, TensorStorage};
-use crate::dtype::DType;
 use candle_core::{Device as CandleDevice, Tensor as CandleTensor};
 
 #[derive(Debug, Clone)]
@@ -71,10 +71,7 @@ pub fn matmul(
 }
 
 pub fn relu(t: &CudaTensor) -> TensorResult<CudaTensor> {
-    let out = t
-        .inner
-        .relu()
-        .map_err(|e| TensorError::Op(e.to_string()))?;
+    let out = t.inner.relu().map_err(|e| TensorError::Op(e.to_string()))?;
     Ok(CudaTensor {
         inner: out,
         device_idx: t.device_idx,

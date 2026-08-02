@@ -93,11 +93,21 @@ macro_rules! impl_from {
     };
 }
 
-impl_from!(i32, |s: &str| s.parse().map_err(|e: std::num::ParseIntError| Error::msg(e.to_string())));
-impl_from!(i64, |s: &str| s.parse().map_err(|e: std::num::ParseIntError| Error::msg(e.to_string())));
-impl_from!(f64, |s: &str| s.parse().map_err(|e: std::num::ParseFloatError| Error::msg(e.to_string())));
-impl_from!(bool, |s: &str| -> Result<bool, Error> { Ok(s == "t" || s.eq_ignore_ascii_case("true")) });
-impl_from!(String, |s: &str| -> Result<String, Error> { Ok(s.to_string()) });
+impl_from!(i32, |s: &str| s
+    .parse()
+    .map_err(|e: std::num::ParseIntError| Error::msg(e.to_string())));
+impl_from!(i64, |s: &str| s
+    .parse()
+    .map_err(|e: std::num::ParseIntError| Error::msg(e.to_string())));
+impl_from!(f64, |s: &str| s
+    .parse()
+    .map_err(|e: std::num::ParseFloatError| Error::msg(e.to_string())));
+impl_from!(bool, |s: &str| -> Result<bool, Error> {
+    Ok(s == "t" || s.eq_ignore_ascii_case("true"))
+});
+impl_from!(String, |s: &str| -> Result<String, Error> {
+    Ok(s.to_string())
+});
 
 impl<'a> FromSql<'a> for &'a str {
     fn from_sql_nullable(raw: Option<&'a str>) -> Result<Self, Error> {
@@ -151,7 +161,10 @@ impl<'a> FromSql<'a> for Vec<String> {
         if inner.is_empty() {
             return Ok(Vec::new());
         }
-        Ok(inner.split(',').map(|x| x.trim_matches('"').to_string()).collect())
+        Ok(inner
+            .split(',')
+            .map(|x| x.trim_matches('"').to_string())
+            .collect())
     }
 }
 

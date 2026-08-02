@@ -19,10 +19,17 @@ impl WsMode {
     }
 }
 
-pub async fn handle_websocket(socket: WebSocket, handler: WsHandlerFn, ctx: crate::context::RequestContext) {
+pub async fn handle_websocket(
+    socket: WebSocket,
+    handler: WsHandlerFn,
+    ctx: crate::context::RequestContext,
+) {
     let send = std::sync::Arc::new(tokio::sync::Mutex::new(socket));
     let send_fn: std::sync::Arc<
-        dyn Fn(String) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<(), String>> + Send>>
+        dyn Fn(
+                String,
+            )
+                -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<(), String>> + Send>>
             + Send
             + Sync,
     > = {

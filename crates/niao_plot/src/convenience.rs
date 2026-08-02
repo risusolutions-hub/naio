@@ -45,7 +45,8 @@ pub fn heatmap(matrix: &[f64], rows: usize, cols: usize) -> PlotResult<Figure> {
 
 pub fn confusion_matrix(cm: &[f64], n: usize, labels: &[String]) -> PlotResult<Figure> {
     let mut fig = Figure::new(480.0, 480.0);
-    fig.axes(0)?.confusion_matrix(cm, n, labels, Some("Confusion Matrix"))?;
+    fig.axes(0)?
+        .confusion_matrix(cm, n, labels, Some("Confusion Matrix"))?;
     Ok(fig)
 }
 

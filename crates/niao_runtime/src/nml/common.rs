@@ -26,7 +26,10 @@ pub fn arity_range(
         return Err(RuntimeError::at(
             span,
             codes::E1970_NML_ARITY,
-            format!("{name}() expects {min}..={max} argument(s), got {}", args.len()),
+            format!(
+                "{name}() expects {min}..={max} argument(s), got {}",
+                args.len()
+            ),
         ));
     }
     Ok(())
@@ -43,7 +46,12 @@ pub fn int_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> Result<
     }
 }
 
-pub fn float_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> Result<f64, RuntimeError> {
+pub fn float_arg(
+    args: &[ValueRef],
+    idx: usize,
+    name: &str,
+    span: Span,
+) -> Result<f64, RuntimeError> {
     match &*args[idx].borrow() {
         Value::Float(f) => Ok(*f),
         Value::Int(n) => Ok(*n as f64),
@@ -55,7 +63,12 @@ pub fn float_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> Resul
     }
 }
 
-pub fn string_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> Result<String, RuntimeError> {
+pub fn string_arg(
+    args: &[ValueRef],
+    idx: usize,
+    name: &str,
+    span: Span,
+) -> Result<String, RuntimeError> {
     match &*args[idx].borrow() {
         Value::String(s) => Ok(s.clone()),
         other => Err(RuntimeError::at(
@@ -66,7 +79,12 @@ pub fn string_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> Resu
     }
 }
 
-pub fn nml_handle_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> Result<u64, RuntimeError> {
+pub fn nml_handle_arg(
+    args: &[ValueRef],
+    idx: usize,
+    name: &str,
+    span: Span,
+) -> Result<u64, RuntimeError> {
     match &*args[idx].borrow() {
         Value::NmlHandle(id) => Ok(*id),
         other => Err(RuntimeError::at(
@@ -77,7 +95,12 @@ pub fn nml_handle_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> 
     }
 }
 
-pub fn float_array_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> Result<Vec<f64>, RuntimeError> {
+pub fn float_array_arg(
+    args: &[ValueRef],
+    idx: usize,
+    name: &str,
+    span: Span,
+) -> Result<Vec<f64>, RuntimeError> {
     match &*args[idx].borrow() {
         Value::NmlHandle(id) => {
             let t = super::tensor_from_handle(*id, name, span)?;
@@ -112,7 +135,12 @@ pub fn float_array_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) ->
     }
 }
 
-pub fn int_array_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> Result<Vec<i64>, RuntimeError> {
+pub fn int_array_arg(
+    args: &[ValueRef],
+    idx: usize,
+    name: &str,
+    span: Span,
+) -> Result<Vec<i64>, RuntimeError> {
     match &*args[idx].borrow() {
         Value::IntArray(a) => Ok(a.clone()),
         Value::Array(items) => {
@@ -155,7 +183,12 @@ pub fn ok_bool(b: bool) -> ValueRef {
     Value::Bool(b).ref_cell()
 }
 
-pub fn string_array_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> Result<Vec<String>, RuntimeError> {
+pub fn string_array_arg(
+    args: &[ValueRef],
+    idx: usize,
+    name: &str,
+    span: Span,
+) -> Result<Vec<String>, RuntimeError> {
     match &*args[idx].borrow() {
         Value::StringArray(sa) => {
             let mut out = Vec::with_capacity(sa.len());
@@ -188,7 +221,12 @@ pub fn string_array_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -
     }
 }
 
-pub fn ncl_handle_from_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> Result<u64, RuntimeError> {
+pub fn ncl_handle_from_arg(
+    args: &[ValueRef],
+    idx: usize,
+    name: &str,
+    span: Span,
+) -> Result<u64, RuntimeError> {
     match &*args[idx].borrow() {
         Value::NclHandle(id) => Ok(*id),
         other => Err(RuntimeError::at(

@@ -127,9 +127,7 @@ fn parse_kind(kind: &str, span: Span) -> NiaoResult<&'static str> {
     Err(RuntimeError::at(
         span,
         codes::E2941_NBUDGET_ERROR,
-        format!(
-            "unknown budget kind '{kind}'; expected one of cpu_pct|ram_mb|gpu_pct|usd|tokens"
-        ),
+        format!("unknown budget kind '{kind}'; expected one of cpu_pct|ram_mb|gpu_pct|usd|tokens"),
     ))
 }
 
@@ -173,9 +171,7 @@ fn collect_violations(limits: &Amounts, used: &Amounts, extra: &Amounts) -> Vec<
         };
         let total = used.get(kind).unwrap_or(0.0) + extra.get(kind).unwrap_or(0.0);
         if total > limit {
-            violations.push(format!(
-                "{kind}: used {total} exceeds limit {limit}"
-            ));
+            violations.push(format!("{kind}: used {total} exceeds limit {limit}"));
         }
     }
     violations
@@ -200,12 +196,21 @@ fn arity(args: &[ValueRef], n: usize, name: &str, span: Span) -> NiaoResult<()> 
     Ok(())
 }
 
-fn arity_range(args: &[ValueRef], min: usize, max: usize, name: &str, span: Span) -> NiaoResult<()> {
+fn arity_range(
+    args: &[ValueRef],
+    min: usize,
+    max: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<()> {
     if args.len() < min || args.len() > max {
         return Err(RuntimeError::at(
             span,
             codes::E2940_NBUDGET_ARITY,
-            format!("{name}() expects {min}..={max} argument(s), got {}", args.len()),
+            format!(
+                "{name}() expects {min}..={max} argument(s), got {}",
+                args.len()
+            ),
         ));
     }
     Ok(())
@@ -352,9 +357,7 @@ fn nbudget_charge(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
             if used > limit {
                 return Ok(exceed_err(
                     span,
-                    format!(
-                        "nbudget_charge({kind}, {amount}): used {used} exceeds limit {limit}"
-                    ),
+                    format!("nbudget_charge({kind}, {amount}): used {used} exceeds limit {limit}"),
                 ));
             }
         }
@@ -475,8 +478,13 @@ mod tests {
         let g = nbudget_get(&[], span()).unwrap();
         match &*g.borrow() {
             Value::Object(m) => {
-                assert!(matches!(&*m.get("ram_mb").unwrap().borrow(), Value::Int(1024)));
-                assert!(matches!(&*m.get("usd").unwrap().borrow(), Value::Float(x) if (*x - 1.5).abs() < 1e-9));
+                assert!(matches!(
+                    &*m.get("ram_mb").unwrap().borrow(),
+                    Value::Int(1024)
+                ));
+                assert!(
+                    matches!(&*m.get("usd").unwrap().borrow(), Value::Float(x) if (*x - 1.5).abs() < 1e-9)
+                );
                 assert!(m.get("cpu_pct").is_none());
             }
             other => panic!("expected object, got {other:?}"),
@@ -502,8 +510,13 @@ mod tests {
         let rem = nbudget_remain(&[], span()).unwrap();
         match &*rem.borrow() {
             Value::Object(m) => {
-                assert!(matches!(&*m.get("tokens").unwrap().borrow(), Value::Int(60)));
-                assert!(matches!(&*m.get("usd").unwrap().borrow(), Value::Float(x) if (*x - 1.5).abs() < 1e-9));
+                assert!(matches!(
+                    &*m.get("tokens").unwrap().borrow(),
+                    Value::Int(60)
+                ));
+                assert!(
+                    matches!(&*m.get("usd").unwrap().borrow(), Value::Float(x) if (*x - 1.5).abs() < 1e-9)
+                );
             }
             other => panic!("expected object, got {other:?}"),
         }
@@ -511,7 +524,10 @@ mod tests {
         let chk = nbudget_check(&[obj(&[("tokens", i(70))])], span()).unwrap();
         match &*chk.borrow() {
             Value::Object(m) => {
-                assert!(matches!(&*m.get("ok").unwrap().borrow(), Value::Bool(false)));
+                assert!(matches!(
+                    &*m.get("ok").unwrap().borrow(),
+                    Value::Bool(false)
+                ));
                 match &*m.get("violations").unwrap().borrow() {
                     Value::Array(v) => assert_eq!(v.len(), 1),
                     other => panic!("expected array, got {other:?}"),
@@ -531,7 +547,10 @@ mod tests {
         let used = nbudget_used(&[], span()).unwrap();
         match &*used.borrow() {
             Value::Object(m) => {
-                assert!(matches!(&*m.get("ram_mb").unwrap().borrow(), Value::Int(110)));
+                assert!(matches!(
+                    &*m.get("ram_mb").unwrap().borrow(),
+                    Value::Int(110)
+                ));
             }
             other => panic!("expected object, got {other:?}"),
         }

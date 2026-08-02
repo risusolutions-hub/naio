@@ -32,14 +32,16 @@ fn floats(args: &[ValueRef], idx: usize, name: &str, span: Span) -> NiaoResult<V
 fn nstats_mean(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity(args, 1, "nstats_mean", span)?;
     let v = floats(args, 0, "nstats_mean", span)?;
-    let m = mean(&v).map_err(|e| RuntimeError::at(span, codes::E4021_NSTATS_ERROR, e.to_string()))?;
+    let m =
+        mean(&v).map_err(|e| RuntimeError::at(span, codes::E4021_NSTATS_ERROR, e.to_string()))?;
     Ok(Value::Float(m).ref_cell())
 }
 
 fn nstats_std(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity(args, 1, "nstats_std", span)?;
     let v = floats(args, 0, "nstats_std", span)?;
-    let s = std(&v, 1).map_err(|e| RuntimeError::at(span, codes::E4021_NSTATS_ERROR, e.to_string()))?;
+    let s =
+        std(&v, 1).map_err(|e| RuntimeError::at(span, codes::E4021_NSTATS_ERROR, e.to_string()))?;
     Ok(Value::Float(s).ref_cell())
 }
 
@@ -47,7 +49,8 @@ fn nstats_pearsonr(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity(args, 2, "nstats_pearsonr", span)?;
     let x = floats(args, 0, "nstats_pearsonr", span)?;
     let y = floats(args, 1, "nstats_pearsonr", span)?;
-    let r = pearsonr(&x, &y).map_err(|e| RuntimeError::at(span, codes::E4021_NSTATS_ERROR, e.to_string()))?;
+    let r = pearsonr(&x, &y)
+        .map_err(|e| RuntimeError::at(span, codes::E4021_NSTATS_ERROR, e.to_string()))?;
     let mut m = HashMap::new();
     m.insert("r".to_string(), Value::Float(r.statistic).ref_cell());
     m.insert("p".to_string(), Value::Float(r.pvalue).ref_cell());
@@ -61,7 +64,10 @@ fn nstats_ttest_ind(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let t = ttest_ind(&a, &b, false, Alternative::TwoSided)
         .map_err(|e| RuntimeError::at(span, codes::E4021_NSTATS_ERROR, e.to_string()))?;
     let mut m = HashMap::new();
-    m.insert("statistic".to_string(), Value::Float(t.statistic).ref_cell());
+    m.insert(
+        "statistic".to_string(),
+        Value::Float(t.statistic).ref_cell(),
+    );
     m.insert("pvalue".to_string(), Value::Float(t.pvalue).ref_cell());
     Ok(Value::Object(m).ref_cell())
 }
@@ -85,7 +91,10 @@ pub const MODULE_NAME: &str = "nstats";
 pub const MODULE_PATHS: &[&str] = &["nstats", "std/nstats"];
 
 pub fn builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(f, _, fn_)| (f, fn_)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(f, _, fn_)| (f, fn_))
+        .collect()
 }
 
 pub fn namespace() -> Value {

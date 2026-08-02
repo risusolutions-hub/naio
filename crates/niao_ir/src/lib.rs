@@ -33,21 +33,37 @@ pub enum IrInstr {
     Store(String),
     Binary(BinOp),
     Unary(UnaryOp),
-    Call { name: String, argc: usize },
+    Call {
+        name: String,
+        argc: usize,
+    },
     Return,
     Jump(usize),
     JumpIfFalse(usize),
     Pop,
     MakeArray(usize),
     MakeObject(Vec<usize>),
-    MakeInstance { class: String, field_count: usize },
+    MakeInstance {
+        class: String,
+        field_count: usize,
+    },
     GetField(usize),
     SetField(usize),
     GetIndex,
     SetIndex,
-    CallMethod { field: usize, argc: usize },
-    CallStatic { class: String, method: String, argc: usize },
-    CallSuper { method: String, argc: usize },
+    CallMethod {
+        field: usize,
+        argc: usize,
+    },
+    CallStatic {
+        class: String,
+        method: String,
+        argc: usize,
+    },
+    CallSuper {
+        method: String,
+        argc: usize,
+    },
     BindGlobal(String),
     TryBegin(usize),
     TryEnd(usize),
@@ -261,10 +277,14 @@ fn lower_stmt(
                 instrs.push(IrInstr::Store(name.clone()));
             }
         }
-        Stmt::Assign { target, op, value, .. } => match target {
+        Stmt::Assign {
+            target, op, value, ..
+        } => match target {
             AssignTarget::Name(name) => {
                 match op {
-                    AssignOp::Assign => lower_expr(value, instrs, constants, field_names, class_names)?,
+                    AssignOp::Assign => {
+                        lower_expr(value, instrs, constants, field_names, class_names)?
+                    }
                     AssignOp::AddAssign => {
                         instrs.push(IrInstr::Load(name.clone()));
                         lower_expr(value, instrs, constants, field_names, class_names)?;
@@ -302,7 +322,12 @@ fn lower_stmt(
             }
             instrs.push(IrInstr::Return);
         }
-        Stmt::If { cond, then_block, else_block, .. } => {
+        Stmt::If {
+            cond,
+            then_block,
+            else_block,
+            ..
+        } => {
             lower_expr(cond, instrs, constants, field_names, class_names)?;
             let jump_false = instrs.len();
             instrs.push(IrInstr::JumpIfFalse(0));
@@ -382,10 +407,7 @@ fn lower_stmt(
                 .push(jump);
         }
         Stmt::Continue(_) => {
-            let target = loops
-                .last()
-                .expect("continue outside loop")
-                .continue_target;
+            let target = loops.last().expect("continue outside loop").continue_target;
             instrs.push(IrInstr::Jump(target));
         }
         Stmt::Try {
@@ -452,7 +474,9 @@ fn lower_expr(
         Expr::Bool(v, _) => instrs.push(IrInstr::Const(const_idx(constants, IrConst::Bool(*v)))),
         Expr::Nil(_) => instrs.push(IrInstr::Const(const_idx(constants, IrConst::Nil))),
         Expr::Ident(name, _) => instrs.push(IrInstr::Load(name.clone())),
-        Expr::Binary { left, op, right, .. } => {
+        Expr::Binary {
+            left, op, right, ..
+        } => {
             lower_expr(left, instrs, constants, field_names, class_names)?;
             lower_expr(right, instrs, constants, field_names, class_names)?;
             instrs.push(IrInstr::Binary(*op));

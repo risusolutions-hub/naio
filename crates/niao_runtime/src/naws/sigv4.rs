@@ -98,8 +98,8 @@ pub fn canonical_query_str(raw: &str) -> String {
 pub struct SignInput<'a> {
     pub method: &'a str,
     pub host: &'a str,
-    pub path: &'a str,   // URI path (forward-slashes already present)
-    pub query: &'a str,  // raw query string, without leading '?'
+    pub path: &'a str,  // URI path (forward-slashes already present)
+    pub query: &'a str, // raw query string, without leading '?'
     pub region: &'a str,
     pub service: &'a str,
     pub access_key: &'a str,
@@ -270,7 +270,9 @@ mod tests {
             .map(|(_, v)| v.clone())
             .unwrap_or_default();
 
-        assert!(auth.starts_with("AWS4-HMAC-SHA256 Credential=AKIDEXAMPLE/20150830/us-east-1/service/aws4_request"));
+        assert!(auth.starts_with(
+            "AWS4-HMAC-SHA256 Credential=AKIDEXAMPLE/20150830/us-east-1/service/aws4_request"
+        ));
         assert!(auth.contains("SignedHeaders=host;x-amz-content-sha256;x-amz-date"));
         assert!(auth.contains("Signature="));
     }

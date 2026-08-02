@@ -35,15 +35,16 @@ pub fn isna(series: &Series) -> Series {
             }
         }
     }
-    Series::new(
-        format!("{}_isna", series.name),
-        Column::Bool(bits),
-    )
+    Series::new(format!("{}_isna", series.name), Column::Bool(bits))
 }
 
 pub fn fillna_int(series: &Series, fill: i64) -> Series {
     let data = match &series.data {
-        Column::Int(v) => Column::Int(v.iter().map(|&x| if x == i64::MIN { fill } else { x }).collect()),
+        Column::Int(v) => Column::Int(
+            v.iter()
+                .map(|&x| if x == i64::MIN { fill } else { x })
+                .collect(),
+        ),
         Column::Float(v) => Column::Float(
             v.iter()
                 .map(|&x| if x.is_nan() { fill as f64 } else { x })

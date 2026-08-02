@@ -26,7 +26,10 @@ pub fn run_console(project: &Path) -> Result<(), Box<dyn std::error::Error>> {
         if trimmed.is_empty() {
             continue;
         }
-        println!("(console eval not wired — run: niao run --mode interp {})", main.display());
+        println!(
+            "(console eval not wired — run: niao run --mode interp {})",
+            main.display()
+        );
     }
     Ok(())
 }

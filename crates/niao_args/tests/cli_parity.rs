@@ -1,7 +1,7 @@
 mod fixtures;
 
 use clap::Parser;
-use fixtures::{nm_command, niao_command, snapshot_matches, Snapshot};
+use fixtures::{niao_command, nm_command, snapshot_matches, Snapshot};
 use std::path::PathBuf;
 
 const VERSION: &str = "0.2.3";
@@ -45,7 +45,9 @@ enum NiaoCmd {
         time: bool,
     },
     Version,
-    New { name: String },
+    New {
+        name: String,
+    },
     Test {
         #[arg(default_value = "tests")]
         dir: PathBuf,
@@ -55,7 +57,9 @@ enum NiaoCmd {
         #[arg(long)]
         write: bool,
     },
-    Lint { file: PathBuf },
+    Lint {
+        file: PathBuf,
+    },
     Docs {
         file: PathBuf,
         #[arg(short, long, default_value = "docs-output")]
@@ -215,9 +219,15 @@ fn clap_niao(argv: &[&str]) -> Snapshot {
 fn niao_to_snapshot(cmd: NiaoCmd) -> Snapshot {
     let mut snap = Snapshot::default();
     match cmd {
-        NiaoCmd::Run { file, args, mode, time } => {
+        NiaoCmd::Run {
+            file,
+            args,
+            mode,
+            time,
+        } => {
             snap.subcommands.push("run".into());
-            snap.values.insert("file".into(), vec![file.display().to_string()]);
+            snap.values
+                .insert("file".into(), vec![file.display().to_string()]);
             if !args.is_empty() {
                 snap.values.insert("args".into(), args);
             }
@@ -233,42 +243,56 @@ fn niao_to_snapshot(cmd: NiaoCmd) -> Snapshot {
         }
         NiaoCmd::Test { dir } => {
             snap.subcommands.push("test".into());
-            snap.values.insert("dir".into(), vec![dir.display().to_string()]);
+            snap.values
+                .insert("dir".into(), vec![dir.display().to_string()]);
         }
         NiaoCmd::Format { file, write } => {
             snap.subcommands.push("format".into());
-            snap.values.insert("file".into(), vec![file.display().to_string()]);
+            snap.values
+                .insert("file".into(), vec![file.display().to_string()]);
             if write {
                 snap.flags.push("write".into());
             }
         }
         NiaoCmd::Lint { file } => {
             snap.subcommands.push("lint".into());
-            snap.values.insert("file".into(), vec![file.display().to_string()]);
+            snap.values
+                .insert("file".into(), vec![file.display().to_string()]);
         }
         NiaoCmd::Docs { file, output } => {
             snap.subcommands.push("docs".into());
-            snap.values.insert("file".into(), vec![file.display().to_string()]);
-            snap.values.insert("output".into(), vec![output.display().to_string()]);
+            snap.values
+                .insert("file".into(), vec![file.display().to_string()]);
+            snap.values
+                .insert("output".into(), vec![output.display().to_string()]);
         }
         NiaoCmd::Build { file, output } => {
             snap.subcommands.push("build".into());
-            snap.values.insert("file".into(), vec![file.display().to_string()]);
-            snap.values.insert("output".into(), vec![output.display().to_string()]);
+            snap.values
+                .insert("file".into(), vec![file.display().to_string()]);
+            snap.values
+                .insert("output".into(), vec![output.display().to_string()]);
         }
         NiaoCmd::Serve { file, port } => {
             snap.subcommands.push("serve".into());
-            snap.values.insert("file".into(), vec![file.display().to_string()]);
+            snap.values
+                .insert("file".into(), vec![file.display().to_string()]);
             snap.values.insert("port".into(), vec![port.to_string()]);
         }
         NiaoCmd::Bench { file, runs } => {
             snap.subcommands.push("bench".into());
-            snap.values.insert("file".into(), vec![file.display().to_string()]);
+            snap.values
+                .insert("file".into(), vec![file.display().to_string()]);
             snap.values.insert("runs".into(), vec![runs.to_string()]);
         }
-        NiaoCmd::Clean { cache_dir, keep, all } => {
+        NiaoCmd::Clean {
+            cache_dir,
+            keep,
+            all,
+        } => {
             snap.subcommands.push("clean".into());
-            snap.values.insert("cache_dir".into(), vec![cache_dir.display().to_string()]);
+            snap.values
+                .insert("cache_dir".into(), vec![cache_dir.display().to_string()]);
             snap.values.insert("keep".into(), vec![keep.to_string()]);
             if all {
                 snap.flags.push("all".into());
@@ -311,9 +335,11 @@ fn ahiru_to_snapshot(cmd: AhiruCmd) -> Snapshot {
             port,
         } => {
             snap.subcommands.push("serve".into());
-            snap.values.insert("project".into(), vec![project.display().to_string()]);
+            snap.values
+                .insert("project".into(), vec![project.display().to_string()]);
             if let Some(f) = file {
-                snap.values.insert("file".into(), vec![f.display().to_string()]);
+                snap.values
+                    .insert("file".into(), vec![f.display().to_string()]);
             }
             snap.values.insert("mode".into(), vec![mode]);
             if dev {
@@ -340,11 +366,13 @@ fn ahiru_to_snapshot(cmd: AhiruCmd) -> Snapshot {
         }
         AhiruCmd::Migrate { project } => {
             snap.subcommands.push("migrate".into());
-            snap.values.insert("project".into(), vec![project.display().to_string()]);
+            snap.values
+                .insert("project".into(), vec![project.display().to_string()]);
         }
         AhiruCmd::Routes { project } => {
             snap.subcommands.push("routes".into());
-            snap.values.insert("project".into(), vec![project.display().to_string()]);
+            snap.values
+                .insert("project".into(), vec![project.display().to_string()]);
         }
         AhiruCmd::Db { command } => {
             snap.subcommands.push("db".into());
@@ -352,12 +380,14 @@ fn ahiru_to_snapshot(cmd: AhiruCmd) -> Snapshot {
         }
         AhiruCmd::Doctor { project } => {
             snap.subcommands.push("doctor".into());
-            snap.values.insert("project".into(), vec![project.display().to_string()]);
+            snap.values
+                .insert("project".into(), vec![project.display().to_string()]);
         }
         AhiruCmd::Add { feature, project } => {
             snap.subcommands.push("add".into());
             snap.values.insert("feature".into(), vec![feature]);
-            snap.values.insert("project".into(), vec![project.display().to_string()]);
+            snap.values
+                .insert("project".into(), vec![project.display().to_string()]);
         }
         AhiruCmd::Generate { command } => {
             snap.subcommands.push("generate".into());
@@ -365,22 +395,26 @@ fn ahiru_to_snapshot(cmd: AhiruCmd) -> Snapshot {
         }
         AhiruCmd::Console { project } => {
             snap.subcommands.push("console".into());
-            snap.values.insert("project".into(), vec![project.display().to_string()]);
+            snap.values
+                .insert("project".into(), vec![project.display().to_string()]);
         }
         AhiruCmd::Openapi { project, serve } => {
             snap.subcommands.push("openapi".into());
-            snap.values.insert("project".into(), vec![project.display().to_string()]);
+            snap.values
+                .insert("project".into(), vec![project.display().to_string()]);
             if serve {
                 snap.flags.push("serve".into());
             }
         }
         AhiruCmd::Test { project } => {
             snap.subcommands.push("test".into());
-            snap.values.insert("project".into(), vec![project.display().to_string()]);
+            snap.values
+                .insert("project".into(), vec![project.display().to_string()]);
         }
         AhiruCmd::Worker { project } => {
             snap.subcommands.push("worker".into());
-            snap.values.insert("project".into(), vec![project.display().to_string()]);
+            snap.values
+                .insert("project".into(), vec![project.display().to_string()]);
         }
     }
     snap
@@ -391,23 +425,28 @@ fn db_to_snapshot(cmd: AhiruDbCmd) -> Snapshot {
     match cmd {
         AhiruDbCmd::Migrate { project } => {
             snap.subcommands.push("migrate".into());
-            snap.values.insert("project".into(), vec![project.display().to_string()]);
+            snap.values
+                .insert("project".into(), vec![project.display().to_string()]);
         }
         AhiruDbCmd::Status { project } => {
             snap.subcommands.push("status".into());
-            snap.values.insert("project".into(), vec![project.display().to_string()]);
+            snap.values
+                .insert("project".into(), vec![project.display().to_string()]);
         }
         AhiruDbCmd::Seed { project } => {
             snap.subcommands.push("seed".into());
-            snap.values.insert("project".into(), vec![project.display().to_string()]);
+            snap.values
+                .insert("project".into(), vec![project.display().to_string()]);
         }
         AhiruDbCmd::Rollback { project } => {
             snap.subcommands.push("rollback".into());
-            snap.values.insert("project".into(), vec![project.display().to_string()]);
+            snap.values
+                .insert("project".into(), vec![project.display().to_string()]);
         }
         AhiruDbCmd::Reset { project, force } => {
             snap.subcommands.push("reset".into());
-            snap.values.insert("project".into(), vec![project.display().to_string()]);
+            snap.values
+                .insert("project".into(), vec![project.display().to_string()]);
             if force {
                 snap.flags.push("force".into());
             }
@@ -422,7 +461,8 @@ fn gen_to_snapshot(cmd: AhiruGenCmd) -> Snapshot {
         AhiruGenCmd::Resource { name, project } => {
             snap.subcommands.push("resource".into());
             snap.values.insert("name".into(), vec![name]);
-            snap.values.insert("project".into(), vec![project.display().to_string()]);
+            snap.values
+                .insert("project".into(), vec![project.display().to_string()]);
         }
     }
     snap
@@ -561,18 +601,22 @@ fn nm_to_snapshot(cmd: NmCmd) -> Snapshot {
             if venv {
                 snap.flags.push("venv".into());
             }
-            snap.values.insert("project".into(), vec![project.display().to_string()]);
+            snap.values
+                .insert("project".into(), vec![project.display().to_string()]);
             if force {
                 snap.flags.push("force".into());
             }
             if let Some(s) = source {
-                snap.values.insert("source".into(), vec![s.display().to_string()]);
+                snap.values
+                    .insert("source".into(), vec![s.display().to_string()]);
             }
             if let Some(s) = niao_bin {
-                snap.values.insert("niao_bin".into(), vec![s.display().to_string()]);
+                snap.values
+                    .insert("niao_bin".into(), vec![s.display().to_string()]);
             }
             if let Some(s) = nm_bin {
-                snap.values.insert("nm_bin".into(), vec![s.display().to_string()]);
+                snap.values
+                    .insert("nm_bin".into(), vec![s.display().to_string()]);
             }
             if let Some(s) = registry {
                 snap.values.insert("registry".into(), vec![s]);
@@ -589,7 +633,8 @@ fn nm_to_snapshot(cmd: NmCmd) -> Snapshot {
             if venv {
                 snap.flags.push("venv".into());
             }
-            snap.values.insert("project".into(), vec![project.display().to_string()]);
+            snap.values
+                .insert("project".into(), vec![project.display().to_string()]);
             if force {
                 snap.flags.push("force".into());
             }
@@ -610,9 +655,14 @@ fn nm_to_snapshot(cmd: NmCmd) -> Snapshot {
             if venv {
                 snap.flags.push("venv".into());
             }
-            snap.values.insert("project".into(), vec![project.display().to_string()]);
+            snap.values
+                .insert("project".into(), vec![project.display().to_string()]);
         }
-        NmCmd::Search { query, venv, project } => {
+        NmCmd::Search {
+            query,
+            venv,
+            project,
+        } => {
             snap.subcommands.push("search".into());
             if let Some(q) = query {
                 snap.values.insert("query".into(), vec![q]);
@@ -620,7 +670,8 @@ fn nm_to_snapshot(cmd: NmCmd) -> Snapshot {
             if venv {
                 snap.flags.push("venv".into());
             }
-            snap.values.insert("project".into(), vec![project.display().to_string()]);
+            snap.values
+                .insert("project".into(), vec![project.display().to_string()]);
         }
         NmCmd::Update {
             libs,
@@ -645,12 +696,14 @@ fn nm_to_snapshot(cmd: NmCmd) -> Snapshot {
             if venv {
                 snap.flags.push("venv".into());
             }
-            snap.values.insert("project".into(), vec![project.display().to_string()]);
+            snap.values
+                .insert("project".into(), vec![project.display().to_string()]);
             if force {
                 snap.flags.push("force".into());
             }
             if let Some(s) = source {
-                snap.values.insert("source".into(), vec![s.display().to_string()]);
+                snap.values
+                    .insert("source".into(), vec![s.display().to_string()]);
             }
             if let Some(s) = registry {
                 snap.values.insert("registry".into(), vec![s]);
@@ -661,19 +714,26 @@ fn nm_to_snapshot(cmd: NmCmd) -> Snapshot {
             if venv {
                 snap.flags.push("venv".into());
             }
-            snap.values.insert("project".into(), vec![project.display().to_string()]);
+            snap.values
+                .insert("project".into(), vec![project.display().to_string()]);
         }
-        NmCmd::Info { name, venv, project } => {
+        NmCmd::Info {
+            name,
+            venv,
+            project,
+        } => {
             snap.subcommands.push("info".into());
             snap.values.insert("name".into(), vec![name]);
             if venv {
                 snap.flags.push("venv".into());
             }
-            snap.values.insert("project".into(), vec![project.display().to_string()]);
+            snap.values
+                .insert("project".into(), vec![project.display().to_string()]);
         }
         NmCmd::Venv { project, force } => {
             snap.subcommands.push("venv".into());
-            snap.values.insert("project".into(), vec![project.display().to_string()]);
+            snap.values
+                .insert("project".into(), vec![project.display().to_string()]);
             if force {
                 snap.flags.push("force".into());
             }

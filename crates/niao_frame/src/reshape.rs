@@ -107,7 +107,11 @@ fn append_series(a: &Series, b: &Series) -> FrameResult<Series> {
 }
 
 /// Wide → long: id_vars kept, value_vars melted into variable/value columns.
-pub fn melt(df: &DataFrame, id_vars: &[&str], value_vars: Option<&[&str]>) -> FrameResult<DataFrame> {
+pub fn melt(
+    df: &DataFrame,
+    id_vars: &[&str],
+    value_vars: Option<&[&str]>,
+) -> FrameResult<DataFrame> {
     for id in id_vars {
         let _ = df.get(id)?;
     }
@@ -203,21 +207,14 @@ pub fn melt(df: &DataFrame, id_vars: &[&str], value_vars: Option<&[&str]>) -> Fr
                 j += 1;
             }
         }
-        id_cols.push(
-            Series::new("value", ColumnData::Str(sc)).with_validity(validity)?,
-        );
+        id_cols.push(Series::new("value", ColumnData::Str(sc)).with_validity(validity)?);
     }
 
     DataFrame::new(id_cols)
 }
 
 /// Pivot: index × columns → values (mean aggregation for duplicates).
-pub fn pivot(
-    df: &DataFrame,
-    index: &str,
-    columns: &str,
-    values: &str,
-) -> FrameResult<DataFrame> {
+pub fn pivot(df: &DataFrame, index: &str, columns: &str, values: &str) -> FrameResult<DataFrame> {
     let _ = df.get(index)?;
     let col_s = df.get(columns)?;
     let val_s = df.get(values)?;
@@ -235,7 +232,9 @@ pub fn pivot(
     let val_f = val_s.to_f64_vec().unwrap_or_else(|_| vec![0.0; df.nrows()]);
 
     for i in 0..df.nrows() {
-        if df.get(index)?.validity.is_null(i) || col_s.validity.is_null(i) || val_s.validity.is_null(i)
+        if df.get(index)?.validity.is_null(i)
+            || col_s.validity.is_null(i)
+            || val_s.validity.is_null(i)
         {
             continue;
         }
@@ -248,10 +247,7 @@ pub fn pivot(
 
     let mut idx_col = StringColumn::new();
     let mut out_cols: Vec<Vec<f64>> = col_labels.iter().map(|_| Vec::new()).collect();
-    let mut valids: Vec<Validity> = col_labels
-        .iter()
-        .map(|_| Validity::all_valid(0))
-        .collect();
+    let mut valids: Vec<Validity> = col_labels.iter().map(|_| Validity::all_valid(0)).collect();
 
     let n_rows = map.len();
     for v in &mut valids {
@@ -278,7 +274,8 @@ pub fn pivot(
     let mut series_vec = vec![Series::new(index, ColumnData::Str(idx_col))];
     for (i, label) in col_labels.iter().enumerate() {
         series_vec.push(
-            Series::from_f64(label.clone(), out_cols[i].clone()).with_validity(valids[i].clone())?,
+            Series::from_f64(label.clone(), out_cols[i].clone())
+                .with_validity(valids[i].clone())?,
         );
     }
     DataFrame::new(series_vec)
@@ -298,11 +295,7 @@ pub fn explode(df: &DataFrame, col: &str, sep: &str) -> FrameResult<DataFrame> {
     let s = df.get(col)?;
     let strs = match &s.data {
         ColumnData::Str(v) => v,
-        _ => {
-            return Err(FrameError::Dtype(
-                "explode requires string column".into(),
-            ))
-        }
+        _ => return Err(FrameError::Dtype("explode requires string column".into())),
     };
     let mut indices = Vec::new();
     let mut parts: Vec<String> = Vec::new();

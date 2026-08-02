@@ -6,10 +6,8 @@ use crate::paths::{
     niao_libs_dir, project_venv_dir, venv_catalog_path, venv_install_state_path, venv_libs_dir,
     InstallMode,
 };
-use crate::source::{
-    all_standard_from_source, find_source_root_or_err,
-};
 use crate::registry::{self, is_remote_lib};
+use crate::source::{all_standard_from_source, find_source_root_or_err};
 use crate::state::{InstallState, InstalledLib, LibsCatalog};
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -100,10 +98,7 @@ pub fn install_venv(project: &Path, opts: &InstallOptions) -> PkgResult<InstallR
 }
 
 /// Install one or more libraries by name from local source or the online registry.
-pub fn install_libs(
-    lib_names: &[String],
-    opts: &InstallOptions,
-) -> PkgResult<InstallReport> {
+pub fn install_libs(lib_names: &[String], opts: &InstallOptions) -> PkgResult<InstallReport> {
     let source = resolve_source_root_optional(opts, lib_names, false)?;
     let (libs_root, state_path, catalog_path, root, mode) = install_targets(opts)?;
     install_with_roots(
@@ -196,9 +191,7 @@ pub fn update_libs(lib_names: &[String], opts: &InstallOptions) -> PkgResult<Upd
         return Ok(UpdateReport {
             mode,
             root,
-            source_root: source
-                .clone()
-                .unwrap_or_else(|| niao_home()),
+            source_root: source.clone().unwrap_or_else(|| niao_home()),
             upgraded,
             up_to_date,
             not_installed,
@@ -252,12 +245,12 @@ pub fn update_libs(lib_names: &[String], opts: &InstallOptions) -> PkgResult<Upd
 }
 
 /// Install dependencies listed in a project `package.json`.
-pub fn install_from_package_json(project: &Path, opts: &InstallOptions) -> PkgResult<InstallReport> {
+pub fn install_from_package_json(
+    project: &Path,
+    opts: &InstallOptions,
+) -> PkgResult<InstallReport> {
     let package_path = find_project_package(project).ok_or_else(|| {
-        PkgError::NotFound(format!(
-            "package.json not found in {}",
-            project.display()
-        ))
+        PkgError::NotFound(format!("package.json not found in {}", project.display()))
     })?;
     let pkg = read_project_package(&package_path)?;
     if pkg.dependencies.is_empty() {
@@ -283,7 +276,9 @@ pub fn install_from_package_json(project: &Path, opts: &InstallOptions) -> PkgRe
     )
 }
 
-fn install_targets(opts: &InstallOptions) -> PkgResult<(PathBuf, PathBuf, PathBuf, PathBuf, InstallMode)> {
+fn install_targets(
+    opts: &InstallOptions,
+) -> PkgResult<(PathBuf, PathBuf, PathBuf, PathBuf, InstallMode)> {
     match opts.mode {
         InstallMode::Global => Ok((
             niao_libs_dir(),
@@ -293,10 +288,9 @@ fn install_targets(opts: &InstallOptions) -> PkgResult<(PathBuf, PathBuf, PathBu
             InstallMode::Global,
         )),
         InstallMode::Venv => {
-            let project = opts
-                .project_dir
-                .as_deref()
-                .ok_or_else(|| PkgError::Message("project directory required for venv install".into()))?;
+            let project = opts.project_dir.as_deref().ok_or_else(|| {
+                PkgError::Message("project directory required for venv install".into())
+            })?;
             Ok((
                 venv_libs_dir(project),
                 venv_install_state_path(project),
@@ -400,9 +394,9 @@ fn install_with_roots(
 
     let registry_base = opts.registry_url.as_deref();
     let specs = if full_toolchain {
-        let root = source_root
-            .as_deref()
-            .ok_or_else(|| PkgError::Message("Niao source root required for full toolchain install".into()))?;
+        let root = source_root.as_deref().ok_or_else(|| {
+            PkgError::Message("Niao source root required for full toolchain install".into())
+        })?;
         all_standard_from_source(root)?
     } else {
         install_specs_resolved(
@@ -472,7 +466,10 @@ fn install_with_roots(
     write_json(&state_path, &state)?;
 
     let niao_dest = if full_toolchain && mode == InstallMode::Global {
-        copy_tool_binary(opts.niao_bin.as_deref(), &niao_bin_dir().join(exe_name("niao")))?
+        copy_tool_binary(
+            opts.niao_bin.as_deref(),
+            &niao_bin_dir().join(exe_name("niao")),
+        )?
     } else {
         None
     };
@@ -582,14 +579,8 @@ fn refresh_global_binaries(
     if *mode != InstallMode::Global {
         return Ok((None, None));
     }
-    let niao_src = opts
-        .niao_bin
-        .as_deref()
-        .filter(|path| path.is_file());
-    let nm_src = opts
-        .nm_bin
-        .as_deref()
-        .filter(|path| path.is_file());
+    let niao_src = opts.niao_bin.as_deref().filter(|path| path.is_file());
+    let nm_src = opts.nm_bin.as_deref().filter(|path| path.is_file());
     let niao_dest = copy_tool_binary(niao_src, &niao_bin_dir().join(exe_name("niao")))?;
     let nm_dest = copy_tool_binary(nm_src, &niao_bin_dir().join(exe_name("nm")))?;
     Ok((niao_dest, nm_dest))
@@ -639,16 +630,14 @@ fn exe_name(base: &str) -> String {
 
 pub fn load_install_state(path: &Path) -> PkgResult<InstallState> {
     let data = crate::package::read_json_text(path)?;
-    crate::json::parse_struct(&data).map_err(|e| {
-        PkgError::Message(format!("parse {}: {e}", path.display()))
-    })
+    crate::json::parse_struct(&data)
+        .map_err(|e| PkgError::Message(format!("parse {}: {e}", path.display())))
 }
 
 pub fn load_catalog(path: &Path) -> PkgResult<LibsCatalog> {
     let data = crate::package::read_json_text(path)?;
-    crate::json::parse_struct(&data).map_err(|e| {
-        PkgError::Message(format!("parse {}: {e}", path.display()))
-    })
+    crate::json::parse_struct(&data)
+        .map_err(|e| PkgError::Message(format!("parse {}: {e}", path.display())))
 }
 
 pub fn default_global_state() -> PkgResult<InstallState> {

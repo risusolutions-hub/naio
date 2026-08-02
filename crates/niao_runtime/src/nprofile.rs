@@ -65,12 +65,21 @@ fn arity(args: &[ValueRef], n: usize, name: &str, span: Span) -> NiaoResult<()> 
     Ok(())
 }
 
-fn arity_range(args: &[ValueRef], min: usize, max: usize, name: &str, span: Span) -> NiaoResult<()> {
+fn arity_range(
+    args: &[ValueRef],
+    min: usize,
+    max: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<()> {
     if args.len() < min || args.len() > max {
         return Err(RuntimeError::at(
             span,
             E3150_NPROFILE_ARITY,
-            format!("{name}() expects {min}..={max} argument(s), got {}", args.len()),
+            format!(
+                "{name}() expects {min}..={max} argument(s), got {}",
+                args.len()
+            ),
         ));
     }
     Ok(())
@@ -203,8 +212,14 @@ fn compute_stats(samples: &[i64]) -> HashMap<String, ValueRef> {
         "max".to_string(),
         Value::Int(*sorted.last().unwrap()).ref_cell(),
     );
-    out.insert("p50".to_string(), Value::Int(percentile(&sorted, 0.50)).ref_cell());
-    out.insert("p95".to_string(), Value::Int(percentile(&sorted, 0.95)).ref_cell());
+    out.insert(
+        "p50".to_string(),
+        Value::Int(percentile(&sorted, 0.50)).ref_cell(),
+    );
+    out.insert(
+        "p95".to_string(),
+        Value::Int(percentile(&sorted, 0.95)).ref_cell(),
+    );
     out
 }
 
@@ -287,14 +302,14 @@ fn nprofile_record(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
 fn nprofile_samples(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity(args, 1, "nprofile_samples", span)?;
     let label = string_arg(args, 0, "nprofile_samples", span)?;
-    let items = SAMPLES.with(|samples| {
-        samples
-            .borrow()
-            .get(&label)
-            .cloned()
-            .unwrap_or_default()
-    });
-    Ok(Value::Array(items.into_iter().map(|n| Value::Int(n).ref_cell()).collect()).ref_cell())
+    let items = SAMPLES.with(|samples| samples.borrow().get(&label).cloned().unwrap_or_default());
+    Ok(Value::Array(
+        items
+            .into_iter()
+            .map(|n| Value::Int(n).ref_cell())
+            .collect(),
+    )
+    .ref_cell())
 }
 
 /// nprofile_clear(label?) → nil — clear one label or all samples
@@ -335,7 +350,10 @@ nprofile_fns![
 ];
 
 fn all_builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(flat, _, f)| (flat, f)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(flat, _, f)| (flat, f))
+        .collect()
 }
 
 pub fn namespace() -> Value {

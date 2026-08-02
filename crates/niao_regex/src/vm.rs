@@ -50,7 +50,10 @@ pub fn find(prog: &Program, hay: &str) -> Option<VmResult> {
             epsilon(prog, hay, pos, t, &mut ready, &mut seen, pos == len);
         }
 
-        for t in ready.iter().filter(|t| matches!(prog.insts.get(t.pc), Some(Inst::Match))) {
+        for t in ready
+            .iter()
+            .filter(|t| matches!(prog.insts.get(t.pc), Some(Inst::Match)))
+        {
             let mut slots = t.slots.clone();
             if slots[1] == usize::MAX {
                 slots[1] = pos;
@@ -258,19 +261,15 @@ fn epsilon(
                 t.pc += 1;
             }
             Some(Inst::Eol) => {
-                let ok =
-                    pos == hay.len() || (prog.flags.multiline && hay.as_bytes().get(pos) == Some(&b'\n'));
+                let ok = pos == hay.len()
+                    || (prog.flags.multiline && hay.as_bytes().get(pos) == Some(&b'\n'));
                 if !ok && !(at_end && pos == hay.len()) {
                     return;
                 }
                 t.pc += 1;
             }
             Some(Inst::WordBoundary(neg)) => {
-                let prev = if pos == 0 {
-                    false
-                } else {
-                    prev_word(hay, pos)
-                };
+                let prev = if pos == 0 { false } else { prev_word(hay, pos) };
                 let next = hay[pos..]
                     .chars()
                     .next()

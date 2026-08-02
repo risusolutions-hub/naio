@@ -70,7 +70,8 @@ pub fn npg_ping(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity(args, 1, "npg_ping", span)?;
     let id = conn_arg(args, 0, "npg_ping", span)?;
     handles::with_conn_mut(id, "npg_ping", span, |handle| {
-        handle.client_mut()
+        handle
+            .client_mut()
             .query_one("SELECT 1", &[])
             .map(|_| ())
             .map_err(|e| e.to_string())
@@ -89,7 +90,8 @@ pub fn npg_configure(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
             match key.as_str() {
                 "statement_timeout" => match val_ref {
                     Value::Int(ms) if *ms >= 0 => {
-                        handle.client_mut()
+                        handle
+                            .client_mut()
                             .batch_execute(&format!("SET statement_timeout = {ms}"))
                             .map_err(|e| e.to_string())?;
                     }
@@ -102,7 +104,8 @@ pub fn npg_configure(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
                 },
                 "lock_timeout" => match val_ref {
                     Value::Int(ms) if *ms >= 0 => {
-                        handle.client_mut()
+                        handle
+                            .client_mut()
                             .batch_execute(&format!("SET lock_timeout = {ms}"))
                             .map_err(|e| e.to_string())?;
                     }
@@ -115,22 +118,33 @@ pub fn npg_configure(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
                 },
                 "search_path" => match val_ref {
                     Value::String(s) => {
-                        handle.client_mut()
-                            .execute("SELECT set_config('search_path', $1, false)", &[&s.as_str()])
+                        handle
+                            .client_mut()
+                            .execute(
+                                "SELECT set_config('search_path', $1, false)",
+                                &[&s.as_str()],
+                            )
                             .map_err(|e| e.to_string())?;
                     }
                     other => {
-                        return Err(format!("search_path expects string, got {}", other.type_name()));
+                        return Err(format!(
+                            "search_path expects string, got {}",
+                            other.type_name()
+                        ));
                     }
                 },
                 "timezone" => match val_ref {
                     Value::String(s) => {
-                        handle.client_mut()
+                        handle
+                            .client_mut()
                             .execute("SET TIME ZONE $1", &[&s.as_str()])
                             .map_err(|e| e.to_string())?;
                     }
                     other => {
-                        return Err(format!("timezone expects string, got {}", other.type_name()));
+                        return Err(format!(
+                            "timezone expects string, got {}",
+                            other.type_name()
+                        ));
                     }
                 },
                 other => return Err(format!("unknown configure option \"{other}\"")),
@@ -158,7 +172,8 @@ pub fn npg_server_version(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef>
     arity(args, 1, "npg_server_version", span)?;
     let id = conn_arg(args, 0, "npg_server_version", span)?;
     handles::with_conn_mut(id, "npg_server_version", span, |handle| {
-        let row = handle.client_mut()
+        let row = handle
+            .client_mut()
             .query_one("SHOW server_version", &[])
             .map_err(|e| e.to_string())?;
         Ok(row.get::<_, String>(0))
@@ -170,9 +185,11 @@ pub fn npg_server_version(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef>
 pub fn npg_is_in_transaction(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity(args, 1, "npg_is_in_transaction", span)?;
     let id = conn_arg(args, 0, "npg_is_in_transaction", span)?;
-    handles::with_conn_mut(id, "npg_is_in_transaction", span, |handle| Ok(handle.in_transaction))
-        .map(ok_bool)
-        .or_else(|e| Ok(error_from_runtime(&e)))
+    handles::with_conn_mut(id, "npg_is_in_transaction", span, |handle| {
+        Ok(handle.in_transaction)
+    })
+    .map(ok_bool)
+    .or_else(|e| Ok(error_from_runtime(&e)))
 }
 
 pub fn npg_begin(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
@@ -213,7 +230,8 @@ pub fn npg_begin(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
                 parts.push("DEFERRABLE".to_string());
             }
         }
-        handle.client_mut()
+        handle
+            .client_mut()
             .batch_execute(&parts.join(" "))
             .map_err(|e| e.to_string())?;
         handle.in_transaction = true;
@@ -227,7 +245,10 @@ pub fn npg_commit(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity(args, 1, "npg_commit", span)?;
     let id = conn_arg(args, 0, "npg_commit", span)?;
     handles::with_conn_mut(id, "npg_commit", span, |handle| {
-        handle.client_mut().batch_execute("COMMIT").map_err(|e| e.to_string())?;
+        handle
+            .client_mut()
+            .batch_execute("COMMIT")
+            .map_err(|e| e.to_string())?;
         handle.in_transaction = false;
         Ok(())
     })
@@ -239,7 +260,10 @@ pub fn npg_rollback(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity(args, 1, "npg_rollback", span)?;
     let id = conn_arg(args, 0, "npg_rollback", span)?;
     handles::with_conn_mut(id, "npg_rollback", span, |handle| {
-        handle.client_mut().batch_execute("ROLLBACK").map_err(|e| e.to_string())?;
+        handle
+            .client_mut()
+            .batch_execute("ROLLBACK")
+            .map_err(|e| e.to_string())?;
         handle.in_transaction = false;
         Ok(())
     })
@@ -253,7 +277,8 @@ pub fn npg_savepoint(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let name = string_arg(args, 1, "npg_savepoint", span)?;
     let ident = super::types::quote_ident(&name);
     handles::with_conn_mut(id, "npg_savepoint", span, |handle| {
-        handle.client_mut()
+        handle
+            .client_mut()
             .batch_execute(&format!("SAVEPOINT {ident}"))
             .map_err(|e| e.to_string())
     })
@@ -267,7 +292,8 @@ pub fn npg_rollback_to(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let name = string_arg(args, 1, "npg_rollback_to", span)?;
     let ident = super::types::quote_ident(&name);
     handles::with_conn_mut(id, "npg_rollback_to", span, |handle| {
-        handle.client_mut()
+        handle
+            .client_mut()
             .batch_execute(&format!("ROLLBACK TO SAVEPOINT {ident}"))
             .map_err(|e| e.to_string())
     })

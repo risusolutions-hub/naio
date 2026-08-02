@@ -38,12 +38,21 @@ fn arity(args: &[ValueRef], n: usize, name: &str, span: Span) -> NiaoResult<()> 
     Ok(())
 }
 
-fn arity_range(args: &[ValueRef], min: usize, max: usize, name: &str, span: Span) -> NiaoResult<()> {
+fn arity_range(
+    args: &[ValueRef],
+    min: usize,
+    max: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<()> {
     if args.len() < min || args.len() > max {
         return Err(RuntimeError::at(
             span,
             codes::E1950_NENV_ARITY,
-            format!("{name}() expects {min}..={max} argument(s), got {}", args.len()),
+            format!(
+                "{name}() expects {min}..={max} argument(s), got {}",
+                args.len()
+            ),
         ));
     }
     Ok(())
@@ -77,10 +86,7 @@ fn int_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> NiaoResult<
     }
 }
 
-fn optional_object_arg(
-    args: &[ValueRef],
-    idx: usize,
-) -> Option<HashMap<String, ValueRef>> {
+fn optional_object_arg(args: &[ValueRef], idx: usize) -> Option<HashMap<String, ValueRef>> {
     if args.len() <= idx {
         return None;
     }
@@ -117,7 +123,12 @@ fn nenv_not_found(span: Span, key: &str) -> ValueRef {
 }
 
 fn nenv_invalid_value(span: Span, msg: impl Into<String>) -> ValueRef {
-    error_value(codes::E1953_NENV_INVALID_VALUE, "nenv_error", msg.into(), span)
+    error_value(
+        codes::E1953_NENV_INVALID_VALUE,
+        "nenv_error",
+        msg.into(),
+        span,
+    )
 }
 
 fn ok_nil() -> ValueRef {
@@ -176,7 +187,11 @@ fn apply_pairs(pairs: &[(String, String)], override_existing: bool) -> usize {
 }
 
 fn load_opts(args: &[ValueRef], opts_idx: usize) -> bool {
-    bool_field(optional_object_arg(args, opts_idx).as_ref(), "override", false)
+    bool_field(
+        optional_object_arg(args, opts_idx).as_ref(),
+        "override",
+        false,
+    )
 }
 
 fn parse_bool_str(s: &str) -> Option<bool> {
@@ -333,7 +348,11 @@ fn apply_store(store: &EnvStore, override_existing: bool) -> usize {
     count
 }
 
-fn object_to_store_map(obj: &HashMap<String, ValueRef>, span: Span, name: &str) -> Result<HashMap<String, String>, RuntimeError> {
+fn object_to_store_map(
+    obj: &HashMap<String, ValueRef>,
+    span: Span,
+    name: &str,
+) -> Result<HashMap<String, String>, RuntimeError> {
     let mut map = HashMap::new();
     for (k, v) in obj {
         match value_to_string(&*v.borrow()) {
@@ -760,7 +779,12 @@ fn nenv_close(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
 }
 
 fn store_err(span: Span, e: RuntimeError) -> ValueRef {
-    error_value(codes::E1954_NENV_INVALID_HANDLE, "nenv_error", e.message(), span)
+    error_value(
+        codes::E1954_NENV_INVALID_HANDLE,
+        "nenv_error",
+        e.message(),
+        span,
+    )
 }
 
 fn nenv_store_load(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
@@ -796,7 +820,9 @@ fn nenv_store_get(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     } else {
         None
     };
-    match with_store(id, "nenv_store_get", span, |store| store_lookup(store, &key)) {
+    match with_store(id, "nenv_store_get", span, |store| {
+        store_lookup(store, &key)
+    }) {
         Ok(Some(v)) => Ok(ok_string(v)),
         Ok(None) => {
             if let Some(d) = default {
@@ -858,7 +884,9 @@ fn nenv_store_apply(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity_range(args, 1, 2, "nenv_store_apply", span)?;
     let id = int_arg(args, 0, "nenv_store_apply", span)?;
     let override_existing = load_opts(args, 1);
-    match with_store(id, "nenv_store_apply", span, |store| apply_store(store, override_existing)) {
+    match with_store(id, "nenv_store_apply", span, |store| {
+        apply_store(store, override_existing)
+    }) {
         Ok(count) => Ok(ok_int(count as i64)),
         Err(e) => Ok(store_err(span, e)),
     }

@@ -128,7 +128,10 @@ fn read_sasl_final(stream: &mut std::net::TcpStream) -> Result<String, Error> {
     }
 }
 
-fn read_one(stream: &mut std::net::TcpStream, buf: &mut Vec<u8>) -> Result<super::wire::Message, Error> {
+fn read_one(
+    stream: &mut std::net::TcpStream,
+    buf: &mut Vec<u8>,
+) -> Result<super::wire::Message, Error> {
     use std::io::Read;
     loop {
         if let Ok(parsed) = super::wire::try_parse_message(buf) {
@@ -146,7 +149,10 @@ fn read_one(stream: &mut std::net::TcpStream, buf: &mut Vec<u8>) -> Result<super
     }
 }
 
-fn parse_server_first(s: &str, client_nonce: &str) -> Result<(Vec<u8>, u32, String, String), Error> {
+fn parse_server_first(
+    s: &str,
+    client_nonce: &str,
+) -> Result<(Vec<u8>, u32, String, String), Error> {
     let mut salt_b64 = None;
     let mut iter = 4096u32;
     let mut nonce = None;
@@ -163,7 +169,11 @@ fn parse_server_first(s: &str, client_nonce: &str) -> Result<(Vec<u8>, u32, Stri
     if !server_nonce.starts_with(client_nonce) {
         return Err(Error::msg("SCRAM nonce mismatch"));
     }
-    let salt = b64dec(salt_b64.ok_or_else(|| Error::msg("SCRAM missing salt"))?.as_bytes())?;
+    let salt = b64dec(
+        salt_b64
+            .ok_or_else(|| Error::msg("SCRAM missing salt"))?
+            .as_bytes(),
+    )?;
     Ok((salt, iter, client_nonce.to_string(), server_nonce))
 }
 

@@ -117,7 +117,9 @@ fn parse_numeric_component(s: &str, label: &str) -> Result<u64, String> {
         return Err(format!("missing {label} version component"));
     }
     if s.len() > 1 && s.starts_with('0') {
-        return Err(format!("{label} version component must not have leading zeros"));
+        return Err(format!(
+            "{label} version component must not have leading zeros"
+        ));
     }
     s.parse::<u64>()
         .map_err(|_| format!("invalid {label} version component '{s}'"))
@@ -134,7 +136,9 @@ fn parse_identifiers(s: &str) -> Result<Vec<Identifier>, String> {
             }
             if part.chars().all(|c| c.is_ascii_digit()) {
                 if part.len() > 1 && part.starts_with('0') {
-                    return Err(format!("numeric identifier must not have leading zeros: '{part}'"));
+                    return Err(format!(
+                        "numeric identifier must not have leading zeros: '{part}'"
+                    ));
                 }
                 let n = part
                     .parse::<u64>()
@@ -536,7 +540,10 @@ nsemver_fns![
 ];
 
 fn all_builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(flat, _, f)| (flat, f)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(flat, _, f)| (flat, f))
+        .collect()
 }
 
 pub fn namespace() -> Value {

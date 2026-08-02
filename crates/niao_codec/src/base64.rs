@@ -81,12 +81,8 @@ impl std::error::Error for DecodeError {}
 #[inline]
 fn encode_table(alphabet: Alphabet) -> &'static [u8; 64] {
     match alphabet {
-        Alphabet::Standard => {
-            b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
-        }
-        Alphabet::UrlSafe => {
-            b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
-        }
+        Alphabet::Standard => b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/",
+        Alphabet::UrlSafe => b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_",
     }
 }
 

@@ -2,8 +2,8 @@
 
 use crate::axis::{autoscale, merge_limits, nice_ticks, Limits, Scale, Transform};
 use crate::charts::{
-    draw_area, draw_bar, draw_box, draw_confusion_matrix, draw_errorbar, draw_heatmap, draw_hist,
-    draw_hbar, draw_line, draw_pie, draw_roc, draw_scatter, draw_step, BarMode, BoxStats, Series,
+    draw_area, draw_bar, draw_box, draw_confusion_matrix, draw_errorbar, draw_hbar, draw_heatmap,
+    draw_hist, draw_line, draw_pie, draw_roc, draw_scatter, draw_step, BarMode, BoxStats, Series,
 };
 use crate::color::{categorical, Rgba};
 use crate::error::{PlotError, PlotResult};
@@ -111,22 +111,42 @@ impl Axes {
         Ok(self)
     }
 
-    pub fn hbar(&mut self, cats: &[String], vals: &[f64], label: Option<&str>) -> PlotResult<&mut Self> {
+    pub fn hbar(
+        &mut self,
+        cats: &[String],
+        vals: &[f64],
+        label: Option<&str>,
+    ) -> PlotResult<&mut Self> {
         draw_hbar(self, cats, vals, label)?;
         Ok(self)
     }
 
-    pub fn hist(&mut self, data: &[f64], bins: usize, label: Option<&str>) -> PlotResult<&mut Self> {
+    pub fn hist(
+        &mut self,
+        data: &[f64],
+        bins: usize,
+        label: Option<&str>,
+    ) -> PlotResult<&mut Self> {
         draw_hist(self, data, bins, label)?;
         Ok(self)
     }
 
-    pub fn box_plot(&mut self, groups: &[(&str, &[f64])], label: Option<&str>) -> PlotResult<&mut Self> {
+    pub fn box_plot(
+        &mut self,
+        groups: &[(&str, &[f64])],
+        label: Option<&str>,
+    ) -> PlotResult<&mut Self> {
         draw_box(self, groups, label)?;
         Ok(self)
     }
 
-    pub fn heatmap(&mut self, data: &[f64], rows: usize, cols: usize, label: Option<&str>) -> PlotResult<&mut Self> {
+    pub fn heatmap(
+        &mut self,
+        data: &[f64],
+        rows: usize,
+        cols: usize,
+        label: Option<&str>,
+    ) -> PlotResult<&mut Self> {
         draw_heatmap(self, data, rows, cols, label)?;
         Ok(self)
     }
@@ -168,7 +188,12 @@ impl Axes {
         Ok(self)
     }
 
-    pub fn pie(&mut self, labels: &[String], vals: &[f64], title: Option<&str>) -> PlotResult<&mut Self> {
+    pub fn pie(
+        &mut self,
+        labels: &[String],
+        vals: &[f64],
+        title: Option<&str>,
+    ) -> PlotResult<&mut Self> {
         draw_pie(self, labels, vals, title)?;
         Ok(self)
     }
@@ -335,7 +360,9 @@ impl Figure {
 
     pub fn subplots(&mut self, rows: usize, cols: usize) -> PlotResult<&mut Self> {
         if rows == 0 || cols == 0 {
-            return Err(PlotError::Render("subplots: rows and cols must be > 0".into()));
+            return Err(PlotError::Render(
+                "subplots: rows and cols must be > 0".into(),
+            ));
         }
         self.rows = rows;
         self.cols = cols;
@@ -540,7 +567,13 @@ pub fn box_stats(data: &[f64]) -> PlotResult<BoxStats> {
     let q3 = v[(3 * n) / 4];
     let min = v[0];
     let max = v[n - 1];
-    Ok(BoxStats { min, q1, med, q3, max })
+    Ok(BoxStats {
+        min,
+        q1,
+        med,
+        q3,
+        max,
+    })
 }
 
 pub fn merge_series_limits(a: Limits, b: Limits) -> Limits {

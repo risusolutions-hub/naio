@@ -11,7 +11,12 @@ use super::common::*;
 use super::query::{parse_row_format, RowFormat};
 
 fn nsqlite_error(span: Span, msg: impl Into<String>) -> ValueRef {
-    error_value(codes::E1701_NSQLITE_ERROR, "nsqlite_error", msg.into(), span)
+    error_value(
+        codes::E1701_NSQLITE_ERROR,
+        "nsqlite_error",
+        msg.into(),
+        span,
+    )
 }
 
 fn ok_nil() -> ValueRef {

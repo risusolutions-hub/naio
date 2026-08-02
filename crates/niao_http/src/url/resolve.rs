@@ -50,9 +50,8 @@ fn merge_paths(base_path: &str, reference: &str) -> String {
 
 /// Resolve `reference` against `base` (RFC 3986 section 5.2).
 pub fn resolve(base: &Url, reference: &str) -> Result<Url, String> {
-    let reference = reference.trim_matches(|c: char| {
-        matches!(c, '\u{0009}' | '\u{000A}' | '\u{000D}' | ' ')
-    });
+    let reference =
+        reference.trim_matches(|c: char| matches!(c, '\u{0009}' | '\u{000A}' | '\u{000D}' | ' '));
     if reference.is_empty() {
         return Ok(base.clone());
     }

@@ -49,9 +49,11 @@ impl Parser {
             }
             TokenKind::Trait => TopLevel::Trait(self.parse_trait_def()?),
             TokenKind::Server => TopLevel::Server(self.parse_server_block()?),
-            TokenKind::Get | TokenKind::Post | TokenKind::Put | TokenKind::Delete | TokenKind::Patch => {
-                TopLevel::Route(self.parse_route_block()?)
-            }
+            TokenKind::Get
+            | TokenKind::Post
+            | TokenKind::Put
+            | TokenKind::Delete
+            | TokenKind::Patch => TopLevel::Route(self.parse_route_block()?),
             _ => TopLevel::Stmt(self.parse_stmt()?),
         };
         Ok(item)
@@ -488,7 +490,10 @@ impl Parser {
             _ => {
                 if let TokenKind::Ident(name) = self.peek().kind.clone() {
                     let next_is_assign = self.pos + 1 < self.tokens.len()
-                        && matches!(self.tokens[self.pos + 1].kind, TokenKind::Assign | TokenKind::AddAssign | TokenKind::SubAssign);
+                        && matches!(
+                            self.tokens[self.pos + 1].kind,
+                            TokenKind::Assign | TokenKind::AddAssign | TokenKind::SubAssign
+                        );
                     if next_is_assign {
                         let start = self.current_span();
                         self.advance();
@@ -1054,7 +1059,12 @@ fn main() {
             panic!("expected fn")
         };
         match cond {
-            Expr::Binary { left, op: BinOp::Le, right, .. } => {
+            Expr::Binary {
+                left,
+                op: BinOp::Le,
+                right,
+                ..
+            } => {
                 assert!(matches!(&**left, Expr::Index { .. }));
                 assert!(matches!(&**right, Expr::Ident(name, _) if name == "key"));
             }
@@ -1115,15 +1125,17 @@ fn main() {
                 .expect("inner if")
         };
         match inner_if {
-            Expr::Binary { left, op: BinOp::Le, .. } => {
-                match &**left {
-                    Expr::Index { index, .. } => match &**index {
-                        Expr::Ident(name, _) => assert_eq!(name, "j"),
-                        other => panic!("index should be j, got {other:?}"),
-                    },
-                    other => panic!("left should be index, got {other:?}"),
-                }
-            }
+            Expr::Binary {
+                left,
+                op: BinOp::Le,
+                ..
+            } => match &**left {
+                Expr::Index { index, .. } => match &**index {
+                    Expr::Ident(name, _) => assert_eq!(name, "j"),
+                    other => panic!("index should be j, got {other:?}"),
+                },
+                other => panic!("left should be index, got {other:?}"),
+            },
             other => panic!("expected <=, got {other:?}"),
         }
     }

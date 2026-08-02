@@ -1,4 +1,4 @@
-﻿//! Native nprovider standard library — provider profiles, model aliases,
+//! Native nprovider standard library — provider profiles, model aliases,
 //! failover chains, and a built-in pricing table for LLM planning.
 //!
 //! Import with `import "nprovider"` (or `import "std/nprovider"`).
@@ -105,7 +105,10 @@ fn resolve_key(key: &str) -> Option<String> {
 fn profile_to_value(name: &str, p: &Profile) -> ValueRef {
     let mut map = HashMap::new();
     map.insert("name".into(), Value::String(name.into()).ref_cell());
-    map.insert("provider".into(), Value::String(p.provider.clone()).ref_cell());
+    map.insert(
+        "provider".into(),
+        Value::String(p.provider.clone()).ref_cell(),
+    );
     map.insert("model".into(), Value::String(p.model.clone()).ref_cell());
     if let Some(ref base) = p.api_base {
         map.insert("api_base".into(), Value::String(base.clone()).ref_cell());
@@ -144,12 +147,21 @@ fn arity(args: &[ValueRef], n: usize, name: &str, span: Span) -> NiaoResult<()> 
     Ok(())
 }
 
-fn arity_range(args: &[ValueRef], min: usize, max: usize, name: &str, span: Span) -> NiaoResult<()> {
+fn arity_range(
+    args: &[ValueRef],
+    min: usize,
+    max: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<()> {
     if args.len() < min || args.len() > max {
         return Err(RuntimeError::at(
             span,
             E3330_NPROVIDER_ARITY,
-            format!("{name}() expects {min}..={max} argument(s), got {}", args.len()),
+            format!(
+                "{name}() expects {min}..={max} argument(s), got {}",
+                args.len()
+            ),
         ));
     }
     Ok(())
@@ -217,7 +229,12 @@ fn object_arg(
     }
 }
 
-fn string_array_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> NiaoResult<Vec<String>> {
+fn string_array_arg(
+    args: &[ValueRef],
+    idx: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<Vec<String>> {
     match &*args[idx].borrow() {
         Value::Array(items) => {
             let mut out = Vec::with_capacity(items.len());
@@ -266,10 +283,16 @@ fn parse_profile_config(
     span: Span,
 ) -> NiaoResult<(String, String, Option<String>, Option<String>)> {
     let provider = opt_string_field(map, "provider").ok_or_else(|| {
-        type_err(span, "nprovider.profile() config requires string field 'provider'")
+        type_err(
+            span,
+            "nprovider.profile() config requires string field 'provider'",
+        )
     })?;
     let model = opt_string_field(map, "model").ok_or_else(|| {
-        type_err(span, "nprovider.profile() config requires string field 'model'")
+        type_err(
+            span,
+            "nprovider.profile() config requires string field 'model'",
+        )
     })?;
     Ok((
         provider,
@@ -287,7 +310,10 @@ fn nprovider_profile(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity(args, 2, "nprovider_profile", span)?;
     let name = string_arg(args, 0, "nprovider_profile", span)?;
     if name.is_empty() {
-        return Ok(nprovider_err(span, "nprovider.profile() name must not be empty"));
+        return Ok(nprovider_err(
+            span,
+            "nprovider.profile() name must not be empty",
+        ));
     }
     let cfg = object_arg(args, 1, "nprovider_profile", span)?;
     let (provider, model, api_base, key_env) = parse_profile_config(&cfg, span)?;
@@ -310,7 +336,10 @@ fn nprovider_alias(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let alias = string_arg(args, 0, "nprovider_alias", span)?;
     let target = string_arg(args, 1, "nprovider_alias", span)?;
     if alias.is_empty() || target.is_empty() {
-        return Ok(nprovider_err(span, "nprovider.alias() names must not be empty"));
+        return Ok(nprovider_err(
+            span,
+            "nprovider.alias() names must not be empty",
+        ));
     }
     ALIASES.with(|a| {
         a.borrow_mut().insert(alias, target);
@@ -323,7 +352,12 @@ fn nprovider_resolve(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let key = string_arg(args, 0, "nprovider_resolve", span)?;
     let resolved = match resolve_key(&key) {
         Some(r) => r,
-        None => return Ok(nprovider_err(span, format!("unknown profile or alias '{key}'"))),
+        None => {
+            return Ok(nprovider_err(
+                span,
+                format!("unknown profile or alias '{key}'"),
+            ))
+        }
     };
     PROFILES.with(|p| {
         let profiles = p.borrow();
@@ -341,7 +375,10 @@ fn nprovider_chain(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity(args, 1, "nprovider_chain", span)?;
     let keys = string_array_arg(args, 0, "nprovider_chain", span)?;
     if keys.is_empty() {
-        return Ok(nprovider_err(span, "nprovider.chain() requires at least one entry"));
+        return Ok(nprovider_err(
+            span,
+            "nprovider.chain() requires at least one entry",
+        ));
     }
     for k in &keys {
         if resolve_key(k).is_none() {
@@ -353,13 +390,7 @@ fn nprovider_chain(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     }
     let id = new_chain_id();
     CHAINS.with(|c| {
-        c.borrow_mut().insert(
-            id,
-            Chain {
-                keys,
-                cursor: 0,
-            },
-        );
+        c.borrow_mut().insert(id, Chain { keys, cursor: 0 });
     });
     Ok(Value::Int(id).ref_cell())
 }
@@ -444,7 +475,12 @@ fn nprovider_price(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     }
     let price = match lookup_price(&model) {
         Some(p) => p,
-        None => return Ok(nprovider_err(span, format!("unknown model '{model}' for pricing"))),
+        None => {
+            return Ok(nprovider_err(
+                span,
+                format!("unknown model '{model}' for pricing"),
+            ))
+        }
     };
     let usd = (tokens_in / 1_000_000.0) * price.in_per_mtok
         + (tokens_out / 1_000_000.0) * price.out_per_mtok;
@@ -473,7 +509,10 @@ fn nprovider_table(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let mut out = HashMap::new();
     for (model, price) in builtin_prices() {
         let mut row = HashMap::new();
-        row.insert("in_per_mtok".into(), Value::Float(price.in_per_mtok).ref_cell());
+        row.insert(
+            "in_per_mtok".into(),
+            Value::Float(price.in_per_mtok).ref_cell(),
+        );
         row.insert(
             "out_per_mtok".into(),
             Value::Float(price.out_per_mtok).ref_cell(),
@@ -483,7 +522,10 @@ fn nprovider_table(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     PRICE_OVERRIDES.with(|over| {
         for (model, price) in over.borrow().iter() {
             let mut row = HashMap::new();
-            row.insert("in_per_mtok".into(), Value::Float(price.in_per_mtok).ref_cell());
+            row.insert(
+                "in_per_mtok".into(),
+                Value::Float(price.in_per_mtok).ref_cell(),
+            );
             row.insert(
                 "out_per_mtok".into(),
                 Value::Float(price.out_per_mtok).ref_cell(),
@@ -540,7 +582,10 @@ nprovider_fns![
 ];
 
 fn all_builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(flat, _, f)| (flat, f)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(flat, _, f)| (flat, f))
+        .collect()
 }
 
 pub fn namespace() -> Value {
@@ -621,7 +666,11 @@ mod tests {
             other => panic!("expected object, got {other:?}"),
         }
         let usd = nprovider_price(
-            &[s("gpt-4o-mini"), Value::Int(1_000_000).ref_cell(), Value::Int(0).ref_cell()],
+            &[
+                s("gpt-4o-mini"),
+                Value::Int(1_000_000).ref_cell(),
+                Value::Int(0).ref_cell(),
+            ],
             span(),
         )
         .unwrap();

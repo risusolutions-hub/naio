@@ -118,7 +118,9 @@ impl From<HeaderName> for HeaderValue {
 
 #[inline]
 fn is_valid_value(bytes: &[u8]) -> bool {
-    bytes.iter().all(|&b| b == b'\t' || (b >= 0x20 && b != 0x7f))
+    bytes
+        .iter()
+        .all(|&b| b == b'\t' || (b >= 0x20 && b != 0x7f))
 }
 
 #[inline]

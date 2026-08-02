@@ -118,12 +118,21 @@ fn arity(args: &[ValueRef], n: usize, name: &str, span: Span) -> Result<(), Runt
     Ok(())
 }
 
-fn arity_range(args: &[ValueRef], min: usize, max: usize, name: &str, span: Span) -> Result<(), RuntimeError> {
+fn arity_range(
+    args: &[ValueRef],
+    min: usize,
+    max: usize,
+    name: &str,
+    span: Span,
+) -> Result<(), RuntimeError> {
     if args.len() < min || args.len() > max {
         return Err(RuntimeError::at(
             span,
             codes::E2830_NMODEL_ARITY,
-            format!("{name}() expects {min}..={max} argument(s), got {}", args.len()),
+            format!(
+                "{name}() expects {min}..={max} argument(s), got {}",
+                args.len()
+            ),
         ));
     }
     Ok(())
@@ -144,7 +153,12 @@ fn handle_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> Result<u
     }
 }
 
-fn string_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> Result<String, RuntimeError> {
+fn string_arg(
+    args: &[ValueRef],
+    idx: usize,
+    name: &str,
+    span: Span,
+) -> Result<String, RuntimeError> {
     match &*args[idx].borrow() {
         Value::String(s) => Ok(s.clone()),
         other => Err(RuntimeError::at(
@@ -159,7 +173,12 @@ fn string_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> Result<S
     }
 }
 
-fn object_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> Result<HashMap<String, ValueRef>, RuntimeError> {
+fn object_arg(
+    args: &[ValueRef],
+    idx: usize,
+    name: &str,
+    span: Span,
+) -> Result<HashMap<String, ValueRef>, RuntimeError> {
     match &*args[idx].borrow() {
         Value::Object(m) => Ok(m.clone()),
         other => Err(RuntimeError::at(
@@ -205,7 +224,11 @@ fn nmodel_bind(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     };
     // Validate schema_id exists.
     with_schema(schema_id, "nmodel_bind", span, |_| Ok(()))?;
-    let client_id = alloc_client(ClientHandle { schema_id, db_handle, dialect });
+    let client_id = alloc_client(ClientHandle {
+        schema_id,
+        db_handle,
+        dialect,
+    });
     Ok(ok_int(client_id as i64))
 }
 
@@ -218,24 +241,16 @@ fn nmodel_migrate(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
         let schema_id = client.schema_id;
         let db_handle = client.db_handle;
         let dialect = client.dialect;
-        with_schema(schema_id, "nmodel_migrate", span, |schema| {
-            match dialect {
-                Dialect::Sqlite => {
-                    crate::nsqlite::handles::with_conn_mut(
-                        db_handle,
-                        "nmodel_migrate",
-                        span,
-                        |conn| sqlite_migrate(conn, schema, dialect),
-                    )
-                }
-                Dialect::Pg => {
-                    crate::npg::handles::with_conn_mut(
-                        db_handle,
-                        "nmodel_migrate",
-                        span,
-                        |conn| pg_migrate(conn, schema),
-                    )
-                }
+        with_schema(schema_id, "nmodel_migrate", span, |schema| match dialect {
+            Dialect::Sqlite => {
+                crate::nsqlite::handles::with_conn_mut(db_handle, "nmodel_migrate", span, |conn| {
+                    sqlite_migrate(conn, schema, dialect)
+                })
+            }
+            Dialect::Pg => {
+                crate::npg::handles::with_conn_mut(db_handle, "nmodel_migrate", span, |conn| {
+                    pg_migrate(conn, schema)
+                })
             }
         })
     });
@@ -367,9 +382,7 @@ fn nmodel_delete(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
             exec_delete(model, where_obj, db_handle, dialect, span)
         })
     });
-    result
-        .map(ok_int)
-        .or_else(|e| Ok(error_from_runtime(&e)))
+    result.map(ok_int).or_else(|e| Ok(error_from_runtime(&e)))
 }
 
 // ── `nmodel.raw` ───────────────────────────────────────────────────────────
@@ -384,7 +397,10 @@ fn nmodel_raw(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
             other => {
                 return Ok(nmodel_error(
                     span,
-                    format!("nmodel_raw() expects params array as argument 3, got {}", other.type_name()),
+                    format!(
+                        "nmodel_raw() expects params array as argument 3, got {}",
+                        other.type_name()
+                    ),
                 ))
             }
         }
@@ -416,7 +432,10 @@ fn nmodel_schema_info(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
                 .map(|f| {
                     let mut m: HashMap<String, ValueRef> = HashMap::new();
                     m.insert("name".to_string(), Value::String(f.name.clone()).ref_cell());
-                    m.insert("type".to_string(), Value::String(format!("{:?}", f.ty).to_lowercase()).ref_cell());
+                    m.insert(
+                        "type".to_string(),
+                        Value::String(format!("{:?}", f.ty).to_lowercase()).ref_cell(),
+                    );
                     m.insert("is_id".to_string(), Value::Bool(f.is_id).ref_cell());
                     m.insert("is_unique".to_string(), Value::Bool(f.is_unique).ref_cell());
                     m.insert("nullable".to_string(), Value::Bool(f.nullable).ref_cell());

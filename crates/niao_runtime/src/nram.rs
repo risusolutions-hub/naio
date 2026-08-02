@@ -35,12 +35,21 @@ fn arity(args: &[ValueRef], n: usize, name: &str, span: Span) -> NiaoResult<()> 
     Ok(())
 }
 
-fn arity_range(args: &[ValueRef], min: usize, max: usize, name: &str, span: Span) -> NiaoResult<()> {
+fn arity_range(
+    args: &[ValueRef],
+    min: usize,
+    max: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<()> {
     if args.len() < min || args.len() > max {
         return Err(RuntimeError::at(
             span,
             codes::E2720_NRAM_ARITY,
-            format!("{name}() expects {min}..={max} argument(s), got {}", args.len()),
+            format!(
+                "{name}() expects {min}..={max} argument(s), got {}",
+                args.len()
+            ),
         ));
     }
     Ok(())
@@ -115,7 +124,10 @@ fn nram_set_limit_mb(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity(args, 1, "nram_set_limit_mb", span)?;
     let mb = int_arg(args, 0, "nram_set_limit_mb", span)?;
     if mb < 0 {
-        return Err(type_err(span, "nram_set_limit_mb() expects >= 0 (0 disables)"));
+        return Err(type_err(
+            span,
+            "nram_set_limit_mb() expects >= 0 (0 disables)",
+        ));
     }
     hw::RAM_LIMIT_MB.store(mb, Ordering::Relaxed);
     Ok(Value::Nil.ref_cell())
@@ -125,7 +137,10 @@ fn nram_set_limit_pct(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity(args, 1, "nram_set_limit_pct", span)?;
     let pct = int_arg(args, 0, "nram_set_limit_pct", span)?;
     if !(0..=100).contains(&pct) {
-        return Err(type_err(span, "nram_set_limit_pct() expects 0..=100 (0 disables)"));
+        return Err(type_err(
+            span,
+            "nram_set_limit_pct() expects 0..=100 (0 disables)",
+        ));
     }
     hw::RAM_LIMIT_PCT.store(pct as u8, Ordering::Relaxed);
     Ok(Value::Nil.ref_cell())
@@ -188,8 +203,14 @@ fn nram_info(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
             Value::Nil.ref_cell()
         },
     );
-    map.insert("process_mb".to_string(), Value::Int(hw::process_mb()).ref_cell());
-    map.insert("limit_mb".to_string(), Value::Int(hw::ram_budget_mb()).ref_cell());
+    map.insert(
+        "process_mb".to_string(),
+        Value::Int(hw::process_mb()).ref_cell(),
+    );
+    map.insert(
+        "limit_mb".to_string(),
+        Value::Int(hw::ram_budget_mb()).ref_cell(),
+    );
     map.insert(
         "pressure".to_string(),
         Value::String(hw::ram_pressure().to_string()).ref_cell(),
@@ -225,7 +246,10 @@ nram_fns![
 ];
 
 fn all_builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(flat, _, f)| (flat, f)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(flat, _, f)| (flat, f))
+        .collect()
 }
 
 pub fn namespace() -> Value {
@@ -273,7 +297,10 @@ mod tests {
     #[test]
     fn ok_with_huge_request_fails_under_budget() {
         nram_set_limit_mb(&[Value::Int(1).ref_cell()], span()).unwrap();
-        match &*nram_ok(&[Value::Int(10_000).ref_cell()], span()).unwrap().borrow() {
+        match &*nram_ok(&[Value::Int(10_000).ref_cell()], span())
+            .unwrap()
+            .borrow()
+        {
             Value::Bool(b) => assert!(!*b),
             other => panic!("expected bool, got {other:?}"),
         }

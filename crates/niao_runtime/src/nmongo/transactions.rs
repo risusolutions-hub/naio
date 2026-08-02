@@ -71,12 +71,7 @@ pub fn nmongo_abort_transaction(args: &[ValueRef], span: Span) -> NiaoResult<Val
     let session_id = session_arg(args, 0, "nmongo_abort_transaction", span)?;
 
     with_session_mut(session_id, "nmongo_abort_transaction", span, |session| {
-        block_on(async move {
-            session
-                .abort_transaction()
-                .await
-                .map_err(|e| e.to_string())
-        })
+        block_on(async move { session.abort_transaction().await.map_err(|e| e.to_string()) })
     })
     .map(|_| ok_nil())
     .or_else(|e| Ok(error_from_runtime(&e)))

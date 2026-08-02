@@ -1,4 +1,4 @@
-﻿//! Native ntemplate standard library — versioned prompt templates with
+//! Native ntemplate standard library — versioned prompt templates with
 //! `{{var}}` injection and token-count estimation for context budgeting.
 //!
 //! Import with `import "ntemplate"` (or `import "std/ntemplate"`).
@@ -44,12 +44,21 @@ fn arity(args: &[ValueRef], n: usize, name: &str, span: Span) -> NiaoResult<()> 
     Ok(())
 }
 
-fn arity_range(args: &[ValueRef], min: usize, max: usize, name: &str, span: Span) -> NiaoResult<()> {
+fn arity_range(
+    args: &[ValueRef],
+    min: usize,
+    max: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<()> {
     if args.len() < min || args.len() > max {
         return Err(RuntimeError::at(
             span,
             E3300_NTEMPLATE_ARITY,
-            format!("{name}() expects {min}..={max} argument(s), got {}", args.len()),
+            format!(
+                "{name}() expects {min}..={max} argument(s), got {}",
+                args.len()
+            ),
         ));
     }
     Ok(())
@@ -84,7 +93,12 @@ fn optional_string_arg(args: &[ValueRef], idx: usize) -> Option<String> {
     }
 }
 
-fn object_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> NiaoResult<HashMap<String, ValueRef>> {
+fn object_arg(
+    args: &[ValueRef],
+    idx: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<HashMap<String, ValueRef>> {
     match &*args[idx].borrow() {
         Value::Object(map) => Ok(map.clone()),
         other => Err(type_err(
@@ -199,7 +213,10 @@ fn sort_versions(mut versions: Vec<String>) -> Vec<String> {
     versions
 }
 
-fn find_entry<'a>(entries: &'a [TemplateEntry], version: Option<&str>) -> Option<&'a TemplateEntry> {
+fn find_entry<'a>(
+    entries: &'a [TemplateEntry],
+    version: Option<&str>,
+) -> Option<&'a TemplateEntry> {
     if entries.is_empty() {
         return None;
     }
@@ -222,10 +239,16 @@ fn ntemplate_set(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let version = string_arg(args, 1, "ntemplate_set", span)?;
     let body = string_arg(args, 2, "ntemplate_set", span)?;
     if name.is_empty() {
-        return Ok(ntemplate_err(span, "ntemplate_set() name must not be empty"));
+        return Ok(ntemplate_err(
+            span,
+            "ntemplate_set() name must not be empty",
+        ));
     }
     if version.is_empty() {
-        return Ok(ntemplate_err(span, "ntemplate_set() version must not be empty"));
+        return Ok(ntemplate_err(
+            span,
+            "ntemplate_set() version must not be empty",
+        ));
     }
     TEMPLATES.with(|store| {
         let mut store = store.borrow_mut();
@@ -254,7 +277,12 @@ fn ntemplate_get(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
         Some(b) => Ok(Value::String(b).ref_cell()),
         None => Ok(ntemplate_err(
             span,
-            format!("template '{name}' not found{}", version.map(|v| format!(" at version '{v}'")).unwrap_or_default()),
+            format!(
+                "template '{name}' not found{}",
+                version
+                    .map(|v| format!(" at version '{v}'"))
+                    .unwrap_or_default()
+            ),
         )),
     }
 }
@@ -303,7 +331,12 @@ fn ntemplate_render(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let Some(template) = body else {
         return Ok(ntemplate_err(
             span,
-            format!("template '{name}' not found{}", version.map(|v| format!(" at version '{v}'")).unwrap_or_default()),
+            format!(
+                "template '{name}' not found{}",
+                version
+                    .map(|v| format!(" at version '{v}'"))
+                    .unwrap_or_default()
+            ),
         ));
     };
     match render_template(&template, &vars) {
@@ -368,7 +401,10 @@ ntemplate_fns![
 ];
 
 fn all_builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(flat, _, f)| (flat, f)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(flat, _, f)| (flat, f))
+        .collect()
 }
 
 pub fn namespace() -> Value {
@@ -429,9 +465,15 @@ mod tests {
         assert_eq!(&*v.borrow().to_string(), "Hello {{name}}");
         let rendered = ntemplate_render(&[s("greet"), vars(&[("name", "Bob")])], span()).unwrap();
         assert_eq!(&*rendered.borrow().to_string(), "Hey Bob!");
-        let versions_val = ntemplate_versions(&[s("greet")], span()).unwrap().borrow().clone();
+        let versions_val = ntemplate_versions(&[s("greet")], span())
+            .unwrap()
+            .borrow()
+            .clone();
         match versions_val {
-            Value::StringArray(vs) => assert_eq!(vs.dense_vec(), vec!["1.0.0".to_string(), "2.0.0".to_string()]),
+            Value::StringArray(vs) => assert_eq!(
+                vs.dense_vec(),
+                vec!["1.0.0".to_string(), "2.0.0".to_string()]
+            ),
             other => panic!("expected string_array, got {other:?}"),
         }
     }

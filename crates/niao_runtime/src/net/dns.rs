@@ -23,7 +23,10 @@ pub fn net_resolve(args: &[crate::ValueRef], span: Span) -> NetResult {
             for addr in addrs {
                 let mut map = HashMap::new();
                 map.insert("ip".into(), ok_string(addr.ip().to_string()));
-                map.insert("port".into(), crate::Value::Int(addr.port() as i64).ref_cell());
+                map.insert(
+                    "port".into(),
+                    crate::Value::Int(addr.port() as i64).ref_cell(),
+                );
                 let family = if addr.is_ipv4() { "ipv4" } else { "ipv6" };
                 map.insert("family".into(), ok_string(family.into()));
                 out.push(crate::Value::Object(map).ref_cell());

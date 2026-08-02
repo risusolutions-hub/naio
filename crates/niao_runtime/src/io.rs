@@ -45,12 +45,21 @@ fn arity(args: &[ValueRef], n: usize, name: &str, span: Span) -> NiaoResult<()> 
     Ok(())
 }
 
-fn arity_range(args: &[ValueRef], min: usize, max: usize, name: &str, span: Span) -> NiaoResult<()> {
+fn arity_range(
+    args: &[ValueRef],
+    min: usize,
+    max: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<()> {
     if args.len() < min || args.len() > max {
         return Err(RuntimeError::at(
             span,
             codes::E1200_IO_ARITY,
-            format!("{name}() expects {min}..={max} argument(s), got {}", args.len()),
+            format!(
+                "{name}() expects {min}..={max} argument(s), got {}",
+                args.len()
+            ),
         ));
     }
     Ok(())
@@ -89,7 +98,10 @@ fn size_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> NiaoResult
     if n < 0 {
         return Err(type_err(
             span,
-            format!("{name}() expects a non-negative int as argument {}", idx + 1),
+            format!(
+                "{name}() expects a non-negative int as argument {}",
+                idx + 1
+            ),
         ));
     }
     Ok(n as usize)
@@ -100,19 +112,17 @@ fn handle_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> NiaoResu
     if id <= 0 {
         return Err(type_err(
             span,
-            format!("{name}() expects a positive file handle as argument {}", idx + 1),
+            format!(
+                "{name}() expects a positive file handle as argument {}",
+                idx + 1
+            ),
         ));
     }
     Ok(id as u64)
 }
 
 fn io_error(span: Span, msg: impl Into<String>) -> ValueRef {
-    error_value(
-        codes::E1201_IO_ERROR,
-        "io_error",
-        msg.into(),
-        span,
-    )
+    error_value(codes::E1201_IO_ERROR, "io_error", msg.into(), span)
 }
 
 fn ok_string(s: String) -> ValueRef {
@@ -254,9 +264,9 @@ enum IoHandle {
 impl IoHandle {
     fn binary(&self) -> bool {
         match self {
-            Self::Reader { binary, .. } | Self::Writer { binary, .. } | Self::ReadWrite { binary, .. } => {
-                *binary
-            }
+            Self::Reader { binary, .. }
+            | Self::Writer { binary, .. }
+            | Self::ReadWrite { binary, .. } => *binary,
         }
     }
 
@@ -382,7 +392,10 @@ fn task_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> NiaoResult
     if id <= 0 {
         return Err(type_err(
             span,
-            format!("{name}() expects a positive task id as argument {}", idx + 1),
+            format!(
+                "{name}() expects a positive task id as argument {}",
+                idx + 1
+            ),
         ));
     }
     Ok(id as u64)
@@ -414,7 +427,10 @@ fn io_join_many(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
                 Value::String(s) => Ok(s.clone()),
                 other => Err(type_err(
                     span,
-                    format!("io_join_many() expects array of strings, got {}", other.type_name()),
+                    format!(
+                        "io_join_many() expects array of strings, got {}",
+                        other.type_name()
+                    ),
                 )),
             })
             .collect::<Result<Vec<_>, _>>()?,
@@ -635,14 +651,20 @@ fn io_write_lines(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
                 Value::String(s) => Ok(s.clone()),
                 other => Err(type_err(
                     span,
-                    format!("io_write_lines() expects array of strings, got {}", other.type_name()),
+                    format!(
+                        "io_write_lines() expects array of strings, got {}",
+                        other.type_name()
+                    ),
                 )),
             })
             .collect::<Result<Vec<_>, _>>()?,
         other => {
             return Err(type_err(
                 span,
-                format!("io_write_lines() expects an array, got {}", other.type_name()),
+                format!(
+                    "io_write_lines() expects an array, got {}",
+                    other.type_name()
+                ),
             ));
         }
     };
@@ -811,9 +833,7 @@ fn io_chdir(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
 
 fn io_temp_dir(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity(args, 0, "io_temp_dir", span)?;
-    Ok(ok_string(
-        env::temp_dir().to_string_lossy().into_owned(),
-    ))
+    Ok(ok_string(env::temp_dir().to_string_lossy().into_owned()))
 }
 
 fn io_home_dir(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
@@ -854,9 +874,7 @@ fn io_open(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
         None => {
             return Ok(io_error(
                 span,
-                format!(
-                    "io_open(): invalid mode \"{mode_str}\" (use r, w, a, r+, rb, wb, ab)"
-                ),
+                format!("io_open(): invalid mode \"{mode_str}\" (use r, w, a, r+, rb, wb, ab)"),
             ));
         }
     };
@@ -933,10 +951,9 @@ fn io_read(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
                 }
             };
             buf.truncate(read);
-            Ok(HandleResult::String(
-                String::from_utf8(buf)
-                    .unwrap_or_else(|e| String::from_utf8_lossy(e.as_bytes()).into_owned()),
-            ))
+            Ok(HandleResult::String(String::from_utf8(buf).unwrap_or_else(
+                |e| String::from_utf8_lossy(e.as_bytes()).into_owned(),
+            )))
         }
     })
 }
@@ -944,36 +961,43 @@ fn io_read(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
 fn io_read_all(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity(args, 1, "io_read_all", span)?;
     let id = handle_arg(args, 0, "io_read_all", span)?;
-    with_handle(id, "io_read_all", span, |handle| {
-        match handle {
-            IoHandle::Reader { reader, binary, eof, .. } => {
-                if *binary {
-                    let mut data = Vec::new();
-                    reader.read_to_end(&mut data).map_err(|e| e.to_string())?;
-                    *eof = true;
-                    Ok(HandleResult::Bytes(data))
-                } else {
-                    let mut data = String::new();
-                    reader.read_to_string(&mut data).map_err(|e| e.to_string())?;
-                    *eof = true;
-                    Ok(HandleResult::String(data))
-                }
+    with_handle(id, "io_read_all", span, |handle| match handle {
+        IoHandle::Reader {
+            reader,
+            binary,
+            eof,
+            ..
+        } => {
+            if *binary {
+                let mut data = Vec::new();
+                reader.read_to_end(&mut data).map_err(|e| e.to_string())?;
+                *eof = true;
+                Ok(HandleResult::Bytes(data))
+            } else {
+                let mut data = String::new();
+                reader
+                    .read_to_string(&mut data)
+                    .map_err(|e| e.to_string())?;
+                *eof = true;
+                Ok(HandleResult::String(data))
             }
-            IoHandle::ReadWrite { file, binary, eof, .. } => {
-                if *binary {
-                    let mut data = Vec::new();
-                    file.read_to_end(&mut data).map_err(|e| e.to_string())?;
-                    *eof = true;
-                    Ok(HandleResult::Bytes(data))
-                } else {
-                    let mut data = String::new();
-                    file.read_to_string(&mut data).map_err(|e| e.to_string())?;
-                    *eof = true;
-                    Ok(HandleResult::String(data))
-                }
-            }
-            IoHandle::Writer { .. } => Err("io_read_all(): handle is not open for reading".into()),
         }
+        IoHandle::ReadWrite {
+            file, binary, eof, ..
+        } => {
+            if *binary {
+                let mut data = Vec::new();
+                file.read_to_end(&mut data).map_err(|e| e.to_string())?;
+                *eof = true;
+                Ok(HandleResult::Bytes(data))
+            } else {
+                let mut data = String::new();
+                file.read_to_string(&mut data).map_err(|e| e.to_string())?;
+                *eof = true;
+                Ok(HandleResult::String(data))
+            }
+        }
+        IoHandle::Writer { .. } => Err("io_read_all(): handle is not open for reading".into()),
     })
 }
 
@@ -1040,7 +1064,9 @@ fn io_write(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
             let text = string_arg(args, 1, "io_write", span).map_err(|e| e.to_string())?;
             match handle {
                 IoHandle::Writer { writer, .. } => {
-                    writer.write_all(text.as_bytes()).map_err(|e| e.to_string())?;
+                    writer
+                        .write_all(text.as_bytes())
+                        .map_err(|e| e.to_string())?;
                     Ok(HandleResult::Int(text.len() as i64))
                 }
                 IoHandle::ReadWrite { file, .. } => {
@@ -1071,7 +1097,12 @@ fn io_seek(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
         0 => SeekFrom::Start(offset as u64),
         1 => SeekFrom::Current(offset),
         2 => SeekFrom::End(offset),
-        _ => return Ok(io_error(span, "io_seek(): whence must be 0 (start), 1 (current), or 2 (end)")),
+        _ => {
+            return Ok(io_error(
+                span,
+                "io_seek(): whence must be 0 (start), 1 (current), or 2 (end)",
+            ))
+        }
     };
     with_handle(id, "io_seek", span, |handle| {
         let pos = match handle {
@@ -1098,8 +1129,12 @@ fn io_tell(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let id = handle_arg(args, 0, "io_tell", span)?;
     with_handle(id, "io_tell", span, |handle| {
         let pos = match handle {
-            IoHandle::Reader { reader, .. } => reader.stream_position().map_err(|e| e.to_string())?,
-            IoHandle::ReadWrite { file, .. } => file.stream_position().map_err(|e| e.to_string())?,
+            IoHandle::Reader { reader, .. } => {
+                reader.stream_position().map_err(|e| e.to_string())?
+            }
+            IoHandle::ReadWrite { file, .. } => {
+                file.stream_position().map_err(|e| e.to_string())?
+            }
             IoHandle::Writer { .. } => {
                 return Err("io_tell(): writer-only handle does not support tell".into())
             }
@@ -1111,7 +1146,9 @@ fn io_tell(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
 fn io_eof(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity(args, 1, "io_eof", span)?;
     let id = handle_arg(args, 0, "io_eof", span)?;
-    with_handle(id, "io_eof", span, |handle| Ok(HandleResult::Bool(handle.is_eof())))
+    with_handle(id, "io_eof", span, |handle| {
+        Ok(HandleResult::Bool(handle.is_eof()))
+    })
 }
 
 // ---------------------------------------------------------------------------
@@ -1200,7 +1237,14 @@ fn io_task_poll(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
         codes::E1203_IO_TASK_NOT_FOUND,
         "async task cancelled",
         async_io_error,
-        |state| Ok(task_result_value(state, span, "async task cancelled", async_io_error)),
+        |state| {
+            Ok(task_result_value(
+                state,
+                span,
+                "async task cancelled",
+                async_io_error,
+            ))
+        },
     )
 }
 
@@ -1215,7 +1259,14 @@ fn io_task_wait(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
         codes::E1203_IO_TASK_NOT_FOUND,
         "async task cancelled",
         async_io_error,
-        |state| Ok(task_result_value(state, span, "async task cancelled", async_io_error)),
+        |state| {
+            Ok(task_result_value(
+                state,
+                span,
+                "async task cancelled",
+                async_io_error,
+            ))
+        },
     )
 }
 

@@ -12,7 +12,12 @@ use std::time::Duration;
 use super::common::*;
 
 fn nsqlite_error(span: Span, msg: impl Into<String>) -> ValueRef {
-    error_value(codes::E1701_NSQLITE_ERROR, "nsqlite_error", msg.into(), span)
+    error_value(
+        codes::E1701_NSQLITE_ERROR,
+        "nsqlite_error",
+        msg.into(),
+        span,
+    )
 }
 
 fn ok_nil() -> ValueRef {
@@ -90,7 +95,11 @@ pub fn nsqlite_configure(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> 
             let val_ref = &*val.borrow();
             match key.as_str() {
                 "wal" => {
-                    let mode = if bool_from_value(val_ref)? { "WAL" } else { "DELETE" };
+                    let mode = if bool_from_value(val_ref)? {
+                        "WAL"
+                    } else {
+                        "DELETE"
+                    };
                     handle
                         .conn
                         .pragma_update(None, "journal_mode", mode)

@@ -37,13 +37,11 @@ impl LlamaSession {
     ) -> Result<Self> {
         let backend = LlamaBackend::init().map_err(|e| LlmError::Msg(e.to_string()))?;
 
-        let thread_count = threads
-            .map(|t| t as i32)
-            .unwrap_or_else(|| {
-                std::thread::available_parallelism()
-                    .map(|n| n.get() as i32)
-                    .unwrap_or(4)
-            });
+        let thread_count = threads.map(|t| t as i32).unwrap_or_else(|| {
+            std::thread::available_parallelism()
+                .map(|n| n.get() as i32)
+                .unwrap_or(4)
+        });
 
         let ctx_size = n_ctx.unwrap_or(2048).max(512);
         let n_ctx_nz = NonZeroU32::new(ctx_size).unwrap_or(NonZeroU32::new(2048).unwrap());

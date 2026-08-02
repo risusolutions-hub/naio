@@ -29,7 +29,9 @@ fn concat_columns(a: &Column, b: &Column) -> Result<Column, String> {
         (Column::Float(x), Column::Float(y)) => {
             Ok(Column::Float([x.as_slice(), y.as_slice()].concat()))
         }
-        (Column::Bool(x), Column::Bool(y)) => Ok(Column::Bool([x.as_slice(), y.as_slice()].concat())),
+        (Column::Bool(x), Column::Bool(y)) => {
+            Ok(Column::Bool([x.as_slice(), y.as_slice()].concat()))
+        }
         (Column::String(x), Column::String(y)) => {
             let mut dense = x.dense_vec();
             dense.extend(y.dense_vec());

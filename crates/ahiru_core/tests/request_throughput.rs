@@ -13,12 +13,7 @@ fn native_health_handler() -> HandlerFn {
 fn bridge_echo_handler() -> HandlerFn {
     Arc::new(|ctx| {
         let body = ahiru_core::body_for_dispatch(&ctx);
-        Box::pin(async move {
-            Ok(AhiruResponse::json(
-                200,
-                &format!(r#"{{"echo":"{body}"}}"#),
-            ))
-        })
+        Box::pin(async move { Ok(AhiruResponse::json(200, &format!(r#"{{"echo":"{body}"}}"#))) })
     })
 }
 

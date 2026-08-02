@@ -100,13 +100,11 @@ impl Estimator for RandomForestClassifier {
                             }
                         }
                         let Ok(x_arr) = NdArray::from_vec(vec![n, n_feat], sub_x) else {
-                            *results.lock().unwrap() =
-                                Err(LearnError::Error("RF x shape".into()));
+                            *results.lock().unwrap() = Err(LearnError::Error("RF x shape".into()));
                             return;
                         };
                         let Ok(y_arr) = NdArray::from_vec(vec![n], sub_y) else {
-                            *results.lock().unwrap() =
-                                Err(LearnError::Error("RF y shape".into()));
+                            *results.lock().unwrap() = Err(LearnError::Error("RF y shape".into()));
                             return;
                         };
                         let mut tree = DecisionTreeClassifier::new(max_depth);
@@ -234,8 +232,8 @@ impl Estimator for RandomForestRegressor {
                     sub_x[i * nf + fi] = xv[si * d + f];
                 }
             }
-            let x_arr =
-                NdArray::from_vec(vec![n, nf], sub_x).map_err(|e| LearnError::Error(e.to_string()))?;
+            let x_arr = NdArray::from_vec(vec![n, nf], sub_x)
+                .map_err(|e| LearnError::Error(e.to_string()))?;
             let y_arr =
                 NdArray::from_vec(vec![n], sub_y).map_err(|e| LearnError::Error(e.to_string()))?;
             let mut tree = DecisionTreeRegressor::new(self.max_depth);

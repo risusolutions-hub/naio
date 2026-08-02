@@ -1,4 +1,4 @@
-﻿//! Native nlazy standard library — fused lazy pipelines over packed arrays.
+//! Native nlazy standard library — fused lazy pipelines over packed arrays.
 //! Built-in map/filter/take stages compose without materializing until
 //! `collect` or `sum`.
 //!
@@ -105,7 +105,10 @@ fn with_pipe_result<T>(
 
 fn require_source(p: &LazyPipe, span: Span) -> Result<(), ValueRef> {
     if p.source.is_none() {
-        Err(lazy_err(span, "nlazy pipeline has no source; call from() first"))
+        Err(lazy_err(
+            span,
+            "nlazy pipeline has no source; call from() first",
+        ))
     } else {
         Ok(())
     }
@@ -424,10 +427,7 @@ fn nlazy_take(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let id = handle_arg(args, 0, "nlazy_take", span)?;
     let n = int_arg(args, 1, "nlazy_take", span)?;
     if n < 0 {
-        return Ok(lazy_err(
-            span,
-            "nlazy_take() expects a non-negative count",
-        ));
+        return Ok(lazy_err(span, "nlazy_take() expects a non-negative count"));
     }
     match with_pipe_result(id, span, |p| {
         require_source(p, span)?;
@@ -526,7 +526,10 @@ nlazy_fns![
 ];
 
 fn all_builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(flat, _, f)| (flat, f)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(flat, _, f)| (flat, f))
+        .collect()
 }
 
 pub fn namespace() -> Value {
@@ -580,9 +583,16 @@ mod tests {
         let h = handle(nlazy_from(&[ia((1..=20).collect())], span()));
         nlazy_filter(&[Value::Int(h).ref_cell(), s("even")], span()).unwrap();
         nlazy_map(&[Value::Int(h).ref_cell(), s("double")], span()).unwrap();
-        nlazy_take(&[Value::Int(h).ref_cell(), Value::Int(3).ref_cell()], span()).unwrap();
+        nlazy_take(
+            &[Value::Int(h).ref_cell(), Value::Int(3).ref_cell()],
+            span(),
+        )
+        .unwrap();
         // evens 2..20 → double → take 3: 4, 8, 12 → sum 24
-        assert_eq!(expect_int(nlazy_sum(&[Value::Int(h).ref_cell()], span())), 24);
+        assert_eq!(
+            expect_int(nlazy_sum(&[Value::Int(h).ref_cell()], span())),
+            24
+        );
         let collected = nlazy_collect(&[Value::Int(h).ref_cell()], span()).unwrap();
         match &*collected.borrow() {
             Value::IntArray(v) => assert_eq!(v, &vec![4, 8, 12]),
@@ -599,7 +609,11 @@ mod tests {
     fn describe_pipeline() {
         let h = handle(nlazy_from(&[ia(vec![1, 2, 3])], span()));
         nlazy_map(&[Value::Int(h).ref_cell(), s("abs")], span()).unwrap();
-        nlazy_take(&[Value::Int(h).ref_cell(), Value::Int(2).ref_cell()], span()).unwrap();
+        nlazy_take(
+            &[Value::Int(h).ref_cell(), Value::Int(2).ref_cell()],
+            span(),
+        )
+        .unwrap();
         match &*nlazy_describe(&[Value::Int(h).ref_cell()], span())
             .unwrap()
             .borrow()
@@ -624,7 +638,10 @@ mod tests {
         let data = Value::FloatArray(vec![1.0, 4.0, 9.0]).ref_cell();
         let h = handle(nlazy_from(&[data], span()));
         nlazy_map(&[Value::Int(h).ref_cell(), s("sqrt")], span()).unwrap();
-        match &*nlazy_sum(&[Value::Int(h).ref_cell()], span()).unwrap().borrow() {
+        match &*nlazy_sum(&[Value::Int(h).ref_cell()], span())
+            .unwrap()
+            .borrow()
+        {
             Value::Float(x) => assert!((*x - 6.0).abs() < 1e-12),
             other => panic!("{other:?}"),
         }

@@ -1,4 +1,3 @@
-
 use niao_stats::dist::Normal;
 use niao_stats::special::{norm_cdf, norm_pdf};
 fn main() {

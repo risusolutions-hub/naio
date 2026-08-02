@@ -8,11 +8,11 @@ mod tz;
 pub mod unix;
 
 pub use civil::{
-    civil_from_days, days_from_civil, days_in_month, is_leap_year, is_valid_date, weekday_from_days,
-    CivilDateTime, WEEKDAY_NAMES,
+    civil_from_days, days_from_civil, days_in_month, is_leap_year, is_valid_date,
+    weekday_from_days, CivilDateTime, MONTH_ABBR, MONTH_NAMES, WEEKDAY_ABBR, WEEKDAY_NAMES,
 };
 pub use format::format_datetime;
-pub use parse::{parse_datetime, parse_rfc3339, parse_rfc2822};
+pub use parse::{parse_datetime, parse_rfc2822, parse_rfc3339};
 pub use tz::{list_timezones, resolve_timezone, Timezone, TzKind};
 pub use unix::{civil_to_ms, ms_to_civil, ms_to_utc_parts, utc_parts_to_ms, UtcParts};
 

@@ -65,17 +65,18 @@ pub fn unique_labels(y: &[f64]) -> Vec<f64> {
 }
 
 pub fn label_index(labels: &[f64], y: f64) -> Option<usize> {
-    labels
-        .iter()
-        .position(|&c| (c - y).abs() < 1e-12)
+    labels.iter().position(|&c| (c - y).abs() < 1e-12)
 }
 
 #[inline]
 pub fn squared_dist(a: &[f64], b: &[f64]) -> f64 {
-    a.iter().zip(b.iter()).map(|(x, y)| {
-        let d = x - y;
-        d * d
-    }).sum()
+    a.iter()
+        .zip(b.iter())
+        .map(|(x, y)| {
+            let d = x - y;
+            d * d
+        })
+        .sum()
 }
 
 #[inline]

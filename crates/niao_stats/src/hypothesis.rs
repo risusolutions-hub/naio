@@ -1,7 +1,7 @@
 //! Hypothesis tests.
 
 use crate::descriptive::{mean, std, var};
-use crate::dist::{ChiSquare, F, StudentT};
+use crate::dist::{ChiSquare, StudentT, F};
 use crate::error::{StatsError, StatsResult};
 use crate::special::norm_cdf;
 
@@ -48,7 +48,12 @@ pub fn ttest_1samp(data: &[f64], popmean: f64, alt: Alternative) -> StatsResult<
     })
 }
 
-pub fn ttest_ind(a: &[f64], b: &[f64], equal_var: bool, alt: Alternative) -> StatsResult<TestResult> {
+pub fn ttest_ind(
+    a: &[f64],
+    b: &[f64],
+    equal_var: bool,
+    alt: Alternative,
+) -> StatsResult<TestResult> {
     if a.is_empty() || b.is_empty() {
         return Err(StatsError::Error("ttest_ind: empty group".into()));
     }
@@ -535,9 +540,18 @@ mod tests {
 
     #[test]
     fn anova_vs_scipy() {
-        let g1 = [0.496714, -0.138264, 0.647689, 1.523030, -0.234153, -0.234137, 1.579213, 0.767435, -0.469474, 0.542560];
-        let g2 = [-0.463418, -0.465730, 0.241962, -1.913280, -1.724918, -0.562288, -1.012831, 0.314247, -0.908024, -1.412304];
-        let g3 = [1.465649, -0.225776, 0.067528, -1.424748, -0.544383, 0.110923, -1.150994, 0.375698, -0.600639, -0.291694];
+        let g1 = [
+            0.496714, -0.138264, 0.647689, 1.523030, -0.234153, -0.234137, 1.579213, 0.767435,
+            -0.469474, 0.542560,
+        ];
+        let g2 = [
+            -0.463418, -0.465730, 0.241962, -1.913280, -1.724918, -0.562288, -1.012831, 0.314247,
+            -0.908024, -1.412304,
+        ];
+        let g3 = [
+            1.465649, -0.225776, 0.067528, -1.424748, -0.544383, 0.110923, -1.150994, 0.375698,
+            -0.600639, -0.291694,
+        ];
         let r = anova(&[&g1, &g2, &g3]).unwrap();
         assert!(close(r.statistic, 6.569363238896068, 1e-6));
         assert!(close(r.pvalue, 0.004734807901966396, 1e-6));

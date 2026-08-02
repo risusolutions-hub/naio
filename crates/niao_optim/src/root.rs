@@ -3,12 +3,7 @@
 use crate::result::{OptimizeResult, RootMethod};
 use crate::utils::{approx_jacobian, copy_from, dot, mat_vec, norm2, norm_inf};
 
-pub fn root<F>(
-    mut f: F,
-    x0: &[f64],
-    method: RootMethod,
-    max_iter: usize,
-) -> OptimizeResult
+pub fn root<F>(mut f: F, x0: &[f64], method: RootMethod, max_iter: usize) -> OptimizeResult
 where
     F: FnMut(&[f64], &mut [f64]),
 {
@@ -40,7 +35,14 @@ where
         }
     }
     f(&x, &mut fx);
-    OptimizeResult::fail(x, norm2(&fx), None, max_iter, nfev + 1, "maximum iterations exceeded")
+    OptimizeResult::fail(
+        x,
+        norm2(&fx),
+        None,
+        max_iter,
+        nfev + 1,
+        "maximum iterations exceeded",
+    )
 }
 
 fn broyden<F>(f: &mut F, x0: &[f64], max_iter: usize) -> OptimizeResult
@@ -88,7 +90,14 @@ where
         x = x_new;
         copy_from(&fx_new, &mut fx);
     }
-    OptimizeResult::fail(x, norm2(&fx), None, max_iter, nfev, "maximum iterations exceeded")
+    OptimizeResult::fail(
+        x,
+        norm2(&fx),
+        None,
+        max_iter,
+        nfev,
+        "maximum iterations exceeded",
+    )
 }
 
 fn solve_linear(n: usize, a: &[f64], b: &[f64]) -> Vec<f64> {
@@ -99,9 +108,7 @@ fn solve_linear(n: usize, a: &[f64], b: &[f64]) -> Vec<f64> {
     }
     let a_arr = from_slice(&[n, n], &a_reg).expect("matrix");
     let b_arr = from_slice(&[n, 1], b).expect("rhs");
-    solve(&a_arr, &b_arr)
-        .expect("solve")
-        .to_vec()
+    solve(&a_arr, &b_arr).expect("solve").to_vec()
 }
 
 #[cfg(test)]

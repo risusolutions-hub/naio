@@ -97,10 +97,20 @@ fn ncl_slice(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let start = int_arg(args, 1, "ncl_slice", span)? as usize;
     let end = int_arg(args, 2, "ncl_slice", span)? as usize;
     match v {
-        Value::IntArray(x) => Ok(ok_value(Value::IntArray(x[start..end.min(x.len())].to_vec()))),
-        Value::FloatArray(x) => Ok(ok_value(Value::FloatArray(x[start..end.min(x.len())].to_vec()))),
-        Value::BoolArray(x) => Ok(ok_value(Value::BoolArray(x[start..end.min(x.len())].to_vec()))),
-        _ => Err(RuntimeError::at(span, codes::E1964_NCL_TYPE, "ncl_slice() requires packed array")),
+        Value::IntArray(x) => Ok(ok_value(Value::IntArray(
+            x[start..end.min(x.len())].to_vec(),
+        ))),
+        Value::FloatArray(x) => Ok(ok_value(Value::FloatArray(
+            x[start..end.min(x.len())].to_vec(),
+        ))),
+        Value::BoolArray(x) => Ok(ok_value(Value::BoolArray(
+            x[start..end.min(x.len())].to_vec(),
+        ))),
+        _ => Err(RuntimeError::at(
+            span,
+            codes::E1964_NCL_TYPE,
+            "ncl_slice() requires packed array",
+        )),
     }
 }
 
@@ -264,7 +274,11 @@ fn ncl_series(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
         String::new()
     };
     let series = Series::from_value(name, &*args[0].borrow()).ok_or_else(|| {
-        RuntimeError::at(span, codes::E1964_NCL_TYPE, "ncl_series() expects array data")
+        RuntimeError::at(
+            span,
+            codes::E1964_NCL_TYPE,
+            "ncl_series() expects array data",
+        )
     })?;
     Ok(ok_handle(alloc_handle(NclHandle::Series(series))))
 }
@@ -284,7 +298,8 @@ fn ncl_dataframe(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
                 })?;
                 cols.push(Series::new(name.clone(), col));
             }
-            let df = DataFrame::new(cols).map_err(|e| RuntimeError::at(span, codes::E1961_NCL_ERROR, e))?;
+            let df = DataFrame::new(cols)
+                .map_err(|e| RuntimeError::at(span, codes::E1961_NCL_ERROR, e))?;
             Ok(ok_handle(alloc_handle(NclHandle::DataFrame(df))))
         }
         other => Err(RuntimeError::at(
@@ -299,17 +314,15 @@ fn ncl_df_get(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity(args, 2, "ncl_df_get", span)?;
     let id = ncl_handle_arg(args, 0, "ncl_df_get", span)?;
     let col = string_arg(args, 1, "ncl_df_get", span)?;
-    with_handle(id, "ncl_df_get", span, |h| {
-        match h {
-            NclHandle::DataFrame(df) => {
-                let s = df
-                    .get_column(&col)
-                    .ok_or_else(|| format!("column '{col}' not found"))?
-                    .clone();
-                Ok(alloc_handle(NclHandle::Series(s)))
-            }
-            _ => Err("expected DataFrame handle".into()),
+    with_handle(id, "ncl_df_get", span, |h| match h {
+        NclHandle::DataFrame(df) => {
+            let s = df
+                .get_column(&col)
+                .ok_or_else(|| format!("column '{col}' not found"))?
+                .clone();
+            Ok(alloc_handle(NclHandle::Series(s)))
         }
+        _ => Err("expected DataFrame handle".into()),
     })
     .map(ok_handle)
 }
@@ -319,15 +332,15 @@ fn ncl_df_set(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let id = ncl_handle_arg(args, 0, "ncl_df_set", span)?;
     let col = string_arg(args, 1, "ncl_df_set", span)?;
     let series = Series::from_value(col.clone(), &*args[2].borrow()).ok_or_else(|| {
-        RuntimeError::at(span, codes::E1964_NCL_TYPE, "ncl_df_set() expects array column")
+        RuntimeError::at(
+            span,
+            codes::E1964_NCL_TYPE,
+            "ncl_df_set() expects array column",
+        )
     })?;
-    with_handle_mut(id, "ncl_df_set", span, |h| {
-        match h {
-            NclHandle::DataFrame(df) => {
-                df.set_column(series).map(|_| 0i64)
-            }
-            _ => Err("expected DataFrame handle".into()),
-        }
+    with_handle_mut(id, "ncl_df_set", span, |h| match h {
+        NclHandle::DataFrame(df) => df.set_column(series).map(|_| 0i64),
+        _ => Err("expected DataFrame handle".into()),
     })
     .map(ok_int)
 }
@@ -338,7 +351,10 @@ fn ncl_df_columns(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     with_handle(id, "ncl_df_columns", span, |h| match h {
         NclHandle::DataFrame(df) => {
             let names = df.column_names();
-            let items: Vec<ValueRef> = names.into_iter().map(|s| Value::String(s).ref_cell()).collect();
+            let items: Vec<ValueRef> = names
+                .into_iter()
+                .map(|s| Value::String(s).ref_cell())
+                .collect();
             Ok(Value::Array(items))
         }
         _ => Err("expected DataFrame handle".into()),
@@ -355,7 +371,10 @@ fn ncl_df_shape(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
         _ => Err("expected DataFrame or Series handle".into()),
     })
     .map(|(rows, cols)| {
-        ok_value(Value::Array(vec![Value::Int(rows).ref_cell(), Value::Int(cols).ref_cell()]))
+        ok_value(Value::Array(vec![
+            Value::Int(rows).ref_cell(),
+            Value::Int(cols).ref_cell(),
+        ]))
     })
 }
 
@@ -434,8 +453,18 @@ fn ncl_filter(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let mask_val = array_arg(args, 1, "ncl_filter", span)?;
     let mask = &mask_val;
     let indices: Vec<usize> = match mask {
-        Value::BoolArray(b) => b.iter().enumerate().filter(|(_, &v)| v != 0).map(|(i, _)| i).collect(),
-        Value::IntArray(b) => b.iter().enumerate().filter(|(_, &v)| v != 0).map(|(i, _)| i).collect(),
+        Value::BoolArray(b) => b
+            .iter()
+            .enumerate()
+            .filter(|(_, &v)| v != 0)
+            .map(|(i, _)| i)
+            .collect(),
+        Value::IntArray(b) => b
+            .iter()
+            .enumerate()
+            .filter(|(_, &v)| v != 0)
+            .map(|(i, _)| i)
+            .collect(),
         _ => {
             return Err(RuntimeError::at(
                 span,
@@ -455,12 +484,18 @@ fn ncl_filter(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
                 Column::Float(v) => Column::Float(indices.iter().map(|&i| v[i]).collect()),
                 Column::Bool(v) => Column::Bool(indices.iter().map(|&i| v[i]).collect()),
                 Column::String(sa) => {
-                    let dense: Vec<String> = indices.iter().map(|&i| sa.get(i).unwrap_or_default()).collect();
+                    let dense: Vec<String> = indices
+                        .iter()
+                        .map(|&i| sa.get(i).unwrap_or_default())
+                        .collect();
                     Column::String(crate::StringArray::dense(dense))
                 }
                 Column::Any(v) => Column::Any(indices.iter().map(|&i| v[i].clone()).collect()),
             };
-            Ok(alloc_handle(NclHandle::Series(Series::new(s.name.clone(), data))))
+            Ok(alloc_handle(NclHandle::Series(Series::new(
+                s.name.clone(),
+                data,
+            ))))
         }
         _ => Err("expected DataFrame or Series".into()),
     })
@@ -578,8 +613,14 @@ fn ncl_merge(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
             }
             Ok(())
         })?;
-        (l.ok_or_else(|| RuntimeError::at(span, codes::E1962_NCL_INVALID_HANDLE, "left not DataFrame"))?,
-         r.ok_or_else(|| RuntimeError::at(span, codes::E1962_NCL_INVALID_HANDLE, "right not DataFrame"))?)
+        (
+            l.ok_or_else(|| {
+                RuntimeError::at(span, codes::E1962_NCL_INVALID_HANDLE, "left not DataFrame")
+            })?,
+            r.ok_or_else(|| {
+                RuntimeError::at(span, codes::E1962_NCL_INVALID_HANDLE, "right not DataFrame")
+            })?,
+        )
     };
     let merged = join::merge_inner(&l_df, &r_df, &on)
         .map_err(|e| RuntimeError::at(span, codes::E1961_NCL_ERROR, e))?;
@@ -605,8 +646,14 @@ fn ncl_concat(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
             }
             Ok(())
         })?;
-        (da.ok_or_else(|| RuntimeError::at(span, codes::E1962_NCL_INVALID_HANDLE, "a not DataFrame"))?,
-         db.ok_or_else(|| RuntimeError::at(span, codes::E1962_NCL_INVALID_HANDLE, "b not DataFrame"))?)
+        (
+            da.ok_or_else(|| {
+                RuntimeError::at(span, codes::E1962_NCL_INVALID_HANDLE, "a not DataFrame")
+            })?,
+            db.ok_or_else(|| {
+                RuntimeError::at(span, codes::E1962_NCL_INVALID_HANDLE, "b not DataFrame")
+            })?,
+        )
     };
     let out = join::concat_vertical(&a, &b)
         .map_err(|e| RuntimeError::at(span, codes::E1961_NCL_ERROR, e))?;
@@ -638,7 +685,13 @@ fn ncl_melt(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
             for item in items {
                 match &*item.borrow() {
                     Value::String(s) => names.push(s.clone()),
-                    _ => return Err(RuntimeError::at(span, codes::E1964_NCL_TYPE, "id_vars must be strings")),
+                    _ => {
+                        return Err(RuntimeError::at(
+                            span,
+                            codes::E1964_NCL_TYPE,
+                            "id_vars must be strings",
+                        ))
+                    }
                 }
             }
             names
@@ -647,7 +700,10 @@ fn ncl_melt(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
             return Err(RuntimeError::at(
                 span,
                 codes::E1964_NCL_TYPE,
-                format!("ncl_melt() expects array of id column names, got {}", other.type_name()),
+                format!(
+                    "ncl_melt() expects array of id column names, got {}",
+                    other.type_name()
+                ),
             ));
         }
     };
@@ -712,12 +768,16 @@ fn ncl_dropna(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
                 Column::Float(v) => Column::Float(idx.iter().map(|&i| v[i]).collect()),
                 Column::Bool(v) => Column::Bool(idx.iter().map(|&i| v[i]).collect()),
                 Column::String(sa) => {
-                    let dense: Vec<String> = idx.iter().map(|&i| sa.get(i).unwrap_or_default()).collect();
+                    let dense: Vec<String> =
+                        idx.iter().map(|&i| sa.get(i).unwrap_or_default()).collect();
                     Column::String(crate::StringArray::dense(dense))
                 }
                 Column::Any(v) => Column::Any(idx.iter().map(|&i| v[i].clone()).collect()),
             };
-            Ok(alloc_handle(NclHandle::Series(Series::new(s.name.clone(), data))))
+            Ok(alloc_handle(NclHandle::Series(Series::new(
+                s.name.clone(),
+                data,
+            ))))
         }
         _ => Err("expected Series".into()),
     })
@@ -821,7 +881,10 @@ fn ncl_from_sqlite(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
             return Err(RuntimeError::at(
                 span,
                 codes::E1962_NCL_INVALID_HANDLE,
-                format!("ncl_from_sqlite() expects connection handle, got {}", other.type_name()),
+                format!(
+                    "ncl_from_sqlite() expects connection handle, got {}",
+                    other.type_name()
+                ),
             ));
         }
     };
@@ -856,11 +919,13 @@ fn ncl_to_datetime(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     with_handle(id, "ncl_to_datetime", span, |h| match h {
         NclHandle::Series(s) => {
             let strings = match &s.data {
-                Column::String(sa) => (0..sa.len()).map(|i| sa.get(i).unwrap_or_default()).collect::<Vec<_>>(),
+                Column::String(sa) => (0..sa.len())
+                    .map(|i| sa.get(i).unwrap_or_default())
+                    .collect::<Vec<_>>(),
                 _ => return Err("to_datetime requires string column".into()),
             };
-            let utc = niao_time::resolve_timezone("UTC")
-                .map_err(|e| format!("UTC timezone: {e}"))?;
+            let utc =
+                niao_time::resolve_timezone("UTC").map_err(|e| format!("UTC timezone: {e}"))?;
             let mut epochs = Vec::with_capacity(strings.len());
             for st in strings {
                 let ms = niao_time::parse_datetime(&st, &fmt)
@@ -892,7 +957,11 @@ fn ncl_ndarray(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
                 match &*item.borrow() {
                     Value::Int(n) => shape.push(*n as usize),
                     _ => {
-                        return Err(RuntimeError::at(span, codes::E1964_NCL_TYPE, "shape must be int array"));
+                        return Err(RuntimeError::at(
+                            span,
+                            codes::E1964_NCL_TYPE,
+                            "shape must be int array",
+                        ));
                     }
                 }
             }
@@ -940,7 +1009,11 @@ fn ncl_shape(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let id = ncl_handle_arg(args, 0, "ncl_shape", span)?;
     with_handle(id, "ncl_shape", span, |h| match h {
         NclHandle::NDArray(a) => {
-            let items: Vec<ValueRef> = a.shape.iter().map(|&n| Value::Int(n as i64).ref_cell()).collect();
+            let items: Vec<ValueRef> = a
+                .shape
+                .iter()
+                .map(|&n| Value::Int(n as i64).ref_cell())
+                .collect();
             Ok(Value::Array(items))
         }
         _ => Err("expected NDArray".into()),
@@ -968,7 +1041,13 @@ fn ncl_reshape(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
             for item in items {
                 match &*item.borrow() {
                     Value::Int(n) => shape.push(*n as usize),
-                    _ => return Err(RuntimeError::at(span, codes::E1964_NCL_TYPE, "shape must be ints")),
+                    _ => {
+                        return Err(RuntimeError::at(
+                            span,
+                            codes::E1964_NCL_TYPE,
+                            "shape must be ints",
+                        ))
+                    }
                 }
             }
             shape
@@ -1004,8 +1083,10 @@ fn ncl_flatten(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
 fn ncl_kind(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity(args, 1, "ncl_kind", span)?;
     let id = ncl_handle_arg(args, 0, "ncl_kind", span)?;
-    with_handle(id, "ncl_kind", span, |h| Ok(Value::String(h.kind_name().into())))
-        .map(|v| v.ref_cell())
+    with_handle(id, "ncl_kind", span, |h| {
+        Ok(Value::String(h.kind_name().into()))
+    })
+    .map(|v| v.ref_cell())
 }
 
 fn ncl_len(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
@@ -1180,6 +1261,9 @@ pub fn dataframe_from_pg(
 }
 
 /// MongoDB-style object rows → DataFrame.
-pub fn dataframe_from_objects(rows: &[ValueRef], columns: &[String]) -> Result<frame::DataFrame, String> {
+pub fn dataframe_from_objects(
+    rows: &[ValueRef],
+    columns: &[String],
+) -> Result<frame::DataFrame, String> {
     bridge::from_object_rows(rows, columns)
 }

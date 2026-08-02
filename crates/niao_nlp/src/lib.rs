@@ -8,10 +8,10 @@ pub mod baseline;
 pub mod error;
 pub mod ngrams;
 pub mod normalize;
+pub mod similarity;
 pub mod sparse;
 pub mod stem;
 pub mod stopwords;
-pub mod similarity;
 pub mod tokenize;
 pub mod vectorizer;
 pub mod word2vec;
@@ -23,13 +23,13 @@ pub use error::{
 };
 pub use ngrams::{char_ngrams, ngram_range, ngrams, skip_grams};
 pub use normalize::{normalize, NormalizeOptions};
+pub use similarity::{cosine, jaccard, jaro, jaro_winkler, levenshtein, Bm25};
 pub use sparse::CsrMatrix;
 pub use stem::{DictLemmatizer, PorterStemmer, SnowballEnglish};
 pub use stopwords::{english_stopwords, remove_stopwords};
-pub use similarity::{cosine, jaccard, jaro, jaro_winkler, levenshtein, Bm25};
 pub use tokenize::{sent_tokenize, tokenize_for_vectorizer, whitespace_tokenize, word_tokenize};
 pub use vectorizer::{CountVectorizer, HashingVectorizer, TfidfVectorizer, VectorizerOptions};
-pub use word2vec::{Word2Vec, Word2VecOptions, W2vMode};
+pub use word2vec::{W2vMode, Word2Vec, Word2VecOptions};
 
 #[cfg(test)]
 mod integration {
@@ -42,10 +42,7 @@ mod integration {
             "A fast brown fox leaps over a sleepy dog.",
         ];
         let norm_opts = NormalizeOptions::sklearn_default();
-        let cleaned: Vec<String> = docs
-            .iter()
-            .map(|d| normalize(d, &norm_opts))
-            .collect();
+        let cleaned: Vec<String> = docs.iter().map(|d| normalize(d, &norm_opts)).collect();
         let mut tv = TfidfVectorizer::default();
         let mat = tv
             .fit_transform(&cleaned.iter().map(|s| s.as_str()).collect::<Vec<_>>())

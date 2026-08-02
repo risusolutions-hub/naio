@@ -401,9 +401,18 @@ fn url_to_string(url: &UrlParts) -> String {
 
 fn parts_to_object(url: &UrlParts) -> HashMap<String, ValueRef> {
     let mut map = HashMap::new();
-    map.insert("scheme".to_string(), Value::String(url.scheme.clone()).ref_cell());
-    map.insert("host".to_string(), Value::String(url.host.clone()).ref_cell());
-    map.insert("path".to_string(), Value::String(url.path.clone()).ref_cell());
+    map.insert(
+        "scheme".to_string(),
+        Value::String(url.scheme.clone()).ref_cell(),
+    );
+    map.insert(
+        "host".to_string(),
+        Value::String(url.host.clone()).ref_cell(),
+    );
+    map.insert(
+        "path".to_string(),
+        Value::String(url.path.clone()).ref_cell(),
+    );
 
     let def = default_port(&url.scheme);
     if url.port != 0 && url.port != def {
@@ -443,9 +452,8 @@ fn parts_from_object(map: &HashMap<String, ValueRef>, span: Span) -> NiaoResult<
     let scheme = opt_string_field(map, "scheme").ok_or_else(|| {
         RuntimeError::at(span, E_NURL_TYPE, "nurl_build() requires scheme string")
     })?;
-    let host = opt_string_field(map, "host").ok_or_else(|| {
-        RuntimeError::at(span, E_NURL_TYPE, "nurl_build() requires host string")
-    })?;
+    let host = opt_string_field(map, "host")
+        .ok_or_else(|| RuntimeError::at(span, E_NURL_TYPE, "nurl_build() requires host string"))?;
 
     let path = opt_string_field(map, "path").unwrap_or_else(|| "/".to_string());
     let query = opt_string_field(map, "query").unwrap_or_default();
@@ -774,7 +782,10 @@ nurl_fns![
 ];
 
 fn all_builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(flat, _, f)| (flat, f)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(flat, _, f)| (flat, f))
+        .collect()
 }
 
 pub fn namespace() -> Value {
@@ -877,10 +888,7 @@ mod tests {
     #[test]
     fn encode_decode_roundtrip() {
         let s = "hello world!@#";
-        let enc = expect_str(nurl_encode(
-            &[Value::String(s.into()).ref_cell()],
-            span(),
-        ));
+        let enc = expect_str(nurl_encode(&[Value::String(s.into()).ref_cell()], span()));
         assert_eq!(enc, "hello%20world%21%40%23");
         let dec = expect_str(nurl_decode(&[Value::String(enc).ref_cell()], span()));
         assert_eq!(dec, s);
@@ -889,8 +897,14 @@ mod tests {
     #[test]
     fn build_and_join() {
         let mut parts = HashMap::new();
-        parts.insert("scheme".to_string(), Value::String("https".into()).ref_cell());
-        parts.insert("host".to_string(), Value::String("example.com".into()).ref_cell());
+        parts.insert(
+            "scheme".to_string(),
+            Value::String("https".into()).ref_cell(),
+        );
+        parts.insert(
+            "host".to_string(),
+            Value::String("example.com".into()).ref_cell(),
+        );
         parts.insert("path".to_string(), Value::String("/a/b/".into()).ref_cell());
         let built = expect_str(nurl_build(&[Value::Object(parts).ref_cell()], span()));
         assert_eq!(built, "https://example.com/a/b/");

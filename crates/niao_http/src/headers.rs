@@ -72,9 +72,7 @@ impl HeaderMap {
     #[inline]
     pub fn get(&self, name: &str) -> Option<&str> {
         let key = name.to_ascii_lowercase();
-        self.index
-            .get(&key)
-            .map(|&i| self.entries[i].1.as_str())
+        self.index.get(&key).map(|&i| self.entries[i].1.as_str())
     }
 
     #[inline]
@@ -185,6 +183,9 @@ mod tests {
         let name = HeaderName::from_str("Cache-Control").unwrap();
         let value = HeaderValue::from_str("no-cache").unwrap();
         map.insert_typed(name, value);
-        assert_eq!(map.get_typed(&HeaderName::from_static("cache-control")), Some("no-cache"));
+        assert_eq!(
+            map.get_typed(&HeaderName::from_static("cache-control")),
+            Some("no-cache")
+        );
     }
 }

@@ -30,7 +30,10 @@ pub fn acf(x: &[f64], nlags: Option<usize>) -> TsResult<Vec<f64>> {
     let arr = from_slice(&[m], &padded.iter().map(|c| c.re).collect::<Vec<_>>())
         .map_err(|e| TsError::Error(e.to_string()))?;
     let spec = fft(&arr).map_err(|e| TsError::Error(e.to_string()))?;
-    let power: Vec<Complex> = spec.iter().map(|c| Complex::new(c.re * c.re + c.im * c.im, 0.0)).collect();
+    let power: Vec<Complex> = spec
+        .iter()
+        .map(|c| Complex::new(c.re * c.re + c.im * c.im, 0.0))
+        .collect();
     let cov = ifft(&power).map_err(|e| TsError::Error(e.to_string()))?;
 
     let mut acf_vals = vec![1.0; maxlag + 1];
@@ -210,14 +213,20 @@ fn invert_small(a: Vec<f64>, n: usize) -> Result<Vec<f64>, String> {
 pub fn adfuller(x: &[f64], maxlag: Option<usize>) -> TsResult<TestResult> {
     let n = x.len();
     if n < 4 {
-        return Err(TsError::Domain("adfuller: need at least 4 observations".into()));
+        return Err(TsError::Domain(
+            "adfuller: need at least 4 observations".into(),
+        ));
     }
-    let p = maxlag.unwrap_or(((n - 1) as f64).powf(1.0 / 3.0).floor() as usize).min(n / 2 - 2);
+    let p = maxlag
+        .unwrap_or(((n - 1) as f64).powf(1.0 / 3.0).floor() as usize)
+        .min(n / 2 - 2);
     let dy = diff(x, 1)?;
     let y_lag = x[..n - 1].to_vec();
     let m = dy.len();
     if m <= p + 2 {
-        return Err(TsError::Domain("adfuller: insufficient length after lags".into()));
+        return Err(TsError::Domain(
+            "adfuller: insufficient length after lags".into(),
+        ));
     }
 
     let mut design = Vec::with_capacity(m - p);

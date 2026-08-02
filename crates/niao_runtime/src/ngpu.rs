@@ -30,12 +30,21 @@ fn type_err(span: Span, msg: impl Into<String>) -> RuntimeError {
     }
 }
 
-fn arity_range(args: &[ValueRef], min: usize, max: usize, name: &str, span: Span) -> NiaoResult<()> {
+fn arity_range(
+    args: &[ValueRef],
+    min: usize,
+    max: usize,
+    name: &str,
+    span: Span,
+) -> NiaoResult<()> {
     if args.len() < min || args.len() > max {
         return Err(RuntimeError::at(
             span,
             codes::E2710_NGPU_ARITY,
-            format!("{name}() expects {min}..={max} argument(s), got {}", args.len()),
+            format!(
+                "{name}() expects {min}..={max} argument(s), got {}",
+                args.len()
+            ),
         ));
     }
     Ok(())
@@ -90,7 +99,10 @@ fn gpu_at(index: usize, span: Span) -> Result<hw::GpuInfo, ValueRef> {
         None => Err(error_value(
             codes::E2711_NGPU_ERROR,
             "ngpu_error",
-            format!("GPU index {index} out of range ({} detected)", snap.gpus.len()),
+            format!(
+                "GPU index {index} out of range ({} detected)",
+                snap.gpus.len()
+            ),
             span,
         )),
     }
@@ -100,7 +112,10 @@ fn gpu_object(g: &hw::GpuInfo) -> ValueRef {
     let mut map = HashMap::new();
     map.insert("index".to_string(), Value::Int(g.index).ref_cell());
     map.insert("name".to_string(), Value::String(g.name.clone()).ref_cell());
-    map.insert("vendor".to_string(), Value::String(g.vendor.clone()).ref_cell());
+    map.insert(
+        "vendor".to_string(),
+        Value::String(g.vendor.clone()).ref_cell(),
+    );
     map.insert("vram_total_mb".to_string(), opt_num(g.vram_total_mb));
     map.insert("vram_used_mb".to_string(), opt_num(g.vram_used_mb));
     map.insert("usage".to_string(), opt_num(g.util_pct));
@@ -176,11 +191,15 @@ fn ngpu_temp_c(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
 }
 
 fn ngpu_vram_total_mb(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
-    reading(args, span, "ngpu_vram_total_mb", "GPU memory info", |g| g.vram_total_mb)
+    reading(args, span, "ngpu_vram_total_mb", "GPU memory info", |g| {
+        g.vram_total_mb
+    })
 }
 
 fn ngpu_vram_used_mb(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
-    reading(args, span, "ngpu_vram_used_mb", "GPU memory info", |g| g.vram_used_mb)
+    reading(args, span, "ngpu_vram_used_mb", "GPU memory info", |g| {
+        g.vram_used_mb
+    })
 }
 
 /// Limit Niao's GPU appetite (advisory budget consulted by ok()/ndevice).
@@ -249,7 +268,10 @@ fn ngpu_wait_cool(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     } else if max_temp > 0 {
         (max_temp - 10).max(30)
     } else {
-        return Ok(unavailable(span, "wait_cool without target (set_max_temp first)"));
+        return Ok(unavailable(
+            span,
+            "wait_cool without target (set_max_temp first)",
+        ));
     };
     let timeout_ms = if args.len() > 1 {
         int_arg(args, 1, "ngpu_wait_cool", span)?.max(0) as u64
@@ -285,8 +307,14 @@ fn ngpu_status(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity_range(args, 0, 0, "ngpu_status", span)?;
     let snap = hw::gpu_snapshot();
     let mut map = HashMap::new();
-    map.insert("backend".to_string(), Value::String(snap.backend.to_string()).ref_cell());
-    map.insert("count".to_string(), Value::Int(snap.gpus.len() as i64).ref_cell());
+    map.insert(
+        "backend".to_string(),
+        Value::String(snap.backend.to_string()).ref_cell(),
+    );
+    map.insert(
+        "count".to_string(),
+        Value::Int(snap.gpus.len() as i64).ref_cell(),
+    );
     map.insert(
         "limit_pct".to_string(),
         Value::Int(hw::GPU_LIMIT_PCT.load(Ordering::Relaxed) as i64).ref_cell(),
@@ -337,7 +365,10 @@ ngpu_fns![
 ];
 
 fn all_builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(flat, _, f)| (flat, f)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(flat, _, f)| (flat, f))
+        .collect()
 }
 
 pub fn namespace() -> Value {

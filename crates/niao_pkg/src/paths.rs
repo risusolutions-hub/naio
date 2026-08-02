@@ -29,7 +29,7 @@ pub fn resolve_niao_home() -> PathBuf {
         }
     }
 
-  if let Ok(home) = env::var("HOME") {
+    if let Ok(home) = env::var("HOME") {
         let legacy = PathBuf::from(home).join(".niao");
         if legacy.join("install.json").is_file() {
             return legacy;

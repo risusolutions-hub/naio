@@ -53,8 +53,7 @@ pub fn poll_one(span: Span) -> bool {
         Err("no Niao call hook registered for parallel_poll()".into())
     };
     POLL_RESULTS.with(|m| {
-        m.borrow_mut()
-            .insert(job.id, PollJobResult::Done(result));
+        m.borrow_mut().insert(job.id, PollJobResult::Done(result));
     });
     true
 }

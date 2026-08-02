@@ -185,8 +185,10 @@ fn nredis_mset(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let pairs = object_pairs_arg(args, 1, "nredis_mset", span)?;
     // Collect owned strings before borrowing as &str slices.
     let owned: Vec<(String, String)> = pairs.into_iter().collect();
-    let pair_refs: Vec<(&str, &str)> =
-        owned.iter().map(|(k, v)| (k.as_str(), v.as_str())).collect();
+    let pair_refs: Vec<(&str, &str)> = owned
+        .iter()
+        .map(|(k, v)| (k.as_str(), v.as_str()))
+        .collect();
     handles::with_client_mut(id, "nredis_mset", span, |c| {
         c.mset(&pair_refs).map_err(|e| e.to_string())
     })
@@ -266,7 +268,10 @@ fn nredis_cmd(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let id = handle_arg(args, 0, "nredis_cmd", span)?;
     let parts = string_array_arg(args, 1, "nredis_cmd", span)?;
     if parts.is_empty() {
-        return Ok(nredis_error(span, "nredis_cmd() parts array must not be empty"));
+        return Ok(nredis_error(
+            span,
+            "nredis_cmd() parts array must not be empty",
+        ));
     }
     // Convert to bytes; collect owned vecs to have stable references.
     let byte_vecs: Vec<Vec<u8>> = parts.iter().map(|s| s.as_bytes().to_vec()).collect();
@@ -284,7 +289,10 @@ fn nredis_close(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let id = handle_arg(args, 0, "nredis_close", span)?;
     match handles::remove(id) {
         Some(_) => Ok(ok_true()),
-        None => Ok(nredis_error(span, format!("Redis handle {id} not found or already closed"))),
+        None => Ok(nredis_error(
+            span,
+            format!("Redis handle {id} not found or already closed"),
+        )),
     }
 }
 
@@ -295,20 +303,20 @@ fn nredis_close(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
 fn all_builtins() -> Vec<(&'static str, NativeFn)> {
     vec![
         ("nredis_connect", Rc::new(nredis_connect)),
-        ("nredis_ping",    Rc::new(nredis_ping)),
-        ("nredis_get",     Rc::new(nredis_get)),
-        ("nredis_set",     Rc::new(nredis_set)),
-        ("nredis_del",     Rc::new(nredis_del)),
-        ("nredis_incr",    Rc::new(nredis_incr)),
-        ("nredis_expire",  Rc::new(nredis_expire)),
-        ("nredis_mget",    Rc::new(nredis_mget)),
-        ("nredis_mset",    Rc::new(nredis_mset)),
-        ("nredis_hget",    Rc::new(nredis_hget)),
-        ("nredis_hset",    Rc::new(nredis_hset)),
-        ("nredis_hdel",    Rc::new(nredis_hdel)),
+        ("nredis_ping", Rc::new(nredis_ping)),
+        ("nredis_get", Rc::new(nredis_get)),
+        ("nredis_set", Rc::new(nredis_set)),
+        ("nredis_del", Rc::new(nredis_del)),
+        ("nredis_incr", Rc::new(nredis_incr)),
+        ("nredis_expire", Rc::new(nredis_expire)),
+        ("nredis_mget", Rc::new(nredis_mget)),
+        ("nredis_mset", Rc::new(nredis_mset)),
+        ("nredis_hget", Rc::new(nredis_hget)),
+        ("nredis_hset", Rc::new(nredis_hset)),
+        ("nredis_hdel", Rc::new(nredis_hdel)),
         ("nredis_hgetall", Rc::new(nredis_hgetall)),
-        ("nredis_cmd",     Rc::new(nredis_cmd)),
-        ("nredis_close",   Rc::new(nredis_close)),
+        ("nredis_cmd", Rc::new(nredis_cmd)),
+        ("nredis_close", Rc::new(nredis_close)),
     ]
 }
 
@@ -318,21 +326,21 @@ pub fn namespace() -> Value {
     let bind = |map: &mut HashMap<String, ValueRef>, name: &str, f: NativeFn| {
         map.insert(name.to_string(), Value::NativeFunction(f).ref_cell());
     };
-    bind(&mut map, "connect",  Rc::new(nredis_connect));
-    bind(&mut map, "ping",     Rc::new(nredis_ping));
-    bind(&mut map, "get",      Rc::new(nredis_get));
-    bind(&mut map, "set",      Rc::new(nredis_set));
-    bind(&mut map, "del",      Rc::new(nredis_del));
-    bind(&mut map, "incr",     Rc::new(nredis_incr));
-    bind(&mut map, "expire",   Rc::new(nredis_expire));
-    bind(&mut map, "mget",     Rc::new(nredis_mget));
-    bind(&mut map, "mset",     Rc::new(nredis_mset));
-    bind(&mut map, "hget",     Rc::new(nredis_hget));
-    bind(&mut map, "hset",     Rc::new(nredis_hset));
-    bind(&mut map, "hdel",     Rc::new(nredis_hdel));
-    bind(&mut map, "hgetall",  Rc::new(nredis_hgetall));
-    bind(&mut map, "cmd",      Rc::new(nredis_cmd));
-    bind(&mut map, "close",    Rc::new(nredis_close));
+    bind(&mut map, "connect", Rc::new(nredis_connect));
+    bind(&mut map, "ping", Rc::new(nredis_ping));
+    bind(&mut map, "get", Rc::new(nredis_get));
+    bind(&mut map, "set", Rc::new(nredis_set));
+    bind(&mut map, "del", Rc::new(nredis_del));
+    bind(&mut map, "incr", Rc::new(nredis_incr));
+    bind(&mut map, "expire", Rc::new(nredis_expire));
+    bind(&mut map, "mget", Rc::new(nredis_mget));
+    bind(&mut map, "mset", Rc::new(nredis_mset));
+    bind(&mut map, "hget", Rc::new(nredis_hget));
+    bind(&mut map, "hset", Rc::new(nredis_hset));
+    bind(&mut map, "hdel", Rc::new(nredis_hdel));
+    bind(&mut map, "hgetall", Rc::new(nredis_hgetall));
+    bind(&mut map, "cmd", Rc::new(nredis_cmd));
+    bind(&mut map, "close", Rc::new(nredis_close));
     Value::Object(map)
 }
 
@@ -436,7 +444,10 @@ mod tests {
         let bad = Value::String("bad".into()).ref_cell();
         let result = nredis_ping(&[bad], span);
         assert!(result.is_err());
-        assert_eq!(result.unwrap_err().code(), codes::E2783_NREDIS_INVALID_HANDLE);
+        assert_eq!(
+            result.unwrap_err().code(),
+            codes::E2783_NREDIS_INVALID_HANDLE
+        );
     }
 
     #[test]
@@ -490,8 +501,10 @@ mod tests {
     fn namespace_has_all_keys() {
         let ns = namespace();
         if let Value::Object(map) = ns {
-            for key in &["connect","ping","get","set","del","incr","expire",
-                         "mget","mset","hget","hset","hdel","hgetall","cmd","close"] {
+            for key in &[
+                "connect", "ping", "get", "set", "del", "incr", "expire", "mget", "mset", "hget",
+                "hset", "hdel", "hgetall", "cmd", "close",
+            ] {
                 assert!(map.contains_key(*key), "missing key: {key}");
             }
         } else {

@@ -44,7 +44,8 @@ fn nplot_line(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     arity(args, 2, "nplot_line", span)?;
     let x = floats(args, 0, "nplot_line", span)?;
     let y = floats(args, 1, "nplot_line", span)?;
-    let fig = line(&x, &y).map_err(|e| RuntimeError::at(span, codes::E4044_NPLOT_RENDER, e.to_string()))?;
+    let fig = line(&x, &y)
+        .map_err(|e| RuntimeError::at(span, codes::E4044_NPLOT_RENDER, e.to_string()))?;
     Ok(Value::String(fig.to_svg_string()).ref_cell())
 }
 
@@ -53,8 +54,10 @@ fn nplot_save_line(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let x = floats(args, 0, "nplot_save_line", span)?;
     let y = floats(args, 1, "nplot_save_line", span)?;
     let path = string_arg(args, 2, "nplot_save_line", span)?;
-    let fig = line(&x, &y).map_err(|e| RuntimeError::at(span, codes::E4044_NPLOT_RENDER, e.to_string()))?;
-    fig.save_svg(&path).map_err(|e| RuntimeError::at(span, codes::E4044_NPLOT_RENDER, e.to_string()))?;
+    let fig = line(&x, &y)
+        .map_err(|e| RuntimeError::at(span, codes::E4044_NPLOT_RENDER, e.to_string()))?;
+    fig.save_svg(&path)
+        .map_err(|e| RuntimeError::at(span, codes::E4044_NPLOT_RENDER, e.to_string()))?;
     Ok(Value::Nil.ref_cell())
 }
 
@@ -75,7 +78,10 @@ pub const MODULE_NAME: &str = "nplot";
 pub const MODULE_PATHS: &[&str] = &["nplot", "std/nplot"];
 
 pub fn builtins() -> Vec<(&'static str, NativeFn)> {
-    all_pairs().into_iter().map(|(f, _, fn_)| (f, fn_)).collect()
+    all_pairs()
+        .into_iter()
+        .map(|(f, _, fn_)| (f, fn_))
+        .collect()
 }
 
 pub fn namespace() -> Value {

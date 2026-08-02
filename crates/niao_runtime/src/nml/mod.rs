@@ -118,7 +118,8 @@ fn nml_reshape(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let id = nml_handle_arg(args, 0, "nml_reshape", span)?;
     let new_shape = shape_from_arg(args, 1, "nml_reshape", span)?;
     let t = tensor_from_handle(id, "nml_reshape", span)?;
-    let out = t.reshape(&new_shape)
+    let out = t
+        .reshape(&new_shape)
         .map_err(|e| RuntimeError::at(span, codes::E1973_NML_SHAPE, e.to_string()))?;
     Ok(ok_handle(alloc_handle(NmlHandle::Tensor(out))))
 }
@@ -128,7 +129,11 @@ fn nml_to_device(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     let id = nml_handle_arg(args, 0, "nml_to_device", span)?;
     let s = string_arg(args, 1, "nml_to_device", span)?;
     let dev = Device::parse(&s).ok_or_else(|| {
-        RuntimeError::at(span, codes::E1975_NML_DEVICE, format!("unknown device '{s}'"))
+        RuntimeError::at(
+            span,
+            codes::E1975_NML_DEVICE,
+            format!("unknown device '{s}'"),
+        )
     })?;
     with_handle(id, "nml_to_device", span, |h| {
         let NmlHandle::Tensor(t) = h else {
@@ -150,7 +155,8 @@ fn nml_matmul(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
 pub fn matmul_handles(a_id: u64, b_id: u64, span: Span) -> Result<u64, RuntimeError> {
     let a = tensor_from_handle(a_id, "nml_matmul", span)?;
     let b = tensor_from_handle(b_id, "nml_matmul", span)?;
-    let out = a.matmul(&b)
+    let out = a
+        .matmul(&b)
         .map_err(|e| RuntimeError::at(span, codes::E1971_NML_ERROR, e.to_string()))?;
     Ok(alloc_handle(NmlHandle::Tensor(out)))
 }
@@ -294,7 +300,12 @@ fn nml_len(args: &[ValueRef], span: Span) -> NiaoResult<ValueRef> {
     Ok(ok_int(n))
 }
 
-fn shape_from_arg(args: &[ValueRef], idx: usize, name: &str, span: Span) -> Result<Vec<usize>, RuntimeError> {
+fn shape_from_arg(
+    args: &[ValueRef],
+    idx: usize,
+    name: &str,
+    span: Span,
+) -> Result<Vec<usize>, RuntimeError> {
     let ints = int_array_arg(args, idx, name, span)?;
     Ok(ints.iter().map(|&n| n as usize).collect())
 }
@@ -317,7 +328,8 @@ where
     let b_id = nml_handle_arg(args, 1, name, span)?;
     let a = tensor_from_handle(a_id, name, span)?;
     let b = tensor_from_handle(b_id, name, span)?;
-    let out = op(&a, &b).map_err(|e| RuntimeError::at(span, codes::E1971_NML_ERROR, e.to_string()))?;
+    let out =
+        op(&a, &b).map_err(|e| RuntimeError::at(span, codes::E1971_NML_ERROR, e.to_string()))?;
     Ok(ok_handle(alloc_handle(NmlHandle::Tensor(out))))
 }
 
@@ -341,7 +353,10 @@ fn parse_layer_list(args: &[ValueRef], idx: usize, span: Span) -> Result<Vec<Lay
                         return Err(RuntimeError::at(
                             span,
                             codes::E1974_NML_TYPE,
-                            format!("nml_sequential expects model handles, got {}", other.type_name()),
+                            format!(
+                                "nml_sequential expects model handles, got {}",
+                                other.type_name()
+                            ),
                         ));
                     }
                 };

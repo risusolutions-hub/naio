@@ -8,10 +8,22 @@ pub type VarId = u64;
 #[derive(Clone)]
 pub enum OpKind {
     Input,
-    Matmul { a: VarId, b: VarId },
-    Add { a: VarId, b: VarId },
-    Relu { a: VarId },
-    Linear { input: VarId, weight: VarId, bias: Option<VarId> },
+    Matmul {
+        a: VarId,
+        b: VarId,
+    },
+    Add {
+        a: VarId,
+        b: VarId,
+    },
+    Relu {
+        a: VarId,
+    },
+    Linear {
+        input: VarId,
+        weight: VarId,
+        bias: Option<VarId>,
+    },
 }
 
 #[derive(Clone)]
@@ -127,7 +139,9 @@ pub fn backward(graph: &Graph, loss_id: VarId) -> HashMap<VarId, Vec<f32>> {
 
     for id in order {
         let Some(node) = graph.get(id) else { continue };
-        let Some(grad_out) = grads.get(&id).cloned() else { continue };
+        let Some(grad_out) = grads.get(&id).cloned() else {
+            continue;
+        };
 
         match &node.op {
             OpKind::Input => {}
@@ -140,7 +154,13 @@ pub fn backward(graph: &Graph, loss_id: VarId) -> HashMap<VarId, Vec<f32>> {
                         if let (Ok(a_data), Ok(b_data)) = (na.value.to_cpu(), nb.value.to_cpu()) {
                             let grad_a = niao_tensor::cpu::matmul_f32(&grad_out, &b_data, m, k, n);
                             let bt = transpose2d(&b_data, n, k);
-                            let grad_b = niao_tensor::cpu::matmul_f32(&at(&a_data, m, n), &grad_out, n, m, k);
+                            let grad_b = niao_tensor::cpu::matmul_f32(
+                                &at(&a_data, m, n),
+                                &grad_out,
+                                n,
+                                m,
+                                k,
+                            );
                             acc_grad(&mut grads, *a, grad_a);
                             acc_grad(&mut grads, *b, grad_b);
                             let _ = bt;
@@ -159,16 +179,22 @@ pub fn backward(graph: &Graph, loss_id: VarId) -> HashMap<VarId, Vec<f32>> {
                     acc_grad(&mut grads, *a, g);
                 }
             }
-            OpKind::Linear { input, weight, bias } => {
+            OpKind::Linear {
+                input,
+                weight,
+                bias,
+            } => {
                 if let (Some(ni), Some(nw)) = (graph.get(*input), graph.get(*weight)) {
                     if ni.value.shape.len() == 2 && nw.value.shape.len() == 2 {
                         let rows = ni.value.shape[0];
                         let in_f = ni.value.shape[1];
                         let out_f = nw.value.shape[0];
                         if let (Ok(x), Ok(w)) = (ni.value.to_cpu(), nw.value.to_cpu()) {
-                            let grad_w = niao_tensor::cpu::matmul_f32(&grad_out, &x, out_f, rows, in_f);
+                            let grad_w =
+                                niao_tensor::cpu::matmul_f32(&grad_out, &x, out_f, rows, in_f);
                             let wt = transpose2d(&w, out_f, in_f);
-                            let grad_x = niao_tensor::cpu::matmul_f32(&grad_out, &wt, rows, out_f, in_f);
+                            let grad_x =
+                                niao_tensor::cpu::matmul_f32(&grad_out, &wt, rows, out_f, in_f);
                             acc_grad(&mut grads, *input, grad_x);
                             acc_grad(&mut grads, *weight, grad_w);
                             if let Some(bid) = bias {
