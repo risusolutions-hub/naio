@@ -80,8 +80,8 @@ const PLATFORM_SIGNALS: &[(i32, &str)] = &[
 #[cfg(unix)]
 mod engine {
     use super::*;
+    use libc::{signal, SIG_DFL, SIG_IGN};
     use signal_hook::iterator::Signals;
-    use signal_hook::low_level::{self, Action};
 
     pub struct EngineState {
         watch_list: Vec<i32>,
@@ -117,11 +117,17 @@ mod engine {
         pub fn set_kind(&mut self, sig: i32, kind: HandlerKind) -> io::Result<()> {
             match kind {
                 HandlerKind::Default => {
-                    low_level::register(sig, Action::Default)?;
+                    // SAFETY: restoring the platform default handler for a known signal number.
+                    unsafe {
+                        signal(sig, SIG_DFL);
+                    }
                     self.kinds.remove(&sig);
                 }
                 HandlerKind::Ignore => {
-                    low_level::register(sig, Action::Ignore)?;
+                    // SAFETY: installing SIG_IGN for a known signal number.
+                    unsafe {
+                        signal(sig, SIG_IGN);
+                    }
                     self.kinds.insert(sig, HandlerKind::Ignore);
                 }
                 HandlerKind::Watched => {
@@ -152,7 +158,10 @@ mod engine {
         pub fn reset_all(&mut self) -> io::Result<()> {
             let keys: Vec<i32> = self.kinds.keys().copied().collect();
             for sig in keys {
-                low_level::register(sig, Action::Default)?;
+                // SAFETY: restoring the platform default handler for a known signal number.
+                unsafe {
+                    signal(sig, SIG_DFL);
+                }
             }
             self.kinds.clear();
             self.rebuild()
